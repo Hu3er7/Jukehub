@@ -630,6 +630,7 @@
       await updateDoc(doc(db, "votes", id), {
         cooldownUntil: Date.now() + COOLDOWN_MS,
         playedAt: serverTimestamp(),
+        requests: 0, // repart à zéro : ne remonte plus seule dans le palmarès, il faut de nouvelles demandes
       });
     } catch (e) {
       console.error(e);
