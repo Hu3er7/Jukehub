@@ -1,3 +1,11 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Demande ta chanson</title>
+</head>
+<body style="margin:0;">
 <style>
   /* ===== Système de demandes de chansons — styles isolés sous #jb-app ===== */
   #jb-app, #jb-app * { box-sizing: border-box; }
@@ -84,6 +92,21 @@
   #jb-app .jb-btn-request[disabled] { background: var(--border); color: var(--text-dim); cursor: default; }
   #jb-app .jb-btn-request.jb-played-btn { background: var(--card2); color: var(--text-dim); }
 
+  /* Refroidissement (30 sec après avoir été jouée) */
+  #jb-app .jb-cooldown-badge {
+    flex-shrink: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    background: #3a2f14; border: 1px solid var(--accent); color: var(--accent2);
+    border-radius: 10px; padding: 6px 12px; font-weight: 700; font-size: 0.7rem; line-height: 1.1; white-space: nowrap;
+  }
+  #jb-app .jb-cooldown-num { font-size: 1.2rem; font-weight: 800; }
+
+  /* Chanson brûlée (retirée volontairement par l'admin) */
+  #jb-app .jb-burned-badge {
+    flex-shrink: 0; display: flex; align-items: center; gap: 6px; justify-content: center;
+    background: #3a1414; border: 1px solid var(--danger); color: #ff8a7d;
+    border-radius: 10px; padding: 8px 12px; font-weight: 800; font-size: 0.8rem; white-space: nowrap;
+  }
+
   #jb-app .jb-toggle { width: 100%; text-align: left; color: var(--accent2); font-weight: 700; padding: 10px 2px; cursor: pointer; }
   #jb-app .jb-played-list { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
   #jb-app .jb-played-item { display: flex; justify-content: space-between; gap: 8px; padding: 8px 10px; background: var(--card); border-radius: 10px; font-size: 0.88rem; }
@@ -113,11 +136,20 @@
   #jb-app .jb-mark-played-btn { background: var(--success); color: #08210f; font-weight: 700; padding: 9px 11px; border-radius: 10px; font-size: 0.82rem; flex-shrink: 0; cursor: pointer; white-space: nowrap; }
   #jb-app .jb-unmark-btn { background: var(--card2); color: var(--text-dim); font-weight: 600; padding: 6px 10px; border-radius: 8px; font-size: 0.75rem; cursor: pointer; }
 
+  #jb-app .jb-cooldown-list { display: flex; flex-direction: column; gap: 8px; }
+  #jb-app .jb-cooldown-row { display: flex; align-items: center; gap: 10px; background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 10px 12px; }
+  #jb-app .jb-cooldown-row .jb-song-info { flex: 1; min-width: 0; }
+  #jb-app .jb-bypass-btn { background: var(--accent); color: #1a1408; font-weight: 700; padding: 8px 10px; border-radius: 9px; font-size: 0.78rem; cursor: pointer; flex-shrink: 0; white-space: nowrap; }
+  #jb-app .jb-burn-btn { background: #3a1414; color: #ff8a7d; border: 1px solid var(--danger); font-weight: 700; padding: 8px 10px; border-radius: 9px; font-size: 0.78rem; cursor: pointer; flex-shrink: 0; white-space: nowrap; }
+  #jb-app .jb-unburn-btn { background: var(--success); color: #08210f; font-weight: 700; padding: 8px 10px; border-radius: 9px; font-size: 0.78rem; cursor: pointer; flex-shrink: 0; white-space: nowrap; }
+
   #jb-app .jb-admin-catalog { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; max-height: 420px; overflow-y: auto; }
   #jb-app .jb-admin-catalog-item { display: flex; align-items: center; gap: 8px; padding: 8px 10px; background: var(--card); border-radius: 10px; }
   #jb-app .jb-icon-btn { flex-shrink: 0; padding: 7px 10px; border-radius: 8px; font-size: 0.85rem; cursor: pointer; }
   #jb-app .jb-icon-btn.jb-del { background: var(--card2); color: var(--danger); }
   #jb-app .jb-icon-btn.jb-plus { background: var(--card2); color: var(--accent2); }
+  #jb-app .jb-icon-btn.jb-fire { background: var(--card2); color: #ff8a7d; }
+  #jb-app .jb-icon-btn.jb-fire.jb-active { background: #3a1414; border: 1px solid var(--danger); }
 
   #jb-app .jb-toast {
     position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%);
@@ -192,6 +224,13 @@
       </section>
 
       <section class="jb-admin-section">
+        <h3>⏳ Refroidissement &amp; 🔥 Brûlées</h3>
+        <p class="jb-hint">Chansons temporairement indisponibles (30 sec après avoir été jouées) ou retirées volontairement.</p>
+        <div id="jb-cooldown-list" class="jb-cooldown-list"></div>
+        <p id="jb-cooldown-empty" class="jb-empty" hidden>Aucune chanson en attente pour l'instant.</p>
+      </section>
+
+      <section class="jb-admin-section">
         <h3>➕ Ajouter des chansons au répertoire</h3>
         <p class="jb-hint">Une chanson par ligne. Format : Titre - Artiste</p>
         <textarea id="jb-bulk-input" rows="6" placeholder="Ex:&#10;Bohemian Rhapsody - Queen&#10;Hotel California - Eagles"></textarea>
@@ -251,11 +290,30 @@
   const auth = getAuth(fbApp);
 
   // ---------- État local ----------
+  const COOLDOWN_MS = 30000; // 30 secondes de refroidissement après avoir été jouée
   let catalogSongs = [];      // [{id, title, artist}]
-  let votes = {};             // songId -> {requests, played, playedAt, title, artist}
+  // votes: songId -> {requests, burned, cooldownUntil, playedAt, title, artist}
+  let votes = {};
+  let lastSeenPlayedAt = {};  // songId -> millis, pour détecter un nouveau "jouée" et libérer le vote local
   let nightId = null;
   let requestedThisNight = new Set();
   let isAdmin = false;
+
+  function isInCooldown(v) {
+    return !!(v && v.cooldownUntil && v.cooldownUntil > Date.now());
+  }
+  function isBurned(v) {
+    return !!(v && v.burned);
+  }
+  function isUnavailable(v) {
+    return isBurned(v) || isInCooldown(v);
+  }
+  function remainingSeconds(v) {
+    return Math.max(0, Math.ceil((v.cooldownUntil - Date.now()) / 1000));
+  }
+  function playedAtMillis(v) {
+    return v?.playedAt?.seconds ? v.playedAt.seconds * 1000 : (v?.playedAt || 0);
+  }
 
   // ---------- Utilitaires ----------
   function norm(s) {
@@ -322,6 +380,20 @@
   onSnapshot(collection(db, "votes"), (snap) => {
     votes = {};
     snap.forEach((d) => { votes[d.id] = d.data(); });
+
+    // Si une chanson vient d'être (re)jouée, on libère la demande locale
+    // pour que la même personne puisse la redemander dans ce nouveau tour.
+    let storageChanged = false;
+    Object.entries(votes).forEach(([id, v]) => {
+      const p = playedAtMillis(v);
+      if (p && lastSeenPlayedAt[id] && p !== lastSeenPlayedAt[id] && requestedThisNight.has(id)) {
+        requestedThisNight.delete(id);
+        storageChanged = true;
+      }
+      if (p) lastSeenPlayedAt[id] = p;
+    });
+    if (storageChanged) saveRequestedToStorage();
+
     renderAll();
   }, (err) => console.error("votes onSnapshot", err));
 
@@ -331,14 +403,30 @@
     renderPlayed();
     renderAdminPalmares();
     renderAdminCatalog();
+    renderCooldownList();
   }
+
+  // ---------- Compte à rebours en direct (sans re-rendu complet à chaque seconde) ----------
+  setInterval(() => {
+    const now = Date.now();
+    let anyExpired = false;
+    document.querySelectorAll(".jb-cooldown-badge, .jb-cooldown-row").forEach((el) => {
+      const until = Number(el.dataset.until || 0);
+      if (!until) return;
+      const remaining = Math.max(0, Math.ceil((until - now) / 1000));
+      const numEl = el.querySelector(".jb-cooldown-num");
+      if (numEl) numEl.textContent = remaining;
+      if (remaining <= 0) anyExpired = true;
+    });
+    if (anyExpired) renderAll();
+  }, 1000);
 
   // ---------- Rendu : Palmarès (public) ----------
   function renderPalmares() {
     const list = document.getElementById("jb-palmares-list");
     const empty = document.getElementById("jb-palmares-empty");
     const ranked = Object.entries(votes)
-      .filter(([, v]) => v.requests > 0 && !v.played)
+      .filter(([, v]) => v.requests > 0 && !isUnavailable(v))
       .sort((a, b) => b[1].requests - a[1].requests)
       .slice(0, 20);
 
@@ -379,14 +467,15 @@
 
     songs.forEach((song) => {
       const v = votes[song.id];
-      const played = v?.played;
       const requested = requestedThisNight.has(song.id);
       const li = document.createElement("li");
       li.className = "jb-song-item";
 
       let btnHtml;
-      if (played) {
-        btnHtml = `<span class="jb-btn-request jb-played-btn">✅ Déjà jouée</span>`;
+      if (isBurned(v)) {
+        btnHtml = `<div class="jb-burned-badge">🔥❌ Brûlée</div>`;
+      } else if (isInCooldown(v)) {
+        btnHtml = `<div class="jb-cooldown-badge" data-until="${v.cooldownUntil}"><span class="jb-cooldown-num">${remainingSeconds(v)}</span>sec</div>`;
       } else if (requested) {
         btnHtml = `<span class="jb-btn-request" disabled>✅ Demandée</span>`;
       } else {
@@ -414,22 +503,32 @@
   // ---------- Rendu : Chansons déjà jouées (public) ----------
   function renderPlayed() {
     const played = Object.entries(votes)
-      .filter(([, v]) => v.played)
-      .sort((a, b) => (b[1].playedAt?.seconds || 0) - (a[1].playedAt?.seconds || 0));
+      .filter(([, v]) => playedAtMillis(v) > 0)
+      .sort((a, b) => playedAtMillis(b[1]) - playedAtMillis(a[1]));
 
     const section = document.getElementById("jb-played-section");
     section.hidden = played.length === 0;
     document.getElementById("jb-played-count").textContent = played.length;
 
     const list = document.getElementById("jb-played-list");
-    list.innerHTML = played.map(([, v]) => `
+    list.innerHTML = played.map(([, v]) => {
+      let statusHtml;
+      if (isBurned(v)) {
+        statusHtml = `<span class="jb-burned-badge">🔥❌ Brûlée</span>`;
+      } else if (isInCooldown(v)) {
+        statusHtml = `<span class="jb-cooldown-badge" data-until="${v.cooldownUntil}"><span class="jb-cooldown-num">${remainingSeconds(v)}</span>sec</span>`;
+      } else {
+        statusHtml = `<span>🎵</span>`;
+      }
+      return `
       <li class="jb-played-item">
         <span>
           <span class="jb-song-title">${escapeHtml(v.title)}</span><br>
           <span class="jb-song-artist">${escapeHtml(v.artist || "")}</span>
         </span>
-        <span>🎵</span>
-      </li>`).join("");
+        ${statusHtml}
+      </li>`;
+    }).join("");
   }
 
   document.getElementById("jb-played-toggle").addEventListener("click", () => {
@@ -448,7 +547,7 @@
         const snap = await tx.get(ref);
         if (!snap.exists()) {
           tx.set(ref, {
-            requests: 1, played: false, playedAt: null,
+            requests: 1, burned: false, cooldownUntil: 0, playedAt: null,
             title: song.title, artist: song.artist || "", createdAt: serverTimestamp(),
           });
         } else {
@@ -499,7 +598,7 @@
     const list = document.getElementById("jb-admin-palmares");
     const empty = document.getElementById("jb-admin-palmares-empty");
     const ranked = Object.entries(votes)
-      .filter(([, v]) => v.requests > 0 && !v.played)
+      .filter(([, v]) => v.requests > 0 && !isUnavailable(v))
       .sort((a, b) => b[1].requests - a[1].requests)
       .slice(0, 20);
 
@@ -528,19 +627,86 @@
 
   async function markPlayed(id) {
     try {
-      await updateDoc(doc(db, "votes", id), { played: true, playedAt: serverTimestamp() });
+      await updateDoc(doc(db, "votes", id), {
+        cooldownUntil: Date.now() + COOLDOWN_MS,
+        playedAt: serverTimestamp(),
+      });
     } catch (e) {
       console.error(e);
       showToast("Erreur — réessaie.");
     }
   }
 
-  async function unmarkPlayed(id) {
+  // Rend la chanson disponible tout de suite, sans attendre la fin du 30 sec
+  async function bypassCooldown(id) {
     try {
-      await updateDoc(doc(db, "votes", id), { played: false, playedAt: null });
+      await updateDoc(doc(db, "votes", id), { cooldownUntil: 0 });
     } catch (e) {
       console.error(e);
     }
+  }
+
+  // Retire ou remet une chanson volontairement (🔥 Brûlée)
+  async function toggleBurn(id, burn) {
+    const ref = doc(db, "votes", id);
+    try {
+      const song = catalogSongs.find((s) => s.id === id);
+      await runTransaction(db, async (tx) => {
+        const snap = await tx.get(ref);
+        if (!snap.exists()) {
+          tx.set(ref, {
+            requests: 0, burned: burn, cooldownUntil: 0, playedAt: null,
+            title: song?.title || "", artist: song?.artist || "", createdAt: serverTimestamp(),
+          });
+        } else {
+          tx.update(ref, { burned: burn, cooldownUntil: burn ? 0 : (snap.data().cooldownUntil || 0) });
+        }
+      });
+    } catch (e) {
+      console.error(e);
+      showToast("Erreur — réessaie.");
+    }
+  }
+
+  // ---------- Rendu admin : chansons en refroidissement / brûlées ----------
+  function renderCooldownList() {
+    if (!isAdmin) return;
+    const container = document.getElementById("jb-cooldown-list");
+    const empty = document.getElementById("jb-cooldown-empty");
+    const entries = Object.entries(votes)
+      .filter(([, v]) => isUnavailable(v))
+      .sort((a, b) => (b[1].cooldownUntil || 0) - (a[1].cooldownUntil || 0));
+
+    container.innerHTML = "";
+    empty.hidden = entries.length > 0;
+
+    entries.forEach(([id, v]) => {
+      const row = document.createElement("div");
+      row.className = "jb-cooldown-row";
+      if (isBurned(v)) {
+        row.innerHTML = `
+          <div class="jb-song-info">
+            <div class="jb-song-title">${escapeHtml(v.title)}</div>
+            <div class="jb-song-artist">${escapeHtml(v.artist || "")} · 🔥❌ Brûlée</div>
+          </div>
+          <button class="jb-unburn-btn" data-unburn="${id}">♻️ Réactiver</button>`;
+      } else {
+        row.dataset.until = v.cooldownUntil;
+        row.innerHTML = `
+          <div class="jb-cooldown-badge" data-until="${v.cooldownUntil}"><span class="jb-cooldown-num">${remainingSeconds(v)}</span>sec</div>
+          <div class="jb-song-info">
+            <div class="jb-song-title">${escapeHtml(v.title)}</div>
+            <div class="jb-song-artist">${escapeHtml(v.artist || "")}</div>
+          </div>
+          <button class="jb-bypass-btn" data-bypass="${id}">▶️ Disponible</button>
+          <button class="jb-burn-btn" data-burn="${id}">🔥 Brûler</button>`;
+      }
+      container.appendChild(row);
+    });
+
+    container.querySelectorAll("[data-bypass]").forEach((b) => b.addEventListener("click", () => bypassCooldown(b.dataset.bypass)));
+    container.querySelectorAll("[data-burn]").forEach((b) => b.addEventListener("click", () => toggleBurn(b.dataset.burn, true)));
+    container.querySelectorAll("[data-unburn]").forEach((b) => b.addEventListener("click", () => toggleBurn(b.dataset.unburn, false)));
   }
 
   // ---------- Nouvelle soirée ----------
@@ -616,14 +782,15 @@
     const container = document.getElementById("jb-admin-catalog");
     container.innerHTML = songs.slice(0, 150).map((s) => {
       const v = votes[s.id];
-      const status = v?.played ? " · déjà jouée" : v?.requests ? ` · ${v.requests} demande(s)` : "";
+      const burned = isBurned(v);
+      const status = burned ? " · 🔥 brûlée" : isInCooldown(v) ? ` · refroidit (${remainingSeconds(v)}s)` : v?.requests ? ` · ${v.requests} demande(s)` : "";
       return `
         <div class="jb-admin-catalog-item">
           <div class="jb-song-info">
             <div class="jb-song-title">${escapeHtml(s.title)}</div>
             <div class="jb-song-artist">${escapeHtml(s.artist || "")}${status}</div>
           </div>
-          ${v?.played ? `<button class="jb-unmark-btn" data-unmark="${s.id}">↩️ annuler</button>` : ""}
+          <button class="jb-icon-btn jb-fire${burned ? " jb-active" : ""}" data-toggleburn="${s.id}" title="${burned ? "Réactiver cette chanson" : "Retirer cette chanson (brûlée)"}">${burned ? "♻️" : "🔥"}</button>
           <button class="jb-icon-btn jb-plus" data-addvote="${s.id}" title="Ajouter une demande manuellement">+1</button>
           <button class="jb-icon-btn jb-del" data-delsong="${s.id}" title="Supprimer du répertoire">🗑️</button>
         </div>`;
@@ -633,7 +800,10 @@
       container.innerHTML += `<p class="jb-hint">... et ${songs.length - 150} autres (affine ta recherche).</p>`;
     }
 
-    container.querySelectorAll("[data-unmark]").forEach((b) => b.addEventListener("click", () => unmarkPlayed(b.dataset.unmark)));
+    container.querySelectorAll("[data-toggleburn]").forEach((b) => {
+      const id = b.dataset.toggleburn;
+      b.addEventListener("click", () => toggleBurn(id, !isBurned(votes[id])));
+    });
     container.querySelectorAll("[data-addvote]").forEach((b) => b.addEventListener("click", () => adminAddVote(b.dataset.addvote)));
     container.querySelectorAll("[data-delsong]").forEach((b) => b.addEventListener("click", () => deleteSong(b.dataset.delsong)));
   }
@@ -648,7 +818,7 @@
       await runTransaction(db, async (tx) => {
         const snap = await tx.get(ref);
         if (!snap.exists()) {
-          tx.set(ref, { requests: 1, played: false, playedAt: null, title: song.title, artist: song.artist || "", createdAt: serverTimestamp() });
+          tx.set(ref, { requests: 1, burned: false, cooldownUntil: 0, playedAt: null, title: song.title, artist: song.artist || "", createdAt: serverTimestamp() });
         } else {
           tx.update(ref, { requests: increment(1) });
         }
@@ -676,3 +846,4 @@
     return String(str).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   }
 </script>
+</body></html>
