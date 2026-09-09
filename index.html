@@ -1,0 +1,678 @@
+<style>
+  /* ===== Système de demandes de chansons — styles isolés sous #jb-app ===== */
+  #jb-app, #jb-app * { box-sizing: border-box; }
+  #jb-app {
+    --bg: #0c0b10;
+    --bg2: #15131c;
+    --card: #1c1a24;
+    --card2: #221f2b;
+    --text: #f5f2ec;
+    --text-dim: #a39dae;
+    --accent: #e3b23c;
+    --accent2: #f2c766;
+    --danger: #e05a4e;
+    --success: #4caf7d;
+    --border: #2a2733;
+    --radius: 16px;
+
+    all: initial;
+    display: block;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    width: 100vw;
+    margin-left: calc(-50vw + 50%);
+    min-height: 100vh;
+    line-height: 1.4;
+    -webkit-font-smoothing: antialiased;
+  }
+  #jb-app h1, #jb-app h2, #jb-app h3, #jb-app p, #jb-app ul, #jb-app ol, #jb-app li,
+  #jb-app input, #jb-app textarea, #jb-app button, #jb-app a {
+    font-family: inherit; color: inherit; margin: 0; padding: 0; border: 0;
+    background: none; text-decoration: none; list-style: none; font-size: 1rem;
+  }
+  #jb-app .jb-view { max-width: 640px; margin: 0 auto; padding: 20px 16px 60px; }
+
+  #jb-app .jb-header { text-align: center; padding: 24px 8px 8px; }
+  #jb-app .jb-header h1 { font-size: 1.7rem; font-weight: 800; color: var(--accent2); letter-spacing: 0.3px; }
+  #jb-app .jb-subtitle { color: var(--text-dim); margin-top: 6px; font-size: 0.95rem; }
+
+  #jb-app section { margin-top: 26px; }
+  #jb-app h2 { font-size: 1.05rem; font-weight: 700; margin-bottom: 10px; color: var(--text); }
+  #jb-app h3 { font-size: 1rem; font-weight: 700; margin-bottom: 8px; color: var(--text); }
+
+  #jb-app input[type="text"], #jb-app input[type="email"], #jb-app input[type="password"], #jb-app textarea {
+    width: 100%; background: var(--card); border: 1px solid var(--border);
+    border-radius: 12px; padding: 13px 14px; font-size: 1rem; color: var(--text);
+  }
+  #jb-app input::placeholder, #jb-app textarea::placeholder { color: var(--text-dim); }
+  #jb-app input:focus, #jb-app textarea:focus { outline: 2px solid var(--accent); }
+  #jb-app textarea { resize: vertical; margin-top: 8px; }
+
+  #jb-app .jb-empty { color: var(--text-dim); font-size: 0.9rem; padding: 10px 2px; }
+
+  /* Palmarès */
+  #jb-app .jb-palmares-list, #jb-app .jb-admin-palmares { display: flex; flex-direction: column; gap: 8px; }
+  #jb-app .jb-rank-item {
+    display: flex; align-items: center; gap: 12px; background: var(--card);
+    border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 14px;
+  }
+  #jb-app .jb-rank-item.jb-top1 { border-color: #e3b23c; background: linear-gradient(90deg, #2a2312, var(--card)); }
+  #jb-app .jb-rank-item.jb-top2 { border-color: #c9c9d4; }
+  #jb-app .jb-rank-item.jb-top3 { border-color: #b97a4e; }
+  #jb-app .jb-rank-num { font-weight: 800; font-size: 1.1rem; width: 30px; text-align: center; color: var(--accent2); flex-shrink: 0; }
+  #jb-app .jb-rank-info { flex: 1; min-width: 0; }
+  #jb-app .jb-rank-title { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  #jb-app .jb-rank-artist { color: var(--text-dim); font-size: 0.85rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  #jb-app .jb-rank-count { font-weight: 700; color: var(--accent2); font-size: 0.9rem; flex-shrink: 0; white-space: nowrap; }
+
+  /* Catalogue */
+  #jb-app .jb-catalog-list { display: flex; flex-direction: column; gap: 8px; max-height: none; }
+  #jb-app .jb-song-item {
+    display: flex; align-items: center; gap: 10px; background: var(--card);
+    border: 1px solid var(--border); border-radius: 12px; padding: 11px 12px;
+  }
+  #jb-app .jb-song-info { flex: 1; min-width: 0; }
+  #jb-app .jb-song-title { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  #jb-app .jb-song-artist { color: var(--text-dim); font-size: 0.83rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  #jb-app .jb-song-badge { font-size: 0.72rem; color: var(--success); margin-top: 2px; display: inline-block; }
+  #jb-app .jb-btn-request {
+    flex-shrink: 0; background: var(--accent); color: #1a1408; font-weight: 700;
+    padding: 9px 12px; border-radius: 10px; font-size: 0.85rem; white-space: nowrap; cursor: pointer;
+  }
+  #jb-app .jb-btn-request:active { transform: scale(0.97); }
+  #jb-app .jb-btn-request[disabled] { background: var(--border); color: var(--text-dim); cursor: default; }
+  #jb-app .jb-btn-request.jb-played-btn { background: var(--card2); color: var(--text-dim); }
+
+  #jb-app .jb-toggle { width: 100%; text-align: left; color: var(--accent2); font-weight: 700; padding: 10px 2px; cursor: pointer; }
+  #jb-app .jb-played-list { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
+  #jb-app .jb-played-item { display: flex; justify-content: space-between; gap: 8px; padding: 8px 10px; background: var(--card); border-radius: 10px; font-size: 0.88rem; }
+  #jb-app .jb-played-item .jb-song-artist { font-size: 0.8rem; }
+
+  #jb-app .jb-footer { text-align: center; margin-top: 40px; opacity: 0.35; }
+  #jb-app .jb-admin-link { font-size: 1.3rem; }
+
+  /* Admin */
+  #jb-app .jb-login { max-width: 360px; margin: 60px auto; display: flex; flex-direction: column; gap: 10px; text-align: center; }
+  #jb-app .jb-login h2 { text-align: center; margin-bottom: 6px; }
+  #jb-app .jb-back-link { color: var(--text-dim); font-size: 0.85rem; margin-top: 8px; }
+  #jb-app .jb-error { color: var(--danger); font-size: 0.85rem; }
+
+  #jb-app .jb-admin-topbar { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; }
+  #jb-app .jb-admin-section { margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--border); }
+  #jb-app .jb-hint { color: var(--text-dim); font-size: 0.8rem; margin-top: 4px; }
+
+  #jb-app button.jb-btn-primary, #jb-app button.jb-btn-danger, #jb-app button.jb-btn-ghost {
+    padding: 12px 16px; border-radius: 12px; font-weight: 700; cursor: pointer; margin-top: 10px;
+  }
+  #jb-app .jb-btn-primary { background: var(--accent); color: #1a1408; width: 100%; }
+  #jb-app .jb-btn-danger { background: var(--danger); color: #fff; width: 100%; }
+  #jb-app .jb-btn-ghost { background: var(--card2); color: var(--text); margin-top: 0; }
+
+  #jb-app .jb-admin-rank-item { display: flex; align-items: center; gap: 10px; }
+  #jb-app .jb-mark-played-btn { background: var(--success); color: #08210f; font-weight: 700; padding: 9px 11px; border-radius: 10px; font-size: 0.82rem; flex-shrink: 0; cursor: pointer; white-space: nowrap; }
+  #jb-app .jb-unmark-btn { background: var(--card2); color: var(--text-dim); font-weight: 600; padding: 6px 10px; border-radius: 8px; font-size: 0.75rem; cursor: pointer; }
+
+  #jb-app .jb-admin-catalog { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; max-height: 420px; overflow-y: auto; }
+  #jb-app .jb-admin-catalog-item { display: flex; align-items: center; gap: 8px; padding: 8px 10px; background: var(--card); border-radius: 10px; }
+  #jb-app .jb-icon-btn { flex-shrink: 0; padding: 7px 10px; border-radius: 8px; font-size: 0.85rem; cursor: pointer; }
+  #jb-app .jb-icon-btn.jb-del { background: var(--card2); color: var(--danger); }
+  #jb-app .jb-icon-btn.jb-plus { background: var(--card2); color: var(--accent2); }
+
+  #jb-app .jb-toast {
+    position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%);
+    background: var(--card2); color: var(--text); padding: 12px 18px; border-radius: 12px;
+    border: 1px solid var(--border); font-size: 0.9rem; z-index: 999; max-width: 90vw; text-align: center;
+  }
+  #jb-app .jb-warn-banner {
+    background: #3a1f1f; border: 1px solid var(--danger); color: #ffd9d4;
+    border-radius: 12px; padding: 14px; margin: 16px; font-size: 0.88rem;
+  }
+</style>
+
+<div id="jb-app">
+
+  <div id="jb-public" class="jb-view">
+    <header class="jb-header">
+      <h1 id="jb-artist-name">🎤 Chargement…</h1>
+      <p class="jb-subtitle">Choisis une chanson dans mon répertoire — je la joue en direct !</p>
+    </header>
+
+    <section class="jb-search">
+      <input id="jb-search-input" type="text" placeholder="🔍 Cherche un titre ou un artiste…" autocomplete="off" />
+    </section>
+
+    <section class="jb-palmares">
+      <h2>🏆 Palmarès de la soirée</h2>
+      <ol id="jb-palmares-list" class="jb-palmares-list"></ol>
+      <p id="jb-palmares-empty" class="jb-empty" hidden>Aucune demande pour l'instant — sois le premier à voter !</p>
+    </section>
+
+    <section class="jb-catalog">
+      <h2>🎵 Répertoire complet (<span id="jb-catalog-count">0</span>)</h2>
+      <ul id="jb-catalog-list" class="jb-catalog-list"></ul>
+      <p id="jb-catalog-empty" class="jb-empty" hidden>Aucun résultat pour cette recherche.</p>
+    </section>
+
+    <section id="jb-played-section" hidden>
+      <button id="jb-played-toggle" class="jb-toggle">🎶 Chansons déjà jouées ce soir (<span id="jb-played-count">0</span>) ▾</button>
+      <ul id="jb-played-list" class="jb-played-list" hidden></ul>
+    </section>
+
+    <footer class="jb-footer">
+      <a href="#admin" class="jb-admin-link" title="Mode spectacle">🎤</a>
+    </footer>
+  </div>
+
+  <div id="jb-admin" class="jb-view" hidden>
+    <div id="jb-login" class="jb-login">
+      <h2>🔐 Mode spectacle</h2>
+      <input id="jb-login-email" type="email" placeholder="Courriel" autocomplete="username" />
+      <input id="jb-login-pass" type="password" placeholder="Mot de passe" autocomplete="current-password" />
+      <button id="jb-login-btn" class="jb-btn-primary">Se connecter</button>
+      <p id="jb-login-error" class="jb-error" hidden></p>
+      <a href="#" class="jb-back-link">← Retour au site public</a>
+    </div>
+
+    <div id="jb-dashboard" class="jb-dashboard" hidden>
+      <div class="jb-admin-topbar">
+        <h2>🎛️ Panneau admin</h2>
+        <button id="jb-logout-btn" class="jb-btn-ghost">Déconnexion</button>
+      </div>
+
+      <section class="jb-admin-section">
+        <button id="jb-newnight-btn" class="jb-btn-danger">🌙 Nouvelle soirée (reset palmarès)</button>
+        <p class="jb-hint">Efface le palmarès et les chansons "déjà jouées". Le répertoire complet reste intact.</p>
+      </section>
+
+      <section class="jb-admin-section">
+        <h3>🏆 Palmarès en direct</h3>
+        <ol id="jb-admin-palmares" class="jb-admin-palmares"></ol>
+        <p id="jb-admin-palmares-empty" class="jb-empty" hidden>Rien pour l'instant.</p>
+      </section>
+
+      <section class="jb-admin-section">
+        <h3>➕ Ajouter des chansons au répertoire</h3>
+        <p class="jb-hint">Une chanson par ligne. Format : Titre - Artiste</p>
+        <textarea id="jb-bulk-input" rows="6" placeholder="Ex:&#10;Bohemian Rhapsody - Queen&#10;Hotel California - Eagles"></textarea>
+        <button id="jb-bulk-add-btn" class="jb-btn-primary">Ajouter au répertoire</button>
+        <p id="jb-bulk-status" class="jb-hint"></p>
+      </section>
+
+      <section class="jb-admin-section">
+        <h3>📚 Répertoire complet (<span id="jb-admin-count">0</span>)</h3>
+        <input id="jb-admin-search" type="text" placeholder="🔍 Chercher pour modifier / supprimer…" />
+        <div id="jb-admin-catalog" class="jb-admin-catalog"></div>
+      </section>
+    </div>
+  </div>
+
+</div>
+
+<script type="module">
+  // ============================================================
+  //  🎸 CONFIGURATION — à personnaliser
+  // ============================================================
+  const ARTIST_NAME = "🎤 Demande ta chanson"; // 👉 remplace par ton nom de scène
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyAxihJ80dUNLJLszro2p8Tg5WFmvxRZjBA",
+    authDomain: "jukehub-14c98.firebaseapp.com",
+    projectId: "jukehub-14c98",
+    storageBucket: "jukehub-14c98.firebasestorage.app",
+    messagingSenderId: "465762599450",
+    appId: "1:465762599450:web:0c2dddeb5e5d1dbb3047a3",
+  };
+  // ============================================================
+
+  document.getElementById("jb-artist-name").textContent = ARTIST_NAME;
+
+  if (firebaseConfig.apiKey === "REMPLACE_MOI") {
+    const app = document.getElementById("jb-app");
+    const banner = document.createElement("div");
+    banner.className = "jb-warn-banner";
+    banner.innerHTML = "⚠️ Configuration Firebase manquante. Remplace les valeurs de <code>firebaseConfig</code> en haut du code par celles de ton projet Firebase.";
+    app.prepend(banner);
+    throw new Error("firebaseConfig non configuré");
+  }
+
+  const FB_VERSION = "12.18.0";
+  const { initializeApp } = await import(`https://www.gstatic.com/firebasejs/${FB_VERSION}/firebase-app.js`);
+  const {
+    getFirestore, doc, setDoc, updateDoc, deleteDoc, onSnapshot,
+    collection, runTransaction, increment, serverTimestamp, writeBatch,
+  } = await import(`https://www.gstatic.com/firebasejs/${FB_VERSION}/firebase-firestore.js`);
+  const {
+    getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut,
+  } = await import(`https://www.gstatic.com/firebasejs/${FB_VERSION}/firebase-auth.js`);
+
+  const fbApp = initializeApp(firebaseConfig);
+  const db = getFirestore(fbApp);
+  const auth = getAuth(fbApp);
+
+  // ---------- État local ----------
+  let catalogSongs = [];      // [{id, title, artist}]
+  let votes = {};             // songId -> {requests, played, playedAt, title, artist}
+  let nightId = null;
+  let requestedThisNight = new Set();
+  let isAdmin = false;
+
+  // ---------- Utilitaires ----------
+  function norm(s) {
+    return (s || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+  }
+  function slugId() {
+    return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+  }
+  function showToast(msg) {
+    const t = document.createElement("div");
+    t.className = "jb-toast";
+    t.textContent = msg;
+    document.getElementById("jb-app").appendChild(t);
+    setTimeout(() => t.remove(), 2600);
+  }
+  function storageKey() {
+    return "jb_requested_" + (nightId || "default");
+  }
+  function loadRequestedFromStorage() {
+    try {
+      const raw = localStorage.getItem(storageKey());
+      requestedThisNight = new Set(raw ? JSON.parse(raw) : []);
+    } catch (e) {
+      requestedThisNight = new Set();
+    }
+  }
+  function saveRequestedToStorage() {
+    try {
+      localStorage.setItem(storageKey(), JSON.stringify([...requestedThisNight]));
+    } catch (e) {}
+  }
+
+  // ---------- Routage (site public vs mode spectacle) ----------
+  function checkRoute() {
+    const admin = location.hash === "#admin";
+    document.getElementById("jb-public").hidden = admin;
+    document.getElementById("jb-admin").hidden = !admin;
+  }
+  window.addEventListener("hashchange", checkRoute);
+  checkRoute();
+
+  document.querySelector(".jb-back-link").addEventListener("click", (e) => {
+    e.preventDefault();
+    location.hash = "";
+    checkRoute();
+  });
+
+  // ---------- Abonnements temps réel ----------
+  onSnapshot(doc(db, "config", "settings"), (snap) => {
+    const data = snap.data();
+    const newNightId = data?.nightId || "default";
+    if (newNightId !== nightId) {
+      nightId = newNightId;
+      loadRequestedFromStorage();
+      renderAll();
+    }
+  }, (err) => console.error("config onSnapshot", err));
+
+  onSnapshot(doc(db, "catalog", "all"), (snap) => {
+    catalogSongs = snap.data()?.songs || [];
+    renderAll();
+  }, (err) => console.error("catalog onSnapshot", err));
+
+  onSnapshot(collection(db, "votes"), (snap) => {
+    votes = {};
+    snap.forEach((d) => { votes[d.id] = d.data(); });
+    renderAll();
+  }, (err) => console.error("votes onSnapshot", err));
+
+  function renderAll() {
+    renderPalmares();
+    renderCatalog();
+    renderPlayed();
+    renderAdminPalmares();
+    renderAdminCatalog();
+  }
+
+  // ---------- Rendu : Palmarès (public) ----------
+  function renderPalmares() {
+    const list = document.getElementById("jb-palmares-list");
+    const empty = document.getElementById("jb-palmares-empty");
+    const ranked = Object.entries(votes)
+      .filter(([, v]) => v.requests > 0 && !v.played)
+      .sort((a, b) => b[1].requests - a[1].requests)
+      .slice(0, 20);
+
+    list.innerHTML = "";
+    empty.hidden = ranked.length > 0;
+
+    ranked.forEach(([id, v], i) => {
+      const rank = i + 1;
+      const li = document.createElement("li");
+      li.className = "jb-rank-item" + (rank <= 3 ? ` jb-top${rank}` : "");
+      const medal = rank === 1 ? "🥇" : rank === 2 ? "🥈" : rank === 3 ? "🥉" : rank;
+      li.innerHTML = `
+        <div class="jb-rank-num">${medal}</div>
+        <div class="jb-rank-info">
+          <div class="jb-rank-title">${escapeHtml(v.title)}</div>
+          <div class="jb-rank-artist">${escapeHtml(v.artist || "")}</div>
+        </div>
+        <div class="jb-rank-count">${v.requests} 🙌</div>`;
+      list.appendChild(li);
+    });
+  }
+
+  // ---------- Rendu : Catalogue (public) ----------
+  function renderCatalog() {
+    const search = norm(document.getElementById("jb-search-input").value);
+    const list = document.getElementById("jb-catalog-list");
+    const empty = document.getElementById("jb-catalog-empty");
+    document.getElementById("jb-catalog-count").textContent = catalogSongs.length;
+
+    let songs = catalogSongs;
+    if (search) {
+      songs = songs.filter((s) => norm(s.title).includes(search) || norm(s.artist).includes(search));
+    }
+    songs = [...songs].sort((a, b) => a.title.localeCompare(b.title, "fr"));
+
+    list.innerHTML = "";
+    empty.hidden = songs.length > 0;
+
+    songs.forEach((song) => {
+      const v = votes[song.id];
+      const played = v?.played;
+      const requested = requestedThisNight.has(song.id);
+      const li = document.createElement("li");
+      li.className = "jb-song-item";
+
+      let btnHtml;
+      if (played) {
+        btnHtml = `<span class="jb-btn-request jb-played-btn">✅ Déjà jouée</span>`;
+      } else if (requested) {
+        btnHtml = `<span class="jb-btn-request" disabled>✅ Demandée</span>`;
+      } else {
+        btnHtml = `<button class="jb-btn-request" data-req="${song.id}">🎶 Je veux l'entendre</button>`;
+      }
+
+      li.innerHTML = `
+        <div class="jb-song-info">
+          <div class="jb-song-title">${escapeHtml(song.title)}</div>
+          <div class="jb-song-artist">${escapeHtml(song.artist || "")}</div>
+        </div>
+        ${btnHtml}`;
+      list.appendChild(li);
+    });
+
+    list.querySelectorAll("[data-req]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const id = btn.dataset.req;
+        const song = catalogSongs.find((s) => s.id === id);
+        if (song) requestSong(song);
+      });
+    });
+  }
+
+  // ---------- Rendu : Chansons déjà jouées (public) ----------
+  function renderPlayed() {
+    const played = Object.entries(votes)
+      .filter(([, v]) => v.played)
+      .sort((a, b) => (b[1].playedAt?.seconds || 0) - (a[1].playedAt?.seconds || 0));
+
+    const section = document.getElementById("jb-played-section");
+    section.hidden = played.length === 0;
+    document.getElementById("jb-played-count").textContent = played.length;
+
+    const list = document.getElementById("jb-played-list");
+    list.innerHTML = played.map(([, v]) => `
+      <li class="jb-played-item">
+        <span>
+          <span class="jb-song-title">${escapeHtml(v.title)}</span><br>
+          <span class="jb-song-artist">${escapeHtml(v.artist || "")}</span>
+        </span>
+        <span>🎵</span>
+      </li>`).join("");
+  }
+
+  document.getElementById("jb-played-toggle").addEventListener("click", () => {
+    const list = document.getElementById("jb-played-list");
+    list.hidden = !list.hidden;
+  });
+
+  document.getElementById("jb-search-input").addEventListener("input", renderCatalog);
+
+  // ---------- Action : demander une chanson ----------
+  async function requestSong(song) {
+    if (requestedThisNight.has(song.id)) return;
+    const ref = doc(db, "votes", song.id);
+    try {
+      await runTransaction(db, async (tx) => {
+        const snap = await tx.get(ref);
+        if (!snap.exists()) {
+          tx.set(ref, {
+            requests: 1, played: false, playedAt: null,
+            title: song.title, artist: song.artist || "", createdAt: serverTimestamp(),
+          });
+        } else {
+          tx.update(ref, { requests: increment(1) });
+        }
+      });
+      requestedThisNight.add(song.id);
+      saveRequestedToStorage();
+      renderCatalog();
+      showToast("🎶 Chanson demandée !");
+    } catch (e) {
+      console.error(e);
+      showToast("Oups, réessaie dans un instant.");
+    }
+  }
+
+  // ============================================================
+  //  MODE SPECTACLE (ADMIN)
+  // ============================================================
+  onAuthStateChanged(auth, (user) => {
+    isAdmin = !!user;
+    document.getElementById("jb-login").hidden = isAdmin;
+    document.getElementById("jb-dashboard").hidden = !isAdmin;
+    if (isAdmin) {
+      renderAdminPalmares();
+      renderAdminCatalog();
+    }
+  });
+
+  document.getElementById("jb-login-btn").addEventListener("click", async () => {
+    const email = document.getElementById("jb-login-email").value.trim();
+    const pass = document.getElementById("jb-login-pass").value;
+    const errEl = document.getElementById("jb-login-error");
+    errEl.hidden = true;
+    try {
+      await signInWithEmailAndPassword(auth, email, pass);
+    } catch (e) {
+      errEl.textContent = "Courriel ou mot de passe incorrect.";
+      errEl.hidden = false;
+    }
+  });
+
+  document.getElementById("jb-logout-btn").addEventListener("click", () => signOut(auth));
+
+  // ---------- Rendu : Palmarès admin (avec bouton "jouée") ----------
+  function renderAdminPalmares() {
+    if (!isAdmin) return;
+    const list = document.getElementById("jb-admin-palmares");
+    const empty = document.getElementById("jb-admin-palmares-empty");
+    const ranked = Object.entries(votes)
+      .filter(([, v]) => v.requests > 0 && !v.played)
+      .sort((a, b) => b[1].requests - a[1].requests)
+      .slice(0, 20);
+
+    list.innerHTML = "";
+    empty.hidden = ranked.length > 0;
+
+    ranked.forEach(([id, v], i) => {
+      const rank = i + 1;
+      const li = document.createElement("li");
+      li.className = "jb-rank-item jb-admin-rank-item" + (rank <= 3 ? ` jb-top${rank}` : "");
+      const medal = rank === 1 ? "🥇" : rank === 2 ? "🥈" : rank === 3 ? "🥉" : rank;
+      li.innerHTML = `
+        <div class="jb-rank-num">${medal}</div>
+        <div class="jb-rank-info">
+          <div class="jb-rank-title">${escapeHtml(v.title)}</div>
+          <div class="jb-rank-artist">${escapeHtml(v.artist || "")} · ${v.requests} 🙌</div>
+        </div>
+        <button class="jb-mark-played-btn" data-played="${id}">✅ Jouée</button>`;
+      list.appendChild(li);
+    });
+
+    list.querySelectorAll("[data-played]").forEach((btn) => {
+      btn.addEventListener("click", () => markPlayed(btn.dataset.played));
+    });
+  }
+
+  async function markPlayed(id) {
+    try {
+      await updateDoc(doc(db, "votes", id), { played: true, playedAt: serverTimestamp() });
+    } catch (e) {
+      console.error(e);
+      showToast("Erreur — réessaie.");
+    }
+  }
+
+  async function unmarkPlayed(id) {
+    try {
+      await updateDoc(doc(db, "votes", id), { played: false, playedAt: null });
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  // ---------- Nouvelle soirée ----------
+  document.getElementById("jb-newnight-btn").addEventListener("click", async () => {
+    if (!confirm("Réinitialiser le palmarès et les chansons jouées pour une nouvelle soirée ?")) return;
+    try {
+      const voteIds = Object.keys(votes);
+      for (let i = 0; i < voteIds.length; i += 400) {
+        const batch = writeBatch(db);
+        voteIds.slice(i, i + 400).forEach((id) => batch.delete(doc(db, "votes", id)));
+        await batch.commit();
+      }
+      await setDoc(doc(db, "config", "settings"), { nightId: new Date().toISOString() }, { merge: true });
+      showToast("🌙 Nouvelle soirée lancée !");
+    } catch (e) {
+      console.error(e);
+      showToast("Erreur pendant la réinitialisation.");
+    }
+  });
+
+  // ---------- Ajout en masse de chansons ----------
+  document.getElementById("jb-bulk-add-btn").addEventListener("click", async () => {
+    const raw = document.getElementById("jb-bulk-input").value;
+    const lines = raw.split("\n").map((l) => l.trim()).filter(Boolean);
+    const statusEl = document.getElementById("jb-bulk-status");
+    if (lines.length === 0) return;
+
+    const existingKeys = new Set(catalogSongs.map((s) => norm(s.title) + "|" + norm(s.artist)));
+    let added = 0, skipped = 0;
+    const newSongs = [];
+
+    lines.forEach((line) => {
+      let title = line, artist = "";
+      const sepMatch = line.split(/\s+-\s+|;|\|/);
+      if (sepMatch.length >= 2) {
+        title = sepMatch[0].trim();
+        artist = sepMatch.slice(1).join(" - ").trim();
+      }
+      const key = norm(title) + "|" + norm(artist);
+      if (!title || existingKeys.has(key)) { skipped++; return; }
+      existingKeys.add(key);
+      newSongs.push({ id: slugId(), title, artist });
+      added++;
+    });
+
+    try {
+      await runTransaction(db, async (tx) => {
+        const ref = doc(db, "catalog", "all");
+        const snap = await tx.get(ref);
+        const current = snap.exists() ? (snap.data().songs || []) : [];
+        tx.set(ref, { songs: [...current, ...newSongs], updatedAt: serverTimestamp() });
+      });
+      statusEl.textContent = `✅ ${added} chanson(s) ajoutée(s)` + (skipped ? `, ${skipped} doublon(s) ignoré(s).` : ".");
+      document.getElementById("jb-bulk-input").value = "";
+    } catch (e) {
+      console.error(e);
+      statusEl.textContent = "❌ Erreur pendant l'ajout.";
+    }
+  });
+
+  // ---------- Répertoire admin (recherche + suppression) ----------
+  function renderAdminCatalog() {
+    if (!isAdmin) return;
+    const search = norm(document.getElementById("jb-admin-search").value);
+    document.getElementById("jb-admin-count").textContent = catalogSongs.length;
+
+    let songs = catalogSongs;
+    if (search) {
+      songs = songs.filter((s) => norm(s.title).includes(search) || norm(s.artist).includes(search));
+    }
+    songs = [...songs].sort((a, b) => a.title.localeCompare(b.title, "fr"));
+
+    const container = document.getElementById("jb-admin-catalog");
+    container.innerHTML = songs.slice(0, 150).map((s) => {
+      const v = votes[s.id];
+      const status = v?.played ? " · déjà jouée" : v?.requests ? ` · ${v.requests} demande(s)` : "";
+      return `
+        <div class="jb-admin-catalog-item">
+          <div class="jb-song-info">
+            <div class="jb-song-title">${escapeHtml(s.title)}</div>
+            <div class="jb-song-artist">${escapeHtml(s.artist || "")}${status}</div>
+          </div>
+          ${v?.played ? `<button class="jb-unmark-btn" data-unmark="${s.id}">↩️ annuler</button>` : ""}
+          <button class="jb-icon-btn jb-plus" data-addvote="${s.id}" title="Ajouter une demande manuellement">+1</button>
+          <button class="jb-icon-btn jb-del" data-delsong="${s.id}" title="Supprimer du répertoire">🗑️</button>
+        </div>`;
+    }).join("");
+
+    if (songs.length > 150) {
+      container.innerHTML += `<p class="jb-hint">... et ${songs.length - 150} autres (affine ta recherche).</p>`;
+    }
+
+    container.querySelectorAll("[data-unmark]").forEach((b) => b.addEventListener("click", () => unmarkPlayed(b.dataset.unmark)));
+    container.querySelectorAll("[data-addvote]").forEach((b) => b.addEventListener("click", () => adminAddVote(b.dataset.addvote)));
+    container.querySelectorAll("[data-delsong]").forEach((b) => b.addEventListener("click", () => deleteSong(b.dataset.delsong)));
+  }
+
+  document.getElementById("jb-admin-search").addEventListener("input", renderAdminCatalog);
+
+  async function adminAddVote(id) {
+    const song = catalogSongs.find((s) => s.id === id);
+    if (!song) return;
+    const ref = doc(db, "votes", id);
+    try {
+      await runTransaction(db, async (tx) => {
+        const snap = await tx.get(ref);
+        if (!snap.exists()) {
+          tx.set(ref, { requests: 1, played: false, playedAt: null, title: song.title, artist: song.artist || "", createdAt: serverTimestamp() });
+        } else {
+          tx.update(ref, { requests: increment(1) });
+        }
+      });
+    } catch (e) { console.error(e); }
+  }
+
+  async function deleteSong(id) {
+    if (!confirm("Supprimer cette chanson du répertoire ?")) return;
+    try {
+      await runTransaction(db, async (tx) => {
+        const ref = doc(db, "catalog", "all");
+        const snap = await tx.get(ref);
+        const current = snap.exists() ? (snap.data().songs || []) : [];
+        tx.set(ref, { songs: current.filter((s) => s.id !== id), updatedAt: serverTimestamp() });
+      });
+      deleteDoc(doc(db, "votes", id)).catch(() => {});
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  // ---------- Divers ----------
+  function escapeHtml(str) {
+    return String(str).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  }
+</script>
