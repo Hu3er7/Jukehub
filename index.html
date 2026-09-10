@@ -295,9 +295,12 @@
   let catalogSongs = [];      // [{id, title, artist}]
   // votes: songId -> {requests, burned, cooldownUntil, playedAt, title, artist}
   let votes = {};
-  let lastSeenPlayedAt = {};  // songId -> millis, pour détecter un nouveau "jouée" et libérer le vote local
   let nightId = null;
-  let requestedThisNight = new Set();
+  // requestedRounds : songId -> le "jeton de tour" (playedAtMillis) au moment de la demande.
+  // Comparé au jeton ACTUEL de la chanson : si la chanson a été rejouée depuis (nouveau jeton),
+  // la demande précédente ne compte plus et le client peut redemander — sans logique de
+  // détection de changement fragile, juste une comparaison à chaque rendu.
+  let requestedRounds = {};
   let isAdmin = false;
 
   function isInCooldown(v) {
@@ -314,6 +317,12 @@
   }
   function playedAtMillis(v) {
     return v?.playedAt?.seconds ? v.playedAt.seconds * 1000 : (v?.playedAt || 0);
+  }
+  function roundToken(v) {
+    return playedAtMillis(v); // 0 tant que jamais jouée cette nuit
+  }
+  function alreadyRequested(id) {
+    return requestedRounds[id] !== undefined && requestedRounds[id] === roundToken(votes[id]);
   }
 
   // ---------- Utilitaires ----------
@@ -336,14 +345,14 @@
   function loadRequestedFromStorage() {
     try {
       const raw = localStorage.getItem(storageKey());
-      requestedThisNight = new Set(raw ? JSON.parse(raw) : []);
+      requestedRounds = raw ? JSON.parse(raw) : {};
     } catch (e) {
-      requestedThisNight = new Set();
+      requestedRounds = {};
     }
   }
   function saveRequestedToStorage() {
     try {
-      localStorage.setItem(storageKey(), JSON.stringify([...requestedThisNight]));
+      localStorage.setItem(storageKey(), JSON.stringify(requestedRounds));
     } catch (e) {}
   }
 
@@ -381,20 +390,6 @@
   onSnapshot(collection(db, "votes"), (snap) => {
     votes = {};
     snap.forEach((d) => { votes[d.id] = d.data(); });
-
-    // Si une chanson vient d'être (re)jouée, on libère la demande locale
-    // pour que la même personne puisse la redemander dans ce nouveau tour.
-    let storageChanged = false;
-    Object.entries(votes).forEach(([id, v]) => {
-      const p = playedAtMillis(v);
-      if (p && lastSeenPlayedAt[id] && p !== lastSeenPlayedAt[id] && requestedThisNight.has(id)) {
-        requestedThisNight.delete(id);
-        storageChanged = true;
-      }
-      if (p) lastSeenPlayedAt[id] = p;
-    });
-    if (storageChanged) saveRequestedToStorage();
-
     renderAll();
   }, (err) => console.error("votes onSnapshot", err));
 
@@ -468,7 +463,7 @@
 
     songs.forEach((song) => {
       const v = votes[song.id];
-      const requested = requestedThisNight.has(song.id);
+      const requested = alreadyRequested(song.id);
       const li = document.createElement("li");
       li.className = "jb-song-item";
 
@@ -541,7 +536,8 @@
 
   // ---------- Action : demander une chanson ----------
   async function requestSong(song) {
-    if (requestedThisNight.has(song.id)) return;
+    if (alreadyRequested(song.id)) return;
+    const tokenAtRequest = roundToken(votes[song.id]);
     const ref = doc(db, "votes", song.id);
     try {
       await runTransaction(db, async (tx) => {
@@ -555,7 +551,7 @@
           tx.update(ref, { requests: increment(1) });
         }
       });
-      requestedThisNight.add(song.id);
+      requestedRounds[song.id] = tokenAtRequest;
       saveRequestedToStorage();
       renderCatalog();
       showToast("🎶 Chanson demandée !");
