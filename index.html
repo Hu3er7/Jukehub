@@ -83,6 +83,10 @@
   #jb-app .jb-song-info { flex: 1; min-width: 0; }
   #jb-app .jb-song-title { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   #jb-app .jb-song-artist { color: var(--text-dim); font-size: 0.83rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  #jb-app .jb-artist-link { background: none; border: none; padding: 0; color: var(--text-dim); font-size: 0.83rem; text-decoration: underline dotted; text-underline-offset: 2px; cursor: pointer; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: left; }
+  #jb-app .jb-artist-link:active { color: var(--accent2); }
+  #jb-app .jb-artist-filter-bar { display: flex; align-items: center; justify-content: space-between; gap: 10px; background: var(--card2); border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; margin-bottom: 10px; font-size: 0.85rem; }
+  #jb-app .jb-clear-artist { flex-shrink: 0; background: var(--accent); color: #1a1408; font-weight: 700; padding: 6px 10px; border-radius: 8px; font-size: 0.78rem; cursor: pointer; white-space: nowrap; }
   #jb-app .jb-song-badge { font-size: 0.72rem; color: var(--success); margin-top: 2px; display: inline-block; }
   #jb-app .jb-btn-request {
     flex-shrink: 0; background: var(--accent); color: #1a1408; font-weight: 700;
@@ -183,6 +187,10 @@
 
     <section class="jb-catalog">
       <h2>🎵 Répertoire complet (<span id="jb-catalog-count">0</span>)</h2>
+      <div id="jb-artist-filter-bar" class="jb-artist-filter-bar" hidden>
+        <span>📁 Chansons de <strong id="jb-artist-filter-label"></strong></span>
+        <button id="jb-artist-filter-clear" class="jb-clear-artist">✕ Retour</button>
+      </div>
       <ul id="jb-catalog-list" class="jb-catalog-list"></ul>
       <p id="jb-catalog-empty" class="jb-empty" hidden>Aucun résultat pour cette recherche.</p>
     </section>
@@ -301,6 +309,7 @@
   // la demande précédente ne compte plus et le client peut redemander — sans logique de
   // détection de changement fragile, juste une comparaison à chaque rendu.
   let requestedRounds = {};
+  let artistFilter = null; // nom d'artiste actif ("dossier" ouvert), ou null
   let isAdmin = false;
 
   function isInCooldown(v) {
@@ -452,7 +461,17 @@
     const empty = document.getElementById("jb-catalog-empty");
     document.getElementById("jb-catalog-count").textContent = catalogSongs.length;
 
+    const filterBar = document.getElementById("jb-artist-filter-bar");
+    filterBar.hidden = !artistFilter;
+    if (artistFilter) {
+      document.getElementById("jb-artist-filter-label").textContent = artistFilter;
+    }
+
     let songs = catalogSongs;
+    if (artistFilter) {
+      const wanted = norm(artistFilter);
+      songs = songs.filter((s) => norm(s.artist) === wanted);
+    }
     if (search) {
       songs = songs.filter((s) => norm(s.title).includes(search) || norm(s.artist).includes(search));
     }
@@ -478,10 +497,14 @@
         btnHtml = `<button class="jb-btn-request" data-req="${song.id}">🎶 Je veux l'entendre</button>`;
       }
 
+      const artistHtml = song.artist
+        ? `<button class="jb-artist-link" data-artist="${escapeHtml(song.artist)}">${escapeHtml(song.artist)} 📁</button>`
+        : "";
+
       li.innerHTML = `
         <div class="jb-song-info">
           <div class="jb-song-title">${escapeHtml(song.title)}</div>
-          <div class="jb-song-artist">${escapeHtml(song.artist || "")}</div>
+          ${artistHtml}
         </div>
         ${btnHtml}`;
       list.appendChild(li);
@@ -492,6 +515,15 @@
         const id = btn.dataset.req;
         const song = catalogSongs.find((s) => s.id === id);
         if (song) requestSong(song);
+      });
+    });
+
+    list.querySelectorAll("[data-artist]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        artistFilter = btn.dataset.artist;
+        document.getElementById("jb-search-input").value = "";
+        renderCatalog();
+        document.querySelector(".jb-catalog").scrollIntoView({ behavior: "smooth", block: "start" });
       });
     });
   }
@@ -532,7 +564,15 @@
     list.hidden = !list.hidden;
   });
 
-  document.getElementById("jb-search-input").addEventListener("input", renderCatalog);
+  document.getElementById("jb-search-input").addEventListener("input", () => {
+    artistFilter = null;
+    renderCatalog();
+  });
+
+  document.getElementById("jb-artist-filter-clear").addEventListener("click", () => {
+    artistFilter = null;
+    renderCatalog();
+  });
 
   // ---------- Action : demander une chanson ----------
   async function requestSong(song) {
