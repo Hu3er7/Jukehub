@@ -150,6 +150,7 @@
   #jb-app .jb-icon-btn.jb-plus { background: var(--card2); color: var(--accent2); }
   #jb-app .jb-icon-btn.jb-fire { background: var(--card2); color: #ff8a7d; }
   #jb-app .jb-icon-btn.jb-fire.jb-active { background: #3a1414; border: 1px solid var(--danger); }
+  #jb-app .jb-icon-btn[disabled] { opacity: 0.35; cursor: default; }
 
   #jb-app .jb-toast {
     position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%);
@@ -410,7 +411,7 @@
   setInterval(() => {
     const now = Date.now();
     let anyExpired = false;
-    document.querySelectorAll(".jb-cooldown-badge, .jb-cooldown-row").forEach((el) => {
+    document.querySelectorAll("[data-until]").forEach((el) => {
       const until = Number(el.dataset.until || 0);
       if (!until) return;
       const remaining = Math.max(0, Math.ceil((until - now) / 1000));
@@ -784,7 +785,13 @@
     container.innerHTML = songs.slice(0, 150).map((s) => {
       const v = votes[s.id];
       const burned = isBurned(v);
-      const status = burned ? " · 🔥 brûlée" : isInCooldown(v) ? ` · refroidit (${remainingSeconds(v)}s)` : v?.requests ? ` · ${v.requests} demande(s)` : "";
+      const cooling = isInCooldown(v);
+      const status = burned
+        ? " · 🔥 brûlée"
+        : cooling
+          ? ` · refroidit (<span data-until="${v.cooldownUntil}"><span class="jb-cooldown-num">${remainingSeconds(v)}</span>s</span>)`
+          : v?.requests ? ` · ${v.requests} demande(s)` : "";
+      const plusDisabled = burned || cooling;
       return `
         <div class="jb-admin-catalog-item">
           <div class="jb-song-info">
@@ -792,7 +799,7 @@
             <div class="jb-song-artist">${escapeHtml(s.artist || "")}${status}</div>
           </div>
           <button class="jb-icon-btn jb-fire${burned ? " jb-active" : ""}" data-toggleburn="${s.id}" title="${burned ? "Réactiver cette chanson" : "Retirer cette chanson (brûlée)"}">${burned ? "♻️" : "🔥"}</button>
-          <button class="jb-icon-btn jb-plus" data-addvote="${s.id}" title="Ajouter une demande manuellement">+1</button>
+          <button class="jb-icon-btn jb-plus" data-addvote="${s.id}" ${plusDisabled ? "disabled" : ""} title="${plusDisabled ? "Indisponible pendant le refroidissement / brûlée" : "Ajouter une demande manuellement"}">+1</button>
           <button class="jb-icon-btn jb-del" data-delsong="${s.id}" title="Supprimer du répertoire">🗑️</button>
         </div>`;
     }).join("");
@@ -805,7 +812,7 @@
       const id = b.dataset.toggleburn;
       b.addEventListener("click", () => toggleBurn(id, !isBurned(votes[id])));
     });
-    container.querySelectorAll("[data-addvote]").forEach((b) => b.addEventListener("click", () => adminAddVote(b.dataset.addvote)));
+    container.querySelectorAll("[data-addvote]:not([disabled])").forEach((b) => b.addEventListener("click", () => adminAddVote(b.dataset.addvote)));
     container.querySelectorAll("[data-delsong]").forEach((b) => b.addEventListener("click", () => deleteSong(b.dataset.delsong)));
   }
 
@@ -814,6 +821,7 @@
   async function adminAddVote(id) {
     const song = catalogSongs.find((s) => s.id === id);
     if (!song) return;
+    if (isUnavailable(votes[id])) return; // sécurité : pas de +1 pendant refroidissement/brûlée
     const ref = doc(db, "votes", id);
     try {
       await runTransaction(db, async (tx) => {
