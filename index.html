@@ -194,7 +194,7 @@
       <h2>🎵 Répertoire complet (<span id="jb-catalog-count">0</span>)</h2>
       <div id="jb-folder-header" class="jb-folder-header" hidden>
         <button id="jb-back-btn" class="jb-back-btn">⬅ BACK</button>
-        <div class="jb-folder-title">🎤 <span id="jb-artist-filter-label"></span> 📁</div>
+        <div class="jb-folder-title"></div>
       </div>
       <ul id="jb-catalog-list" class="jb-catalog-list"></ul>
       <p id="jb-catalog-empty" class="jb-empty" hidden>Aucun résultat pour cette recherche.</p>
@@ -257,6 +257,7 @@
         <input id="jb-admin-search" type="text" placeholder="🔍 Chercher pour modifier / supprimer…" />
         <div id="jb-admin-catalog" class="jb-admin-catalog"></div>
       </section>
+
     </div>
   </div>
 
@@ -343,6 +344,7 @@
   function norm(s) {
     return (s || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
   }
+
   function slugId() {
     return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
   }
@@ -483,7 +485,8 @@
     if (artistFilter) {
       // Dossier ouvert : uniquement les chansons de cet artiste
       folderHeader.hidden = false;
-      document.getElementById("jb-artist-filter-label").textContent = artistFilter;
+      document.querySelector(".jb-folder-title").innerHTML =
+        escapeHtml(artistFilter);
       const wanted = norm(artistFilter);
       const songs = catalogSongs
         .filter((s) => norm(s.artist) === wanted)
@@ -497,15 +500,7 @@
 
     // Vue par défaut : liste des dossiers d'artistes
     folderHeader.hidden = true;
-    const byArtist = new Map(); // clé normalisée -> {name, count}
-    catalogSongs.forEach((s) => {
-      const name = (s.artist || "").trim();
-      if (!name) return;
-      const key = norm(name);
-      if (!byArtist.has(key)) byArtist.set(key, { name, count: 0 });
-      byArtist.get(key).count++;
-    });
-    const artists = [...byArtist.values()].sort((a, b) => a.name.localeCompare(b.name, "fr"));
+    const artists = getUniqueArtists();
     const noArtistCount = catalogSongs.filter((s) => !(s.artist || "").trim()).length;
 
     list.innerHTML = "";
@@ -517,7 +512,7 @@
       li.dataset.openartist = a.name;
       li.innerHTML = `
         <div class="jb-song-info">
-          <div class="jb-artist-name">📁 ${escapeHtml(a.name)}</div>
+          <div class="jb-artist-name">${escapeHtml(a.name)}</div>
           <div class="jb-song-artist">${a.count} chanson${a.count > 1 ? "s" : ""}</div>
         </div>
         <button class="jb-btn-request jb-folder-btn" data-openartist="${escapeHtml(a.name)}">🎵 Chansons</button>`;
@@ -540,6 +535,19 @@
     });
 
     wireSongRowEvents(list);
+  }
+
+  // Liste unique des artistes du répertoire, avec le compte de chansons de chacun.
+  function getUniqueArtists() {
+    const byArtist = new Map(); // clé normalisée -> {name, count}
+    catalogSongs.forEach((s) => {
+      const name = (s.artist || "").trim();
+      if (!name) return;
+      const key = norm(name);
+      if (!byArtist.has(key)) byArtist.set(key, { name, count: 0 });
+      byArtist.get(key).count++;
+    });
+    return [...byArtist.values()].sort((a, b) => a.name.localeCompare(b.name, "fr"));
   }
 
   function openArtistFolder(name) {
