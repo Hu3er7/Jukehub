@@ -83,10 +83,15 @@
   #jb-app .jb-song-info { flex: 1; min-width: 0; }
   #jb-app .jb-song-title { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   #jb-app .jb-song-artist { color: var(--text-dim); font-size: 0.83rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  #jb-app .jb-artist-link { background: none; border: none; padding: 0; color: var(--text-dim); font-size: 0.83rem; text-decoration: underline dotted; text-underline-offset: 2px; cursor: pointer; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: left; }
-  #jb-app .jb-artist-link:active { color: var(--accent2); }
-  #jb-app .jb-artist-filter-bar { display: flex; align-items: center; justify-content: space-between; gap: 10px; background: var(--card2); border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; margin-bottom: 10px; font-size: 0.85rem; }
-  #jb-app .jb-clear-artist { flex-shrink: 0; background: var(--accent); color: #1a1408; font-weight: 700; padding: 6px 10px; border-radius: 8px; font-size: 0.78rem; cursor: pointer; white-space: nowrap; }
+
+  /* Dossiers d'artistes */
+  #jb-app .jb-artist-row { cursor: pointer; }
+  #jb-app .jb-artist-row:active { background: var(--card2); }
+  #jb-app .jb-artist-name { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  #jb-app .jb-folder-btn { background: var(--accent); color: #1a1408; }
+  #jb-app .jb-folder-header { display: flex; flex-direction: column; align-items: center; gap: 10px; margin-bottom: 14px; }
+  #jb-app .jb-back-btn { align-self: flex-start; background: var(--card); border: 1px solid var(--accent); color: var(--accent2); font-weight: 700; padding: 9px 16px; border-radius: 999px; font-size: 0.85rem; cursor: pointer; }
+  #jb-app .jb-folder-title { background: var(--card); border-radius: 10px; padding: 10px 18px; font-weight: 800; font-size: 1.05rem; text-align: center; }
   #jb-app .jb-song-badge { font-size: 0.72rem; color: var(--success); margin-top: 2px; display: inline-block; }
   #jb-app .jb-btn-request {
     flex-shrink: 0; background: var(--accent); color: #1a1408; font-weight: 700;
@@ -187,9 +192,9 @@
 
     <section class="jb-catalog">
       <h2>🎵 Répertoire complet (<span id="jb-catalog-count">0</span>)</h2>
-      <div id="jb-artist-filter-bar" class="jb-artist-filter-bar" hidden>
-        <span>📁 Chansons de <strong id="jb-artist-filter-label"></strong></span>
-        <button id="jb-artist-filter-clear" class="jb-clear-artist">✕ Retour</button>
+      <div id="jb-folder-header" class="jb-folder-header" hidden>
+        <button id="jb-back-btn" class="jb-back-btn">⬅ BACK</button>
+        <div class="jb-folder-title">🎤 <span id="jb-artist-filter-label"></span> 📁</div>
       </div>
       <ul id="jb-catalog-list" class="jb-catalog-list"></ul>
       <p id="jb-catalog-empty" class="jb-empty" hidden>Aucun résultat pour cette recherche.</p>
@@ -454,76 +459,135 @@
     });
   }
 
-  // ---------- Rendu : Catalogue (public) ----------
+  // ---------- Rendu : Catalogue (public, navigation par dossiers d'artistes) ----------
   function renderCatalog() {
     const search = norm(document.getElementById("jb-search-input").value);
     const list = document.getElementById("jb-catalog-list");
     const empty = document.getElementById("jb-catalog-empty");
+    const folderHeader = document.getElementById("jb-folder-header");
     document.getElementById("jb-catalog-count").textContent = catalogSongs.length;
 
-    const filterBar = document.getElementById("jb-artist-filter-bar");
-    filterBar.hidden = !artistFilter;
-    if (artistFilter) {
-      document.getElementById("jb-artist-filter-label").textContent = artistFilter;
+    // Une recherche active montre toujours les chansons directement (peu importe le dossier).
+    if (search) {
+      folderHeader.hidden = true;
+      const songs = [...catalogSongs]
+        .filter((s) => norm(s.title).includes(search) || norm(s.artist).includes(search))
+        .sort((a, b) => a.title.localeCompare(b.title, "fr"));
+      list.innerHTML = "";
+      empty.hidden = songs.length > 0;
+      songs.forEach((song) => list.appendChild(renderSongRow(song, true)));
+      wireSongRowEvents(list);
+      return;
     }
 
-    let songs = catalogSongs;
     if (artistFilter) {
+      // Dossier ouvert : uniquement les chansons de cet artiste
+      folderHeader.hidden = false;
+      document.getElementById("jb-artist-filter-label").textContent = artistFilter;
       const wanted = norm(artistFilter);
-      songs = songs.filter((s) => norm(s.artist) === wanted);
+      const songs = catalogSongs
+        .filter((s) => norm(s.artist) === wanted)
+        .sort((a, b) => a.title.localeCompare(b.title, "fr"));
+      list.innerHTML = "";
+      empty.hidden = songs.length > 0;
+      songs.forEach((song) => list.appendChild(renderSongRow(song, false)));
+      wireSongRowEvents(list);
+      return;
     }
-    if (search) {
-      songs = songs.filter((s) => norm(s.title).includes(search) || norm(s.artist).includes(search));
-    }
-    songs = [...songs].sort((a, b) => a.title.localeCompare(b.title, "fr"));
+
+    // Vue par défaut : liste des dossiers d'artistes
+    folderHeader.hidden = true;
+    const byArtist = new Map(); // clé normalisée -> {name, count}
+    catalogSongs.forEach((s) => {
+      const name = (s.artist || "").trim();
+      if (!name) return;
+      const key = norm(name);
+      if (!byArtist.has(key)) byArtist.set(key, { name, count: 0 });
+      byArtist.get(key).count++;
+    });
+    const artists = [...byArtist.values()].sort((a, b) => a.name.localeCompare(b.name, "fr"));
+    const noArtistCount = catalogSongs.filter((s) => !(s.artist || "").trim()).length;
 
     list.innerHTML = "";
-    empty.hidden = songs.length > 0;
+    empty.hidden = artists.length > 0 || noArtistCount > 0;
 
-    songs.forEach((song) => {
-      const v = votes[song.id];
-      const requested = alreadyRequested(song.id);
+    artists.forEach((a) => {
       const li = document.createElement("li");
-      li.className = "jb-song-item";
-
-      let btnHtml;
-      if (isBurned(v)) {
-        btnHtml = `<div class="jb-burned-badge">🔥❌ Brûlée</div>`;
-      } else if (isInCooldown(v)) {
-        btnHtml = `<div class="jb-cooldown-badge" data-until="${v.cooldownUntil}"><span class="jb-cooldown-num">${remainingSeconds(v)}</span>sec</div>`;
-      } else if (requested) {
-        btnHtml = `<span class="jb-btn-request" disabled>✅ Demandée</span>`;
-      } else {
-        btnHtml = `<button class="jb-btn-request" data-req="${song.id}">🎶 Je veux l'entendre</button>`;
-      }
-
-      const artistHtml = song.artist
-        ? `<button class="jb-artist-link" data-artist="${escapeHtml(song.artist)}">${escapeHtml(song.artist)} 📁</button>`
-        : "";
-
+      li.className = "jb-song-item jb-artist-row";
+      li.dataset.openartist = a.name;
       li.innerHTML = `
         <div class="jb-song-info">
-          <div class="jb-song-title">${escapeHtml(song.title)}</div>
-          ${artistHtml}
+          <div class="jb-artist-name">📁 ${escapeHtml(a.name)}</div>
+          <div class="jb-song-artist">${a.count} chanson${a.count > 1 ? "s" : ""}</div>
         </div>
-        ${btnHtml}`;
+        <button class="jb-btn-request jb-folder-btn" data-openartist="${escapeHtml(a.name)}">🎵 Chansons</button>`;
       list.appendChild(li);
     });
 
+    if (noArtistCount > 0) {
+      // Chansons sans artiste renseigné : affichées directement, pas de dossier possible
+      catalogSongs
+        .filter((s) => !(s.artist || "").trim())
+        .sort((a, b) => a.title.localeCompare(b.title, "fr"))
+        .forEach((song) => list.appendChild(renderSongRow(song, false)));
+    }
+
+    list.querySelectorAll("[data-openartist]").forEach((el) => {
+      el.addEventListener("click", (e) => {
+        e.stopPropagation();
+        openArtistFolder(el.dataset.openartist);
+      });
+    });
+
+    wireSongRowEvents(list);
+  }
+
+  function openArtistFolder(name) {
+    artistFilter = name;
+    renderCatalog();
+    document.querySelector(".jb-catalog").scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  document.getElementById("jb-back-btn").addEventListener("click", () => {
+    artistFilter = null;
+    renderCatalog();
+    document.querySelector(".jb-catalog").scrollIntoView({ behavior: "smooth", block: "start" });
+  });
+
+  // Construit une ligne de chanson (titre + bouton demande / refroidissement / brûlée).
+  // showArtist: affiche le nom de l'artiste sous le titre (utile hors dossier, ex. en recherche).
+  function renderSongRow(song, showArtist) {
+    const v = votes[song.id];
+    const requested = alreadyRequested(song.id);
+    const li = document.createElement("li");
+    li.className = "jb-song-item";
+
+    let btnHtml;
+    if (isBurned(v)) {
+      btnHtml = `<div class="jb-burned-badge">🔥❌ Brûlée</div>`;
+    } else if (isInCooldown(v)) {
+      btnHtml = `<div class="jb-cooldown-badge" data-until="${v.cooldownUntil}"><span class="jb-cooldown-num">${remainingSeconds(v)}</span>sec</div>`;
+    } else if (requested) {
+      btnHtml = `<span class="jb-btn-request" disabled>✅ Demandée</span>`;
+    } else {
+      btnHtml = `<button class="jb-btn-request" data-req="${song.id}">🎶 Je veux l'entendre</button>`;
+    }
+
+    li.innerHTML = `
+      <div class="jb-song-info">
+        <div class="jb-song-title">${escapeHtml(song.title)}</div>
+        ${showArtist && song.artist ? `<div class="jb-song-artist">${escapeHtml(song.artist)}</div>` : ""}
+      </div>
+      ${btnHtml}`;
+    return li;
+  }
+
+  function wireSongRowEvents(list) {
     list.querySelectorAll("[data-req]").forEach((btn) => {
       btn.addEventListener("click", () => {
         const id = btn.dataset.req;
         const song = catalogSongs.find((s) => s.id === id);
         if (song) requestSong(song);
-      });
-    });
-
-    list.querySelectorAll("[data-artist]").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        artistFilter = btn.dataset.artist;
-        document.getElementById("jb-search-input").value = "";
-        renderCatalog();
-        document.querySelector(".jb-catalog").scrollIntoView({ behavior: "smooth", block: "start" });
       });
     });
   }
@@ -565,12 +629,6 @@
   });
 
   document.getElementById("jb-search-input").addEventListener("input", () => {
-    artistFilter = null;
-    renderCatalog();
-  });
-
-  document.getElementById("jb-artist-filter-clear").addEventListener("click", () => {
-    artistFilter = null;
     renderCatalog();
   });
 
