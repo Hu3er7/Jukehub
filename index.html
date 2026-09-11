@@ -89,8 +89,13 @@
   #jb-app .jb-artist-row:active { background: var(--card2); }
   #jb-app .jb-artist-name { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   #jb-app .jb-folder-btn { background: var(--accent); color: #1a1408; }
-  #jb-app .jb-folder-header { display: flex; flex-direction: column; align-items: center; gap: 10px; margin-bottom: 14px; }
-  #jb-app .jb-back-btn { align-self: flex-start; background: var(--card); border: 1px solid var(--accent); color: var(--accent2); font-weight: 700; padding: 9px 16px; border-radius: 999px; font-size: 0.85rem; cursor: pointer; }
+  #jb-app .jb-catalog-sticky-header {
+    position: sticky; top: 0; z-index: 20; display: flex; align-items: center; gap: 10px;
+    background: var(--bg); padding: 8px 0; margin-bottom: 10px;
+  }
+  #jb-app .jb-back-btn { flex-shrink: 0; background: var(--card); border: 1px solid var(--accent); color: var(--accent2); font-weight: 700; padding: 12px 16px; border-radius: 999px; font-size: 0.85rem; cursor: pointer; }
+  #jb-app .jb-catalog-sticky-header input[type="text"] { flex: 1; min-width: 0; margin: 0; }
+  #jb-app .jb-folder-title-wrap { margin-bottom: 14px; }
   #jb-app .jb-folder-title { background: var(--card); border-radius: 10px; padding: 10px 18px; font-weight: 800; font-size: 1.05rem; text-align: center; }
   #jb-app .jb-song-badge { font-size: 0.72rem; color: var(--success); margin-top: 2px; display: inline-block; }
   #jb-app .jb-btn-request {
@@ -180,10 +185,6 @@
       <p class="jb-subtitle">Choisis une chanson dans mon répertoire — je la joue en direct !</p>
     </header>
 
-    <section class="jb-search">
-      <input id="jb-search-input" type="text" placeholder="🔍 Cherche un titre ou un artiste…" autocomplete="off" />
-    </section>
-
     <section class="jb-palmares">
       <h2>🏆 Palmarès de la soirée</h2>
       <ol id="jb-palmares-list" class="jb-palmares-list"></ol>
@@ -192,8 +193,11 @@
 
     <section class="jb-catalog">
       <h2>🎵 Répertoire complet (<span id="jb-catalog-count">0</span>)</h2>
-      <div id="jb-folder-header" class="jb-folder-header" hidden>
+      <div id="jb-catalog-header" class="jb-catalog-sticky-header">
         <button id="jb-back-btn" class="jb-back-btn">⬅ BACK</button>
+        <input id="jb-search-input" type="text" placeholder="🔍 Cherche un titre ou un artiste…" autocomplete="off" />
+      </div>
+      <div id="jb-folder-title-wrap" class="jb-folder-title-wrap" hidden>
         <div class="jb-folder-title"></div>
       </div>
       <ul id="jb-catalog-list" class="jb-catalog-list"></ul>
@@ -466,12 +470,13 @@
     const search = norm(document.getElementById("jb-search-input").value);
     const list = document.getElementById("jb-catalog-list");
     const empty = document.getElementById("jb-catalog-empty");
-    const folderHeader = document.getElementById("jb-folder-header");
+    const titleWrap = document.getElementById("jb-folder-title-wrap");
     document.getElementById("jb-catalog-count").textContent = catalogSongs.length;
 
     // Une recherche active montre toujours les chansons directement (peu importe le dossier).
     if (search) {
-      folderHeader.hidden = true;
+      titleWrap.hidden = true;
+      document.querySelector(".jb-folder-title").textContent = "";
       const songs = [...catalogSongs]
         .filter((s) => norm(s.title).includes(search) || norm(s.artist).includes(search))
         .sort((a, b) => a.title.localeCompare(b.title, "fr"));
@@ -484,9 +489,8 @@
 
     if (artistFilter) {
       // Dossier ouvert : uniquement les chansons de cet artiste
-      folderHeader.hidden = false;
-      document.querySelector(".jb-folder-title").innerHTML =
-        escapeHtml(artistFilter);
+      titleWrap.hidden = false;
+      document.querySelector(".jb-folder-title").textContent = artistFilter;
       const wanted = norm(artistFilter);
       const songs = catalogSongs
         .filter((s) => norm(s.artist) === wanted)
@@ -498,8 +502,9 @@
       return;
     }
 
-    // Vue par défaut : liste des dossiers d'artistes
-    folderHeader.hidden = true;
+    // Vue par défaut : liste des dossiers d'artistes — aucun nom d'artiste résiduel affiché
+    titleWrap.hidden = true;
+    document.querySelector(".jb-folder-title").textContent = "";
     const artists = getUniqueArtists();
     const noArtistCount = catalogSongs.filter((s) => !(s.artist || "").trim()).length;
 
