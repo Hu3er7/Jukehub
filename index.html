@@ -31,6 +31,7 @@
     width: 100vw;
     margin-left: calc(-50vw + 50%);
     min-height: 100vh;
+    min-height: 100dvh;
     line-height: 1.4;
     -webkit-font-smoothing: antialiased;
   }
@@ -73,6 +74,15 @@
   #jb-app .jb-rank-title { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   #jb-app .jb-rank-artist { color: var(--text-dim); font-size: 0.85rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   #jb-app .jb-rank-count { font-weight: 700; color: var(--accent2); font-size: 0.9rem; flex-shrink: 0; white-space: nowrap; }
+  #jb-app .jb-palmares-heading { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+  #jb-app .jb-palmares-heading h2 { margin-bottom: 0; }
+  #jb-app .jb-boost-remaining { font-size: 0.82rem; font-weight: 700; color: var(--accent2); background: var(--card); border: 1px solid var(--border); border-radius: 999px; padding: 5px 12px; white-space: nowrap; }
+  #jb-app .jb-boost-btn {
+    flex-shrink: 0; background: var(--card2); border: 1px solid var(--accent); color: var(--accent2);
+    font-weight: 700; padding: 8px 12px; border-radius: 10px; font-size: 0.8rem; white-space: nowrap; cursor: pointer;
+  }
+  #jb-app .jb-boost-btn:active { transform: scale(0.97); }
+  #jb-app .jb-boost-btn[disabled] { border-color: var(--border); color: var(--text-dim); cursor: default; }
 
   /* Catalogue */
   #jb-app .jb-catalog-list { display: flex; flex-direction: column; gap: 8px; max-height: none; }
@@ -186,7 +196,10 @@
     </header>
 
     <section class="jb-palmares">
-      <h2>🏆 Palmarès de la soirée</h2>
+      <div class="jb-palmares-heading">
+        <h2>🏆 Palmarès de la soirée</h2>
+        <div id="jb-boost-remaining" class="jb-boost-remaining">🚀 Boosts restants : 3</div>
+      </div>
       <ol id="jb-palmares-list" class="jb-palmares-list"></ol>
       <p id="jb-palmares-empty" class="jb-empty" hidden>Aucune demande pour l'instant — sois le premier à voter !</p>
     </section>
@@ -319,6 +332,10 @@
   // la demande précédente ne compte plus et le client peut redemander — sans logique de
   // détection de changement fragile, juste une comparaison à chaque rendu.
   let requestedRounds = {};
+  const MAX_BOOSTS = 3; // nombre maximum de boosts par client, par soirée
+  // boostUsage : songId -> { count, token } — boosts actuellement "verrouillés" sur cette chanson
+  // (token = roundToken au moment du boost ; libéré automatiquement dès que la chanson est jouée).
+  let boostUsage = {};
   let artistFilter = null; // nom d'artiste actif ("dossier" ouvert), ou null
   let isAdmin = false;
 
@@ -376,6 +393,64 @@
     } catch (e) {}
   }
 
+  // ---------- Boosts (palmarès) ----------
+  function boostStorageKey() {
+    return "jb_boosts_" + (nightId || "default");
+  }
+  function loadBoostsFromStorage() {
+    try {
+      const raw = localStorage.getItem(boostStorageKey());
+      boostUsage = raw ? JSON.parse(raw) : {};
+    } catch (e) {
+      boostUsage = {};
+    }
+  }
+  function saveBoostsToStorage() {
+    try {
+      localStorage.setItem(boostStorageKey(), JSON.stringify(boostUsage));
+    } catch (e) {}
+  }
+  // Compte les boosts actuellement "verrouillés", en libérant au passage ceux dont la
+  // chanson a été jouée depuis le boost (son jeton de tour a changé).
+  function activeBoostsCount() {
+    let total = 0;
+    let changed = false;
+    Object.keys(boostUsage).forEach((id) => {
+      const entry = boostUsage[id];
+      if (entry.token === roundToken(votes[id])) {
+        total += entry.count;
+      } else {
+        delete boostUsage[id];
+        changed = true;
+      }
+    });
+    if (changed) saveBoostsToStorage();
+    return total;
+  }
+  function boostsRemaining() {
+    return Math.max(0, MAX_BOOSTS - activeBoostsCount());
+  }
+  async function boostSong(id) {
+    const v = votes[id];
+    if (!v || isUnavailable(v)) return;
+    if (boostsRemaining() <= 0) {
+      showToast("Tu as utilisé tes 3 boosts pour ce soir !");
+      return;
+    }
+    const token = roundToken(v);
+    try {
+      await updateDoc(doc(db, "votes", id), { requests: increment(1) });
+      const existing = boostUsage[id];
+      boostUsage[id] = { count: (existing && existing.token === token ? existing.count : 0) + 1, token };
+      saveBoostsToStorage();
+      renderPalmares();
+      showToast("🚀 Boost ajouté !");
+    } catch (e) {
+      console.error(e);
+      showToast("Oups, réessaie dans un instant.");
+    }
+  }
+
   // ---------- Routage (site public vs mode spectacle) ----------
   function checkRoute() {
     const admin = location.hash === "#admin";
@@ -398,6 +473,7 @@
     if (newNightId !== nightId) {
       nightId = newNightId;
       loadRequestedFromStorage();
+      loadBoostsFromStorage();
       renderAll();
     }
   }, (err) => console.error("config onSnapshot", err));
@@ -441,6 +517,10 @@
   function renderPalmares() {
     const list = document.getElementById("jb-palmares-list");
     const empty = document.getElementById("jb-palmares-empty");
+    const remainingEl = document.getElementById("jb-boost-remaining");
+    const remaining = boostsRemaining();
+    if (remainingEl) remainingEl.textContent = `🚀 Boosts restants : ${remaining}`;
+
     const ranked = Object.entries(votes)
       .filter(([, v]) => v.requests > 0 && !isUnavailable(v))
       .sort((a, b) => b[1].requests - a[1].requests)
@@ -460,8 +540,13 @@
           <div class="jb-rank-title">${escapeHtml(v.title)}</div>
           <div class="jb-rank-artist">${escapeHtml(v.artist || "")}</div>
         </div>
+        <button class="jb-boost-btn" data-boost="${escapeHtml(id)}" ${remaining <= 0 ? "disabled" : ""}>🚀 Boost</button>
         <div class="jb-rank-count">${v.requests} 🙌</div>`;
       list.appendChild(li);
+    });
+
+    list.querySelectorAll("[data-boost]").forEach((btn) => {
+      btn.addEventListener("click", () => boostSong(btn.dataset.boost));
     });
   }
 
