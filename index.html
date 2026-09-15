@@ -98,7 +98,6 @@
   #jb-app .jb-artist-row { cursor: pointer; }
   #jb-app .jb-artist-row:active { background: var(--card2); }
   #jb-app .jb-artist-name { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  #jb-app .jb-folder-btn { background: var(--accent); color: #1a1408; }
   #jb-app .jb-catalog-sticky-header {
     position: sticky; top: 0; z-index: 20; display: flex; align-items: center; gap: 10px;
     background: var(--bg); padding: 8px 0; margin-bottom: 10px;
@@ -604,8 +603,7 @@
         <div class="jb-song-info">
           <div class="jb-artist-name">${escapeHtml(a.name)}</div>
           <div class="jb-song-artist">${a.count} chanson${a.count > 1 ? "s" : ""}</div>
-        </div>
-        <button class="jb-btn-request jb-folder-btn" data-openartist="${escapeHtml(a.name)}">🎵 Chansons</button>`;
+        </div>`;
       list.appendChild(li);
     });
 
