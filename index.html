@@ -747,13 +747,15 @@
   function openArtistFolder(name) {
     artistFilter = name;
     renderCatalog();
-    document.querySelector(".jb-catalog").scrollIntoView({ behavior: "smooth", block: "start" });
+    // "nearest" plutôt que "start" : ne défile que si nécessaire, et juste assez —
+    // pour ne pas pousser le palmarès complètement hors de l'écran à chaque ouverture.
+    document.querySelector(".jb-catalog").scrollIntoView({ behavior: "smooth", block: "nearest" });
   }
 
   document.getElementById("jb-back-btn").addEventListener("click", () => {
     artistFilter = null;
     renderCatalog();
-    document.querySelector(".jb-catalog").scrollIntoView({ behavior: "smooth", block: "start" });
+    document.querySelector(".jb-catalog").scrollIntoView({ behavior: "smooth", block: "nearest" });
   });
 
   // Construit une ligne de chanson (titre + bouton demande / refroidissement / brûlée).
