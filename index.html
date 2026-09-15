@@ -748,7 +748,7 @@
   const auth = getAuth(fbApp);
 
   // ---------- État local ----------
-  const COOLDOWN_MS = 30000; // 30 secondes de refroidissement après avoir été jouée
+  const COOLDOWN_MS = 60 * 60 * 1000; // 1 heure de refroidissement après avoir été jouée
   let catalogSongs = [];      // [{id, title, artist}]
   // votes: songId -> {requests, burned, cooldownUntil, playedAt, title, artist}
   let votes = {};
@@ -788,6 +788,16 @@
   }
   function remainingSeconds(v) {
     return Math.max(0, Math.ceil((v.cooldownUntil - Date.now()) / 1000));
+  }
+  // Formate un nombre de secondes en "MM:SS" (ex. 42:40) pour l'affichage du refroidissement.
+  function formatMMSS(totalSeconds) {
+    const s = Math.max(0, Math.round(totalSeconds));
+    const mm = String(Math.floor(s / 60)).padStart(2, "0");
+    const ss = String(s % 60).padStart(2, "0");
+    return `${mm}:${ss}`;
+  }
+  function formatCooldown(v) {
+    return formatMMSS(remainingSeconds(v));
   }
   function playedAtMillis(v) {
     return v?.playedAt?.seconds ? v.playedAt.seconds * 1000 : (v?.playedAt || 0);
@@ -1041,7 +1051,7 @@
       if (!until) return;
       const remaining = Math.max(0, Math.ceil((until - now) / 1000));
       const numEl = el.querySelector(".jb-cooldown-num");
-      if (numEl) numEl.textContent = remaining;
+      if (numEl) numEl.textContent = formatMMSS(remaining);
       if (remaining <= 0) anyExpired = true;
     });
     if (boostResetAt) {
@@ -1307,7 +1317,7 @@
     if (isBurned(v)) {
       btnHtml = `<div class="jb-burned-badge">${t("burned_badge")}</div>`;
     } else if (isInCooldown(v)) {
-      btnHtml = `<div class="jb-cooldown-badge" data-until="${v.cooldownUntil}"><span class="jb-cooldown-num">${remainingSeconds(v)}</span>sec</div>`;
+      btnHtml = `<div class="jb-cooldown-badge" data-until="${v.cooldownUntil}"><span class="jb-cooldown-num">${formatCooldown(v)}</span></div>`;
     } else if (requested) {
       const remaining = boostsRemaining();
       btnHtml = `<button class="jb-slot-boost" data-boost="${escapeHtml(song.id)}" ${remaining <= 0 ? "disabled" : ""} aria-label="${t("boost_aria")}" title="${t("boost_aria")}">🚀 ${t("boost_btn")}</button>`;
@@ -1361,7 +1371,7 @@
       if (isBurned(v)) {
         statusHtml = `<span class="jb-burned-badge">${t("burned_badge")}</span>`;
       } else if (isInCooldown(v)) {
-        statusHtml = `<span class="jb-cooldown-badge" data-until="${v.cooldownUntil}"><span class="jb-cooldown-num">${remainingSeconds(v)}</span>sec</span>`;
+        statusHtml = `<span class="jb-cooldown-badge" data-until="${v.cooldownUntil}"><span class="jb-cooldown-num">${formatCooldown(v)}</span></span>`;
       } else {
         statusHtml = `<span>🎵</span>`;
       }
@@ -1542,7 +1552,7 @@
       } else {
         row.dataset.until = v.cooldownUntil;
         row.innerHTML = `
-          <div class="jb-cooldown-badge" data-until="${v.cooldownUntil}"><span class="jb-cooldown-num">${remainingSeconds(v)}</span>sec</div>
+          <div class="jb-cooldown-badge" data-until="${v.cooldownUntil}"><span class="jb-cooldown-num">${formatCooldown(v)}</span></div>
           <div class="jb-song-info">
             <div class="jb-song-title">${escapeHtml(v.title)}</div>
             <div class="jb-song-artist">${escapeHtml(v.artist || "")}</div>
@@ -1636,7 +1646,7 @@
       const status = burned
         ? " · 🔥 brûlée"
         : cooling
-          ? ` · refroidit (<span data-until="${v.cooldownUntil}"><span class="jb-cooldown-num">${remainingSeconds(v)}</span>s</span>)`
+          ? ` · refroidit (<span data-until="${v.cooldownUntil}"><span class="jb-cooldown-num">${formatCooldown(v)}</span></span>)`
           : v?.requests ? ` · ${v.requests} demande(s)` : "";
       const plusDisabled = burned || cooling;
       return `
