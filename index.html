@@ -393,6 +393,7 @@
   const {
     getFirestore, doc, setDoc, updateDoc, deleteDoc, onSnapshot,
     collection, runTransaction, increment, serverTimestamp, writeBatch,
+    enableNetwork, disableNetwork,
   } = await import(`https://www.gstatic.com/firebasejs/${FB_VERSION}/firebase-firestore.js`);
   const {
     getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut,
@@ -546,6 +547,27 @@
     location.hash = "";
     checkRoute();
   });
+
+  // ---------- Reconnexion forcée (Safari iOS coupe parfois la connexion en arrière-plan) ----------
+  // Quand le téléphone se verrouille, change d'appli ou perd le réseau un instant, Safari
+  // peut suspendre la connexion temps réel sans la rétablir proprement au retour. On force
+  // une reconnexion propre dès que la page redevient visible / active / en ligne, pour que
+  // le palmarès et le reste se remettent à jour sans que le client ait à rafraîchir.
+  let reconnecting = false;
+  function forceReconnect() {
+    if (reconnecting) return;
+    reconnecting = true;
+    disableNetwork(db)
+      .then(() => enableNetwork(db))
+      .catch(() => {})
+      .finally(() => { reconnecting = false; });
+  }
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible") forceReconnect();
+  });
+  window.addEventListener("pageshow", forceReconnect);
+  window.addEventListener("focus", forceReconnect);
+  window.addEventListener("online", forceReconnect);
 
   // ---------- Abonnements temps réel ----------
   onSnapshot(doc(db, "config", "settings"), (snap) => {
