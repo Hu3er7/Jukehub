@@ -718,9 +718,14 @@
   document.getElementById("jb-tour-btn").addEventListener("click", startTour);
 
   // Le check est fait dans le setTimeout (pas tout de suite) pour être certain que
-  // "nightId" (déclaré plus bas) a déjà été initialisé au moment de le lire.
+  // "nightId" (déclaré plus bas) a déjà été initialisé au moment de le lire. Protégé par un
+  // try/catch : si le chargement de Firebase plus bas a échoué (Wi-Fi instable au moment de
+  // charger la page), "nightId" ne sera jamais initialisé — mieux vaut ne rien faire ici que
+  // de lancer une erreur qui n'aide personne.
   setTimeout(() => {
-    if (localStorage.getItem(tourSeenKey()) !== "1") startTour();
+    try {
+      if (localStorage.getItem(tourSeenKey()) !== "1") startTour();
+    } catch (e) {}
   }, 1200);
 
   if (firebaseConfig.apiKey === "REMPLACE_MOI") {
@@ -732,16 +737,45 @@
     throw new Error("firebaseConfig non configuré");
   }
 
+  // Les librairies Firebase sont chargées depuis gstatic.com. Sur un Wi-Fi de bar instable,
+  // ce chargement peut échouer au premier essai (page blanche sinon) — on réessaie
+  // automatiquement quelques fois avant d'abandonner et de prévenir le client.
+  async function importWithRetry(url, attempts = 3) {
+    for (let i = 1; i <= attempts; i++) {
+      try {
+        return await import(url);
+      } catch (e) {
+        console.error(`Échec du chargement de ${url} (essai ${i}/${attempts})`, e);
+        if (i === attempts) throw e;
+        await new Promise((resolve) => setTimeout(resolve, 1200 * i));
+      }
+    }
+  }
+
   const FB_VERSION = "12.18.0";
-  const { initializeApp } = await import(`https://www.gstatic.com/firebasejs/${FB_VERSION}/firebase-app.js`);
-  const {
-    getFirestore, doc, setDoc, updateDoc, deleteDoc, onSnapshot,
+  let initializeApp, getFirestore, doc, setDoc, updateDoc, deleteDoc, onSnapshot,
     collection, runTransaction, increment, serverTimestamp, writeBatch,
-    enableNetwork, disableNetwork,
-  } = await import(`https://www.gstatic.com/firebasejs/${FB_VERSION}/firebase-firestore.js`);
-  const {
-    getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut,
-  } = await import(`https://www.gstatic.com/firebasejs/${FB_VERSION}/firebase-auth.js`);
+    enableNetwork, disableNetwork, getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut;
+  try {
+    ({ initializeApp } = await importWithRetry(`https://www.gstatic.com/firebasejs/${FB_VERSION}/firebase-app.js`));
+    ({
+      getFirestore, doc, setDoc, updateDoc, deleteDoc, onSnapshot,
+      collection, runTransaction, increment, serverTimestamp, writeBatch,
+      enableNetwork, disableNetwork,
+    } = await importWithRetry(`https://www.gstatic.com/firebasejs/${FB_VERSION}/firebase-firestore.js`));
+    ({
+      getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut,
+    } = await importWithRetry(`https://www.gstatic.com/firebasejs/${FB_VERSION}/firebase-auth.js`));
+  } catch (e) {
+    console.error("Impossible de charger Firebase après plusieurs tentatives", e);
+    const app = document.getElementById("jb-app");
+    const banner = document.createElement("div");
+    banner.className = "jb-warn-banner";
+    banner.innerHTML = '⚠️ Impossible de se connecter au serveur (connexion instable). <button id="jb-retry-load" style="margin-left:8px; background:var(--accent); color:#2b0a1a; border:none; border-radius:8px; padding:8px 14px; font-weight:700; cursor:pointer;">Réessayer</button>';
+    app.prepend(banner);
+    document.getElementById("jb-retry-load").addEventListener("click", () => location.reload());
+    throw e;
+  }
 
   const fbApp = initializeApp(firebaseConfig);
   const db = getFirestore(fbApp);
