@@ -1434,36 +1434,24 @@
   async function requestSong(song) {
     if (alreadyRequested(song.id)) return;
     const tokenAtRequest = roundToken(votes[song.id]);
-    const countBefore = votes[song.id]?.requests || 0;
     const ref = doc(db, "votes", song.id);
     try {
-      await runTransaction(db, async (tx) => {
-        const snap = await tx.get(ref);
-        if (!snap.exists()) {
-          tx.set(ref, {
-            requests: 1, burned: false, cooldownUntil: 0, playedAt: null,
-            title: song.title, artist: song.artist || "", createdAt: serverTimestamp(),
-          });
-        } else {
-          tx.update(ref, { requests: increment(1) });
-        }
-      });
+      // setDoc + merge (plutôt qu'une transaction avec lecture préalable) : le SDK Firestore
+      // applique ce type d'écriture au cache local tout de suite, exactement comme pour un
+      // boost — la chanson apparaît donc dans le palmarès sans délai, au lieu d'attendre
+      // l'aller-retour avec le serveur. On ne touche jamais burned/cooldownUntil/playedAt ici
+      // (absents du merge), pour ne pas écraser leur état si la chanson a déjà un historique ;
+      // increment() gère correctement les demandes simultanées de plusieurs clients.
+      await setDoc(ref, {
+        requests: increment(1),
+        title: song.title,
+        artist: song.artist || "",
+        createdAt: serverTimestamp(),
+      }, { merge: true });
       requestedRounds[song.id] = tokenAtRequest;
       saveRequestedToStorage();
       renderCatalog();
       showToast(t("request_added_toast"));
-      // Contrairement à un boost (updateDoc, appliqué localement tout de suite), une
-      // transaction Firestore ne passe pas par le cache optimiste local : la chanson ne
-      // s'affichera dans le palmarès que lorsque l'écouteur temps réel "votes" recevra la
-      // confirmation du serveur. Si la connexion est restée "collée" (Safari iOS en
-      // arrière-plan, Wi-Fi instable dans le bar), ça peut ne jamais arriver tout seul — on
-      // vérifie donc après coup, et on force une reconnexion si rien n'est arrivé, pour que
-      // le client n'ait pas à rafraîchir lui-même la page.
-      const songId = song.id;
-      setTimeout(() => {
-        const nowCount = votes[songId]?.requests || 0;
-        if (nowCount <= countBefore) forceReconnect();
-      }, 2500);
     } catch (e) {
       console.error(e);
       showToast(t("error_toast"));
