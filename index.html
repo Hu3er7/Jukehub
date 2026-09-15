@@ -42,6 +42,13 @@
   }
   #jb-app .jb-view { width: 100%; margin: 0 auto; padding: 20px 24px 60px; }
 
+  #jb-app .jb-lang-bar { display: flex; justify-content: flex-end; gap: 6px; padding-top: 14px; }
+  #jb-app .jb-lang-btn {
+    background: var(--card); border: 1px solid var(--border); color: var(--text-dim);
+    font-weight: 700; font-size: 0.75rem; padding: 6px 12px; border-radius: 999px; cursor: pointer;
+  }
+  #jb-app .jb-lang-btn.jb-lang-active { border-color: var(--accent); color: var(--accent2); }
+
   #jb-app .jb-header { text-align: center; padding: 24px 8px 8px; }
   #jb-app .jb-header h1 { font-size: 1.7rem; font-weight: 800; color: var(--accent2); letter-spacing: 0.3px; }
   #jb-app .jb-subtitle { color: var(--text-dim); margin-top: 6px; font-size: 0.95rem; }
@@ -189,14 +196,19 @@
 <div id="jb-app">
 
   <div id="jb-public" class="jb-view">
+    <div class="jb-lang-bar">
+      <button id="jb-lang-fr" class="jb-lang-btn" data-lang="fr">FR</button>
+      <button id="jb-lang-en" class="jb-lang-btn" data-lang="en">EN</button>
+    </div>
+
     <header class="jb-header">
       <h1 id="jb-artist-name">🎤 Chargement…</h1>
-      <p class="jb-subtitle">Choisis une chanson dans mon répertoire — je la joue en direct !</p>
+      <p class="jb-subtitle" id="jb-subtitle">Choisis une chanson dans mon répertoire — je la joue en direct !</p>
     </header>
 
     <section class="jb-palmares">
       <div class="jb-palmares-heading">
-        <h2>🏆 Palmarès de la soirée</h2>
+        <h2 id="jb-palmares-title">🏆 Palmarès de la soirée</h2>
         <div id="jb-boost-remaining" class="jb-boost-remaining">🚀 Boosts restants : 3</div>
       </div>
       <ol id="jb-palmares-list" class="jb-palmares-list"></ol>
@@ -204,7 +216,7 @@
     </section>
 
     <section class="jb-catalog">
-      <h2>🎵 Répertoire complet (<span id="jb-catalog-count">0</span>)</h2>
+      <h2><span id="jb-catalog-title">🎵 Répertoire complet</span> (<span id="jb-catalog-count">0</span>)</h2>
       <div id="jb-catalog-header" class="jb-catalog-sticky-header">
         <button id="jb-back-btn" class="jb-back-btn">⬅ BACK</button>
         <input id="jb-search-input" type="text" placeholder="🔍 Cherche un titre ou un artiste…" autocomplete="off" />
@@ -296,6 +308,73 @@
   // ============================================================
 
   document.getElementById("jb-artist-name").textContent = ARTIST_NAME;
+
+  // ---------- Langue (public) ----------
+  const I18N = {
+    fr: {
+      subtitle: "Choisis une chanson dans mon répertoire — je la joue en direct !",
+      palmares_title: "🏆 Palmarès de la soirée",
+      palmares_empty: "Aucune demande pour l'instant — sois le premier à voter !",
+      boost_remaining: (n) => `🚀 Boosts restants : ${n}`,
+      boost_used_up: "Tu as utilisé tes 3 boosts pour ce soir !",
+      boost_added: "🚀 Boost ajouté !",
+      catalog_title: "🎵 Répertoire complet",
+      search_placeholder: "🔍 Cherche un titre ou un artiste…",
+      catalog_empty: "Aucun résultat pour cette recherche.",
+      played_toggle: (n) => `🎶 Chansons déjà jouées ce soir (${n}) ▾`,
+      burned_badge: "🔥❌ Brûlée",
+      already_requested: "✅ Demandée",
+      request_btn: "🎶 Je veux l'entendre",
+      request_added_toast: "🎶 Chanson demandée !",
+      error_toast: "Oups, réessaie dans un instant.",
+      song_count: (n) => `${n} chanson${n > 1 ? "s" : ""}`,
+      admin_link_title: "Mode spectacle",
+    },
+    en: {
+      subtitle: "Pick a song from my repertoire — I'll play it live!",
+      palmares_title: "🏆 Tonight's Top Requests",
+      palmares_empty: "No requests yet — be the first to vote!",
+      boost_remaining: (n) => `🚀 Boosts left: ${n}`,
+      boost_used_up: "You've used all 3 of your boosts for tonight!",
+      boost_added: "🚀 Boost added!",
+      catalog_title: "🎵 Full Song List",
+      search_placeholder: "🔍 Search a title or artist…",
+      catalog_empty: "No results for this search.",
+      played_toggle: (n) => `🎶 Played tonight (${n}) ▾`,
+      burned_badge: "🔥❌ Unavailable",
+      already_requested: "✅ Requested",
+      request_btn: "🎶 Request this song",
+      request_added_toast: "🎶 Song requested!",
+      error_toast: "Oops, try again in a moment.",
+      song_count: (n) => `${n} song${n > 1 ? "s" : ""}`,
+      admin_link_title: "Show mode",
+    },
+  };
+  let lang = localStorage.getItem("jb_lang") === "en" ? "en" : "fr";
+  function t(key, ...args) {
+    const v = I18N[lang][key];
+    return typeof v === "function" ? v(...args) : v;
+  }
+  function applyStaticTranslations() {
+    document.querySelectorAll(".jb-lang-btn").forEach((b) => {
+      b.classList.toggle("jb-lang-active", b.dataset.lang === lang);
+    });
+    document.getElementById("jb-subtitle").textContent = t("subtitle");
+    document.getElementById("jb-palmares-title").textContent = t("palmares_title");
+    document.getElementById("jb-catalog-title").textContent = t("catalog_title");
+    document.getElementById("jb-search-input").placeholder = t("search_placeholder");
+    document.querySelector(".jb-admin-link").title = t("admin_link_title");
+  }
+  applyStaticTranslations();
+  document.querySelectorAll(".jb-lang-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      if (btn.dataset.lang === lang) return;
+      lang = btn.dataset.lang;
+      localStorage.setItem("jb_lang", lang);
+      applyStaticTranslations();
+      renderAll();
+    });
+  });
 
   if (firebaseConfig.apiKey === "REMPLACE_MOI") {
     const app = document.getElementById("jb-app");
@@ -433,7 +512,7 @@
     const v = votes[id];
     if (!v || isUnavailable(v)) return;
     if (boostsRemaining() <= 0) {
-      showToast("Tu as utilisé tes 3 boosts pour ce soir !");
+      showToast(t("boost_used_up"));
       return;
     }
     const token = roundToken(v);
@@ -443,10 +522,10 @@
       boostUsage[id] = { count: (existing && existing.token === token ? existing.count : 0) + 1, token };
       saveBoostsToStorage();
       renderPalmares();
-      showToast("🚀 Boost ajouté !");
+      showToast(t("boost_added"));
     } catch (e) {
       console.error(e);
-      showToast("Oups, réessaie dans un instant.");
+      showToast(t("error_toast"));
     }
   }
 
@@ -518,7 +597,8 @@
     const empty = document.getElementById("jb-palmares-empty");
     const remainingEl = document.getElementById("jb-boost-remaining");
     const remaining = boostsRemaining();
-    if (remainingEl) remainingEl.textContent = `🚀 Boosts restants : ${remaining}`;
+    if (remainingEl) remainingEl.textContent = t("boost_remaining", remaining);
+    empty.textContent = t("palmares_empty");
 
     const ranked = Object.entries(votes)
       .filter(([, v]) => v.requests > 0 && !isUnavailable(v))
@@ -556,6 +636,7 @@
     const empty = document.getElementById("jb-catalog-empty");
     const titleWrap = document.getElementById("jb-folder-title-wrap");
     document.getElementById("jb-catalog-count").textContent = catalogSongs.length;
+    empty.textContent = t("catalog_empty");
 
     // Une recherche active montre toujours les chansons directement (peu importe le dossier).
     if (search) {
@@ -602,7 +683,7 @@
       li.innerHTML = `
         <div class="jb-song-info">
           <div class="jb-artist-name">${escapeHtml(a.name)}</div>
-          <div class="jb-song-artist">${a.count} chanson${a.count > 1 ? "s" : ""}</div>
+          <div class="jb-song-artist">${t("song_count", a.count)}</div>
         </div>`;
       list.appendChild(li);
     });
@@ -660,13 +741,13 @@
 
     let btnHtml;
     if (isBurned(v)) {
-      btnHtml = `<div class="jb-burned-badge">🔥❌ Brûlée</div>`;
+      btnHtml = `<div class="jb-burned-badge">${t("burned_badge")}</div>`;
     } else if (isInCooldown(v)) {
       btnHtml = `<div class="jb-cooldown-badge" data-until="${v.cooldownUntil}"><span class="jb-cooldown-num">${remainingSeconds(v)}</span>sec</div>`;
     } else if (requested) {
-      btnHtml = `<span class="jb-btn-request" disabled>✅ Demandée</span>`;
+      btnHtml = `<span class="jb-btn-request" disabled>${t("already_requested")}</span>`;
     } else {
-      btnHtml = `<button class="jb-btn-request" data-req="${song.id}">🎶 Je veux l'entendre</button>`;
+      btnHtml = `<button class="jb-btn-request" data-req="${song.id}">${t("request_btn")}</button>`;
     }
 
     li.innerHTML = `
@@ -696,13 +777,13 @@
 
     const section = document.getElementById("jb-played-section");
     section.hidden = played.length === 0;
-    document.getElementById("jb-played-count").textContent = played.length;
+    document.getElementById("jb-played-toggle").textContent = t("played_toggle", played.length);
 
     const list = document.getElementById("jb-played-list");
     list.innerHTML = played.map(([, v]) => {
       let statusHtml;
       if (isBurned(v)) {
-        statusHtml = `<span class="jb-burned-badge">🔥❌ Brûlée</span>`;
+        statusHtml = `<span class="jb-burned-badge">${t("burned_badge")}</span>`;
       } else if (isInCooldown(v)) {
         statusHtml = `<span class="jb-cooldown-badge" data-until="${v.cooldownUntil}"><span class="jb-cooldown-num">${remainingSeconds(v)}</span>sec</span>`;
       } else {
@@ -748,10 +829,10 @@
       requestedRounds[song.id] = tokenAtRequest;
       saveRequestedToStorage();
       renderCatalog();
-      showToast("🎶 Chanson demandée !");
+      showToast(t("request_added_toast"));
     } catch (e) {
       console.error(e);
-      showToast("Oups, réessaie dans un instant.");
+      showToast(t("error_toast"));
     }
   }
 
