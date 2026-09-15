@@ -10,17 +10,17 @@
   /* ===== Système de demandes de chansons — styles isolés sous #jb-app ===== */
   #jb-app, #jb-app * { box-sizing: border-box; }
   #jb-app {
-    --bg: #0c0b10;
-    --bg2: #15131c;
-    --card: #1c1a24;
-    --card2: #221f2b;
-    --text: #f5f2ec;
-    --text-dim: #a39dae;
-    --accent: #e3b23c;
-    --accent2: #f2c766;
-    --danger: #e05a4e;
-    --success: #4caf7d;
-    --border: #2a2733;
+    --bg: #1c0f2e;
+    --bg2: #241640;
+    --card: #2b1745;
+    --card2: #331d52;
+    --text: #bfd9ff;
+    --text-dim: #93a8c9;
+    --accent: #e0568f;
+    --accent2: #f7a8cf;
+    --danger: #ff6b5e;
+    --success: #3fc9b4;
+    --border: #55336f;
     --radius: 16px;
 
     all: initial;
@@ -73,7 +73,7 @@
     display: flex; align-items: center; gap: 12px; background: var(--card);
     border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 14px;
   }
-  #jb-app .jb-rank-item.jb-top1 { border-color: #e3b23c; background: linear-gradient(90deg, #2a2312, var(--card)); }
+  #jb-app .jb-rank-item.jb-top1 { border-color: #e0568f; background: linear-gradient(90deg, #3a1530, var(--card)); }
   #jb-app .jb-rank-item.jb-top2 { border-color: #c9c9d4; }
   #jb-app .jb-rank-item.jb-top3 { border-color: #b97a4e; }
   #jb-app .jb-rank-num { font-weight: 800; font-size: 1.1rem; width: 30px; text-align: center; color: var(--accent2); flex-shrink: 0; }
@@ -115,7 +115,7 @@
   #jb-app .jb-folder-title { background: var(--card); border-radius: 10px; padding: 10px 18px; font-weight: 800; font-size: 1.05rem; text-align: center; }
   #jb-app .jb-song-badge { font-size: 0.72rem; color: var(--success); margin-top: 2px; display: inline-block; }
   #jb-app .jb-btn-request {
-    flex-shrink: 0; background: var(--accent); color: #1a1408; font-weight: 700;
+    flex-shrink: 0; background: var(--accent); color: #2b0a1a; font-weight: 700;
     padding: 9px 12px; border-radius: 10px; font-size: 0.85rem; white-space: nowrap; cursor: pointer;
   }
   #jb-app .jb-btn-request:active { transform: scale(0.97); }
@@ -125,7 +125,7 @@
   /* Refroidissement (30 sec après avoir été jouée) */
   #jb-app .jb-cooldown-badge {
     flex-shrink: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
-    background: #3a2f14; border: 1px solid var(--accent); color: var(--accent2);
+    background: #3a1a30; border: 1px solid var(--accent); color: var(--accent2);
     border-radius: 10px; padding: 6px 12px; font-weight: 700; font-size: 0.7rem; line-height: 1.1; white-space: nowrap;
   }
   #jb-app .jb-cooldown-num { font-size: 1.2rem; font-weight: 800; }
@@ -133,7 +133,7 @@
   /* Chanson brûlée (retirée volontairement par l'admin) */
   #jb-app .jb-burned-badge {
     flex-shrink: 0; display: flex; align-items: center; gap: 6px; justify-content: center;
-    background: #3a1414; border: 1px solid var(--danger); color: #ff8a7d;
+    background: #3a1620; border: 1px solid var(--danger); color: #ff9c8f;
     border-radius: 10px; padding: 8px 12px; font-weight: 800; font-size: 0.8rem; white-space: nowrap;
   }
 
@@ -158,28 +158,28 @@
   #jb-app button.jb-btn-primary, #jb-app button.jb-btn-danger, #jb-app button.jb-btn-ghost {
     padding: 12px 16px; border-radius: 12px; font-weight: 700; cursor: pointer; margin-top: 10px;
   }
-  #jb-app .jb-btn-primary { background: var(--accent); color: #1a1408; width: 100%; }
+  #jb-app .jb-btn-primary { background: var(--accent); color: #2b0a1a; width: 100%; }
   #jb-app .jb-btn-danger { background: var(--danger); color: #fff; width: 100%; }
   #jb-app .jb-btn-ghost { background: var(--card2); color: var(--text); margin-top: 0; }
 
   #jb-app .jb-admin-rank-item { display: flex; align-items: center; gap: 10px; }
-  #jb-app .jb-mark-played-btn { background: var(--success); color: #08210f; font-weight: 700; padding: 9px 11px; border-radius: 10px; font-size: 0.82rem; flex-shrink: 0; cursor: pointer; white-space: nowrap; }
+  #jb-app .jb-mark-played-btn { background: var(--success); color: #062420; font-weight: 700; padding: 9px 11px; border-radius: 10px; font-size: 0.82rem; flex-shrink: 0; cursor: pointer; white-space: nowrap; }
   #jb-app .jb-unmark-btn { background: var(--card2); color: var(--text-dim); font-weight: 600; padding: 6px 10px; border-radius: 8px; font-size: 0.75rem; cursor: pointer; }
 
   #jb-app .jb-cooldown-list { display: flex; flex-direction: column; gap: 8px; }
   #jb-app .jb-cooldown-row { display: flex; align-items: center; gap: 10px; background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 10px 12px; }
   #jb-app .jb-cooldown-row .jb-song-info { flex: 1; min-width: 0; }
-  #jb-app .jb-bypass-btn { background: var(--accent); color: #1a1408; font-weight: 700; padding: 8px 10px; border-radius: 9px; font-size: 0.78rem; cursor: pointer; flex-shrink: 0; white-space: nowrap; }
-  #jb-app .jb-burn-btn { background: #3a1414; color: #ff8a7d; border: 1px solid var(--danger); font-weight: 700; padding: 8px 10px; border-radius: 9px; font-size: 0.78rem; cursor: pointer; flex-shrink: 0; white-space: nowrap; }
-  #jb-app .jb-unburn-btn { background: var(--success); color: #08210f; font-weight: 700; padding: 8px 10px; border-radius: 9px; font-size: 0.78rem; cursor: pointer; flex-shrink: 0; white-space: nowrap; }
+  #jb-app .jb-bypass-btn { background: var(--accent); color: #2b0a1a; font-weight: 700; padding: 8px 10px; border-radius: 9px; font-size: 0.78rem; cursor: pointer; flex-shrink: 0; white-space: nowrap; }
+  #jb-app .jb-burn-btn { background: #3a1620; color: #ff9c8f; border: 1px solid var(--danger); font-weight: 700; padding: 8px 10px; border-radius: 9px; font-size: 0.78rem; cursor: pointer; flex-shrink: 0; white-space: nowrap; }
+  #jb-app .jb-unburn-btn { background: var(--success); color: #062420; font-weight: 700; padding: 8px 10px; border-radius: 9px; font-size: 0.78rem; cursor: pointer; flex-shrink: 0; white-space: nowrap; }
 
   #jb-app .jb-admin-catalog { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; max-height: 420px; overflow-y: auto; }
   #jb-app .jb-admin-catalog-item { display: flex; align-items: center; gap: 8px; padding: 8px 10px; background: var(--card); border-radius: 10px; }
   #jb-app .jb-icon-btn { flex-shrink: 0; padding: 7px 10px; border-radius: 8px; font-size: 0.85rem; cursor: pointer; }
   #jb-app .jb-icon-btn.jb-del { background: var(--card2); color: var(--danger); }
   #jb-app .jb-icon-btn.jb-plus { background: var(--card2); color: var(--accent2); }
-  #jb-app .jb-icon-btn.jb-fire { background: var(--card2); color: #ff8a7d; }
-  #jb-app .jb-icon-btn.jb-fire.jb-active { background: #3a1414; border: 1px solid var(--danger); }
+  #jb-app .jb-icon-btn.jb-fire { background: var(--card2); color: #ff9c8f; }
+  #jb-app .jb-icon-btn.jb-fire.jb-active { background: #3a1620; border: 1px solid var(--danger); }
   #jb-app .jb-icon-btn[disabled] { opacity: 0.35; cursor: default; }
 
   #jb-app .jb-toast {
@@ -188,7 +188,7 @@
     border: 1px solid var(--border); font-size: 0.9rem; z-index: 999; max-width: 90vw; text-align: center;
   }
   #jb-app .jb-warn-banner {
-    background: #3a1f1f; border: 1px solid var(--danger); color: #ffd9d4;
+    background: #3a1a24; border: 1px solid var(--danger); color: #ffd9d2;
     border-radius: 12px; padding: 14px; margin: 16px; font-size: 0.88rem;
   }
 </style>
