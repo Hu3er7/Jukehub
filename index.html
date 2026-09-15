@@ -7,6 +7,7 @@
 </head>
 <body style="margin:0;">
 <style>
+  @import url('https://fonts.googleapis.com/css2?family=Anton&display=swap');
   /* ===== Système de demandes de chansons — styles isolés sous #jb-app ===== */
   #jb-app, #jb-app * { box-sizing: border-box; }
   #jb-app {
@@ -46,7 +47,8 @@
     display: flex; align-items: center; justify-content: space-between; gap: 10px; padding-top: 14px;
   }
   #jb-app .jb-top-bar h1 {
-    font-size: 1.5rem; font-weight: 800; color: var(--accent2); letter-spacing: 0.3px;
+    font-family: 'Anton', -apple-system, sans-serif; font-size: 1.7rem; font-weight: 400;
+    color: var(--accent2); letter-spacing: 0.3px;
     overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0;
   }
   #jb-app .jb-lang-bar { display: flex; gap: 6px; flex-shrink: 0; }
@@ -60,9 +62,12 @@
 
   #jb-app section { margin-top: 16px; }
   @media (max-width: 420px) {
-    #jb-app .jb-top-bar h1 { font-size: 1.2rem; }
+    #jb-app .jb-top-bar h1 { font-size: 1.35rem; }
   }
-  #jb-app h2 { font-size: 1.05rem; font-weight: 700; margin-bottom: 10px; color: var(--text); }
+  #jb-app h2 {
+    font-family: 'Anton', -apple-system, sans-serif; font-size: 1.2rem; font-weight: 400;
+    letter-spacing: 0.3px; margin-bottom: 10px; color: var(--text);
+  }
   #jb-app h3 { font-size: 1rem; font-weight: 700; margin-bottom: 8px; color: var(--text); }
 
   #jb-app input[type="text"], #jb-app input[type="email"], #jb-app input[type="password"], #jb-app textarea {
@@ -166,12 +171,12 @@
   #jb-app .jb-folder-title { background: var(--card); border-radius: 10px; padding: 10px 18px; font-weight: 800; font-size: 1.05rem; text-align: center; }
   #jb-app .jb-song-badge { font-size: 0.72rem; color: var(--success); margin-top: 2px; display: inline-block; }
   #jb-app .jb-btn-request {
-    flex-shrink: 0; background: var(--accent); color: #2b0a1a; font-weight: 700;
-    padding: 9px 12px; border-radius: 10px; font-size: 0.85rem; white-space: nowrap; cursor: pointer;
+    flex-shrink: 0; background: none; border: none; color: var(--accent2); font-weight: 800;
+    padding: 8px 2px; font-size: 0.88rem; white-space: nowrap; cursor: pointer;
   }
-  #jb-app .jb-btn-request:active { transform: scale(0.97); }
-  #jb-app .jb-btn-request[disabled] { background: var(--border); color: var(--text-dim); cursor: default; }
-  #jb-app .jb-btn-request.jb-played-btn { background: var(--card2); color: var(--text-dim); }
+  #jb-app .jb-btn-request:active { transform: scale(0.96); }
+  #jb-app .jb-btn-request[disabled] { color: var(--text-dim); cursor: default; }
+  #jb-app .jb-btn-request.jb-played-btn { color: var(--text-dim); }
 
   /* Refroidissement (30 sec après avoir été jouée) */
   #jb-app .jb-cooldown-badge {
@@ -242,6 +247,45 @@
     background: #3a1a24; border: 1px solid var(--danger); color: #ffd9d2;
     border-radius: 12px; padding: 14px; margin: 16px; font-size: 0.88rem;
   }
+
+  /* Tutoriel guidé (skippable à toute étape) */
+  #jb-app .jb-tour { position: fixed; inset: 0; z-index: 1200; pointer-events: none; }
+  #jb-app .jb-tour-spot {
+    position: fixed; border-radius: 14px; border: 2px solid var(--accent);
+    box-shadow: 0 0 0 9999px rgba(8, 4, 16, 0.72);
+    transition: top 0.35s ease, left 0.35s ease, width 0.35s ease, height 0.35s ease;
+  }
+  /* Bouton "boost" fictif utilisé pendant le tutoriel, pour l'expliquer même sans vraie chanson boostée */
+  #jb-app .jb-tour-fake-boost { position: fixed; transform: translateY(-50%); pointer-events: none; z-index: 1201; }
+  #jb-app .jb-tour-card {
+    position: fixed; left: 16px; right: 16px; max-width: 420px; margin: 0 auto;
+    background: var(--card); border: 1px solid var(--accent); border-radius: var(--radius);
+    padding: 16px 18px; pointer-events: auto; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    transition: top 0.35s ease;
+  }
+  #jb-app .jb-tour-card.jb-tour-card-center { top: 50%; transform: translateY(-50%); }
+  #jb-app .jb-tour-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+  #jb-app .jb-tour-dots { display: flex; gap: 6px; }
+  #jb-app .jb-tour-dot { width: 7px; height: 7px; border-radius: 999px; background: var(--border); }
+  #jb-app .jb-tour-dot.jb-tour-dot-active { background: var(--accent2); }
+  #jb-app .jb-tour-lang { display: flex; gap: 6px; flex-shrink: 0; }
+  #jb-app .jb-tour-lang .jb-lang-btn { padding: 4px 10px; font-size: 0.7rem; }
+  #jb-app .jb-tour-card h3 { font-size: 1.05rem; font-weight: 800; color: var(--accent2); margin-bottom: 6px; }
+  #jb-app .jb-tour-card p { font-size: 0.9rem; color: var(--text); line-height: 1.5; }
+  #jb-app .jb-tour-actions { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 14px; }
+  #jb-app .jb-tour-skip {
+    background: none; color: var(--text-dim); font-size: 0.82rem; font-weight: 600;
+    text-decoration: underline; cursor: pointer; padding: 6px 0;
+  }
+  #jb-app .jb-tour-nav { display: flex; gap: 8px; }
+  #jb-app .jb-tour-nav-btn {
+    background: var(--card2); border: 1px solid var(--border); color: var(--text);
+    font-weight: 700; padding: 9px 14px; border-radius: 999px; font-size: 0.85rem; cursor: pointer;
+  }
+  #jb-app .jb-tour-nav-btn.jb-tour-next {
+    background: var(--accent); border-color: var(--accent); color: #2b0a1a;
+  }
+  #jb-app .jb-tour-nav-btn[hidden] { display: none; }
 </style>
 
 <div id="jb-app">
@@ -252,6 +296,7 @@
       <div class="jb-lang-bar">
         <button id="jb-lang-fr" class="jb-lang-btn" data-lang="fr">FR</button>
         <button id="jb-lang-en" class="jb-lang-btn" data-lang="en">EN</button>
+        <button id="jb-tour-btn" class="jb-lang-btn" type="button">❓</button>
       </div>
     </header>
     <p class="jb-subtitle" id="jb-subtitle">Choisis une chanson dans mon répertoire — je la joue en direct !</p>
@@ -286,6 +331,29 @@
     <footer class="jb-footer">
       <a href="#admin" class="jb-admin-link" title="Mode spectacle">🎤</a>
     </footer>
+
+    <div id="jb-tour" class="jb-tour" hidden>
+      <div id="jb-tour-spot" class="jb-tour-spot"></div>
+      <div id="jb-tour-fake-boost" class="jb-slot-boost jb-tour-fake-boost" hidden>🚀 Boost</div>
+      <div id="jb-tour-card" class="jb-tour-card">
+        <div class="jb-tour-top">
+          <div id="jb-tour-dots" class="jb-tour-dots"></div>
+          <div class="jb-tour-lang">
+            <button class="jb-lang-btn" data-lang="fr">FR</button>
+            <button class="jb-lang-btn" data-lang="en">EN</button>
+          </div>
+        </div>
+        <h3 id="jb-tour-title"></h3>
+        <p id="jb-tour-text"></p>
+        <div class="jb-tour-actions">
+          <button id="jb-tour-skip" class="jb-tour-skip"></button>
+          <div class="jb-tour-nav">
+            <button id="jb-tour-prev" class="jb-tour-nav-btn" hidden></button>
+            <button id="jb-tour-next" class="jb-tour-nav-btn jb-tour-next"></button>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <div id="jb-admin" class="jb-view" hidden>
@@ -377,11 +445,30 @@
       played_toggle: (n) => `🎶 Chansons déjà jouées ce soir (${n}) ▾`,
       burned_badge: "🔥❌ Brûlée",
       already_requested: "✅ Demandée",
-      request_btn: "🎶 Je veux l'entendre",
+      request_btn: "▶ Jouer",
       request_added_toast: "🎶 Chanson demandée !",
       error_toast: "Oups, réessaie dans un instant.",
       song_count: (n) => `${n} chanson${n > 1 ? "s" : ""}`,
       admin_link_title: "Mode spectacle",
+      tour_help_title: "Revoir le tutoriel",
+      tour_skip: "Passer le tutoriel",
+      tour_prev: "Précédent",
+      tour_next: "Suivant",
+      tour_done: "Terminé !",
+      tour1_title: "Bienvenue 👋",
+      tour1_text: "Petit tour rapide pour te montrer comment ça marche. Tu peux passer cette étape (ou tout le tutoriel) à tout moment.",
+      tour2_title: "1. Choisir un artiste",
+      tour2_text: "Touche le nom d'un artiste pour voir la liste de ses chansons.",
+      tour2b_title: "2. Choisir une chanson",
+      tour2b_text: "Te voilà dans les chansons de l'artiste. Touche « ▶ Jouer » à côté de celle que tu veux demander. Utilise ⬅ RETOUR pour revenir à la liste des artistes.",
+      tour3_title: "3. Chercher une chanson",
+      tour3_text: "Pas envie de fouiller ? Tape le titre ou le nom de l'artiste ici pour trouver la chanson tout de suite.",
+      tour4_title: "4. Le palmarès",
+      tour4_text: "Le palmarès montre les chansons les plus demandées ce soir, du plus populaire au moins populaire.",
+      tour4b_title: "5. Les boosts",
+      tour4b_text: "Appuie sur 🚀 Boost pour faire monter une chanson dans le classement. Tu as 3 boosts par soirée — utilise-les sur la ou les chansons que tu veux entendre en premier. Ils se libèrent automatiquement une fois la chanson jouée, pour un nouveau boost plus tard dans la soirée.",
+      tour5_title: "6. Changer de langue",
+      tour5_text: "Tu préfères l'anglais ? Touche EN ici en tout temps pour changer la langue du site.",
     },
     en: {
       subtitle: "Pick a song from my repertoire — I'll play it live!",
@@ -399,11 +486,30 @@
       played_toggle: (n) => `🎶 Played tonight (${n}) ▾`,
       burned_badge: "🔥❌ Unavailable",
       already_requested: "✅ Requested",
-      request_btn: "🎶 Request this song",
+      request_btn: "▶ Play",
       request_added_toast: "🎶 Song requested!",
       error_toast: "Oops, try again in a moment.",
       song_count: (n) => `${n} song${n > 1 ? "s" : ""}`,
       admin_link_title: "Show mode",
+      tour_help_title: "Replay the tutorial",
+      tour_skip: "Skip tutorial",
+      tour_prev: "Back",
+      tour_next: "Next",
+      tour_done: "Done!",
+      tour1_title: "Welcome 👋",
+      tour1_text: "A quick tour of how this works. You can skip this step (or the whole tutorial) at any time.",
+      tour2_title: "1. Choose an artist",
+      tour2_text: "Tap an artist's name to see the list of their songs.",
+      tour2b_title: "2. Pick a song",
+      tour2b_text: "You're now in that artist's songs. Tap \"▶ Play\" next to the one you want. Use ⬅ BACK to return to the artist list.",
+      tour3_title: "3. Search for a song",
+      tour3_text: "Don't feel like browsing? Type a title or artist name here to find the song right away.",
+      tour4_title: "4. The leaderboard",
+      tour4_text: "The leaderboard shows tonight's most requested songs, from most to least popular.",
+      tour4b_title: "5. Boosts",
+      tour4b_text: "Tap 🚀 Boost to push a song up the ranking. You get 3 boosts per night — use them on the song(s) you most want to hear next. They're freed up automatically once the song gets played, for a new boost later in the night.",
+      tour5_title: "6. Switching language",
+      tour5_text: "Prefer French? Tap FR here anytime to switch the site's language.",
     },
   };
   let lang = localStorage.getItem("jb_lang") === "en" ? "en" : "fr";
@@ -421,9 +527,12 @@
     document.getElementById("jb-back-btn").textContent = t("back_btn");
     document.getElementById("jb-search-input").placeholder = t("search_placeholder");
     document.querySelector(".jb-admin-link").title = t("admin_link_title");
+    const tourBtn = document.getElementById("jb-tour-btn");
+    if (tourBtn) tourBtn.title = t("tour_help_title");
+    if (!document.getElementById("jb-tour").hidden) renderTourStep();
   }
   applyStaticTranslations();
-  document.querySelectorAll(".jb-lang-btn").forEach((btn) => {
+  document.querySelectorAll(".jb-lang-btn[data-lang]").forEach((btn) => {
     btn.addEventListener("click", () => {
       if (btn.dataset.lang === lang) return;
       lang = btn.dataset.lang;
@@ -432,6 +541,178 @@
       renderAll();
     });
   });
+
+  // ---------- Tutoriel guidé (skippable à toute étape) ----------
+  // Comme pour les demandes et les boosts, "vu" est propre à chaque soirée (nightId) :
+  // le tuto revient automatiquement à chaque nouvelle soirée plutôt que de ne jamais
+  // se réafficher une fois vu une seule fois sur un appareil.
+  function tourSeenKey() {
+    return "jb_tour_seen_" + (nightId || "default");
+  }
+  const TOUR_STEPS = [
+    { target: () => document.querySelector(".jb-top-bar"), titleKey: "tour1_title", textKey: "tour1_text" },
+    {
+      target: () => document.querySelector(".jb-catalog"),
+      titleKey: "tour2_title",
+      textKey: "tour2_text",
+      center: true,
+      before: () => { artistFilter = null; renderCatalog(); },
+    },
+    {
+      target: () => document.querySelector(".jb-catalog"),
+      titleKey: "tour2b_title",
+      textKey: "tour2b_text",
+      center: true,
+      before: () => {
+        const artists = getUniqueArtists();
+        if (artists.length > 0) artistFilter = artists[0].name;
+        renderCatalog();
+      },
+    },
+    { target: () => document.getElementById("jb-search-input"), titleKey: "tour3_title", textKey: "tour3_text" },
+    { target: () => document.querySelector(".jb-palmares"), titleKey: "tour4_title", textKey: "tour4_text", center: true },
+    {
+      target: () => document.getElementById("jb-tour-fake-boost"),
+      titleKey: "tour4b_title",
+      textKey: "tour4b_text",
+      before: () => showFakeBoost(),
+    },
+    { target: () => document.querySelector(".jb-lang-bar"), titleKey: "tour5_title", textKey: "tour5_text" },
+  ];
+  let tourStep = 0;
+  let tourReposition = null;
+
+  function positionTourSpot(rect) {
+    const spot = document.getElementById("jb-tour-spot");
+    const pad = 6;
+    spot.style.left = `${Math.max(4, rect.left - pad)}px`;
+    spot.style.top = `${Math.max(4, rect.top - pad)}px`;
+    spot.style.width = `${rect.width + pad * 2}px`;
+    spot.style.height = `${rect.height + pad * 2}px`;
+  }
+
+  function positionTourCard(rect, centered) {
+    const card = document.getElementById("jb-tour-card");
+    if (centered) {
+      card.classList.add("jb-tour-card-center");
+      card.style.top = "";
+      return;
+    }
+    card.classList.remove("jb-tour-card-center");
+    const margin = 12;
+    const vh = window.innerHeight;
+    const cardH = card.getBoundingClientRect().height;
+    const spaceBelow = vh - rect.bottom;
+    const spaceAbove = rect.top;
+    let top;
+    if (spaceBelow >= cardH + margin || spaceBelow >= spaceAbove) {
+      top = Math.min(rect.bottom + margin, vh - cardH - margin);
+    } else {
+      top = rect.top - cardH - margin;
+    }
+    card.style.top = `${Math.max(margin, top)}px`;
+  }
+
+  function renderTourStep() {
+    const step = TOUR_STEPS[tourStep];
+    if (!step) return;
+    document.getElementById("jb-tour-title").textContent = t(step.titleKey);
+    document.getElementById("jb-tour-text").textContent = t(step.textKey);
+    document.getElementById("jb-tour-skip").textContent = t("tour_skip");
+    document.getElementById("jb-tour-prev").textContent = t("tour_prev");
+    document.getElementById("jb-tour-next").textContent = tourStep === TOUR_STEPS.length - 1 ? t("tour_done") : t("tour_next");
+    document.getElementById("jb-tour-prev").hidden = tourStep === 0;
+
+    const fakeBoost = document.getElementById("jb-tour-fake-boost");
+    if (fakeBoost && !fakeBoost.hidden) fakeBoost.textContent = `🚀 ${t("boost_btn")}`;
+
+    const dots = document.getElementById("jb-tour-dots");
+    dots.innerHTML = "";
+    TOUR_STEPS.forEach((_, i) => {
+      const dot = document.createElement("span");
+      dot.className = "jb-tour-dot" + (i === tourStep ? " jb-tour-dot-active" : "");
+      dots.appendChild(dot);
+    });
+
+    const target = step.target();
+    if (!target) return;
+    const place = () => {
+      const rect = target.getBoundingClientRect();
+      positionTourSpot(rect);
+      positionTourCard(rect, !!step.center);
+    };
+    place(); // positionnement immédiat (évite un flash), affiné une fois le scroll terminé
+    target.scrollIntoView({ behavior: "smooth", block: "center" });
+    setTimeout(place, 350);
+    tourReposition = place;
+  }
+
+  // Bouton "boost" fictif, ajouté temporairement sur la 1ère ligne du palmarès pour
+  // pouvoir l'expliquer même quand aucune vraie chanson n'a encore été boostée.
+  function showFakeBoost() {
+    const row = document.querySelector("#jb-palmares-list .jb-slot");
+    const fake = document.getElementById("jb-tour-fake-boost");
+    if (!row || !fake) return;
+    const place = () => {
+      const rect = row.getBoundingClientRect();
+      fake.style.top = `${rect.top + rect.height / 2}px`;
+      fake.style.right = `${window.innerWidth - rect.right + 4}px`;
+    };
+    fake.textContent = `🚀 ${t("boost_btn")}`;
+    fake.hidden = false;
+    place();
+    row.scrollIntoView({ behavior: "smooth", block: "center" });
+    setTimeout(place, 350);
+  }
+  function hideFakeBoost() {
+    const fake = document.getElementById("jb-tour-fake-boost");
+    if (fake) fake.hidden = true;
+  }
+
+  function showTourStep(i) {
+    if (i < 0 || i >= TOUR_STEPS.length) return;
+    hideFakeBoost();
+    tourStep = i;
+    const step = TOUR_STEPS[tourStep];
+    if (step.before) step.before();
+    renderTourStep();
+  }
+
+  function startTour() {
+    tourStep = 0;
+    document.getElementById("jb-tour").hidden = false;
+    showTourStep(0);
+    window.addEventListener("resize", handleTourReposition);
+    window.addEventListener("scroll", handleTourReposition, true);
+  }
+
+  function endTour() {
+    document.getElementById("jb-tour").hidden = true;
+    hideFakeBoost();
+    localStorage.setItem(tourSeenKey(), "1");
+    window.removeEventListener("resize", handleTourReposition);
+    window.removeEventListener("scroll", handleTourReposition, true);
+  }
+
+  function handleTourReposition() {
+    if (tourReposition) tourReposition();
+  }
+
+  document.getElementById("jb-tour-next").addEventListener("click", () => {
+    if (tourStep === TOUR_STEPS.length - 1) { endTour(); return; }
+    showTourStep(tourStep + 1);
+  });
+  document.getElementById("jb-tour-prev").addEventListener("click", () => {
+    showTourStep(tourStep - 1);
+  });
+  document.getElementById("jb-tour-skip").addEventListener("click", endTour);
+  document.getElementById("jb-tour-btn").addEventListener("click", startTour);
+
+  // Le check est fait dans le setTimeout (pas tout de suite) pour être certain que
+  // "nightId" (déclaré plus bas) a déjà été initialisé au moment de le lire.
+  setTimeout(() => {
+    if (localStorage.getItem(tourSeenKey()) !== "1") startTour();
+  }, 1200);
 
   if (firebaseConfig.apiKey === "REMPLACE_MOI") {
     const app = document.getElementById("jb-app");
@@ -803,10 +1084,13 @@
         anyMoved = true;
         movingEls.push(el);
         el.classList.add("jb-slot-moving");
-        // Celle qui parcourt la plus grande distance passe par-dessus toutes les autres
-        // (y compris les autres rangées qui ne font que glisser d'une position), peu
-        // importe leur ordre dans le DOM.
-        el.style.zIndex = String(100 + Math.round(Math.max(Math.abs(dx), Math.abs(dy))));
+        // La chanson qui MONTE (dy > 0, se rapproche du haut du classement) passe toujours
+        // par-dessus celles qui descendent — peu importe la distance ou l'ordre dans le DOM —
+        // et parmi des chansons qui vont dans le même sens, celle qui bouge le plus reste
+        // au-dessus des autres.
+        const distance = Math.round(Math.max(Math.abs(dx), Math.abs(dy)));
+        const directionBase = dy > 0 ? 10000 : 0;
+        el.style.zIndex = String(directionBase + distance);
         el.style.transition = "none";
         el.style.transform = `translate(${dx}px, ${dy}px)`;
       }
@@ -954,7 +1238,8 @@
     } else if (isInCooldown(v)) {
       btnHtml = `<div class="jb-cooldown-badge" data-until="${v.cooldownUntil}"><span class="jb-cooldown-num">${remainingSeconds(v)}</span>sec</div>`;
     } else if (requested) {
-      btnHtml = `<span class="jb-btn-request" disabled>${t("already_requested")}</span>`;
+      const remaining = boostsRemaining();
+      btnHtml = `<button class="jb-slot-boost" data-boost="${escapeHtml(song.id)}" ${remaining <= 0 ? "disabled" : ""} aria-label="${t("boost_aria")}" title="${t("boost_aria")}">🚀 ${t("boost_btn")}</button>`;
     } else {
       btnHtml = `<button class="jb-btn-request" data-req="${song.id}">${t("request_btn")}</button>`;
     }
@@ -974,6 +1259,15 @@
         const id = btn.dataset.req;
         const song = catalogSongs.find((s) => s.id === id);
         if (song) requestSong(song);
+      });
+    });
+    // Bouton boost affiché à la place de "Demandée" : permet de booster une chanson même
+    // si elle ne figure pas dans le top 10 du palmarès. On rafraîchit le catalogue après
+    // coup pour que le bouton se désactive dès que les 3 boosts sont épuisés.
+    list.querySelectorAll("[data-boost]").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        await boostSong(btn.dataset.boost);
+        renderCatalog();
       });
     });
   }
