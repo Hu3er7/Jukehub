@@ -81,9 +81,18 @@
   #jb-app .jb-rank-title { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   #jb-app .jb-rank-artist { color: var(--text-dim); font-size: 0.85rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   #jb-app .jb-rank-count { font-weight: 700; color: var(--accent2); font-size: 0.9rem; flex-shrink: 0; white-space: nowrap; }
-  #jb-app .jb-palmares-heading { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
-  #jb-app .jb-palmares-heading h2 { margin-bottom: 0; }
-  #jb-app .jb-boost-remaining { font-size: 0.82rem; font-weight: 700; color: var(--accent2); background: var(--card); border: 1px solid var(--border); border-radius: 999px; padding: 5px 12px; white-space: nowrap; }
+  #jb-app .jb-palmares-heading { display: flex; align-items: center; justify-content: space-between; flex-wrap: nowrap; gap: 8px; margin-bottom: 10px; }
+  #jb-app .jb-palmares-heading h2 {
+    margin-bottom: 0; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  #jb-app .jb-boost-remaining {
+    flex-shrink: 0; font-size: 0.82rem; font-weight: 700; color: var(--accent2); background: var(--card);
+    border: 1px solid var(--border); border-radius: 999px; padding: 5px 12px; white-space: nowrap;
+  }
+  @media (max-width: 420px) {
+    #jb-app .jb-palmares-heading h2 { font-size: 1rem; }
+    #jb-app .jb-boost-remaining { font-size: 0.72rem; padding: 4px 9px; }
+  }
 
   /* Palmarès public : grille 2 colonnes x 5 positions */
   #jb-app .jb-palmares-grid {
@@ -98,9 +107,14 @@
     font-weight: 800; font-size: 0.9rem; color: var(--accent2); width: 18px;
     flex-shrink: 0; text-align: center;
   }
-  #jb-app .jb-slot-info { flex: 1; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 0.85rem; }
-  #jb-app .jb-slot-title { font-weight: 700; }
-  #jb-app .jb-slot-artist { color: var(--text-dim); font-weight: 400; }
+  #jb-app .jb-slot-info { flex: 1; min-width: 0; display: flex; flex-direction: column; overflow: hidden; }
+  #jb-app .jb-slot-title {
+    font-weight: 700; font-size: 0.85rem; overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
+  }
+  #jb-app .jb-slot-artist {
+    color: var(--text-dim); font-weight: 400; font-size: 0.74rem; overflow: hidden;
+    white-space: nowrap; text-overflow: ellipsis;
+  }
   #jb-app .jb-slot-placeholder { color: var(--text-dim); }
   #jb-app .jb-slot-count { flex-shrink: 0; font-weight: 700; color: var(--accent2); font-size: 0.8rem; white-space: nowrap; }
   #jb-app .jb-slot-boost {
@@ -112,7 +126,8 @@
   @media (max-width: 420px) {
     #jb-app .jb-palmares-grid { gap: 2px 8px; }
     #jb-app .jb-slot { gap: 5px; padding: 6px 2px; }
-    #jb-app .jb-slot-info { font-size: 0.78rem; }
+    #jb-app .jb-slot-title { font-size: 0.78rem; }
+    #jb-app .jb-slot-artist { font-size: 0.68rem; }
   }
 
   /* Catalogue */
@@ -669,7 +684,8 @@
         slot.innerHTML = `
           <span class="jb-slot-rank">${rank}</span>
           <span class="jb-slot-info">
-            <span class="jb-slot-title">${escapeHtml(v.title)}</span>${v.artist ? ` <span class="jb-slot-artist">· ${escapeHtml(v.artist)}</span>` : ""}
+            <span class="jb-slot-title">${escapeHtml(v.title)}</span>
+            ${v.artist ? `<span class="jb-slot-artist">${escapeHtml(v.artist)}</span>` : ""}
           </span>
           <span class="jb-slot-count">${v.requests}</span>
           <button class="jb-slot-boost" data-boost="${escapeHtml(id)}" ${remaining <= 0 ? "disabled" : ""} aria-label="${t("boost_aria")}" title="${t("boost_aria")}">🚀</button>`;
