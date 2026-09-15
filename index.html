@@ -1028,6 +1028,7 @@
   }, (err) => console.error("catalog onSnapshot", err));
 
   onSnapshot(collection(db, "votes"), (snap) => {
+    lastLiveSnapshotAt = Date.now(); // confirme que l'écouteur "votes" reçoit bien des données
     votes = {};
     snap.forEach((d) => { votes[d.id] = d.data(); });
     renderAll();
@@ -1399,6 +1400,7 @@
   async function requestSong(song) {
     if (alreadyRequested(song.id)) return;
     const tokenAtRequest = roundToken(votes[song.id]);
+    const countBefore = votes[song.id]?.requests || 0;
     const ref = doc(db, "votes", song.id);
     try {
       await runTransaction(db, async (tx) => {
@@ -1416,6 +1418,18 @@
       saveRequestedToStorage();
       renderCatalog();
       showToast(t("request_added_toast"));
+      // Contrairement à un boost (updateDoc, appliqué localement tout de suite), une
+      // transaction Firestore ne passe pas par le cache optimiste local : la chanson ne
+      // s'affichera dans le palmarès que lorsque l'écouteur temps réel "votes" recevra la
+      // confirmation du serveur. Si la connexion est restée "collée" (Safari iOS en
+      // arrière-plan, Wi-Fi instable dans le bar), ça peut ne jamais arriver tout seul — on
+      // vérifie donc après coup, et on force une reconnexion si rien n'est arrivé, pour que
+      // le client n'ait pas à rafraîchir lui-même la page.
+      const songId = song.id;
+      setTimeout(() => {
+        const nowCount = votes[songId]?.requests || 0;
+        if (nowCount <= countBefore) forceReconnect();
+      }, 2500);
     } catch (e) {
       console.error(e);
       showToast(t("error_toast"));
