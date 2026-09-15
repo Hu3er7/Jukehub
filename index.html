@@ -155,6 +155,13 @@
   #jb-app .jb-song-info { flex: 1; min-width: 0; }
   #jb-app .jb-song-title { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   #jb-app .jb-song-artist { color: var(--text-dim); font-size: 0.83rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  #jb-app .jb-song-votes {
+    font-weight: 800; font-size: 0.95rem; color: var(--accent2); width: 22px;
+    flex-shrink: 0; text-align: center;
+  }
+  @media (max-width: 420px) {
+    #jb-app .jb-song-votes { width: 16px; font-size: 0.85rem; }
+  }
 
   /* Dossiers d'artistes */
   #jb-app .jb-artist-row { cursor: pointer; }
@@ -434,6 +441,7 @@
       palmares_title: "🏆 Palmarès de la soirée",
       palmares_empty: "Aucune demande pour l'instant — sois le premier à voter !",
       boost_remaining: (n) => `🚀 Boosts : ${n}`,
+      boost_remaining_countdown: (time) => `🚀 Boosts : ${time}`,
       boost_used_up: "Tu as utilisé tes 3 boosts pour ce soir !",
       boost_added: "🚀 Boost ajouté !",
       boost_aria: "Booster cette chanson",
@@ -475,6 +483,7 @@
       palmares_title: "🏆 Tonight's Top Requests",
       palmares_empty: "No requests yet — be the first to vote!",
       boost_remaining: (n) => `🚀 Boosts : ${n}`,
+      boost_remaining_countdown: (time) => `🚀 Boosts : ${time}`,
       boost_used_up: "You've used all 3 of your boosts for tonight!",
       boost_added: "🚀 Boost added!",
       boost_aria: "Boost this song",
@@ -750,9 +759,14 @@
   // détection de changement fragile, juste une comparaison à chaque rendu.
   let requestedRounds = {};
   const MAX_BOOSTS = 3; // nombre maximum de boosts par client, par soirée
-  // boostUsage : songId -> { count, token } — boosts actuellement "verrouillés" sur cette chanson
-  // (token = roundToken au moment du boost ; libéré automatiquement dès que la chanson est jouée).
-  let boostUsage = {};
+  const BOOST_RESET_MS = 15 * 60 * 1000; // délai avant le renouvellement des 3 boosts, une fois épuisés
+  // boostCount : nombre de boosts utilisés depuis le dernier renouvellement. Ne dépend PAS du
+  // sort de la chanson boostée (jouée, remise au répertoire, etc.) — seul le décompte de 15 min
+  // (boostResetAt) peut le remettre à zéro, pour que le crédit de 3 boosts soit fiable.
+  let boostCount = 0;
+  // boostResetAt : horodatage (ms) auquel les 3 boosts seront renouvelés, une fois que le client
+  // les a tous utilisés. 0 tant que le client a au moins un boost disponible.
+  let boostResetAt = 0;
   let artistFilter = null; // nom d'artiste actif ("dossier" ouvert), ou null
   let isAdmin = false;
 
@@ -825,42 +839,64 @@
   function loadBoostsFromStorage() {
     try {
       const raw = localStorage.getItem(boostStorageKey());
-      boostUsage = raw ? JSON.parse(raw) : {};
+      boostCount = raw ? Number(raw) || 0 : 0;
     } catch (e) {
-      boostUsage = {};
+      boostCount = 0;
     }
   }
   function saveBoostsToStorage() {
     try {
-      localStorage.setItem(boostStorageKey(), JSON.stringify(boostUsage));
+      localStorage.setItem(boostStorageKey(), String(boostCount));
     } catch (e) {}
   }
-  // Compte les boosts actuellement "verrouillés", en libérant au passage ceux dont la
-  // chanson a été jouée depuis le boost (son jeton de tour a changé).
-  function activeBoostsCount() {
-    let total = 0;
-    let changed = false;
-    Object.keys(boostUsage).forEach((id) => {
-      const entry = boostUsage[id];
-      if (entry.token === roundToken(votes[id])) {
-        total += entry.count;
-      } else {
-        delete boostUsage[id];
-        changed = true;
-      }
-    });
-    if (changed) saveBoostsToStorage();
-    return total;
+  function boostResetKey() {
+    return "jb_boost_reset_" + (nightId || "default");
+  }
+  function loadBoostResetFromStorage() {
+    try {
+      const raw = localStorage.getItem(boostResetKey());
+      boostResetAt = raw ? Number(raw) || 0 : 0;
+    } catch (e) {
+      boostResetAt = 0;
+    }
+  }
+  function saveBoostResetToStorage() {
+    try {
+      if (boostResetAt) localStorage.setItem(boostResetKey(), String(boostResetAt));
+      else localStorage.removeItem(boostResetKey());
+    } catch (e) {}
+  }
+  // Si le délai de 15 minutes est écoulé depuis que les 3 boosts ont été épuisés,
+  // les renouvelle intégralement. C'est la SEULE façon de récupérer des boosts —
+  // peu importe ce qui arrive ensuite à la chanson boostée (jouée, remise au
+  // répertoire par l'admin, etc.), ça ne doit jamais rendre un boost avant l'heure.
+  function maybeRenewBoosts() {
+    if (boostResetAt && Date.now() >= boostResetAt) {
+      boostCount = 0;
+      boostResetAt = 0;
+      saveBoostsToStorage();
+      saveBoostResetToStorage();
+    }
   }
   function boostsRemaining() {
-    return Math.max(0, MAX_BOOSTS - activeBoostsCount());
+    maybeRenewBoosts();
+    return Math.max(0, MAX_BOOSTS - boostCount);
   }
-  // Met à jour uniquement le badge "Boosts : N" (sans toucher au reste du palmarès), pour
-  // qu'il reflète tout de suite le nombre de boosts local du client, même avant que
-  // Firestore ne redéclenche un rendu complet.
+  // Met à jour uniquement le badge "Boosts : N" (ou le décompte "Boosts : MM:SS" une fois les
+  // 3 boosts épuisés), sans toucher au reste du palmarès, pour qu'il reflète tout de suite
+  // l'état local du client, même avant que Firestore ne redéclenche un rendu complet.
   function updateBoostBadge(remaining) {
     const remainingEl = document.getElementById("jb-boost-remaining");
-    if (remainingEl) remainingEl.textContent = t("boost_remaining", remaining ?? boostsRemaining());
+    if (!remainingEl) return;
+    const r = remaining ?? boostsRemaining();
+    if (r <= 0 && boostResetAt > Date.now()) {
+      const totalSec = Math.max(0, Math.ceil((boostResetAt - Date.now()) / 1000));
+      const mm = String(Math.floor(totalSec / 60)).padStart(2, "0");
+      const ss = String(totalSec % 60).padStart(2, "0");
+      remainingEl.textContent = t("boost_remaining_countdown", `${mm}:${ss}`);
+    } else {
+      remainingEl.textContent = t("boost_remaining", r);
+    }
   }
   async function boostSong(id) {
     if (palmaresAnimating) return;
@@ -870,13 +906,16 @@
       showToast(t("boost_used_up"));
       return;
     }
-    const token = roundToken(v);
     try {
       await updateDoc(doc(db, "votes", id), { requests: increment(1) });
-      const existing = boostUsage[id];
-      boostUsage[id] = { count: (existing && existing.token === token ? existing.count : 0) + 1, token };
+      boostCount += 1;
       saveBoostsToStorage();
-      updateBoostBadge();
+      const remainingNow = boostsRemaining();
+      if (remainingNow <= 0 && !boostResetAt) {
+        boostResetAt = Date.now() + BOOST_RESET_MS;
+        saveBoostResetToStorage();
+      }
+      updateBoostBadge(remainingNow);
       showToast(t("boost_added"));
     } catch (e) {
       console.error(e);
@@ -944,6 +983,7 @@
       nightId = newNightId;
       loadRequestedFromStorage();
       loadBoostsFromStorage();
+      loadBoostResetFromStorage();
       renderAll();
     }
   }, (err) => console.error("config onSnapshot", err));
@@ -980,6 +1020,13 @@
       if (numEl) numEl.textContent = remaining;
       if (remaining <= 0) anyExpired = true;
     });
+    if (boostResetAt) {
+      if (now >= boostResetAt) {
+        anyExpired = true; // déclenche un rendu complet pour réactiver les boutons boost
+      } else {
+        updateBoostBadge();
+      }
+    }
     if (anyExpired) renderAll();
   }, 1000);
 
@@ -1244,7 +1291,9 @@
       btnHtml = `<button class="jb-btn-request" data-req="${song.id}">${t("request_btn")}</button>`;
     }
 
+    const voteCount = v?.requests || 0;
     li.innerHTML = `
+      <span class="jb-song-votes">${voteCount}</span>
       <div class="jb-song-info">
         <div class="jb-song-title">${escapeHtml(song.title)}</div>
         ${showArtist && song.artist ? `<div class="jb-song-artist">${escapeHtml(song.artist)}</div>` : ""}
