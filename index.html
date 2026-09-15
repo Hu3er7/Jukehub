@@ -759,11 +759,10 @@
   // détection de changement fragile, juste une comparaison à chaque rendu.
   let requestedRounds = {};
   const MAX_BOOSTS = 3; // nombre maximum de boosts par client, par soirée
-  const BOOST_RESET_MS = 15 * 60 * 1000; // délai avant le renouvellement des 3 boosts, une fois épuisés
-  // boostCount : nombre de boosts utilisés depuis le dernier renouvellement. Ne dépend PAS du
-  // sort de la chanson boostée (jouée, remise au répertoire, etc.) — seul le décompte de 15 min
-  // (boostResetAt) peut le remettre à zéro, pour que le crédit de 3 boosts soit fiable.
-  let boostCount = 0;
+  const BOOST_RESET_MS = 15 * 60 * 1000; // filet de sécurité : renouvelle les 3 boosts après ce délai, même si aucune chanson boostée n'a joué
+  // boostUsage : songId -> { count, token } — boosts actuellement "verrouillés" sur cette chanson
+  // (token = roundToken au moment du boost ; libéré automatiquement dès que la chanson est jouée).
+  let boostUsage = {};
   // boostResetAt : horodatage (ms) auquel les 3 boosts seront renouvelés, une fois que le client
   // les a tous utilisés. 0 tant que le client a au moins un boost disponible.
   let boostResetAt = 0;
@@ -839,14 +838,14 @@
   function loadBoostsFromStorage() {
     try {
       const raw = localStorage.getItem(boostStorageKey());
-      boostCount = raw ? Number(raw) || 0 : 0;
+      boostUsage = raw ? JSON.parse(raw) : {};
     } catch (e) {
-      boostCount = 0;
+      boostUsage = {};
     }
   }
   function saveBoostsToStorage() {
     try {
-      localStorage.setItem(boostStorageKey(), String(boostCount));
+      localStorage.setItem(boostStorageKey(), JSON.stringify(boostUsage));
     } catch (e) {}
   }
   function boostResetKey() {
@@ -866,13 +865,29 @@
       else localStorage.removeItem(boostResetKey());
     } catch (e) {}
   }
-  // Si le délai de 15 minutes est écoulé depuis que les 3 boosts ont été épuisés,
-  // les renouvelle intégralement. C'est la SEULE façon de récupérer des boosts —
-  // peu importe ce qui arrive ensuite à la chanson boostée (jouée, remise au
-  // répertoire par l'admin, etc.), ça ne doit jamais rendre un boost avant l'heure.
+  // Compte les boosts actuellement "verrouillés", en libérant au passage ceux dont la
+  // chanson a été jouée depuis le boost (son jeton de tour a changé) — dès que l'admin
+  // marque la chanson boostée comme jouée, ce boost redevient disponible immédiatement.
+  function activeBoostsCount() {
+    let total = 0;
+    let changed = false;
+    Object.keys(boostUsage).forEach((id) => {
+      const entry = boostUsage[id];
+      if (entry.token === roundToken(votes[id])) {
+        total += entry.count;
+      } else {
+        delete boostUsage[id];
+        changed = true;
+      }
+    });
+    if (changed) saveBoostsToStorage();
+    return total;
+  }
+  // Filet de sécurité : si le délai de 15 minutes est écoulé depuis que les 3 boosts ont
+  // été épuisés, les renouvelle intégralement même si les chansons boostées n'ont pas joué.
   function maybeRenewBoosts() {
     if (boostResetAt && Date.now() >= boostResetAt) {
-      boostCount = 0;
+      boostUsage = {};
       boostResetAt = 0;
       saveBoostsToStorage();
       saveBoostResetToStorage();
@@ -880,7 +895,14 @@
   }
   function boostsRemaining() {
     maybeRenewBoosts();
-    return Math.max(0, MAX_BOOSTS - boostCount);
+    const remaining = Math.max(0, MAX_BOOSTS - activeBoostsCount());
+    // Si un boost s'est libéré parce que sa chanson a joué avant la fin des 15 min,
+    // le décompte n'a plus lieu d'être : on l'annule.
+    if (remaining > 0 && boostResetAt) {
+      boostResetAt = 0;
+      saveBoostResetToStorage();
+    }
+    return remaining;
   }
   // Met à jour uniquement le badge "Boosts : N" (ou le décompte "Boosts : MM:SS" une fois les
   // 3 boosts épuisés), sans toucher au reste du palmarès, pour qu'il reflète tout de suite
@@ -906,9 +928,11 @@
       showToast(t("boost_used_up"));
       return;
     }
+    const token = roundToken(v);
     try {
       await updateDoc(doc(db, "votes", id), { requests: increment(1) });
-      boostCount += 1;
+      const existing = boostUsage[id];
+      boostUsage[id] = { count: (existing && existing.token === token ? existing.count : 0) + 1, token };
       saveBoostsToStorage();
       const remainingNow = boostsRemaining();
       if (remainingNow <= 0 && !boostResetAt) {
