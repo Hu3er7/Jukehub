@@ -68,7 +68,7 @@
   #jb-app .jb-empty { color: var(--text-dim); font-size: 0.9rem; padding: 10px 2px; }
 
   /* Palmarès */
-  #jb-app .jb-palmares-list, #jb-app .jb-admin-palmares { display: flex; flex-direction: column; gap: 8px; }
+  #jb-app .jb-admin-palmares { display: flex; flex-direction: column; gap: 8px; }
   #jb-app .jb-rank-item {
     display: flex; align-items: center; gap: 12px; background: var(--card);
     border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 14px;
@@ -84,12 +84,36 @@
   #jb-app .jb-palmares-heading { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
   #jb-app .jb-palmares-heading h2 { margin-bottom: 0; }
   #jb-app .jb-boost-remaining { font-size: 0.82rem; font-weight: 700; color: var(--accent2); background: var(--card); border: 1px solid var(--border); border-radius: 999px; padding: 5px 12px; white-space: nowrap; }
-  #jb-app .jb-boost-btn {
-    flex-shrink: 0; background: var(--card2); border: 1px solid var(--accent); color: var(--accent2);
-    font-weight: 700; padding: 8px 12px; border-radius: 10px; font-size: 0.8rem; white-space: nowrap; cursor: pointer;
+
+  /* Palmarès public : grille 2 colonnes x 5 positions */
+  #jb-app .jb-palmares-grid {
+    display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: repeat(5, auto);
+    grid-auto-flow: column; gap: 2px 14px;
   }
-  #jb-app .jb-boost-btn:active { transform: scale(0.97); }
-  #jb-app .jb-boost-btn[disabled] { border-color: var(--border); color: var(--text-dim); cursor: default; }
+  #jb-app .jb-slot {
+    display: flex; align-items: center; gap: 8px; padding: 7px 2px;
+    border-bottom: 1px solid var(--border); min-width: 0;
+  }
+  #jb-app .jb-slot-rank {
+    font-weight: 800; font-size: 0.9rem; color: var(--accent2); width: 18px;
+    flex-shrink: 0; text-align: center;
+  }
+  #jb-app .jb-slot-info { flex: 1; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 0.85rem; }
+  #jb-app .jb-slot-title { font-weight: 700; }
+  #jb-app .jb-slot-artist { color: var(--text-dim); font-weight: 400; }
+  #jb-app .jb-slot-placeholder { color: var(--text-dim); }
+  #jb-app .jb-slot-count { flex-shrink: 0; font-weight: 700; color: var(--accent2); font-size: 0.8rem; white-space: nowrap; }
+  #jb-app .jb-slot-boost {
+    flex-shrink: 0; background: none; border: none; color: var(--accent2);
+    font-size: 1.05rem; line-height: 1; padding: 4px; cursor: pointer;
+  }
+  #jb-app .jb-slot-boost:active { transform: scale(0.9); }
+  #jb-app .jb-slot-boost[disabled] { color: var(--text-dim); cursor: default; opacity: 0.5; }
+  @media (max-width: 420px) {
+    #jb-app .jb-palmares-grid { gap: 2px 8px; }
+    #jb-app .jb-slot { gap: 5px; padding: 6px 2px; }
+    #jb-app .jb-slot-info { font-size: 0.78rem; }
+  }
 
   /* Catalogue */
   #jb-app .jb-catalog-list { display: flex; flex-direction: column; gap: 8px; max-height: none; }
@@ -211,7 +235,7 @@
         <h2 id="jb-palmares-title">🏆 Palmarès de la soirée</h2>
         <div id="jb-boost-remaining" class="jb-boost-remaining">🚀 Boosts restants : 3</div>
       </div>
-      <ol id="jb-palmares-list" class="jb-palmares-list"></ol>
+      <div id="jb-palmares-list" class="jb-palmares-grid"></div>
       <p id="jb-palmares-empty" class="jb-empty" hidden>Aucune demande pour l'instant — sois le premier à voter !</p>
     </section>
 
@@ -318,6 +342,7 @@
       boost_remaining: (n) => `🚀 Boosts restants : ${n}`,
       boost_used_up: "Tu as utilisé tes 3 boosts pour ce soir !",
       boost_added: "🚀 Boost ajouté !",
+      boost_aria: "Booster cette chanson",
       catalog_title: "🎵 Répertoire complet",
       back_btn: "⬅ RETOUR",
       search_placeholder: "🔍 Cherche un titre ou un artiste…",
@@ -338,6 +363,7 @@
       boost_remaining: (n) => `🚀 Boosts left: ${n}`,
       boost_used_up: "You've used all 3 of your boosts for tonight!",
       boost_added: "🚀 Boost added!",
+      boost_aria: "Boost this song",
       catalog_title: "🎵 Full Song List",
       back_btn: "⬅ BACK",
       search_placeholder: "🔍 Search a title or artist…",
@@ -628,26 +654,33 @@
     const ranked = Object.entries(votes)
       .filter(([, v]) => v.requests > 0 && !isUnavailable(v))
       .sort((a, b) => b[1].requests - a[1].requests)
-      .slice(0, 20);
+      .slice(0, 10);
 
     list.innerHTML = "";
-    empty.hidden = ranked.length > 0;
+    empty.hidden = true;
 
-    ranked.forEach(([id, v], i) => {
+    for (let i = 0; i < 10; i++) {
       const rank = i + 1;
-      const li = document.createElement("li");
-      li.className = "jb-rank-item" + (rank <= 3 ? ` jb-top${rank}` : "");
-      const medal = rank === 1 ? "🥇" : rank === 2 ? "🥈" : rank === 3 ? "🥉" : rank;
-      li.innerHTML = `
-        <div class="jb-rank-num">${medal}</div>
-        <div class="jb-rank-info">
-          <div class="jb-rank-title">${escapeHtml(v.title)}</div>
-          <div class="jb-rank-artist">${escapeHtml(v.artist || "")}</div>
-        </div>
-        <button class="jb-boost-btn" data-boost="${escapeHtml(id)}" ${remaining <= 0 ? "disabled" : ""}>🚀 Boost</button>
-        <div class="jb-rank-count">${v.requests} 🙌</div>`;
-      list.appendChild(li);
-    });
+      const entry = ranked[i];
+      const slot = document.createElement("div");
+      if (entry) {
+        const [id, v] = entry;
+        slot.className = "jb-slot";
+        slot.innerHTML = `
+          <span class="jb-slot-rank">${rank}</span>
+          <span class="jb-slot-info">
+            <span class="jb-slot-title">${escapeHtml(v.title)}</span>${v.artist ? ` <span class="jb-slot-artist">· ${escapeHtml(v.artist)}</span>` : ""}
+          </span>
+          <span class="jb-slot-count">${v.requests}</span>
+          <button class="jb-slot-boost" data-boost="${escapeHtml(id)}" ${remaining <= 0 ? "disabled" : ""} aria-label="${t("boost_aria")}" title="${t("boost_aria")}">🚀</button>`;
+      } else {
+        slot.className = "jb-slot jb-slot-empty";
+        slot.innerHTML = `
+          <span class="jb-slot-rank">${rank}</span>
+          <span class="jb-slot-info jb-slot-placeholder">—</span>`;
+      }
+      list.appendChild(slot);
+    }
 
     list.querySelectorAll("[data-boost]").forEach((btn) => {
       btn.addEventListener("click", () => boostSong(btn.dataset.boost));
@@ -1153,4 +1186,5 @@
     return String(str).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   }
 </script>
-</body></html>
+</body>
+</html>
