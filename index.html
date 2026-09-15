@@ -319,6 +319,7 @@
       boost_used_up: "Tu as utilisé tes 3 boosts pour ce soir !",
       boost_added: "🚀 Boost ajouté !",
       catalog_title: "🎵 Répertoire complet",
+      back_btn: "⬅ RETOUR",
       search_placeholder: "🔍 Cherche un titre ou un artiste…",
       catalog_empty: "Aucun résultat pour cette recherche.",
       played_toggle: (n) => `🎶 Chansons déjà jouées ce soir (${n}) ▾`,
@@ -338,6 +339,7 @@
       boost_used_up: "You've used all 3 of your boosts for tonight!",
       boost_added: "🚀 Boost added!",
       catalog_title: "🎵 Full Song List",
+      back_btn: "⬅ BACK",
       search_placeholder: "🔍 Search a title or artist…",
       catalog_empty: "No results for this search.",
       played_toggle: (n) => `🎶 Played tonight (${n}) ▾`,
@@ -362,6 +364,7 @@
     document.getElementById("jb-subtitle").textContent = t("subtitle");
     document.getElementById("jb-palmares-title").textContent = t("palmares_title");
     document.getElementById("jb-catalog-title").textContent = t("catalog_title");
+    document.getElementById("jb-back-btn").textContent = t("back_btn");
     document.getElementById("jb-search-input").placeholder = t("search_placeholder");
     document.querySelector(".jb-admin-link").title = t("admin_link_title");
   }
