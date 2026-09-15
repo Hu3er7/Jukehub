@@ -122,16 +122,18 @@
   }
   #jb-app .jb-slot-placeholder { color: var(--text-dim); }
   #jb-app .jb-slot-boost {
-    flex-shrink: 0; margin-left: auto; background: none; border: none; color: var(--accent2);
-    font-size: 1.15rem; line-height: 1; padding: 2px; cursor: pointer;
+    flex-shrink: 0; margin-left: auto; background: var(--card2); border: 1px solid var(--accent);
+    color: var(--accent2); font-weight: 700; font-size: 0.8rem; line-height: 1; white-space: nowrap;
+    padding: 7px 12px; border-radius: 999px; cursor: pointer;
   }
-  #jb-app .jb-slot-boost:active { transform: scale(0.9); }
-  #jb-app .jb-slot-boost[disabled] { color: var(--text-dim); cursor: default; opacity: 0.5; }
+  #jb-app .jb-slot-boost:active { transform: scale(0.96); }
+  #jb-app .jb-slot-boost[disabled] { border-color: var(--border); color: var(--text-dim); cursor: default; opacity: 0.6; }
   @media (max-width: 420px) {
-    #jb-app .jb-slot { gap: 8px; padding: 8px 1px; }
-    #jb-app .jb-slot-votes { width: 18px; font-size: 0.85rem; }
-    #jb-app .jb-slot-title { font-size: 0.85rem; }
-    #jb-app .jb-slot-artist { font-size: 0.72rem; }
+    #jb-app .jb-slot { gap: 6px; padding: 8px 1px; }
+    #jb-app .jb-slot-votes { width: 16px; font-size: 0.85rem; }
+    #jb-app .jb-slot-title { font-size: 0.82rem; }
+    #jb-app .jb-slot-artist { font-size: 0.7rem; }
+    #jb-app .jb-slot-boost { font-size: 0.72rem; padding: 6px 9px; }
   }
 
   /* Catalogue */
@@ -362,6 +364,7 @@
       boost_used_up: "Tu as utilisé tes 3 boosts pour ce soir !",
       boost_added: "🚀 Boost ajouté !",
       boost_aria: "Booster cette chanson",
+      boost_btn: "Boost",
       catalog_title: "🎵 Répertoire complet",
       back_btn: "⬅ RETOUR",
       search_placeholder: "🔍 Cherche un titre ou un artiste…",
@@ -383,6 +386,7 @@
       boost_used_up: "You've used all 3 of your boosts for tonight!",
       boost_added: "🚀 Boost added!",
       boost_aria: "Boost this song",
+      boost_btn: "Boost",
       catalog_title: "🎵 Full Song List",
       back_btn: "⬅ BACK",
       search_placeholder: "🔍 Search a title or artist…",
@@ -691,7 +695,7 @@
             <span class="jb-slot-title">${escapeHtml(v.title)}</span>
             ${v.artist ? `<span class="jb-slot-artist">${escapeHtml(v.artist)}</span>` : ""}
           </span>
-          <button class="jb-slot-boost" data-boost="${escapeHtml(id)}" ${remaining <= 0 ? "disabled" : ""} aria-label="${t("boost_aria")}" title="${t("boost_aria")}">🚀</button>`;
+          <button class="jb-slot-boost" data-boost="${escapeHtml(id)}" ${remaining <= 0 ? "disabled" : ""} aria-label="${t("boost_aria")}" title="${t("boost_aria")}">🚀 ${t("boost_btn")}</button>`;
       } else {
         slot.className = "jb-slot jb-slot-empty";
         slot.innerHTML = `
