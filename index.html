@@ -103,11 +103,13 @@
   }
 
   /* Palmarès public : liste pleine largeur, 10 positions de haut en bas */
-  #jb-app .jb-palmares-grid { display: flex; flex-direction: column; gap: 2px; }
+  #jb-app .jb-palmares-grid { display: flex; flex-direction: column; gap: 2px; position: relative; }
   #jb-app .jb-slot {
     display: flex; align-items: center; gap: 10px; padding: 9px 2px;
-    border-bottom: 1px solid var(--border); min-width: 0;
+    border-bottom: 1px solid var(--border); min-width: 0; will-change: transform;
   }
+  /* Verrouillage pendant l'animation de réordonnancement, pour éviter un mauvais clic */
+  #jb-app .jb-palmares-grid.jb-animating .jb-slot-boost { pointer-events: none; opacity: 0.55; }
   #jb-app .jb-slot-votes {
     font-weight: 800; font-size: 0.95rem; color: var(--accent2); width: 22px;
     flex-shrink: 0; text-align: center;
@@ -470,6 +472,14 @@
   let artistFilter = null; // nom d'artiste actif ("dossier" ouvert), ou null
   let isAdmin = false;
 
+  // Animation du palmarès (FLIP) : garde les éléments existants pour pouvoir
+  // les faire glisser en douceur quand ils changent de position, et verrouille
+  // temporairement les boutons "boost" pendant que ça bouge.
+  let palmaresElByKey = new Map();
+  let palmaresOrderKeys = [];
+  let palmaresAnimating = false;
+  let palmaresAnimTimer = null;
+
   function isInCooldown(v) {
     return !!(v && v.cooldownUntil && v.cooldownUntil > Date.now());
   }
@@ -562,6 +572,7 @@
     return Math.max(0, MAX_BOOSTS - activeBoostsCount());
   }
   async function boostSong(id) {
+    if (palmaresAnimating) return;
     const v = votes[id];
     if (!v || isUnavailable(v)) return;
     if (boostsRemaining() <= 0) {
@@ -666,6 +677,17 @@
   }, 1000);
 
   // ---------- Rendu : Palmarès (public) ----------
+  function palmaresLock() {
+    palmaresAnimating = true;
+    const list = document.getElementById("jb-palmares-list");
+    if (list) list.classList.add("jb-animating");
+  }
+  function palmaresUnlock() {
+    palmaresAnimating = false;
+    const list = document.getElementById("jb-palmares-list");
+    if (list) list.classList.remove("jb-animating");
+  }
+
   function renderPalmares() {
     const list = document.getElementById("jb-palmares-list");
     const empty = document.getElementById("jb-palmares-empty");
@@ -673,23 +695,46 @@
     const remaining = boostsRemaining();
     if (remainingEl) remainingEl.textContent = t("boost_remaining", remaining);
     empty.textContent = t("palmares_empty");
+    empty.hidden = true;
 
     const ranked = Object.entries(votes)
       .filter(([, v]) => v.requests > 0 && !isUnavailable(v))
       .sort((a, b) => b[1].requests - a[1].requests)
       .slice(0, 10);
 
-    list.innerHTML = "";
-    empty.hidden = true;
-
+    const newKeys = [];
     for (let i = 0; i < 10; i++) {
-      const rank = i + 1;
       const entry = ranked[i];
-      const slot = document.createElement("div");
+      newKeys.push(entry ? entry[0] : `__empty_${i}`);
+    }
+
+    // 1) FIRST — mémorise la position actuelle de chaque élément encore présent.
+    const firstRects = new Map();
+    palmaresElByKey.forEach((el, key) => {
+      if (el.isConnected) firstRects.set(key, el.getBoundingClientRect());
+    });
+
+    // 2) Retire les éléments qui ne font plus partie des 10 positions.
+    const usedKeys = new Set(newKeys);
+    palmaresElByKey.forEach((el, key) => {
+      if (!usedKeys.has(key)) {
+        el.remove();
+        palmaresElByKey.delete(key);
+      }
+    });
+
+    // 3) Crée/réutilise et met à jour le contenu de chaque élément (sans les déplacer).
+    newKeys.forEach((key, i) => {
+      const entry = ranked[i];
+      let el = palmaresElByKey.get(key);
+      if (!el) {
+        el = document.createElement("div");
+        palmaresElByKey.set(key, el);
+      }
       if (entry) {
         const [id, v] = entry;
-        slot.className = "jb-slot";
-        slot.innerHTML = `
+        el.className = "jb-slot";
+        el.innerHTML = `
           <span class="jb-slot-votes">${v.requests}</span>
           <span class="jb-slot-info">
             <span class="jb-slot-title">${escapeHtml(v.title)}</span>
@@ -697,16 +742,59 @@
           </span>
           <button class="jb-slot-boost" data-boost="${escapeHtml(id)}" ${remaining <= 0 ? "disabled" : ""} aria-label="${t("boost_aria")}" title="${t("boost_aria")}">🚀 ${t("boost_btn")}</button>`;
       } else {
-        slot.className = "jb-slot jb-slot-empty";
-        slot.innerHTML = `
+        el.className = "jb-slot jb-slot-empty";
+        el.innerHTML = `
           <span class="jb-slot-votes">—</span>
           <span class="jb-slot-info jb-slot-placeholder">—</span>`;
       }
-      list.appendChild(slot);
-    }
+    });
+
+    // 4) LAST — replace les éléments dans le bon ordre dans le DOM.
+    newKeys.forEach((key) => {
+      list.appendChild(palmaresElByKey.get(key));
+    });
 
     list.querySelectorAll("[data-boost]").forEach((btn) => {
       btn.addEventListener("click", () => boostSong(btn.dataset.boost));
+    });
+
+    // 5) INVERT + PLAY — si l'ordre a changé, fait glisser chaque élément déplacé
+    // depuis son ancienne position vers la nouvelle, et verrouille les boutons
+    // "boost" le temps de l'animation pour éviter les clics sur la mauvaise chanson.
+    const orderChanged = JSON.stringify(newKeys) !== JSON.stringify(palmaresOrderKeys);
+    palmaresOrderKeys = newKeys;
+    if (!orderChanged || firstRects.size === 0) return;
+
+    let anyMoved = false;
+    newKeys.forEach((key) => {
+      const el = palmaresElByKey.get(key);
+      const first = firstRects.get(key);
+      if (!el || !first) return;
+      const last = el.getBoundingClientRect();
+      const dx = first.left - last.left;
+      const dy = first.top - last.top;
+      if (Math.abs(dx) > 0.5 || Math.abs(dy) > 0.5) {
+        anyMoved = true;
+        el.style.transition = "none";
+        el.style.transform = `translate(${dx}px, ${dy}px)`;
+      }
+    });
+
+    if (!anyMoved) return;
+
+    palmaresLock();
+    // force le reflow pour que le "transform" de départ soit bien appliqué avant l'animation
+    void list.offsetHeight;
+
+    requestAnimationFrame(() => {
+      newKeys.forEach((key) => {
+        const el = palmaresElByKey.get(key);
+        if (!el) return;
+        el.style.transition = "transform 0.5s cubic-bezier(0.22, 1, 0.36, 1)";
+        el.style.transform = "";
+      });
+      if (palmaresAnimTimer) clearTimeout(palmaresAnimTimer);
+      palmaresAnimTimer = setTimeout(palmaresUnlock, 520);
     });
   }
 
