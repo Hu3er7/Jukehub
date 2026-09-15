@@ -107,7 +107,10 @@
   #jb-app .jb-slot {
     display: flex; align-items: center; gap: 10px; padding: 9px 2px;
     border-bottom: 1px solid var(--border); min-width: 0; will-change: transform;
+    position: relative; z-index: 1; background: var(--bg);
   }
+  /* Pendant le glissement, la chanson qui bouge passe visuellement par-dessus les autres */
+  #jb-app .jb-slot.jb-slot-moving { z-index: 5; box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45); }
   /* Verrouillage pendant l'animation de réordonnancement, pour éviter un mauvais clic */
   #jb-app .jb-palmares-grid.jb-animating .jb-slot-boost { pointer-events: none; opacity: 0.55; }
   #jb-app .jb-slot-votes {
@@ -571,6 +574,13 @@
   function boostsRemaining() {
     return Math.max(0, MAX_BOOSTS - activeBoostsCount());
   }
+  // Met à jour uniquement le badge "Boosts : N" (sans toucher au reste du palmarès), pour
+  // qu'il reflète tout de suite le nombre de boosts local du client, même avant que
+  // Firestore ne redéclenche un rendu complet.
+  function updateBoostBadge(remaining) {
+    const remainingEl = document.getElementById("jb-boost-remaining");
+    if (remainingEl) remainingEl.textContent = t("boost_remaining", remaining ?? boostsRemaining());
+  }
   async function boostSong(id) {
     if (palmaresAnimating) return;
     const v = votes[id];
@@ -585,7 +595,7 @@
       const existing = boostUsage[id];
       boostUsage[id] = { count: (existing && existing.token === token ? existing.count : 0) + 1, token };
       saveBoostsToStorage();
-      renderPalmares();
+      updateBoostBadge();
       showToast(t("boost_added"));
     } catch (e) {
       console.error(e);
@@ -629,8 +639,24 @@
   window.addEventListener("focus", forceReconnect);
   window.addEventListener("online", forceReconnect);
 
+  // ---------- Chien de garde de connexion ----------
+  // Certaines coupures réseau (mauvais signal dans un bar bondé, Wi-Fi instable) n'émettent
+  // ni "offline" ni changement de visibilité : la page reste ouverte et semble normale, mais
+  // n'est plus vraiment connectée à Firestore. On surveille l'état réel de la connexion via
+  // le listener "config" (metadata.fromCache) et on force une reconnexion si trop de temps
+  // s'est écoulé sans confirmation "live", pour éviter que le client ait à rafraîchir lui-même.
+  let lastLiveSnapshotAt = Date.now();
+  const CONNECTION_WATCHDOG_MS = 20000; // vérifie toutes les 20s
+  const CONNECTION_STALE_MS = 25000; // force une reconnexion si rien de "live" depuis 25s
+  setInterval(() => {
+    if (document.visibilityState === "visible" && Date.now() - lastLiveSnapshotAt > CONNECTION_STALE_MS) {
+      forceReconnect();
+    }
+  }, CONNECTION_WATCHDOG_MS);
+
   // ---------- Abonnements temps réel ----------
-  onSnapshot(doc(db, "config", "settings"), (snap) => {
+  onSnapshot(doc(db, "config", "settings"), { includeMetadataChanges: true }, (snap) => {
+    if (!snap.metadata.fromCache) lastLiveSnapshotAt = Date.now();
     const data = snap.data();
     const newNightId = data?.nightId || "default";
     if (newNightId !== nightId) {
@@ -691,9 +717,8 @@
   function renderPalmares() {
     const list = document.getElementById("jb-palmares-list");
     const empty = document.getElementById("jb-palmares-empty");
-    const remainingEl = document.getElementById("jb-boost-remaining");
     const remaining = boostsRemaining();
-    if (remainingEl) remainingEl.textContent = t("boost_remaining", remaining);
+    updateBoostBadge(remaining);
     empty.textContent = t("palmares_empty");
     empty.hidden = true;
 
@@ -766,6 +791,7 @@
     if (!orderChanged || firstRects.size === 0) return;
 
     let anyMoved = false;
+    const movingEls = [];
     newKeys.forEach((key) => {
       const el = palmaresElByKey.get(key);
       const first = firstRects.get(key);
@@ -775,6 +801,12 @@
       const dy = first.top - last.top;
       if (Math.abs(dx) > 0.5 || Math.abs(dy) > 0.5) {
         anyMoved = true;
+        movingEls.push(el);
+        el.classList.add("jb-slot-moving");
+        // Celle qui parcourt la plus grande distance passe par-dessus toutes les autres
+        // (y compris les autres rangées qui ne font que glisser d'une position), peu
+        // importe leur ordre dans le DOM.
+        el.style.zIndex = String(100 + Math.round(Math.max(Math.abs(dx), Math.abs(dy))));
         el.style.transition = "none";
         el.style.transform = `translate(${dx}px, ${dy}px)`;
       }
@@ -790,11 +822,17 @@
       newKeys.forEach((key) => {
         const el = palmaresElByKey.get(key);
         if (!el) return;
-        el.style.transition = "transform 0.5s cubic-bezier(0.22, 1, 0.36, 1)";
+        el.style.transition = "transform 1s cubic-bezier(0.4, 0, 0.2, 1)";
         el.style.transform = "";
       });
       if (palmaresAnimTimer) clearTimeout(palmaresAnimTimer);
-      palmaresAnimTimer = setTimeout(palmaresUnlock, 520);
+      palmaresAnimTimer = setTimeout(() => {
+        movingEls.forEach((el) => {
+          el.classList.remove("jb-slot-moving");
+          el.style.zIndex = "";
+        });
+        palmaresUnlock();
+      }, 1100);
     });
   }
 
