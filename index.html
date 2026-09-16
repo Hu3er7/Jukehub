@@ -192,13 +192,17 @@
     font-weight: 700; font-size: 0.85rem; padding: 11px 16px; border-radius: 999px; white-space: nowrap; cursor: pointer;
   }
   #jb-app .jb-quickpick-item:active { transform: scale(0.97); }
+  #jb-app .jb-quickpick-item-empty {
+    min-width: 60px; border: 1px dashed var(--border); background: transparent; cursor: default;
+  }
 
   /* Style (catégories de musique) */
   #jb-app .jb-style-section { margin-bottom: 18px; }
-  #jb-app .jb-style-list { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  #jb-app .jb-style-list { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
   #jb-app .jb-style-item {
     background: var(--card); border: 1px solid var(--border); color: var(--text);
-    font-weight: 700; font-size: 0.9rem; padding: 14px 10px; border-radius: 12px; text-align: center; cursor: pointer;
+    font-weight: 700; font-size: 0.76rem; padding: 8px 5px; border-radius: 10px; text-align: center; cursor: pointer;
+    line-height: 1.2;
   }
   #jb-app .jb-style-item:active { background: var(--card2); border-color: var(--accent); }
   #jb-app .jb-folder-title { background: var(--card); border-radius: 10px; padding: 10px 18px; font-weight: 800; font-size: 1.05rem; text-align: center; }
@@ -1420,6 +1424,8 @@
   }
 
   // ---------- Top Pick : les 5 artistes les plus demandés (toutes soirées confondues) ----------
+  // La section reste toujours visible avec 5 emplacements, même vacants, pour que le client
+  // sache d'emblée que cette fonctionnalité existe et se remplira avec le temps.
   function renderQuickPick() {
     const section = document.getElementById("jb-quickpick-section");
     const list = document.getElementById("jb-quickpick-list");
@@ -1428,12 +1434,15 @@
       .sort((a, b) => b.count - a.count)
       .slice(0, 5);
 
-    section.hidden = top.length === 0;
-    if (top.length === 0) return;
-
-    list.innerHTML = top.map((e) => `
-      <button class="jb-quickpick-item" data-quickartist="${escapeHtml(e.name)}">${escapeHtml(e.name)}</button>
-    `).join("");
+    section.hidden = false;
+    const slots = [];
+    for (let i = 0; i < 5; i++) {
+      const e = top[i];
+      slots.push(e
+        ? `<button class="jb-quickpick-item" data-quickartist="${escapeHtml(e.name)}">${escapeHtml(e.name)}</button>`
+        : `<div class="jb-quickpick-item jb-quickpick-item-empty" aria-hidden="true"></div>`);
+    }
+    list.innerHTML = slots.join("");
     list.querySelectorAll("[data-quickartist]").forEach((btn) => {
       btn.addEventListener("click", () => {
         catalogView = { type: "artist", name: btn.dataset.quickartist };
@@ -1551,7 +1560,6 @@
       }, { merge: true });
       requestedRounds[song.id] = tokenAtRequest;
       saveRequestedToStorage();
-      renderCatalog();
       showToast(t("request_added_toast"));
       // Compteur cumulatif par artiste (Top Pick) — jamais réinitialisé par "Nouvelle soirée",
       // pour refléter les tendances sur plusieurs soirées plutôt qu'une seule.
@@ -1561,9 +1569,13 @@
           counts: { [key]: { name: song.artist, count: increment(1) } },
         }, { merge: true }).catch((e) => console.error("artistDemand update", e));
       }
-      // Transporte le client jusqu'au palmarès pour qu'il voie sa demande apparaître.
-      const palmaresSection = document.querySelector(".jb-palmares");
-      if (palmaresSection) palmaresSection.scrollIntoView({ behavior: "smooth", block: "start" });
+      // Ramène le client à l'écran principal (Top Pick + Style + recherche) une fois sa demande
+      // confirmée, plutôt que de le laisser dans la liste où il vient de choisir sa chanson.
+      catalogView = null;
+      document.getElementById("jb-search-input").value = "";
+      renderCatalog();
+      const searchbar = document.getElementById("jb-catalog-searchbar");
+      if (searchbar) searchbar.scrollIntoView({ behavior: "smooth", block: "start" });
     } catch (e) {
       console.error(e);
       showToast(t("error_toast"));
