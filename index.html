@@ -197,12 +197,12 @@
   }
 
   /* Style (catégories de musique) */
-  #jb-app .jb-style-section { margin-bottom: 18px; }
-  #jb-app .jb-style-list { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+  #jb-app .jb-style-section { margin-bottom: 12px; }
+  #jb-app .jb-style-list { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; }
   #jb-app .jb-style-item {
     background: var(--card); border: 1px solid var(--border); color: var(--text);
-    font-weight: 700; font-size: 0.76rem; padding: 8px 5px; border-radius: 10px; text-align: center; cursor: pointer;
-    line-height: 1.2;
+    font-weight: 700; font-size: 0.7rem; padding: 6px 4px; border-radius: 9px; text-align: center; cursor: pointer;
+    line-height: 1.15;
   }
   #jb-app .jb-style-item:active { background: var(--card2); border-color: var(--accent); }
   #jb-app .jb-folder-title { background: var(--card); border-radius: 10px; padding: 10px 18px; font-weight: 800; font-size: 1.05rem; text-align: center; }
@@ -368,7 +368,7 @@
           <div id="jb-quickpick-list" class="jb-quickpick-list"></div>
         </div>
         <div class="jb-style-section">
-          <h2 id="jb-style-title">🎨 Style</h2>
+          <h2 id="jb-style-title">🎵 Style</h2>
           <div id="jb-style-list" class="jb-style-list"></div>
         </div>
       </div>
@@ -492,7 +492,7 @@
 
   // ---------- Langue (public) ----------
   // Catégories de style musical, assignées aux chansons depuis le panneau admin.
-  const GENRE_KEYS = ["country", "rock", "punk", "classic-rock", "quebecois", "francais", "pop", "dance", "folk", "classic-folk", "reggae"];
+  const GENRE_KEYS = ["quebecois", "country", "rock", "francais", "pop", "classic-rock", "reggae", "punk", "dance", "classic-folk", "folk"];
 
   const I18N = {
     fr: {
@@ -506,7 +506,7 @@
       boost_aria: "Booster cette chanson",
       boost_btn: "Boost",
       quickpick_title: "⭐ Top Pick",
-      style_title: "🎨 Style",
+      style_title: "🎵 Style",
       back_btn: "⬅ RETOUR",
       search_placeholder: "🔍 Cherche un titre ou un artiste…",
       catalog_empty: "Aucun résultat pour cette recherche.",
@@ -555,7 +555,7 @@
       boost_aria: "Boost this song",
       boost_btn: "Boost",
       quickpick_title: "⭐ Top Pick",
-      style_title: "🎨 Style",
+      style_title: "🎵 Style",
       back_btn: "⬅ BACK",
       search_placeholder: "🔍 Search a title or artist…",
       catalog_empty: "No results for this search.",
