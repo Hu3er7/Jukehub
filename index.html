@@ -211,13 +211,28 @@
   #jb-app .jb-btn-request[disabled] { color: var(--text-dim); cursor: default; }
   #jb-app .jb-btn-request.jb-played-btn { color: var(--text-dim); }
 
-  /* Refroidissement (30 sec après avoir été jouée) */
+  /* Refroidissement (admin) */
   #jb-app .jb-cooldown-badge {
     flex-shrink: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
     background: #3a1a30; border: 1px solid var(--accent); color: var(--accent2);
     border-radius: 10px; padding: 6px 12px; font-weight: 700; font-size: 0.7rem; line-height: 1.1; white-space: nowrap;
   }
   #jb-app .jb-cooldown-num { font-size: 1.2rem; font-weight: 800; }
+
+  /* Refroidissement (client, catalogue public) : badge à deux segments, plus explicite */
+  #jb-app .jb-cooldown-explicit {
+    flex-shrink: 0; display: flex; align-items: stretch; border-radius: 10px; overflow: hidden;
+    border: 1px solid var(--accent); font-weight: 700; font-size: 0.66rem; line-height: 1.15;
+  }
+  #jb-app .jb-cooldown-played-seg {
+    display: flex; align-items: center; justify-content: center; text-align: center;
+    background: var(--accent); color: #2b0a1a; padding: 6px 8px; max-width: 52px;
+  }
+  #jb-app .jb-cooldown-wait-seg {
+    display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;
+    background: #3a1a30; color: var(--text); padding: 6px 10px; gap: 1px; white-space: nowrap;
+  }
+  #jb-app .jb-cooldown-wait-seg .jb-cooldown-num { font-size: 0.85rem; font-weight: 800; color: var(--accent2); }
 
   /* Chanson brûlée (retirée volontairement par l'admin) */
   #jb-app .jb-burned-badge {
@@ -226,10 +241,6 @@
     border-radius: 10px; padding: 8px 12px; font-weight: 800; font-size: 0.8rem; white-space: nowrap;
   }
 
-  #jb-app .jb-toggle { width: 100%; text-align: left; color: var(--accent2); font-weight: 700; padding: 10px 2px; cursor: pointer; }
-  #jb-app .jb-played-list { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
-  #jb-app .jb-played-item { display: flex; justify-content: space-between; gap: 8px; padding: 8px 10px; background: var(--card); border-radius: 10px; font-size: 0.88rem; }
-  #jb-app .jb-played-item .jb-song-artist { font-size: 0.8rem; }
 
   #jb-app .jb-footer { text-align: center; margin-top: 40px; opacity: 0.35; }
   #jb-app .jb-admin-link { font-size: 1.3rem; }
@@ -376,11 +387,6 @@
       <p id="jb-palmares-empty" class="jb-empty" hidden>Aucune demande pour l'instant — sois le premier à voter !</p>
     </section>
 
-    <section id="jb-played-section" hidden>
-      <button id="jb-played-toggle" class="jb-toggle">🎶 Chansons déjà jouées ce soir (<span id="jb-played-count">0</span>) ▾</button>
-      <ul id="jb-played-list" class="jb-played-list" hidden></ul>
-    </section>
-
     <footer class="jb-footer">
       <a href="#admin" class="jb-admin-link" title="Mode spectacle">🎤</a>
     </footer>
@@ -482,7 +488,7 @@
 
   // ---------- Langue (public) ----------
   // Catégories de style musical, assignées aux chansons depuis le panneau admin.
-  const GENRE_KEYS = ["country", "rock", "punk", "classic-rock", "quebecois", "francais", "pop", "dance"];
+  const GENRE_KEYS = ["country", "rock", "punk", "classic-rock", "quebecois", "francais", "pop", "dance", "folk", "classic-folk", "reggae"];
 
   const I18N = {
     fr: {
@@ -500,8 +506,10 @@
       back_btn: "⬅ RETOUR",
       search_placeholder: "🔍 Cherche un titre ou un artiste…",
       catalog_empty: "Aucun résultat pour cette recherche.",
-      played_toggle: (n) => `🎶 Chansons déjà jouées ce soir (${n}) ▾`,
       burned_badge: "🔥❌ Brûlée",
+      cooldown_played_label: "Déjà Jouée",
+      cooldown_available_label: "Disponible",
+      cooldown_in_label: "Dans",
       already_requested: "✅ Demandée",
       request_btn: "▶ Jouer",
       request_added_toast: "🎶 Chanson demandée !",
@@ -517,6 +525,7 @@
       genres: {
         country: "Country", rock: "Rock", punk: "Punk", "classic-rock": "Classique Rock",
         quebecois: "Québécois", francais: "Chanson Française", pop: "Pop", dance: "Dance",
+        folk: "Folk", "classic-folk": "Classique Folk", reggae: "Reggae",
       },
       tour1_title: "Bienvenue 👋",
       tour1_text: "Petit tour rapide pour te montrer comment ça marche. Tu peux passer cette étape (ou tout le tutoriel) à tout moment.",
@@ -527,11 +536,9 @@
       tour3_title: "3. Chercher une chanson",
       tour3_text: "Pas envie de fouiller ? Tape le titre ou le nom de l'artiste ici pour trouver la chanson tout de suite.",
       tour4_title: "4. Le palmarès",
-      tour4_text: "Le palmarès montre toutes les chansons demandées ce soir, classées de la plus populaire à la moins populaire — sans limite de position, tu peux toujours voir exactement où se trouve ta demande.",
+      tour4_text: "Le palmarès montre toutes les chansons demandées ce soir, classées de la plus populaire à la moins populaire. Tu peux toujours voir exactement où se trouve ta demande.",
       tour4b_title: "5. Les boosts",
       tour4b_text: "Appuie sur 🚀 Boost pour faire monter une chanson dans le classement. Tu as 3 boosts par soirée — utilise-les sur la ou les chansons que tu veux entendre en premier. Ils se libèrent automatiquement une fois la chanson jouée, pour un nouveau boost plus tard dans la soirée.",
-      tour5_title: "6. Changer de langue",
-      tour5_text: "Tu préfères l'anglais ? Touche EN ici en tout temps pour changer la langue du site.",
     },
     en: {
       subtitle: "Pick a song from my repertoire — I'll play it live!",
@@ -548,8 +555,10 @@
       back_btn: "⬅ BACK",
       search_placeholder: "🔍 Search a title or artist…",
       catalog_empty: "No results for this search.",
-      played_toggle: (n) => `🎶 Played tonight (${n}) ▾`,
       burned_badge: "🔥❌ Unavailable",
+      cooldown_played_label: "Already Played",
+      cooldown_available_label: "Available",
+      cooldown_in_label: "In",
       already_requested: "✅ Requested",
       request_btn: "▶ Play",
       request_added_toast: "🎶 Song requested!",
@@ -565,6 +574,7 @@
       genres: {
         country: "Country", rock: "Rock", punk: "Punk", "classic-rock": "Classic Rock",
         quebecois: "Québécois", francais: "French Songs", pop: "Pop", dance: "Dance",
+        folk: "Folk", "classic-folk": "Classic Folk", reggae: "Reggae",
       },
       tour1_title: "Welcome 👋",
       tour1_text: "A quick tour of how this works. You can skip this step (or the whole tutorial) at any time.",
@@ -575,11 +585,9 @@
       tour3_title: "3. Search for a song",
       tour3_text: "Don't feel like browsing? Type a title or artist name here to find the song right away.",
       tour4_title: "4. The leaderboard",
-      tour4_text: "The leaderboard shows every song requested tonight, from most to least popular — with no position limit, so you can always see exactly where your request stands.",
+      tour4_text: "The leaderboard shows every song requested tonight, from most to least popular. You can always see exactly where your request stands.",
       tour4b_title: "5. Boosts",
       tour4b_text: "Tap 🚀 Boost to push a song up the ranking. You get 3 boosts per night — use them on the song(s) you most want to hear next. They're freed up automatically once the song gets played, for a new boost later in the night.",
-      tour5_title: "6. Switching language",
-      tour5_text: "Prefer French? Tap FR here anytime to switch the site's language.",
     },
   };
   function genreLabel(key) {
@@ -643,27 +651,22 @@
       center: true,
       before: () => {
         document.getElementById("jb-search-input").value = "";
-        // Choisit le style contenant le plus de chansons déjà classées, pour que la démo
-        // du tuto montre une vraie liste plutôt qu'un résultat vide.
-        let bestKey = GENRE_KEYS[0];
-        let bestCount = -1;
-        GENRE_KEYS.forEach((key) => {
-          const count = catalogSongs.filter((s) => (s.genres || []).includes(key)).length;
-          if (count > bestCount) { bestCount = count; bestKey = key; }
-        });
-        catalogView = { type: "genre", key: bestKey };
+        // Choisit une chanson déjà classée dans un style pour que la démo du tuto montre une
+        // vraie liste (style + artiste) plutôt qu'un résultat vide.
+        const demoSong = catalogSongs.find((s) => (s.genres || []).length && s.artist);
+        catalogView = demoSong
+          ? { type: "genre-song-list", key: demoSong.genres[0], artist: demoSong.artist }
+          : { type: "genre-artists", key: GENRE_KEYS[0] };
         renderCatalog();
       },
     },
     { target: () => document.getElementById("jb-search-input"), titleKey: "tour3_title", textKey: "tour3_text" },
     { target: () => document.querySelector(".jb-palmares"), titleKey: "tour4_title", textKey: "tour4_text", center: true },
     {
-      target: () => document.getElementById("jb-tour-fake-boost"),
+      target: () => document.getElementById("jb-boost-remaining"),
       titleKey: "tour4b_title",
       textKey: "tour4b_text",
-      before: () => showFakeBoost(),
     },
-    { target: () => document.querySelector(".jb-lang-bar"), titleKey: "tour5_title", textKey: "tour5_text" },
   ];
   let tourStep = 0;
   let tourReposition = null;
@@ -878,7 +881,9 @@
   // les a tous utilisés. 0 tant que le client a au moins un boost disponible.
   let boostResetAt = 0;
   // catalogView : navigation active dans le catalogue public.
-  // null = vue par défaut (Top Pick + Style) ; sinon {type:"genre", key} ou {type:"artist", name}.
+  // null = vue par défaut (Top Pick + Style) ; sinon {type:"genre-artists", key} (liste des
+  // artistes d'un style), {type:"genre-song-list", key, artist} (chansons de cet artiste dans ce
+  // style), ou {type:"artist", name} (artiste choisi depuis Top Pick, toutes chansons).
   let catalogView = null;
   // artistDemand : nom d'artiste -> {name, count} — nombre cumulatif (toutes les soirées) de
   // demandes reçues, utilisé pour la section Top Pick (les 5 artistes les plus demandés).
@@ -1159,7 +1164,6 @@
   function renderAll() {
     renderPalmares();
     renderCatalog();
-    renderPlayed();
     renderAdminPalmares();
     renderAdminCatalog();
     renderCooldownList();
@@ -1340,6 +1344,13 @@
       return;
     }
 
+    // Un style choisi passe d'abord par la liste des artistes de ce style, avant la liste
+    // des chansons — voir renderGenreArtistList().
+    if (!search && catalogView.type === "genre-artists") {
+      renderGenreArtistList(catalogView.key);
+      return;
+    }
+
     let songs;
     let showArtist = true;
     if (search) {
@@ -1354,10 +1365,12 @@
       const wanted = norm(catalogView.name);
       songs = catalogSongs.filter((s) => norm(s.artist) === wanted);
     } else {
-      // catalogView.type === "genre"
+      // catalogView.type === "genre-song-list" : artiste choisi depuis la liste d'un style.
+      showArtist = false;
       titleWrap.hidden = false;
-      document.querySelector(".jb-folder-title").textContent = genreLabel(catalogView.key);
-      songs = catalogSongs.filter((s) => (s.genres || []).includes(catalogView.key));
+      document.querySelector(".jb-folder-title").textContent = `${catalogView.artist} · ${genreLabel(catalogView.key)}`;
+      const wantedArtist = norm(catalogView.artist);
+      songs = catalogSongs.filter((s) => (s.genres || []).includes(catalogView.key) && norm(s.artist) === wantedArtist);
     }
 
     songs = [...songs].sort((a, b) => a.title.localeCompare(b.title, "fr"));
@@ -1365,6 +1378,45 @@
     empty.hidden = songs.length > 0;
     songs.forEach((song) => list.appendChild(renderSongRow(song, showArtist)));
     wireSongRowEvents(list);
+  }
+
+  // ---------- Liste des artistes d'un style donné (étape intermédiaire avant les chansons) ----------
+  function renderGenreArtistList(key) {
+    const titleWrap = document.getElementById("jb-folder-title-wrap");
+    const list = document.getElementById("jb-catalog-list");
+    const empty = document.getElementById("jb-catalog-empty");
+    titleWrap.hidden = false;
+    document.querySelector(".jb-folder-title").textContent = genreLabel(key);
+
+    const counts = {};
+    catalogSongs.forEach((s) => {
+      if (s.artist && (s.genres || []).includes(key)) {
+        const k = norm(s.artist);
+        if (!counts[k]) counts[k] = { name: s.artist, count: 0 };
+        counts[k].count += 1;
+      }
+    });
+    const artists = Object.values(counts).sort((a, b) => a.name.localeCompare(b.name, "fr"));
+
+    list.innerHTML = "";
+    empty.hidden = artists.length > 0;
+    artists.forEach((a) => {
+      const li = document.createElement("li");
+      li.className = "jb-song-item jb-artist-row";
+      li.dataset.genreArtist = a.name;
+      li.innerHTML = `
+        <div class="jb-song-info">
+          <span class="jb-artist-name">${escapeHtml(a.name)}</span>
+        </div>
+        <span class="jb-artist-count">${escapeHtml(t("song_count", a.count))} ›</span>`;
+      list.appendChild(li);
+    });
+    list.querySelectorAll("[data-genre-artist]").forEach((row) => {
+      row.addEventListener("click", () => {
+        catalogView = { type: "genre-song-list", key, artist: row.dataset.genreArtist };
+        renderCatalog();
+      });
+    });
   }
 
   // ---------- Top Pick : les 5 artistes les plus demandés (toutes soirées confondues) ----------
@@ -1398,14 +1450,20 @@
     `).join("");
     list.querySelectorAll("[data-genre]").forEach((btn) => {
       btn.addEventListener("click", () => {
-        catalogView = { type: "genre", key: btn.dataset.genre };
+        catalogView = { type: "genre-artists", key: btn.dataset.genre };
         renderCatalog();
       });
     });
   }
 
   document.getElementById("jb-back-btn").addEventListener("click", () => {
-    catalogView = null;
+    // Depuis la liste des chansons d'un artiste (au sein d'un style), on revient d'abord à la
+    // liste des artistes de ce style, plutôt que de sauter directement à l'écran principal.
+    if (catalogView && catalogView.type === "genre-song-list") {
+      catalogView = { type: "genre-artists", key: catalogView.key };
+    } else {
+      catalogView = null;
+    }
     document.getElementById("jb-search-input").value = "";
     renderCatalog();
     document.querySelector(".jb-catalog").scrollIntoView({ behavior: "smooth", block: "nearest" });
@@ -1423,7 +1481,13 @@
     if (isBurned(v)) {
       btnHtml = `<div class="jb-burned-badge">${t("burned_badge")}</div>`;
     } else if (isInCooldown(v)) {
-      btnHtml = `<div class="jb-cooldown-badge" data-until="${v.cooldownUntil}"><span class="jb-cooldown-num">${formatCooldown(v)}</span></div>`;
+      btnHtml = `<div class="jb-cooldown-explicit" data-until="${v.cooldownUntil}">
+        <div class="jb-cooldown-played-seg">${t("cooldown_played_label")}</div>
+        <div class="jb-cooldown-wait-seg">
+          <span>${t("cooldown_available_label")}</span>
+          <span>${t("cooldown_in_label")} <span class="jb-cooldown-num">${formatCooldown(v)}</span></span>
+        </div>
+      </div>`;
     } else if (requested) {
       const remaining = boostsRemaining();
       btnHtml = `<button class="jb-slot-boost" data-boost="${escapeHtml(song.id)}" ${remaining <= 0 ? "disabled" : ""} aria-label="${t("boost_aria")}" title="${t("boost_aria")}">🚀 ${t("boost_btn")}</button>`;
@@ -1462,42 +1526,6 @@
       });
     });
   }
-
-  // ---------- Rendu : Chansons déjà jouées (public) ----------
-  function renderPlayed() {
-    const played = Object.entries(votes)
-      .filter(([, v]) => playedAtMillis(v) > 0)
-      .sort((a, b) => playedAtMillis(b[1]) - playedAtMillis(a[1]));
-
-    const section = document.getElementById("jb-played-section");
-    section.hidden = played.length === 0;
-    document.getElementById("jb-played-toggle").textContent = t("played_toggle", played.length);
-
-    const list = document.getElementById("jb-played-list");
-    list.innerHTML = played.map(([, v]) => {
-      let statusHtml;
-      if (isBurned(v)) {
-        statusHtml = `<span class="jb-burned-badge">${t("burned_badge")}</span>`;
-      } else if (isInCooldown(v)) {
-        statusHtml = `<span class="jb-cooldown-badge" data-until="${v.cooldownUntil}"><span class="jb-cooldown-num">${formatCooldown(v)}</span></span>`;
-      } else {
-        statusHtml = `<span>🎵</span>`;
-      }
-      return `
-      <li class="jb-played-item">
-        <span>
-          <span class="jb-song-title">${escapeHtml(v.title)}</span><br>
-          <span class="jb-song-artist">${escapeHtml(v.artist || "")}</span>
-        </span>
-        ${statusHtml}
-      </li>`;
-    }).join("");
-  }
-
-  document.getElementById("jb-played-toggle").addEventListener("click", () => {
-    const list = document.getElementById("jb-played-list");
-    list.hidden = !list.hidden;
-  });
 
   document.getElementById("jb-search-input").addEventListener("input", () => {
     renderCatalog();
