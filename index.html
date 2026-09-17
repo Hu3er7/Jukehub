@@ -562,7 +562,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-09-17.11";
+  const APP_BUILD = "2026-09-17.12";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -666,7 +666,7 @@
       tour4_title: "4. Le palmarès",
       tour4_text: "Le palmarès montre toutes les chansons demandées ce soir, classées de la plus populaire à la moins populaire. Tu peux toujours voir exactement où se trouve ta demande.",
       tour4b_title: "5. Les boosts",
-      tour4b_text: "Appuie sur 🚀 Boost pour faire monter une chanson dans le classement. Tu as 3 boosts par soirée — utilise-les sur la ou les chansons que tu veux entendre en premier. Ils se libèrent automatiquement une fois la chanson jouée, pour un nouveau boost plus tard dans la soirée.",
+      tour4b_text: "Appuie sur 🚀 Boost pour faire monter une chanson dans le classement. Tu as 3 boosts. Si tu utilises les 3, ils se renouvelleront après 2 minutes. Ils se renouvellent aussi quand la chanson est jouée.",
     },
     en: {
       page_title: "My Repertoire",
@@ -717,7 +717,7 @@
       tour4_title: "4. The leaderboard",
       tour4_text: "The leaderboard shows every song requested tonight, from most to least popular. You can always see exactly where your request stands.",
       tour4b_title: "5. Boosts",
-      tour4b_text: "Tap 🚀 Boost to push a song up the ranking. You get 3 boosts per night — use them on the song(s) you most want to hear next. They're freed up automatically once the song gets played, for a new boost later in the night.",
+      tour4b_text: "Tap 🚀 Boost to push a song up the ranking. You get 3 boosts. If you use all 3, they'll renew after 2 minutes. They also renew as soon as the song gets played.",
     },
   };
   function genreLabel(key) {
