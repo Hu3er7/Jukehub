@@ -106,6 +106,14 @@
     #jb-app .jb-boost-remaining { font-size: 0.72rem; padding: 4px 9px; }
   }
 
+  /* Rappel visuel (badges "Boosts" / "Demandes") : gonfle-dégonfle + s'illumine-s'éteint au
+     même rythme, pour attirer l'œil du client sur son compteur juste après qu'il ait changé. */
+  @keyframes jb-pulse-attn {
+    0%, 100% { transform: scale(1); background: var(--card); box-shadow: none; }
+    50% { transform: scale(1.22); background: var(--accent); color: #2b0a1a; box-shadow: 0 0 12px 2px var(--accent); }
+  }
+  #jb-app .jb-pulse-attn { animation: jb-pulse-attn 0.5s ease-in-out 2; }
+
   /* Palmarès public : liste pleine largeur, 10 positions de haut en bas */
   #jb-app .jb-palmares-grid { display: flex; flex-direction: column; gap: 2px; position: relative; }
   #jb-app .jb-slot {
@@ -493,7 +501,7 @@
   // remplace les anciens styles "Québécois" et "Chanson Française", fusionnés en un seul
   // onglet — voir GENRE_ALIASES plus bas pour la compatibilité avec les chansons déjà classées
   // sous ces anciennes clés.
-  const GENRE_KEYS = ["franco", "country", "rock", "pop", "classic-rock", "reggae", "punk", "dance", "classic-folk", "folk"];
+  const GENRE_KEYS = ["franco", "country", "rock", "pop", "classic-rock", "reggae", "punk", "dance", "classic-folk", "folk", "oldies"];
   const GENRE_ALIASES = { franco: ["quebecois", "francais"] };
   // Vrai si la chanson appartient au style `key`, en tenant compte des anciennes clés fusionnées
   // dans GENRE_ALIASES (ex. une chanson encore taguée "quebecois" compte pour "franco").
@@ -537,7 +545,7 @@
       request_btn: "▶ Jouer",
       request_added_toast: "🎶 Chanson demandée !",
       confirm_request: (title) => `Confirmer ta demande pour « ${title} » ?`,
-      requests_remaining: (n) => `🎫 Demandes : ${n}`,
+      requests_remaining: (n) => `Demandes : ${n}`,
       requests_limit_reached: "Tu as atteint ta limite de 10 chansons pour l'instant. Attends qu'une de tes demandes soit jouée !",
       error_toast: "Oups, réessaie dans un instant.",
       song_count: (n) => `${n} chanson${n > 1 ? "s" : ""}`,
@@ -550,7 +558,7 @@
       genres: {
         franco: "Franco", country: "Country", rock: "Rock", punk: "Punk", "classic-rock": "Classique Rock",
         pop: "Pop", dance: "Dance",
-        folk: "Folk", "classic-folk": "Classique Folk", reggae: "Reggae",
+        folk: "Folk", "classic-folk": "Classique Folk", reggae: "Reggae", oldies: "Oldies",
       },
       tour1_title: "Bienvenue 👋",
       tour1_text: "Petit tour rapide pour te montrer comment ça marche. Tu peux passer cette étape (ou tout le tutoriel) à tout moment.",
@@ -588,7 +596,7 @@
       request_btn: "▶ Play",
       request_added_toast: "🎶 Song requested!",
       confirm_request: (title) => `Confirm your request for "${title}"?`,
-      requests_remaining: (n) => `🎫 Requests: ${n}`,
+      requests_remaining: (n) => `Requests: ${n}`,
       requests_limit_reached: "You've reached your limit of 10 songs for now. Wait for one of your requests to be played!",
       error_toast: "Oops, try again in a moment.",
       song_count: (n) => `${n} song${n > 1 ? "s" : ""}`,
@@ -601,7 +609,7 @@
       genres: {
         franco: "French/Queb", country: "Country", rock: "Rock", punk: "Punk", "classic-rock": "Classic Rock",
         pop: "Pop", dance: "Dance",
-        folk: "Folk", "classic-folk": "Classic Folk", reggae: "Reggae",
+        folk: "Folk", "classic-folk": "Classic Folk", reggae: "Reggae", oldies: "Oldies",
       },
       tour1_title: "Welcome 👋",
       tour1_text: "A quick tour of how this works. You can skip this step (or the whole tutorial) at any time.",
@@ -984,6 +992,20 @@
     if (!el) return;
     el.textContent = t("requests_remaining", requestsRemaining());
   }
+  // Rappel visuel : fait gonfler-dégonfler et s'illuminer-s'éteindre un badge un court instant,
+  // pour attirer l'attention du client dessus juste après qu'il ait changé (boost utilisé,
+  // chanson demandée). On enlève puis remet la classe pour pouvoir rejouer l'animation même
+  // si elle vient tout juste de se terminer.
+  function pulseAttention(el) {
+    if (!el) return;
+    el.classList.remove("jb-pulse-attn");
+    void el.offsetWidth; // force le navigateur à "oublier" l'animation précédente
+    el.classList.add("jb-pulse-attn");
+  }
+  ["jb-boost-remaining", "jb-request-remaining"].forEach((id) => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener("animationend", () => el.classList.remove("jb-pulse-attn"));
+  });
 
   // ---------- Utilitaires ----------
   function norm(s) {
@@ -1126,6 +1148,7 @@
         saveBoostResetToStorage();
       }
       updateBoostBadge(remainingNow);
+      pulseAttention(document.getElementById("jb-boost-remaining"));
       showToast(t("boost_added"));
     } catch (e) {
       console.error(e);
@@ -1640,6 +1663,7 @@
       saveRequestedToStorage();
       showToast(t("request_added_toast"));
       updateRequestBadge();
+      pulseAttention(document.getElementById("jb-request-remaining"));
       // Compteur cumulatif par artiste (Top Pick) — jamais réinitialisé par "Nouvelle soirée",
       // pour refléter les tendances sur plusieurs soirées plutôt qu'une seule.
       if (song.artist) {
