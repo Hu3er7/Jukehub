@@ -164,6 +164,9 @@
     display: flex; align-items: center; gap: 10px; background: var(--card);
     border: 1px solid var(--border); border-radius: 12px; padding: 11px 12px;
   }
+  /* Toute la ligne est cliquable pour demander la chanson, pas seulement le bouton "Jouer". */
+  #jb-app .jb-song-item-clickable { cursor: pointer; }
+  #jb-app .jb-song-item-clickable:active { background: var(--card2); }
   #jb-app .jb-song-info { flex: 1; min-width: 0; }
   #jb-app .jb-song-title { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   #jb-app .jb-song-artist { color: var(--text-dim); font-size: 0.83rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -1576,7 +1579,10 @@
       const remaining = boostsRemaining();
       btnHtml = `<button class="jb-slot-boost" data-boost="${escapeHtml(song.id)}" ${remaining <= 0 ? "disabled" : ""} aria-label="${t("boost_aria")}" title="${t("boost_aria")}">🚀 ${t("boost_btn")}</button>`;
     } else {
-      btnHtml = `<button class="jb-btn-request" data-req="${song.id}">${t("request_btn")}</button>`;
+      // Pas de data-req sur le bouton lui-même : c'est toute la ligne (li) qui porte le
+      // data-req et le clic, pour que le client puisse appuyer n'importe où sur la chanson,
+      // pas seulement sur le bouton "Jouer" — voir wireSongRowEvents().
+      btnHtml = `<button class="jb-btn-request">${t("request_btn")}</button>`;
     }
 
     const voteCount = v?.requests || 0;
@@ -1587,13 +1593,19 @@
         ${showArtist && song.artist ? `<div class="jb-song-artist">${escapeHtml(song.artist)}</div>` : ""}
       </div>
       ${btnHtml}`;
+    if (!isBurned(v) && !isInCooldown(v) && !requested) {
+      li.classList.add("jb-song-item-clickable");
+      li.dataset.req = song.id;
+    }
     return li;
   }
 
   function wireSongRowEvents(list) {
-    list.querySelectorAll("[data-req]").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        const id = btn.dataset.req;
+    // data-req est sur la ligne entière (li), pas seulement sur le bouton "Jouer" : le client
+    // peut donc appuyer n'importe où sur la chanson pour la demander.
+    list.querySelectorAll("li[data-req]").forEach((row) => {
+      row.addEventListener("click", () => {
+        const id = row.dataset.req;
         const song = catalogSongs.find((s) => s.id === id);
         if (!song) return;
         if (requestsRemaining() <= 0) {
