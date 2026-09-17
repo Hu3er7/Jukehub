@@ -520,6 +520,8 @@
         <h3>➕ Ajouter des chansons au répertoire</h3>
         <p class="jb-hint">Une chanson par ligne. Format : Titre - Artiste</p>
         <textarea id="jb-bulk-input" rows="6" placeholder="Ex:&#10;Bohemian Rhapsody - Queen&#10;Hotel California - Eagles"></textarea>
+        <p class="jb-hint">Style(s) à appliquer à tout ce lot (optionnel — modifiable après coup dans le répertoire complet) :</p>
+        <div id="jb-bulk-genre-row" class="jb-genre-chip-row"></div>
         <button id="jb-bulk-add-btn" class="jb-btn-primary">Ajouter au répertoire</button>
         <p id="jb-bulk-status" class="jb-hint"></p>
       </section>
@@ -591,7 +593,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-09-17.20";
+  const APP_BUILD = "2026-09-17.21";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -1112,6 +1114,11 @@
   // résultat, envoyées volontairement à Hubert (colonne "Demandes spéciales" du panneau admin).
   let specialRequests = {};
   let isAdmin = false;
+  // Style(s) sélectionné(s) pour le PROCHAIN lot de chansons collées dans "Ajouter des
+  // chansons au répertoire" — volontairement persistant d'un ajout à l'autre (pas remis à
+  // zéro après un envoi), puisqu'Hubert colle typiquement plusieurs lots d'un même style à
+  // la suite (ex. toute sa liste Country, puis toute sa liste Rock).
+  let bulkAddGenres = new Set();
 
   // Animation du palmarès (FLIP) : garde les éléments existants pour pouvoir
   // les faire glisser en douceur quand ils changent de position, et verrouille
@@ -2066,6 +2073,7 @@
       renderAdminPalmares();
       renderAdminSpecial();
       renderAdminCatalog();
+      renderBulkGenrePicker();
     }
   });
 
@@ -2272,6 +2280,27 @@
     }
   });
 
+  // ---------- Sélecteur de style(s) pour le prochain lot ajouté en masse ----------
+  // Mêmes pastilles que celles du répertoire complet (.jb-genre-chip), pour que ça reste
+  // visuellement cohérent — sauf qu'ici, une chanson peut appartenir à plusieurs styles à la
+  // fois (ex. Franco + Rock), donc chaque pastille bascule juste dans l'ensemble local
+  // bulkAddGenres, sans toucher Firestore avant l'ajout réel des chansons.
+  function renderBulkGenrePicker() {
+    if (!isAdmin) return;
+    const row = document.getElementById("jb-bulk-genre-row");
+    row.innerHTML = GENRE_KEYS.map((key) => `
+      <button type="button" class="jb-genre-chip${bulkAddGenres.has(key) ? " jb-genre-chip-active" : ""}" data-bulkgenre="${key}">${escapeHtml(genreLabel(key))}</button>
+    `).join("");
+    row.querySelectorAll("[data-bulkgenre]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const key = btn.dataset.bulkgenre;
+        if (bulkAddGenres.has(key)) bulkAddGenres.delete(key);
+        else bulkAddGenres.add(key);
+        renderBulkGenrePicker();
+      });
+    });
+  }
+
   // ---------- Ajout en masse de chansons ----------
   document.getElementById("jb-bulk-add-btn").addEventListener("click", async () => {
     const raw = document.getElementById("jb-bulk-input").value;
@@ -2280,6 +2309,7 @@
     if (lines.length === 0) return;
 
     const existingKeys = new Set(catalogSongs.map((s) => norm(s.title) + "|" + norm(s.artist)));
+    const selectedGenres = [...bulkAddGenres];
     let added = 0, skipped = 0;
     const newSongs = [];
 
@@ -2293,7 +2323,7 @@
       const key = norm(title) + "|" + norm(artist);
       if (!title || existingKeys.has(key)) { skipped++; return; }
       existingKeys.add(key);
-      newSongs.push({ id: slugId(), title, artist, genres: [] });
+      newSongs.push({ id: slugId(), title, artist, genres: [...selectedGenres] });
       added++;
     });
 
@@ -2304,7 +2334,10 @@
         const current = snap.exists() ? (snap.data().songs || []) : [];
         tx.set(ref, { songs: [...current, ...newSongs], updatedAt: serverTimestamp() });
       });
-      statusEl.textContent = `✅ ${added} chanson(s) ajoutée(s)` + (skipped ? `, ${skipped} doublon(s) ignoré(s).` : ".");
+      const genreNote = selectedGenres.length
+        ? ` (style${selectedGenres.length > 1 ? "s" : ""} : ${selectedGenres.map(genreLabel).join(", ")})`
+        : "";
+      statusEl.textContent = `✅ ${added} chanson(s) ajoutée(s)${genreNote}` + (skipped ? `, ${skipped} doublon(s) ignoré(s).` : ".");
       document.getElementById("jb-bulk-input").value = "";
     } catch (e) {
       console.error(e);
