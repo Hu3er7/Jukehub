@@ -593,7 +593,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-09-17.25";
+  const APP_BUILD = "2026-09-17.26";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -663,6 +663,7 @@
       back_btn: "⬅ RETOUR",
       search_placeholder: "🔍 Cherche un titre ou un artiste…",
       catalog_empty: "Aucun résultat pour cette recherche.",
+      genre_song_count_unit: "chansons",
       special_request_text: "Tu ne trouves pas ta chanson ? Écris-la quand même : elle me parviendra. Qui sait ? Peut-être que je peux essayer de la faire !",
       special_request_btn: "📨 Envoyer quand même",
       special_request_sent_toast: "📨 Envoyé ! Merci, on y jette un œil.",
@@ -722,6 +723,7 @@
       back_btn: "⬅ BACK",
       search_placeholder: "🔍 Search a title or artist…",
       catalog_empty: "No results for this search.",
+      genre_song_count_unit: "songs",
       special_request_text: "Can't find your song? Type it in anyway — it'll reach me. Who knows? Maybe I can try to learn it!",
       special_request_btn: "📨 Send it anyway",
       special_request_sent_toast: "📨 Sent! Thanks, we'll take a look.",
@@ -1784,7 +1786,7 @@
     // Nombre total de chansons de ce style, tous artistes confondus, affiché à côté du titre
     // (ex. "Franco (42)") — donne un aperçu de la taille du répertoire pour ce style.
     const totalCount = catalogSongs.filter((s) => songHasGenre(s, key)).length;
-    document.querySelector(".jb-folder-title").textContent = `${genreLabel(key)} (${totalCount})`;
+    document.querySelector(".jb-folder-title").textContent = `${genreLabel(key)} (${totalCount} ${t("genre_song_count_unit")})`;
 
     const counts = {};
     catalogSongs.forEach((s) => {
