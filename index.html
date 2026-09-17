@@ -562,7 +562,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-09-17.13";
+  const APP_BUILD = "2026-09-17.14";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -1883,8 +1883,16 @@
       // Plusieurs chansons dans cette liste : on y reste pour que le client puisse en
       // demander une autre tout de suite, sans repartir de l'écran principal.
       renderCatalog();
+    } else if (catalogView && catalogView.type === "genre-song-list") {
+      // Une seule chanson pour cet artiste dans ce style : un seul niveau en arrière, vers la
+      // liste des artistes de ce style — pas jusqu'à l'écran principal.
+      catalogView = { type: "genre-artists", key: catalogView.key };
+      renderCatalog();
+      const searchbar = document.getElementById("jb-catalog-searchbar");
+      if (searchbar) searchbar.scrollIntoView({ behavior: "smooth", block: "start" });
     } else {
-      // Une seule chanson dans cette liste : plus rien à y faire, retour à l'écran principal.
+      // Sinon (recherche texte, ou artiste choisi depuis Top Pick) : plus rien à y faire,
+      // retour à l'écran principal.
       catalogView = null;
       document.getElementById("jb-search-input").value = "";
       renderCatalog();
