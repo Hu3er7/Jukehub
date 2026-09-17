@@ -84,9 +84,12 @@
   #jb-app textarea { resize: vertical; margin-top: 8px; }
 
   #jb-app .jb-empty { color: var(--text-dim); font-size: 0.9rem; padding: 10px 2px; }
+  #jb-app .jb-special-request-block { padding: 6px 2px 4px; }
+  #jb-app .jb-special-request-text { color: var(--text-dim); font-size: 0.88rem; margin: 0 0 12px; line-height: 1.4; }
+  #jb-app .jb-special-request-btn { width: 100%; }
 
   /* Palmarès */
-  #jb-app .jb-admin-palmares { display: flex; flex-direction: column; gap: 8px; }
+  #jb-app .jb-admin-palmares { display: flex; flex-direction: column; gap: 2px; }
   #jb-app .jb-rank-item {
     display: flex; align-items: center; gap: 12px; background: var(--card);
     border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 14px;
@@ -290,6 +293,14 @@
 
   #jb-app .jb-admin-topbar { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; }
   #jb-app .jb-admin-section { margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--border); }
+  #jb-app .jb-admin-columns { display: flex; gap: 28px; flex-wrap: wrap; align-items: flex-start; }
+  #jb-app .jb-admin-columns .jb-admin-column { flex: 1 1 260px; min-width: 0; }
+  #jb-app .jb-dismiss-special-btn {
+    flex-shrink: 0; background: var(--card2); border: 1px solid var(--border); color: var(--text-dim);
+    font-weight: 700; font-size: 0.8rem; line-height: 1; white-space: nowrap;
+    padding: 7px 12px; border-radius: 999px; cursor: pointer;
+  }
+  #jb-app .jb-dismiss-special-btn:active { transform: scale(0.96); }
   #jb-app .jb-hint { color: var(--text-dim); font-size: 0.8rem; margin-top: 4px; }
 
   #jb-app button.jb-btn-primary, #jb-app button.jb-btn-danger, #jb-app button.jb-btn-ghost {
@@ -300,7 +311,8 @@
   #jb-app .jb-btn-ghost { background: var(--card2); color: var(--text); margin-top: 0; }
 
   #jb-app .jb-admin-rank-item { display: flex; align-items: center; gap: 10px; }
-  #jb-app .jb-mark-played-btn { background: var(--success); color: #062420; font-weight: 700; padding: 9px 11px; border-radius: 10px; font-size: 0.82rem; flex-shrink: 0; cursor: pointer; white-space: nowrap; }
+  #jb-app .jb-mark-played-btn { background: var(--success); color: #062420; font-weight: 700; padding: 7px 12px; border-radius: 999px; font-size: 0.8rem; flex-shrink: 0; cursor: pointer; white-space: nowrap; }
+  #jb-app .jb-mark-played-btn:active { transform: scale(0.96); }
   #jb-app .jb-unmark-btn { background: var(--card2); color: var(--text-dim); font-weight: 600; padding: 6px 10px; border-radius: 8px; font-size: 0.75rem; cursor: pointer; }
 
   #jb-app .jb-cooldown-list { display: flex; flex-direction: column; gap: 8px; }
@@ -417,6 +429,10 @@
         </div>
         <ul id="jb-catalog-list" class="jb-catalog-list"></ul>
         <p id="jb-catalog-empty" class="jb-empty" hidden>Aucun résultat pour cette recherche.</p>
+        <div id="jb-special-request-block" class="jb-special-request-block" hidden>
+          <p id="jb-special-request-text" class="jb-special-request-text"></p>
+          <button id="jb-special-request-btn" class="jb-btn-primary jb-special-request-btn"></button>
+        </div>
       </div>
     </section>
 
@@ -478,10 +494,18 @@
         <p class="jb-hint">Efface le palmarès et les chansons "déjà jouées". Le répertoire complet reste intact.</p>
       </section>
 
-      <section class="jb-admin-section">
-        <h3>🏆 Palmarès en direct</h3>
-        <ol id="jb-admin-palmares" class="jb-admin-palmares"></ol>
-        <p id="jb-admin-palmares-empty" class="jb-empty" hidden>Rien pour l'instant.</p>
+      <section class="jb-admin-section jb-admin-columns">
+        <div class="jb-admin-column">
+          <h3>🏆 Palmarès en direct</h3>
+          <ol id="jb-admin-palmares" class="jb-admin-palmares"></ol>
+          <p id="jb-admin-palmares-empty" class="jb-empty" hidden>Rien pour l'instant.</p>
+        </div>
+        <div class="jb-admin-column">
+          <h3>📨 Demandes spéciales</h3>
+          <p class="jb-hint">Recherches de clients restées sans résultat dans le répertoire.</p>
+          <ol id="jb-admin-special" class="jb-admin-palmares"></ol>
+          <p id="jb-admin-special-empty" class="jb-empty" hidden>Rien pour l'instant.</p>
+        </div>
       </section>
 
       <section class="jb-admin-section">
@@ -562,7 +586,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-09-17.15";
+  const APP_BUILD = "2026-09-17.16";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -632,6 +656,9 @@
       back_btn: "⬅ RETOUR",
       search_placeholder: "🔍 Cherche un titre ou un artiste…",
       catalog_empty: "Aucun résultat pour cette recherche.",
+      special_request_text: "Tu ne trouves pas ta chanson ? Écris-la quand même : elle me parviendra. Qui sait ? Peut-être que je peux essayer de la faire !",
+      special_request_btn: "📨 Envoyer quand même",
+      special_request_sent_toast: "📨 Envoyé ! Merci, on y jette un œil.",
       burned_badge: "🔥❌ Brûlée",
       cooldown_played_label: "Déjà Jouée",
       cooldown_available_label: "Disponible",
@@ -657,15 +684,19 @@
       },
       tour1_title: "Bienvenue 👋",
       tour1_text: "Petit tour rapide pour te montrer comment ça marche. Tu peux passer cette étape (ou tout le tutoriel) à tout moment.",
-      tour2_title: "1. Les styles de musique",
-      tour2_text: "Touche un style (Country, Rock, Pop…) pour voir les chansons de ce genre. Juste au-dessus, retrouve aussi le Top Pick : les artistes les plus demandés, en un clic.",
-      tour2b_title: "2. Choisir une chanson",
+      tour3_title: "1. Chercher une chanson",
+      tour3_text: "Fouille dans mon répertoire en inscrivant le titre ou le nom de l'artiste. Si tu ne trouves pas ta chanson, écris-la quand même : elle me parviendra. Qui sait ? Peut-être que je peux essayer de la faire !",
+      tour_quickpick_title: "2. Top Pick",
+      tour_quickpick_text: "Retrouve ici les artistes les plus demandés. Touche un nom pour voir directement toutes ses chansons.",
+      tour2_title: "3. Choisis ton style",
+      tour2_text: "Touche un style (Country, rock, pop...) pour voir les chansons de ce genre.",
+      tour2b_title: "4. Choisir une chanson",
       tour2b_text: "Touche « ▶ Jouer » à côté de la chanson que tu veux demander. Utilise ⬅ RETOUR pour revenir aux styles.",
-      tour3_title: "3. Chercher une chanson",
-      tour3_text: "Pas envie de fouiller ? Tape le titre ou le nom de l'artiste ici pour trouver la chanson tout de suite.",
-      tour4_title: "4. Le palmarès",
+      tour_requests_title: "5. Tes demandes",
+      tour_requests_text: "Tu as un maximum de 10 demandes actives. Une fois ta limite atteinte, patiente 2 minutes (ou attends qu'une de tes chansons soit jouée) pour en récupérer.",
+      tour4_title: "6. Le palmarès",
       tour4_text: "Le palmarès montre toutes les chansons demandées ce soir, classées de la plus populaire à la moins populaire. Tu peux toujours voir exactement où se trouve ta demande.",
-      tour4b_title: "5. Les boosts",
+      tour4b_title: "7. Les boosts",
       tour4b_text: "Appuie sur 🚀 Boost pour faire monter une chanson dans le classement. Tu as 3 boosts. Si tu utilises les 3, ils se renouvelleront après 2 minutes. Ils se renouvellent aussi quand la chanson est jouée.",
     },
     en: {
@@ -683,6 +714,9 @@
       back_btn: "⬅ BACK",
       search_placeholder: "🔍 Search a title or artist…",
       catalog_empty: "No results for this search.",
+      special_request_text: "Can't find your song? Type it in anyway — it'll reach me. Who knows? Maybe I can try to learn it!",
+      special_request_btn: "📨 Send it anyway",
+      special_request_sent_toast: "📨 Sent! Thanks, we'll take a look.",
       burned_badge: "🔥❌ Unavailable",
       cooldown_played_label: "Already Played",
       cooldown_available_label: "Available",
@@ -708,15 +742,19 @@
       },
       tour1_title: "Welcome 👋",
       tour1_text: "A quick tour of how this works. You can skip this step (or the whole tutorial) at any time.",
-      tour2_title: "1. Music styles",
-      tour2_text: "Tap a style (Country, Rock, Pop…) to see songs in that genre. Just above, check out Top Pick: the most-requested artists, one tap away.",
-      tour2b_title: "2. Pick a song",
+      tour3_title: "1. Search for a song",
+      tour3_text: "Search my repertoire by typing the title or artist name. Can't find your song? Type it in anyway — it'll reach me. Who knows? Maybe I can try to learn it!",
+      tour_quickpick_title: "2. Top Pick",
+      tour_quickpick_text: "Find the most-requested artists here. Tap a name to see all their songs right away.",
+      tour2_title: "3. Choose your style",
+      tour2_text: "Tap a style (Country, rock, pop...) to see the songs in that genre.",
+      tour2b_title: "4. Pick a song",
       tour2b_text: "Tap \"▶ Play\" next to the song you want to request. Use ⬅ BACK to return to the styles.",
-      tour3_title: "3. Search for a song",
-      tour3_text: "Don't feel like browsing? Type a title or artist name here to find the song right away.",
-      tour4_title: "4. The leaderboard",
+      tour_requests_title: "5. Your requests",
+      tour_requests_text: "You have a maximum of 10 active requests. Once you hit your limit, wait 2 minutes (or until one of your songs gets played) to get more.",
+      tour4_title: "6. The leaderboard",
       tour4_text: "The leaderboard shows every song requested tonight, from most to least popular. You can always see exactly where your request stands.",
-      tour4b_title: "5. Boosts",
+      tour4b_title: "7. Boosts",
       tour4b_text: "Tap 🚀 Boost to push a song up the ranking. You get 3 boosts. If you use all 3, they'll renew after 2 minutes. They also renew as soon as the song gets played.",
     },
   };
@@ -762,7 +800,31 @@
   const TOUR_STEPS = [
     { target: () => document.querySelector(".jb-top-bar"), titleKey: "tour1_title", textKey: "tour1_text" },
     {
-      target: () => document.querySelector(".jb-catalog-browse"),
+      // 1. Chercher une chanson — en premier, car c'est le raccourci le plus rapide pour un
+      // client qui sait déjà ce qu'il veut. Le texte explique aussi la demande spéciale.
+      target: () => document.getElementById("jb-search-input"),
+      titleKey: "tour3_title",
+      textKey: "tour3_text",
+      before: () => {
+        catalogView = null;
+        document.getElementById("jb-search-input").value = "";
+        renderCatalog();
+      },
+    },
+    {
+      // 2. Top Pick.
+      target: () => document.getElementById("jb-quickpick-section"),
+      titleKey: "tour_quickpick_title",
+      textKey: "tour_quickpick_text",
+      before: () => {
+        catalogView = null;
+        document.getElementById("jb-search-input").value = "";
+        renderCatalog();
+      },
+    },
+    {
+      // 3. Choisis ton style.
+      target: () => document.querySelector(".jb-style-section"),
       titleKey: "tour2_title",
       textKey: "tour2_text",
       before: () => {
@@ -772,6 +834,7 @@
       },
     },
     {
+      // 4. Choisir une chanson.
       target: () => document.querySelector(".jb-catalog-results"),
       titleKey: "tour2b_title",
       textKey: "tour2b_text",
@@ -789,7 +852,17 @@
         renderCatalog();
       },
     },
-    { target: () => document.getElementById("jb-search-input"), titleKey: "tour3_title", textKey: "tour3_text" },
+    {
+      // 5. Tes demandes (max 10).
+      target: () => document.getElementById("jb-request-remaining"),
+      titleKey: "tour_requests_title",
+      textKey: "tour_requests_text",
+      before: () => {
+        catalogView = null;
+        document.getElementById("jb-search-input").value = "";
+        renderCatalog();
+      },
+    },
     { target: () => document.querySelector(".jb-palmares"), titleKey: "tour4_title", textKey: "tour4_text" },
     {
       target: () => document.getElementById("jb-boost-remaining"),
@@ -1030,6 +1103,9 @@
   // artistDemand : nom d'artiste -> {name, count} — nombre cumulatif (toutes les soirées) de
   // demandes reçues, utilisé pour la section Top Pick (les 5 artistes les plus demandés).
   let artistDemand = {};
+  // specialRequests : id -> {text, createdAt} — recherches textuelles des clients restées sans
+  // résultat, envoyées volontairement à Hubert (colonne "Demandes spéciales" du panneau admin).
+  let specialRequests = {};
   let isAdmin = false;
 
   // Animation du palmarès (FLIP) : garde les éléments existants pour pouvoir
@@ -1414,11 +1490,18 @@
     renderAll();
   }, (err) => console.error("votes onSnapshot", err));
 
+  onSnapshot(collection(db, "specialRequests"), (snap) => {
+    specialRequests = {};
+    snap.forEach((d) => { specialRequests[d.id] = d.data(); });
+    renderAdminSpecial();
+  }, (err) => console.error("specialRequests onSnapshot", err));
+
   function renderAll() {
     renderPalmares();
     renderCatalog();
     updateRequestBadge();
     renderAdminPalmares();
+    renderAdminSpecial();
     renderAdminCatalog();
     renderCooldownList();
   }
@@ -1619,6 +1702,7 @@
     browse.hidden = showResults;
     resultsWrap.hidden = !showResults;
     backBtn.hidden = !showResults;
+    document.getElementById("jb-special-request-block").hidden = true;
 
     if (!showResults) {
       positionRequestBadge("style");
@@ -1664,6 +1748,16 @@
     empty.hidden = songs.length > 0;
     songs.forEach((song) => list.appendChild(renderSongRow(song, showArtist)));
     wireSongRowEvents(list);
+
+    // Demande spéciale : seulement pertinent pour une recherche textuelle sans résultat (pas
+    // pour un style/artiste vide, où il n'y a rien de précis à envoyer à Hubert).
+    const specialBlock = document.getElementById("jb-special-request-block");
+    const showSpecial = !!search && songs.length === 0;
+    specialBlock.hidden = !showSpecial;
+    if (showSpecial) {
+      document.getElementById("jb-special-request-text").textContent = t("special_request_text");
+      document.getElementById("jb-special-request-btn").textContent = t("special_request_btn");
+    }
   }
 
   // ---------- Liste des artistes d'un style donné (étape intermédiaire avant les chansons) ----------
@@ -1934,6 +2028,26 @@
     }
   }
 
+  // ---------- Demande spéciale (chanson introuvable dans le répertoire) ----------
+  // Envoie le texte tapé par le client dans une collection à part, consultée dans le panneau
+  // admin (colonne "Demandes spéciales", à côté du palmarès) — même approche optimiste que
+  // requestSong/boostSong : on confirme au client tout de suite, l'écriture se synchronise
+  // en arrière-plan.
+  async function submitSpecialRequest() {
+    const input = document.getElementById("jb-search-input");
+    const text = input.value.trim();
+    if (!text) return;
+    showToast(t("special_request_sent_toast"));
+    document.getElementById("jb-special-request-block").hidden = true;
+    try {
+      const ref = doc(collection(db, "specialRequests"));
+      await setDoc(ref, { text, createdAt: serverTimestamp() });
+    } catch (e) {
+      console.error(e);
+    }
+  }
+  document.getElementById("jb-special-request-btn").addEventListener("click", submitSpecialRequest);
+
   // ============================================================
   //  MODE SPECTACLE (ADMIN)
   // ============================================================
@@ -1943,6 +2057,7 @@
     document.getElementById("jb-dashboard").hidden = !isAdmin;
     if (isAdmin) {
       renderAdminPalmares();
+      renderAdminSpecial();
       renderAdminCatalog();
     }
   });
@@ -1976,17 +2091,18 @@
     list.innerHTML = "";
     empty.hidden = ranked.length > 0;
 
+    // Même visuel que le palmarès du côté client (.jb-slot) — juste le bouton "Jouée" à la
+    // place du bouton Boost, pour que l'admin reconnaisse immédiatement l'écran des clients.
     ranked.forEach(([id, v], i) => {
-      const rank = i + 1;
       const li = document.createElement("li");
-      li.className = "jb-rank-item jb-admin-rank-item" + (rank <= 3 ? ` jb-top${rank}` : "");
-      const medal = rank === 1 ? "🥇" : rank === 2 ? "🥈" : rank === 3 ? "🥉" : rank;
+      li.className = "jb-slot";
       li.innerHTML = `
-        <div class="jb-rank-num">${medal}</div>
-        <div class="jb-rank-info">
-          <div class="jb-rank-title">${escapeHtml(v.title)}</div>
-          <div class="jb-rank-artist">${escapeHtml(v.artist || "")} · ${v.requests} 🙌</div>
-        </div>
+        <span class="jb-slot-rank">${i + 1}</span>
+        <span class="jb-slot-votes">${v.requests}</span>
+        <span class="jb-slot-info">
+          <span class="jb-slot-title">${escapeHtml(v.title)}</span>
+          ${v.artist ? `<span class="jb-slot-artist">${escapeHtml(v.artist)}</span>` : ""}
+        </span>
         <button class="jb-mark-played-btn" data-played="${id}">✅ Jouée</button>`;
       list.appendChild(li);
     });
@@ -1994,6 +2110,44 @@
     list.querySelectorAll("[data-played]").forEach((btn) => {
       btn.addEventListener("click", () => markPlayed(btn.dataset.played));
     });
+  }
+
+  // ---------- Rendu : Demandes spéciales admin (chansons introuvables cherchées par un client) ----------
+  function renderAdminSpecial() {
+    if (!isAdmin) return;
+    const list = document.getElementById("jb-admin-special");
+    const empty = document.getElementById("jb-admin-special-empty");
+    const entries = Object.entries(specialRequests).sort((a, b) => {
+      const ta = a[1].createdAt?.toMillis ? a[1].createdAt.toMillis() : 0;
+      const tb = b[1].createdAt?.toMillis ? b[1].createdAt.toMillis() : 0;
+      return tb - ta; // plus récentes en premier
+    });
+
+    list.innerHTML = "";
+    empty.hidden = entries.length > 0;
+
+    entries.forEach(([id, req]) => {
+      const li = document.createElement("li");
+      li.className = "jb-slot";
+      li.innerHTML = `
+        <span class="jb-slot-info">
+          <span class="jb-slot-title">${escapeHtml(req.text || "")}</span>
+        </span>
+        <button class="jb-dismiss-special-btn" data-dismiss="${id}">✖ Retirer</button>`;
+      list.appendChild(li);
+    });
+
+    list.querySelectorAll("[data-dismiss]").forEach((btn) => {
+      btn.addEventListener("click", () => dismissSpecialRequest(btn.dataset.dismiss));
+    });
+  }
+
+  async function dismissSpecialRequest(id) {
+    try {
+      await deleteDoc(doc(db, "specialRequests", id));
+    } catch (e) {
+      console.error(e);
+    }
   }
 
   async function markPlayed(id) {
