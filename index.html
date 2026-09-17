@@ -593,7 +593,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-09-17.21";
+  const APP_BUILD = "2026-09-17.22";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -627,7 +627,7 @@
   // remplace les anciens styles "Québécois" et "Chanson Française", fusionnés en un seul
   // onglet — voir GENRE_ALIASES plus bas pour la compatibilité avec les chansons déjà classées
   // sous ces anciennes clés.
-  const GENRE_KEYS = ["franco", "country", "rock", "pop", "classic-rock", "reggae", "punk", "dance", "classic-folk", "folk", "oldies"];
+  const GENRE_KEYS = ["franco", "country", "rock", "pop", "classic-rock", "reggae", "punk", "dance", "classic-folk", "folk", "oldies", "irish"];
   const GENRE_ALIASES = { franco: ["quebecois", "francais"] };
   // Vrai si la chanson appartient au style `key`, en tenant compte des anciennes clés fusionnées
   // dans GENRE_ALIASES (ex. une chanson encore taguée "quebecois" compte pour "franco").
@@ -687,7 +687,7 @@
       genres: {
         franco: "Franco", country: "Country", rock: "Rock", punk: "Punk", "classic-rock": "Classique Rock",
         pop: "Pop", dance: "Dance",
-        folk: "Folk", "classic-folk": "Classique Folk", reggae: "Reggae", oldies: "Oldies",
+        folk: "Folk", "classic-folk": "Classique Folk", reggae: "Reggae", oldies: "Oldies", irish: "Irish",
       },
       tour1_title: "Bienvenue 👋",
       tour1_text: "Petit tour rapide pour te montrer comment ça marche. Tu peux passer cette étape (ou tout le tutoriel) à tout moment.",
@@ -745,7 +745,7 @@
       genres: {
         franco: "French/Queb", country: "Country", rock: "Rock", punk: "Punk", "classic-rock": "Classic Rock",
         pop: "Pop", dance: "Dance",
-        folk: "Folk", "classic-folk": "Classic Folk", reggae: "Reggae", oldies: "Oldies",
+        folk: "Folk", "classic-folk": "Classic Folk", reggae: "Reggae", oldies: "Oldies", irish: "Irish",
       },
       tour1_title: "Welcome 👋",
       tour1_text: "A quick tour of how this works. You can skip this step (or the whole tutorial) at any time.",
