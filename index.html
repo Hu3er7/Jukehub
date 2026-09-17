@@ -531,7 +531,7 @@
       palmares_empty: "Aucune demande pour l'instant — sois le premier à voter !",
       boost_remaining: (n) => `🚀 Boosts : ${n}`,
       boost_remaining_countdown: (time) => `🚀 Boosts : ${time}`,
-      boost_used_up: "Tu as utilisé tes 3 boosts pour ce soir !",
+      boost_used_up: "Tu as utilisé tes 3 boosts. Patiente 2 minutes (ou attends qu'une de tes chansons boostées joue) pour en récupérer un !",
       boost_added: "🚀 Boost ajouté !",
       boost_aria: "Booster cette chanson",
       boost_btn: "Boost",
@@ -549,7 +549,8 @@
       request_added_toast: "🎶 Chanson demandée !",
       confirm_request: (title) => `Confirmer ta demande pour « ${title} » ?`,
       requests_remaining: (n) => `Demandes : ${n}`,
-      requests_limit_reached: "Tu as atteint ta limite de 10 chansons pour l'instant. Attends qu'une de tes demandes soit jouée !",
+      requests_remaining_countdown: (time) => `Demandes : ${time}`,
+      requests_limit_reached: "Tu as atteint ta limite de 10 chansons. Patiente 2 minutes (ou attends qu'une de tes chansons soit jouée) pour en récupérer une !",
       error_toast: "Oups, réessaie dans un instant.",
       song_count: (n) => `${n} chanson${n > 1 ? "s" : ""}`,
       admin_link_title: "Mode spectacle",
@@ -582,7 +583,7 @@
       palmares_empty: "No requests yet — be the first to vote!",
       boost_remaining: (n) => `🚀 Boosts : ${n}`,
       boost_remaining_countdown: (time) => `🚀 Boosts : ${time}`,
-      boost_used_up: "You've used all 3 of your boosts for tonight!",
+      boost_used_up: "You've used all 3 of your boosts. Wait 2 minutes (or until one of your boosted songs gets played) to get one back!",
       boost_added: "🚀 Boost added!",
       boost_aria: "Boost this song",
       boost_btn: "Boost",
@@ -600,7 +601,8 @@
       request_added_toast: "🎶 Song requested!",
       confirm_request: (title) => `Confirm your request for "${title}"?`,
       requests_remaining: (n) => `Requests: ${n}`,
-      requests_limit_reached: "You've reached your limit of 10 songs for now. Wait for one of your requests to be played!",
+      requests_remaining_countdown: (time) => `Requests: ${time}`,
+      requests_limit_reached: "You've reached your limit of 10 songs. Wait 2 minutes (or until one of your songs gets played) to get one back!",
       error_toast: "Oops, try again in a moment.",
       song_count: (n) => `${n} song${n > 1 ? "s" : ""}`,
       admin_link_title: "Show mode",
@@ -911,13 +913,17 @@
   // détection de changement fragile, juste une comparaison à chaque rendu.
   let requestedRounds = {};
   const MAX_REQUESTS = 10; // nombre maximum de demandes actives par client, par soirée
+  const REQUEST_RESET_MS = 2 * 60 * 1000; // filet de sécurité : redonne 1 demande après ce délai une fois la banque de 10 épuisée
+  // requestResetAt : horodatage (ms) auquel le client récupérera 1 demande, une fois qu'il a
+  // atteint sa limite de 10. 0 tant qu'il lui reste au moins une demande disponible.
+  let requestResetAt = 0;
   const MAX_BOOSTS = 3; // nombre maximum de boosts par client, par soirée
-  const BOOST_RESET_MS = 15 * 60 * 1000; // filet de sécurité : renouvelle les 3 boosts après ce délai, même si aucune chanson boostée n'a joué
+  const BOOST_RESET_MS = 2 * 60 * 1000; // filet de sécurité : redonne 1 boost après ce délai une fois les 3 épuisés
   // boostUsage : songId -> { count, token } — boosts actuellement "verrouillés" sur cette chanson
   // (token = roundToken au moment du boost ; libéré automatiquement dès que la chanson est jouée).
   let boostUsage = {};
-  // boostResetAt : horodatage (ms) auquel les 3 boosts seront renouvelés, une fois que le client
-  // les a tous utilisés. 0 tant que le client a au moins un boost disponible.
+  // boostResetAt : horodatage (ms) auquel le client récupérera 1 boost, une fois que les 3 sont
+  // épuisés. 0 tant qu'il lui reste au moins un boost disponible.
   let boostResetAt = 0;
   // catalogView : navigation active dans le catalogue public.
   // null = vue par défaut (Top Pick + Style) ; sinon {type:"genre-artists", key} (liste des
@@ -986,14 +992,45 @@
     if (changed) saveRequestedToStorage();
     return total;
   }
-  function requestsRemaining() {
-    return Math.max(0, MAX_REQUESTS - activeRequestsCount());
+  // Filet de sécurité : après 2 minutes à court de demandes, en redonne une seule (pas une
+  // remise à zéro complète) — puis relance aussitôt un nouveau cooldown de 2 min si le client
+  // est encore à 10/10, jusqu'à ce qu'il en retrouve via ce mécanisme ou qu'une de ses chansons
+  // demandées soit jouée.
+  function maybeRenewRequests() {
+    if (!requestResetAt || Date.now() < requestResetAt) return;
+    const ids = Object.keys(requestedRounds);
+    if (ids.length) {
+      delete requestedRounds[ids[0]];
+      saveRequestedToStorage();
+    }
+    requestResetAt = activeRequestsCount() >= MAX_REQUESTS ? Date.now() + REQUEST_RESET_MS : 0;
+    saveRequestResetToStorage();
   }
-  // Met à jour le badge "Demandes : N" à côté de la barre de recherche.
+  function requestsRemaining() {
+    maybeRenewRequests();
+    const remaining = Math.max(0, MAX_REQUESTS - activeRequestsCount());
+    // Si une demande s'est libérée parce que sa chanson a joué avant la fin des 2 min,
+    // le décompte n'a plus lieu d'être : on l'annule.
+    if (remaining > 0 && requestResetAt) {
+      requestResetAt = 0;
+      saveRequestResetToStorage();
+    }
+    return remaining;
+  }
+  // Met à jour le badge "Demandes : N" (ou le décompte "Demandes : MM:SS" une fois la banque de
+  // 10 épuisée) à côté de la barre de recherche.
   function updateRequestBadge() {
     const el = document.getElementById("jb-request-remaining");
     if (!el) return;
-    el.textContent = t("requests_remaining", requestsRemaining());
+    const r = requestsRemaining();
+    if (r <= 0 && requestResetAt > Date.now()) {
+      const totalSec = Math.max(0, Math.ceil((requestResetAt - Date.now()) / 1000));
+      const mm = String(Math.floor(totalSec / 60)).padStart(2, "0");
+      const ss = String(totalSec % 60).padStart(2, "0");
+      el.textContent = t("requests_remaining_countdown", `${mm}:${ss}`);
+    } else {
+      el.textContent = t("requests_remaining", r);
+    }
   }
   // Rappel visuel : fait gonfler-dégonfler et s'illuminer-s'éteindre un badge un court instant,
   // pour attirer l'attention du client dessus juste après qu'il ait changé (boost utilisé,
@@ -1039,6 +1076,23 @@
   function saveRequestedToStorage() {
     try {
       localStorage.setItem(storageKey(), JSON.stringify(requestedRounds));
+    } catch (e) {}
+  }
+  function requestResetKey() {
+    return "jb_request_reset_" + (nightId || "default");
+  }
+  function loadRequestResetFromStorage() {
+    try {
+      const raw = localStorage.getItem(requestResetKey());
+      requestResetAt = raw ? Number(raw) || 0 : 0;
+    } catch (e) {
+      requestResetAt = 0;
+    }
+  }
+  function saveRequestResetToStorage() {
+    try {
+      if (requestResetAt) localStorage.setItem(requestResetKey(), String(requestResetAt));
+      else localStorage.removeItem(requestResetKey());
     } catch (e) {}
   }
 
@@ -1094,15 +1148,21 @@
     if (changed) saveBoostsToStorage();
     return total;
   }
-  // Filet de sécurité : si le délai de 15 minutes est écoulé depuis que les 3 boosts ont
-  // été épuisés, les renouvelle intégralement même si les chansons boostées n'ont pas joué.
+  // Filet de sécurité : après 2 minutes à court de boosts, en redonne un seul (pas une remise à
+  // zéro complète) — puis relance aussitôt un nouveau cooldown de 2 min si le client est encore
+  // à 0, jusqu'à ce qu'il en retrouve un via ce mécanisme ou qu'une de ses chansons boostées joue.
   function maybeRenewBoosts() {
-    if (boostResetAt && Date.now() >= boostResetAt) {
-      boostUsage = {};
-      boostResetAt = 0;
+    if (!boostResetAt || Date.now() < boostResetAt) return;
+    const ids = Object.keys(boostUsage);
+    if (ids.length) {
+      const id = ids[0];
+      const entry = boostUsage[id];
+      if (entry.count > 1) entry.count -= 1;
+      else delete boostUsage[id];
       saveBoostsToStorage();
-      saveBoostResetToStorage();
     }
+    boostResetAt = activeBoostsCount() >= MAX_BOOSTS ? Date.now() + BOOST_RESET_MS : 0;
+    saveBoostResetToStorage();
   }
   function boostsRemaining() {
     maybeRenewBoosts();
@@ -1137,6 +1197,7 @@
     if (!v || isUnavailable(v)) return;
     if (boostsRemaining() <= 0) {
       showToast(t("boost_used_up"));
+      pulseAttention(document.getElementById("jb-boost-remaining"));
       return;
     }
     const token = roundToken(v);
@@ -1218,6 +1279,7 @@
     if (newNightId !== nightId) {
       nightId = newNightId;
       loadRequestedFromStorage();
+      loadRequestResetFromStorage();
       loadBoostsFromStorage();
       loadBoostResetFromStorage();
       renderAll();
@@ -1268,6 +1330,13 @@
         anyExpired = true; // déclenche un rendu complet pour réactiver les boutons boost
       } else {
         updateBoostBadge();
+      }
+    }
+    if (requestResetAt) {
+      if (now >= requestResetAt) {
+        anyExpired = true; // déclenche un rendu complet pour réactiver les demandes
+      } else {
+        updateRequestBadge();
       }
     }
     if (anyExpired) renderAll();
@@ -1610,6 +1679,7 @@
         if (!song) return;
         if (requestsRemaining() <= 0) {
           showToast(t("requests_limit_reached"));
+          pulseAttention(document.getElementById("jb-request-remaining"));
           return;
         }
         if (!confirm(t("confirm_request", song.title))) return;
@@ -1674,6 +1744,11 @@
       requestedRounds[song.id] = tokenAtRequest;
       saveRequestedToStorage();
       showToast(t("request_added_toast"));
+      const remainingNow = requestsRemaining();
+      if (remainingNow <= 0 && !requestResetAt) {
+        requestResetAt = Date.now() + REQUEST_RESET_MS;
+        saveRequestResetToStorage();
+      }
       updateRequestBadge();
       pulseAttention(document.getElementById("jb-request-remaining"));
       // Compteur cumulatif par artiste (Top Pick) — jamais réinitialisé par "Nouvelle soirée",
