@@ -593,7 +593,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-09-17.24";
+  const APP_BUILD = "2026-09-17.25";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -1781,7 +1781,10 @@
     const empty = document.getElementById("jb-catalog-empty");
     titleWrap.hidden = false;
     positionRequestBadge("folder");
-    document.querySelector(".jb-folder-title").textContent = genreLabel(key);
+    // Nombre total de chansons de ce style, tous artistes confondus, affiché à côté du titre
+    // (ex. "Franco (42)") — donne un aperçu de la taille du répertoire pour ce style.
+    const totalCount = catalogSongs.filter((s) => songHasGenre(s, key)).length;
+    document.querySelector(".jb-folder-title").textContent = `${genreLabel(key)} (${totalCount})`;
 
     const counts = {};
     catalogSongs.forEach((s) => {
@@ -1845,13 +1848,9 @@
   // ---------- Style : onglets de catégories musicales, assignées depuis l'admin ----------
   function renderStyleTabs() {
     const list = document.getElementById("jb-style-list");
-    // Nombre total de chansons (tous artistes confondus) pour chaque style, affiché entre
-    // parenthèses sur le bouton — ex. "Franco (42)" — pour donner un aperçu de la taille du
-    // répertoire avant même d'ouvrir le style.
-    list.innerHTML = GENRE_KEYS.map((key) => {
-      const count = catalogSongs.filter((s) => songHasGenre(s, key)).length;
-      return `<button class="jb-style-item" data-genre="${key}">${escapeHtml(genreLabel(key))} (${count})</button>`;
-    }).join("");
+    list.innerHTML = GENRE_KEYS.map((key) => `
+      <button class="jb-style-item" data-genre="${key}">${escapeHtml(genreLabel(key))}</button>
+    `).join("");
     list.querySelectorAll("[data-genre]").forEach((btn) => {
       btn.addEventListener("click", () => {
         catalogView = { type: "genre-artists", key: btn.dataset.genre };
