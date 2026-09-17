@@ -218,8 +218,8 @@
 
   /* Style (catégories de musique) */
   #jb-app .jb-style-section { margin-bottom: 12px; }
-  #jb-app .jb-style-heading-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-  #jb-app .jb-style-heading-row h2 { margin-bottom: 0; }
+  #jb-app .jb-style-heading-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 14px; }
+  #jb-app .jb-style-heading-row h2 { margin-bottom: 0; font-size: 1.6rem; }
   #jb-app .jb-style-list { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; }
   #jb-app .jb-style-item {
     background: var(--card); border: 1px solid var(--border); color: var(--text);
@@ -556,7 +556,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-09-17.7";
+  const APP_BUILD = "2026-09-17.8";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
