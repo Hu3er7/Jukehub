@@ -93,7 +93,10 @@
   #jb-app .jb-rank-title { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   #jb-app .jb-rank-artist { color: var(--text-dim); font-size: 0.85rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   #jb-app .jb-rank-count { font-weight: 700; color: var(--accent2); font-size: 0.9rem; flex-shrink: 0; white-space: nowrap; }
-  #jb-app .jb-palmares-heading { display: flex; align-items: center; justify-content: space-between; flex-wrap: nowrap; gap: 8px; margin-bottom: 10px; }
+  #jb-app .jb-palmares-heading {
+    display: flex; align-items: center; justify-content: space-between; flex-wrap: nowrap; gap: 8px;
+    position: sticky; top: 0; z-index: 20; background: var(--bg); padding: 8px 0; margin-bottom: 2px;
+  }
   #jb-app .jb-palmares-heading h2 {
     margin-bottom: 0; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   }
