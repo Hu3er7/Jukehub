@@ -50,10 +50,11 @@
     display: flex; align-items: center; justify-content: space-between; gap: 10px; padding-top: 14px;
   }
   #jb-app .jb-top-bar h1 {
-    font-family: 'Anton', -apple-system, sans-serif; font-size: 1.7rem; font-weight: 400;
+    font-family: 'Anton', -apple-system, sans-serif; font-size: 2.3rem; font-weight: 400;
     color: var(--accent2); letter-spacing: 0.3px;
     overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0;
   }
+  #jb-app .jb-top-bar-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
   #jb-app .jb-lang-bar { display: flex; gap: 6px; flex-shrink: 0; }
   #jb-app .jb-lang-btn {
     background: var(--card); border: 1px solid var(--border); color: var(--text-dim);
@@ -64,7 +65,7 @@
 
   #jb-app section { margin-top: 16px; }
   @media (max-width: 420px) {
-    #jb-app .jb-top-bar h1 { font-size: 1.35rem; }
+    #jb-app .jb-top-bar h1 { font-size: 1.9rem; }
   }
   #jb-app h2 {
     font-family: 'Anton', -apple-system, sans-serif; font-size: 1.2rem; font-weight: 400;
@@ -200,6 +201,7 @@
     border: 1px solid var(--border); border-radius: 999px; padding: 5px 11px; white-space: nowrap;
   }
   #jb-app .jb-folder-title-wrap { margin-bottom: 14px; }
+  #jb-app .jb-folder-title-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 
   /* Top Pick (artistes les plus demandés) */
   #jb-app .jb-quickpick-section { margin-bottom: 18px; }
@@ -227,7 +229,8 @@
   #jb-app .jb-folder-title {
     font-family: 'Anton', -apple-system, sans-serif; font-weight: 400; font-size: 2rem;
     letter-spacing: 0.3px; line-height: 1.1; color: var(--text); text-align: left;
-    background: none; border-radius: 0; padding: 0;
+    background: none; border-radius: 0; padding: 0; flex: 1; min-width: 0;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   }
   @media (max-width: 420px) {
     #jb-app .jb-folder-title { font-size: 1.6rem; }
@@ -374,17 +377,18 @@
   <div id="jb-public" class="jb-view">
     <header class="jb-top-bar">
       <h1 id="jb-artist-name">🎤 Chargement…</h1>
-      <div class="jb-lang-bar">
-        <button id="jb-lang-fr" class="jb-lang-btn" data-lang="fr">FR</button>
-        <button id="jb-lang-en" class="jb-lang-btn" data-lang="en">EN</button>
-        <button id="jb-tour-btn" class="jb-lang-btn" type="button">❓</button>
+      <div class="jb-top-bar-right">
+        <div id="jb-request-remaining" class="jb-request-remaining">Demandes : 10</div>
+        <div class="jb-lang-bar">
+          <button id="jb-lang-fr" class="jb-lang-btn" data-lang="fr">FR</button>
+          <button id="jb-lang-en" class="jb-lang-btn" data-lang="en">EN</button>
+        </div>
       </div>
     </header>
     <section class="jb-catalog">
       <div id="jb-catalog-searchbar" class="jb-catalog-searchbar">
         <button id="jb-back-btn" class="jb-back-btn" hidden>⬅ RETOUR</button>
         <input id="jb-search-input" type="text" placeholder="🔍 Cherche un titre ou un artiste…" autocomplete="off" />
-        <div id="jb-request-remaining" class="jb-request-remaining">🎫 Demandes : 10</div>
       </div>
 
       <div id="jb-catalog-browse" class="jb-catalog-browse">
@@ -400,7 +404,9 @@
 
       <div id="jb-catalog-results" class="jb-catalog-results" hidden>
         <div id="jb-folder-title-wrap" class="jb-folder-title-wrap" hidden>
-          <div class="jb-folder-title"></div>
+          <div class="jb-folder-title-row">
+            <div class="jb-folder-title"></div>
+          </div>
         </div>
         <ul id="jb-catalog-list" class="jb-catalog-list"></ul>
         <p id="jb-catalog-empty" class="jb-empty" hidden>Aucun résultat pour cette recherche.</p>
@@ -549,7 +555,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-09-17.5";
+  const APP_BUILD = "2026-09-17.6";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -726,8 +732,6 @@
     document.getElementById("jb-back-btn").textContent = t("back_btn");
     document.getElementById("jb-search-input").placeholder = t("search_placeholder");
     document.querySelector(".jb-admin-link").title = t("admin_link_title");
-    const tourBtn = document.getElementById("jb-tour-btn");
-    if (tourBtn) tourBtn.title = t("tour_help_title");
     if (!document.getElementById("jb-tour").hidden) renderTourStep();
   }
   applyStaticTranslations();
@@ -912,7 +916,6 @@
     showTourStep(tourStep - 1);
   });
   document.getElementById("jb-tour-skip").addEventListener("click", endTour);
-  document.getElementById("jb-tour-btn").addEventListener("click", startTour);
 
   // Le check est fait dans le setTimeout (pas tout de suite) pour être certain que
   // "nightId" (déclaré plus bas) a déjà été initialisé au moment de le lire. Protégé par un
@@ -1557,6 +1560,18 @@
     });
   }
 
+  // Le badge "Demandes : N" vit à côté du titre "Mon Répertoire" par défaut (dans l'en-tête),
+  // et se déplace à côté du titre du dossier (nom d'artiste ou de style) dès qu'un dossier est
+  // ouvert — ça garde la barre de recherche libre pour prendre toute la largeur.
+  function positionRequestBadge(nearFolderTitle) {
+    const badge = document.getElementById("jb-request-remaining");
+    if (!badge) return;
+    const target = nearFolderTitle
+      ? document.querySelector(".jb-folder-title-row")
+      : document.querySelector(".jb-top-bar-right");
+    if (target && badge.parentElement !== target) target.appendChild(badge);
+  }
+
   // ---------- Rendu : Catalogue (public, navigation par dossiers d'artistes) ----------
   // Vue par défaut du catalogue (Top Pick + Style) vs. vue "résultats" (recherche, style
   // choisi, ou artiste choisi depuis Top Pick) — recherche et clic sur un onglet se comportent
@@ -1577,6 +1592,7 @@
     backBtn.hidden = !showResults;
 
     if (!showResults) {
+      positionRequestBadge(false);
       renderQuickPick();
       renderStyleTabs();
       return;
@@ -1593,12 +1609,14 @@
     let showArtist = true;
     if (search) {
       titleWrap.hidden = true;
+      positionRequestBadge(false);
       songs = catalogSongs.filter((s) => norm(s.title).includes(search) || norm(s.artist).includes(search));
     } else if (catalogView.type === "artist") {
       // Artiste choisi depuis Top Pick : son nom s'affiche déjà dans le bandeau, pas besoin
       // de le répéter sur chaque ligne.
       showArtist = false;
       titleWrap.hidden = false;
+      positionRequestBadge(true);
       document.querySelector(".jb-folder-title").textContent = catalogView.name;
       const wanted = norm(catalogView.name);
       songs = catalogSongs.filter((s) => norm(s.artist) === wanted);
@@ -1606,6 +1624,7 @@
       // catalogView.type === "genre-song-list" : artiste choisi depuis la liste d'un style.
       showArtist = false;
       titleWrap.hidden = false;
+      positionRequestBadge(true);
       document.querySelector(".jb-folder-title").textContent = catalogView.artist;
       const wantedArtist = norm(catalogView.artist);
       songs = catalogSongs.filter((s) => songHasGenre(s, catalogView.key) && norm(s.artist) === wantedArtist);
@@ -1624,6 +1643,7 @@
     const list = document.getElementById("jb-catalog-list");
     const empty = document.getElementById("jb-catalog-empty");
     titleWrap.hidden = false;
+    positionRequestBadge(true);
     document.querySelector(".jb-folder-title").textContent = genreLabel(key);
 
     const counts = {};
