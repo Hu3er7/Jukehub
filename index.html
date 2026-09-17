@@ -562,7 +562,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-09-17.14";
+  const APP_BUILD = "2026-09-17.15";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -910,6 +910,13 @@
     safeStorageSet(tourSeenKey(), "1");
     window.removeEventListener("resize", handleTourReposition);
     window.removeEventListener("scroll", handleTourReposition, true);
+    // Le tuto navigue à travers plusieurs sections (style, liste d'artistes…) pour ses
+    // démonstrations : qu'il soit passé (skip) ou terminé au complet, on ramène toujours le
+    // client à l'écran principal (Top Pick + Style) plutôt que de le laisser dans un sous-écran.
+    catalogView = null;
+    document.getElementById("jb-search-input").value = "";
+    renderCatalog();
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   function handleTourReposition() {
