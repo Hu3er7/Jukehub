@@ -148,7 +148,6 @@
     padding: 7px 12px; border-radius: 999px; cursor: pointer;
   }
   #jb-app .jb-slot-boost:active { transform: scale(0.96); }
-  #jb-app .jb-slot-boost[disabled] { border-color: var(--border); color: var(--text-dim); cursor: default; opacity: 0.6; }
   @media (max-width: 420px) {
     #jb-app .jb-slot { gap: 6px; padding: 8px 1px; }
     #jb-app .jb-slot-rank { width: 15px; font-size: 0.72rem; }
@@ -1400,7 +1399,7 @@
           <span class="jb-slot-title">${escapeHtml(v.title)}</span>
           ${v.artist ? `<span class="jb-slot-artist">${escapeHtml(v.artist)}</span>` : ""}
         </span>
-        <button class="jb-slot-boost" data-boost="${escapeHtml(id)}" ${remaining <= 0 ? "disabled" : ""} aria-label="${t("boost_aria")}" title="${t("boost_aria")}">🚀 ${t("boost_btn")}</button>`;
+        <button class="jb-slot-boost" data-boost="${escapeHtml(id)}" aria-label="${t("boost_aria")}" title="${t("boost_aria")}">🚀 ${t("boost_btn")}</button>`;
     });
 
     // 4) LAST — replace les éléments dans le bon ordre dans le DOM.
@@ -1643,8 +1642,10 @@
         </div>
       </div>`;
     } else if (requested) {
-      const remaining = boostsRemaining();
-      btnHtml = `<button class="jb-slot-boost" data-boost="${escapeHtml(song.id)}" ${remaining <= 0 ? "disabled" : ""} aria-label="${t("boost_aria")}" title="${t("boost_aria")}">🚀 ${t("boost_btn")}</button>`;
+      // Jamais désactivé, même à 0 boost restant : cliquer déclenche quand même boostSong(),
+      // qui affiche le toast et fait clignoter le badge "Boosts" pour rappeler au client qu'il
+      // doit patienter — un bouton disabled empêcherait ce rappel visuel de se déclencher.
+      btnHtml = `<button class="jb-slot-boost" data-boost="${escapeHtml(song.id)}" aria-label="${t("boost_aria")}" title="${t("boost_aria")}">🚀 ${t("boost_btn")}</button>`;
     } else {
       // Pas de data-req sur le bouton lui-même : c'est toute la ligne (li) qui porte le
       // data-req et le clic, pour que le client puisse appuyer n'importe où sur la chanson,
