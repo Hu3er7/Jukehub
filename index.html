@@ -562,7 +562,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-09-17.9";
+  const APP_BUILD = "2026-09-17.10";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -780,8 +780,11 @@
       before: () => {
         document.getElementById("jb-search-input").value = "";
         // Choisit une chanson déjà classée dans un style pour que la démo du tuto montre une
-        // vraie liste (style + artiste) plutôt qu'un résultat vide.
-        const demoSong = catalogSongs.find((s) => (s.genres || []).length && s.artist);
+        // vraie liste (style + artiste) plutôt qu'un résultat vide. Priorise les Backstreet Boys
+        // comme exemple (plus vendeur), avec un repli sur la première chanson classée disponible.
+        const demoSong =
+          catalogSongs.find((s) => (s.genres || []).length && s.artist && norm(s.artist) === norm("Backstreet Boys")) ||
+          catalogSongs.find((s) => (s.genres || []).length && s.artist);
         catalogView = demoSong
           ? { type: "genre-song-list", key: canonicalGenreKey(demoSong.genres[0]), artist: demoSong.artist }
           : { type: "genre-artists", key: GENRE_KEYS[0] };
