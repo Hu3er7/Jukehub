@@ -562,7 +562,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-09-17.10";
+  const APP_BUILD = "2026-09-17.11";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -765,7 +765,6 @@
       target: () => document.querySelector(".jb-catalog-browse"),
       titleKey: "tour2_title",
       textKey: "tour2_text",
-      center: true,
       before: () => {
         catalogView = null;
         document.getElementById("jb-search-input").value = "";
@@ -776,7 +775,6 @@
       target: () => document.querySelector(".jb-catalog-results"),
       titleKey: "tour2b_title",
       textKey: "tour2b_text",
-      center: true,
       before: () => {
         document.getElementById("jb-search-input").value = "";
         // Choisit une chanson déjà classée dans un style pour que la démo du tuto montre une
@@ -792,7 +790,7 @@
       },
     },
     { target: () => document.getElementById("jb-search-input"), titleKey: "tour3_title", textKey: "tour3_text" },
-    { target: () => document.querySelector(".jb-palmares"), titleKey: "tour4_title", textKey: "tour4_text", center: true },
+    { target: () => document.querySelector(".jb-palmares"), titleKey: "tour4_title", textKey: "tour4_text" },
     {
       target: () => document.getElementById("jb-boost-remaining"),
       titleKey: "tour4b_title",
