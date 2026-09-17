@@ -562,7 +562,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-09-17.12";
+  const APP_BUILD = "2026-09-17.13";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -1299,22 +1299,27 @@
       return;
     }
     const token = roundToken(v);
+    // Même logique optimiste que pour requestSong() : on met à jour l'état local avant même que
+    // l'écriture soit confirmée par le serveur, pour éviter un faux message d'erreur sur un wifi
+    // lent/instable alors que le boost a déjà été pris en compte côté cache local.
+    const existing = boostUsage[id];
+    boostUsage[id] = { count: (existing && existing.token === token ? existing.count : 0) + 1, token };
+    saveBoostsToStorage();
+    const remainingNow = boostsRemaining();
+    if (remainingNow <= 0 && !boostResetAt) {
+      boostResetAt = Date.now() + BOOST_RESET_MS;
+      saveBoostResetToStorage();
+    }
+    updateBoostBadge(remainingNow);
+    pulseAttention(document.getElementById("jb-boost-remaining"));
+    showToast(t("boost_added"));
     try {
       await updateDoc(doc(db, "votes", id), { requests: increment(1) });
-      const existing = boostUsage[id];
-      boostUsage[id] = { count: (existing && existing.token === token ? existing.count : 0) + 1, token };
-      saveBoostsToStorage();
-      const remainingNow = boostsRemaining();
-      if (remainingNow <= 0 && !boostResetAt) {
-        boostResetAt = Date.now() + BOOST_RESET_MS;
-        saveBoostResetToStorage();
-      }
-      updateBoostBadge(remainingNow);
-      pulseAttention(document.getElementById("jb-boost-remaining"));
-      showToast(t("boost_added"));
     } catch (e) {
+      // Écriture non confirmée par le serveur (le plus souvent juste un wifi lent — Firestore la
+      // renverra automatiquement dès que la connexion revient) : on ne défait rien côté client,
+      // on log seulement pour le débogage.
       console.error(e);
-      showToast(t("error_toast"));
     }
   }
 
@@ -1853,29 +1858,51 @@
     const staySameList = currentResultsCount() > 1;
     const tokenAtRequest = roundToken(votes[song.id]);
     const ref = doc(db, "votes", song.id);
+
+    // On met à jour l'état local (marqué comme demandé, badge, toast, navigation) tout de suite,
+    // de façon optimiste, AVANT même que l'écriture Firestore soit confirmée par le serveur.
+    // Pourquoi : le SDK Firestore applique ce type d'écriture à son cache local immédiatement,
+    // donc le palmarès affiche déjà le nouveau compte avant la fin de l'aller-retour réseau —
+    // sur un wifi lent ou instable (fréquent dans un bar plein), attendre cette confirmation
+    // avant de mettre à jour l'état local causait un faux message d'erreur ("Oups, réessaie
+    // dans un instant") alors que la demande avait déjà été prise en compte, ce qui empêchait
+    // ensuite le client de la redemander (le bouton restait "Jouer" au lieu de "Demandée") et le
+    // laissait ré-essayer indéfiniment. Firestore synchronise de toute façon la vraie écriture en
+    // arrière-plan dès que la connexion le permet.
+    requestedRounds[song.id] = tokenAtRequest;
+    saveRequestedToStorage();
+    showToast(t("request_added_toast"));
+    const remainingNow = requestsRemaining();
+    if (remainingNow <= 0 && !requestResetAt) {
+      requestResetAt = Date.now() + REQUEST_RESET_MS;
+      saveRequestResetToStorage();
+    }
+    updateRequestBadge();
+    pulseAttention(document.getElementById("jb-request-remaining"));
+    if (staySameList) {
+      // Plusieurs chansons dans cette liste : on y reste pour que le client puisse en
+      // demander une autre tout de suite, sans repartir de l'écran principal.
+      renderCatalog();
+    } else {
+      // Une seule chanson dans cette liste : plus rien à y faire, retour à l'écran principal.
+      catalogView = null;
+      document.getElementById("jb-search-input").value = "";
+      renderCatalog();
+      const searchbar = document.getElementById("jb-catalog-searchbar");
+      if (searchbar) searchbar.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+
     try {
-      // setDoc + merge (plutôt qu'une transaction avec lecture préalable) : le SDK Firestore
-      // applique ce type d'écriture au cache local tout de suite, exactement comme pour un
-      // boost — la chanson apparaît donc dans le palmarès sans délai, au lieu d'attendre
-      // l'aller-retour avec le serveur. On ne touche jamais burned/cooldownUntil/playedAt ici
-      // (absents du merge), pour ne pas écraser leur état si la chanson a déjà un historique ;
-      // increment() gère correctement les demandes simultanées de plusieurs clients.
+      // setDoc + merge (plutôt qu'une transaction avec lecture préalable). On ne touche jamais
+      // burned/cooldownUntil/playedAt ici (absents du merge), pour ne pas écraser leur état si
+      // la chanson a déjà un historique ; increment() gère correctement les demandes
+      // simultanées de plusieurs clients.
       await setDoc(ref, {
         requests: increment(1),
         title: song.title,
         artist: song.artist || "",
         createdAt: serverTimestamp(),
       }, { merge: true });
-      requestedRounds[song.id] = tokenAtRequest;
-      saveRequestedToStorage();
-      showToast(t("request_added_toast"));
-      const remainingNow = requestsRemaining();
-      if (remainingNow <= 0 && !requestResetAt) {
-        requestResetAt = Date.now() + REQUEST_RESET_MS;
-        saveRequestResetToStorage();
-      }
-      updateRequestBadge();
-      pulseAttention(document.getElementById("jb-request-remaining"));
       // Compteur cumulatif par artiste (Top Pick) — jamais réinitialisé par "Nouvelle soirée",
       // pour refléter les tendances sur plusieurs soirées plutôt qu'une seule.
       if (song.artist) {
@@ -1884,21 +1911,11 @@
           counts: { [key]: { name: song.artist, count: increment(1) } },
         }, { merge: true }).catch((e) => console.error("artistDemand update", e));
       }
-      if (staySameList) {
-        // Plusieurs chansons dans cette liste : on y reste pour que le client puisse en
-        // demander une autre tout de suite, sans repartir de l'écran principal.
-        renderCatalog();
-      } else {
-        // Une seule chanson dans cette liste : plus rien à y faire, retour à l'écran principal.
-        catalogView = null;
-        document.getElementById("jb-search-input").value = "";
-        renderCatalog();
-        const searchbar = document.getElementById("jb-catalog-searchbar");
-        if (searchbar) searchbar.scrollIntoView({ behavior: "smooth", block: "start" });
-      }
     } catch (e) {
+      // Écriture non confirmée par le serveur (le plus souvent juste un wifi lent — Firestore la
+      // renverra automatiquement dès que la connexion revient) : on ne défait rien côté client
+      // (la demande reste affichée), on log seulement pour le débogage.
       console.error(e);
-      showToast(t("error_toast"));
     }
   }
 
