@@ -3,6 +3,9 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+<meta http-equiv="Pragma" content="no-cache" />
+<meta http-equiv="Expires" content="0" />
 <title>Mon Répertoire</title>
 </head>
 <body style="margin:0;">
@@ -500,6 +503,42 @@
     appId: "1:465762599450:web:0c2dddeb5e5d1dbb3047a3",
   };
   // ============================================================
+
+  // ---------- Mise à jour automatique (anti-cache) ----------
+  // Marqueur de version : change à chaque déploiement. Le script ci-dessous
+  // va périodiquement re-télécharger cette même page (en forçant le réseau,
+  // sans passer par le cache du navigateur) et comparer ce marqueur. S'il a
+  // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
+  // la page automatiquement pour que le client (et le tableau de bord admin)
+  // ne restent jamais coincés sur une vieille copie en cache.
+  const APP_BUILD = "2026-09-17.1";
+  (function setupAutoUpdateCheck() {
+    const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
+    let checking = false;
+    async function checkForUpdate() {
+      if (checking) return;
+      checking = true;
+      try {
+        const base = window.location.href.split("#")[0].split("?")[0];
+        const url = base + "?_v=" + Date.now();
+        const res = await fetch(url, { cache: "no-store" });
+        if (!res.ok) return;
+        const html = await res.text();
+        const match = html.match(/APP_BUILD\s*=\s*"([^"]+)"/);
+        if (match && match[1] && match[1] !== APP_BUILD) {
+          window.location.reload();
+        }
+      } catch (e) {
+        // Pas de réseau ou requête bloquée : silencieux, on retente au prochain cycle.
+      } finally {
+        checking = false;
+      }
+    }
+    setInterval(checkForUpdate, CHECK_INTERVAL_MS);
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "visible") checkForUpdate();
+    });
+  })();
 
   // ---------- Langue (public) ----------
   // Catégories de style musical, assignées aux chansons depuis le panneau admin. "franco"
