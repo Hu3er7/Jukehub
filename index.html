@@ -54,7 +54,6 @@
     color: var(--accent2); letter-spacing: 0.3px;
     overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0;
   }
-  #jb-app .jb-top-bar-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
   #jb-app .jb-lang-bar { display: flex; gap: 6px; flex-shrink: 0; }
   #jb-app .jb-lang-btn {
     background: var(--card); border: 1px solid var(--border); color: var(--text-dim);
@@ -65,7 +64,7 @@
 
   #jb-app section { margin-top: 16px; }
   @media (max-width: 420px) {
-    #jb-app .jb-top-bar h1 { font-size: 1.9rem; }
+    #jb-app .jb-top-bar h1 { font-size: 1.7rem; }
   }
   #jb-app h2 {
     font-family: 'Anton', -apple-system, sans-serif; font-size: 1.2rem; font-weight: 400;
@@ -219,6 +218,8 @@
 
   /* Style (catégories de musique) */
   #jb-app .jb-style-section { margin-bottom: 12px; }
+  #jb-app .jb-style-heading-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  #jb-app .jb-style-heading-row h2 { margin-bottom: 0; }
   #jb-app .jb-style-list { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; }
   #jb-app .jb-style-item {
     background: var(--card); border: 1px solid var(--border); color: var(--text);
@@ -376,13 +377,10 @@
 
   <div id="jb-public" class="jb-view">
     <header class="jb-top-bar">
-      <h1 id="jb-artist-name">🎤 Chargement…</h1>
-      <div class="jb-top-bar-right">
-        <div id="jb-request-remaining" class="jb-request-remaining">Demandes : 10</div>
-        <div class="jb-lang-bar">
-          <button id="jb-lang-fr" class="jb-lang-btn" data-lang="fr">FR</button>
-          <button id="jb-lang-en" class="jb-lang-btn" data-lang="en">EN</button>
-        </div>
+      <h1 id="jb-artist-name">Chargement…</h1>
+      <div class="jb-lang-bar">
+        <button id="jb-lang-fr" class="jb-lang-btn" data-lang="fr">FR</button>
+        <button id="jb-lang-en" class="jb-lang-btn" data-lang="en">EN</button>
       </div>
     </header>
     <section class="jb-catalog">
@@ -397,7 +395,10 @@
           <div id="jb-quickpick-list" class="jb-quickpick-list"></div>
         </div>
         <div class="jb-style-section">
-          <h2 id="jb-style-title">🎵 Style</h2>
+          <div class="jb-style-heading-row">
+            <h2 id="jb-style-title">🎵 Style</h2>
+            <div id="jb-request-remaining" class="jb-request-remaining">Demandes : 10</div>
+          </div>
           <div id="jb-style-list" class="jb-style-list"></div>
         </div>
       </div>
@@ -555,7 +556,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-09-17.6";
+  const APP_BUILD = "2026-09-17.7";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -611,7 +612,7 @@
 
   const I18N = {
     fr: {
-      page_title: "🎤 Mon Répertoire",
+      page_title: "Mon Répertoire",
       palmares_title: "🏆 Palmarès de la soirée",
       palmares_empty: "Aucune demande pour l'instant — sois le premier à voter !",
       boost_remaining: (n) => `🚀 Boosts : ${n}`,
@@ -662,7 +663,7 @@
       tour4b_text: "Appuie sur 🚀 Boost pour faire monter une chanson dans le classement. Tu as 3 boosts par soirée — utilise-les sur la ou les chansons que tu veux entendre en premier. Ils se libèrent automatiquement une fois la chanson jouée, pour un nouveau boost plus tard dans la soirée.",
     },
     en: {
-      page_title: "🎤 My Repertoire",
+      page_title: "My Repertoire",
       palmares_title: "🏆 Tonight's Top Requests",
       palmares_empty: "No requests yet — be the first to vote!",
       boost_remaining: (n) => `🚀 Boosts : ${n}`,
@@ -1560,15 +1561,24 @@
     });
   }
 
-  // Le badge "Demandes : N" vit à côté du titre "Mon Répertoire" par défaut (dans l'en-tête),
-  // et se déplace à côté du titre du dossier (nom d'artiste ou de style) dès qu'un dossier est
-  // ouvert — ça garde la barre de recherche libre pour prendre toute la largeur.
-  function positionRequestBadge(nearFolderTitle) {
+  // Le badge "Demandes : N" vit par défaut au bout de la rangée du titre "🎵 Style" (déjà au bon
+  // endroit quand le client ouvre un style), se déplace à côté du titre du dossier (artiste ou
+  // style ouvert) une fois dedans, et retombe à côté du titre de la page comme filet de secours
+  // pendant une recherche texte (là où ni la section Style ni un titre de dossier ne sont visibles)
+  // — ça garde la barre de recherche libre pour prendre toute la largeur.
+  function positionRequestBadge(location) {
     const badge = document.getElementById("jb-request-remaining");
     if (!badge) return;
-    const target = nearFolderTitle
+    if (location === "topbar") {
+      // Cas de secours (recherche texte en cours) : ni la section Style ni un titre de dossier
+      // ne sont visibles, alors on insère le badge juste avant les boutons FR/EN.
+      const langBar = document.querySelector(".jb-top-bar .jb-lang-bar");
+      if (langBar && badge.nextElementSibling !== langBar) langBar.parentElement.insertBefore(badge, langBar);
+      return;
+    }
+    const target = location === "folder"
       ? document.querySelector(".jb-folder-title-row")
-      : document.querySelector(".jb-top-bar-right");
+      : document.querySelector(".jb-style-heading-row");
     if (target && badge.parentElement !== target) target.appendChild(badge);
   }
 
@@ -1592,7 +1602,7 @@
     backBtn.hidden = !showResults;
 
     if (!showResults) {
-      positionRequestBadge(false);
+      positionRequestBadge("style");
       renderQuickPick();
       renderStyleTabs();
       return;
@@ -1609,14 +1619,14 @@
     let showArtist = true;
     if (search) {
       titleWrap.hidden = true;
-      positionRequestBadge(false);
+      positionRequestBadge("topbar");
       songs = catalogSongs.filter((s) => norm(s.title).includes(search) || norm(s.artist).includes(search));
     } else if (catalogView.type === "artist") {
       // Artiste choisi depuis Top Pick : son nom s'affiche déjà dans le bandeau, pas besoin
       // de le répéter sur chaque ligne.
       showArtist = false;
       titleWrap.hidden = false;
-      positionRequestBadge(true);
+      positionRequestBadge("folder");
       document.querySelector(".jb-folder-title").textContent = catalogView.name;
       const wanted = norm(catalogView.name);
       songs = catalogSongs.filter((s) => norm(s.artist) === wanted);
@@ -1624,7 +1634,7 @@
       // catalogView.type === "genre-song-list" : artiste choisi depuis la liste d'un style.
       showArtist = false;
       titleWrap.hidden = false;
-      positionRequestBadge(true);
+      positionRequestBadge("folder");
       document.querySelector(".jb-folder-title").textContent = catalogView.artist;
       const wantedArtist = norm(catalogView.artist);
       songs = catalogSongs.filter((s) => songHasGenre(s, catalogView.key) && norm(s.artist) === wantedArtist);
@@ -1643,7 +1653,7 @@
     const list = document.getElementById("jb-catalog-list");
     const empty = document.getElementById("jb-catalog-empty");
     titleWrap.hidden = false;
-    positionRequestBadge(true);
+    positionRequestBadge("folder");
     document.querySelector(".jb-folder-title").textContent = genreLabel(key);
 
     const counts = {};
