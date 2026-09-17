@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>TuneBuddy</title>
+<title>Mon Répertoire</title>
 </head>
 <body style="margin:0;">
 <style>
@@ -58,7 +58,6 @@
   }
   #jb-app .jb-lang-btn.jb-lang-active { border-color: var(--accent); color: var(--accent2); }
 
-  #jb-app .jb-subtitle { color: var(--text-dim); margin-top: 6px; font-size: 0.9rem; }
 
   #jb-app section { margin-top: 16px; }
   @media (max-width: 420px) {
@@ -174,12 +173,16 @@
   #jb-app .jb-artist-name { font-weight: 700; font-size: 0.92rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   #jb-app .jb-artist-count { flex-shrink: 0; color: var(--text-dim); font-size: 0.8rem; white-space: nowrap; }
   #jb-app .jb-catalog-searchbar {
-    position: sticky; top: 0; z-index: 20; display: flex; align-items: center; gap: 10px;
-    background: var(--bg); padding: 8px 0; margin-bottom: 10px;
+    position: sticky; top: 0; z-index: 20; display: flex; align-items: center; gap: 8px;
+    background: var(--bg); padding: 6px 0; margin-bottom: 10px; flex-wrap: wrap;
   }
-  #jb-app .jb-back-btn { flex-shrink: 0; background: var(--card); border: 1px solid var(--accent); color: var(--accent2); font-weight: 700; padding: 12px 16px; border-radius: 999px; font-size: 0.85rem; cursor: pointer; }
+  #jb-app .jb-back-btn { flex-shrink: 0; background: var(--card); border: 1px solid var(--accent); color: var(--accent2); font-weight: 700; padding: 8px 12px; border-radius: 999px; font-size: 0.78rem; cursor: pointer; }
   #jb-app .jb-back-btn[hidden] { display: none; }
-  #jb-app .jb-catalog-searchbar input[type="text"] { flex: 1; min-width: 0; margin: 0; }
+  #jb-app .jb-catalog-searchbar input[type="text"] { flex: 1; min-width: 0; margin: 0; padding: 9px 12px; font-size: 0.92rem; }
+  #jb-app .jb-request-remaining {
+    flex-shrink: 0; font-size: 0.78rem; font-weight: 700; color: var(--accent2); background: var(--card);
+    border: 1px solid var(--border); border-radius: 999px; padding: 5px 11px; white-space: nowrap;
+  }
   #jb-app .jb-folder-title-wrap { margin-bottom: 14px; }
 
   /* Top Pick (artistes les plus demandés) */
@@ -354,12 +357,11 @@
         <button id="jb-tour-btn" class="jb-lang-btn" type="button">❓</button>
       </div>
     </header>
-    <p class="jb-subtitle" id="jb-subtitle">Choisis une chanson dans mon répertoire — je la joue en direct !</p>
-
     <section class="jb-catalog">
       <div id="jb-catalog-searchbar" class="jb-catalog-searchbar">
         <button id="jb-back-btn" class="jb-back-btn" hidden>⬅ RETOUR</button>
         <input id="jb-search-input" type="text" placeholder="🔍 Cherche un titre ou un artiste…" autocomplete="off" />
+        <div id="jb-request-remaining" class="jb-request-remaining">🎫 Demandes : 10</div>
       </div>
 
       <div id="jb-catalog-browse" class="jb-catalog-browse">
@@ -476,8 +478,6 @@
   // ============================================================
   //  🎸 CONFIGURATION — à personnaliser
   // ============================================================
-  const ARTIST_NAME = "🎤 TuneBuddy"; // 👉 remplace par ton nom de scène
-
   const firebaseConfig = {
     apiKey: "AIzaSyAxihJ80dUNLJLszro2p8Tg5WFmvxRZjBA",
     authDomain: "jukehub-14c98.firebaseapp.com",
@@ -488,15 +488,34 @@
   };
   // ============================================================
 
-  document.getElementById("jb-artist-name").textContent = ARTIST_NAME;
-
   // ---------- Langue (public) ----------
-  // Catégories de style musical, assignées aux chansons depuis le panneau admin.
-  const GENRE_KEYS = ["quebecois", "country", "rock", "francais", "pop", "classic-rock", "reggae", "punk", "dance", "classic-folk", "folk"];
+  // Catégories de style musical, assignées aux chansons depuis le panneau admin. "franco"
+  // remplace les anciens styles "Québécois" et "Chanson Française", fusionnés en un seul
+  // onglet — voir GENRE_ALIASES plus bas pour la compatibilité avec les chansons déjà classées
+  // sous ces anciennes clés.
+  const GENRE_KEYS = ["franco", "country", "rock", "pop", "classic-rock", "reggae", "punk", "dance", "classic-folk", "folk"];
+  const GENRE_ALIASES = { franco: ["quebecois", "francais"] };
+  // Vrai si la chanson appartient au style `key`, en tenant compte des anciennes clés fusionnées
+  // dans GENRE_ALIASES (ex. une chanson encore taguée "quebecois" compte pour "franco").
+  function songHasGenre(song, key) {
+    const genres = song.genres || [];
+    if (genres.includes(key)) return true;
+    const aliases = GENRE_ALIASES[key];
+    return !!aliases && aliases.some((a) => genres.includes(a));
+  }
+  // Convertit une ancienne clé de style (ex. "quebecois") vers sa clé actuelle ("franco"),
+  // pour que le code qui manipule directement une clé de chanson reste cohérent.
+  function canonicalGenreKey(key) {
+    if (GENRE_KEYS.includes(key)) return key;
+    for (const canon of Object.keys(GENRE_ALIASES)) {
+      if (GENRE_ALIASES[canon].includes(key)) return canon;
+    }
+    return key;
+  }
 
   const I18N = {
     fr: {
-      subtitle: "Choisis une chanson dans mon répertoire — je la joue en direct !",
+      page_title: "🎤 Mon Répertoire",
       palmares_title: "🏆 Palmarès de la soirée",
       palmares_empty: "Aucune demande pour l'instant — sois le premier à voter !",
       boost_remaining: (n) => `🚀 Boosts : ${n}`,
@@ -518,6 +537,8 @@
       request_btn: "▶ Jouer",
       request_added_toast: "🎶 Chanson demandée !",
       confirm_request: (title) => `Confirmer ta demande pour « ${title} » ?`,
+      requests_remaining: (n) => `🎫 Demandes : ${n}`,
+      requests_limit_reached: "Tu as atteint ta limite de 10 chansons pour l'instant. Attends qu'une de tes demandes soit jouée !",
       error_toast: "Oups, réessaie dans un instant.",
       song_count: (n) => `${n} chanson${n > 1 ? "s" : ""}`,
       admin_link_title: "Mode spectacle",
@@ -527,8 +548,8 @@
       tour_next: "Suivant",
       tour_done: "Terminé !",
       genres: {
-        country: "Country", rock: "Rock", punk: "Punk", "classic-rock": "Classique Rock",
-        quebecois: "Québécois", francais: "Chanson Française", pop: "Pop", dance: "Dance",
+        franco: "Franco", country: "Country", rock: "Rock", punk: "Punk", "classic-rock": "Classique Rock",
+        pop: "Pop", dance: "Dance",
         folk: "Folk", "classic-folk": "Classique Folk", reggae: "Reggae",
       },
       tour1_title: "Bienvenue 👋",
@@ -545,7 +566,7 @@
       tour4b_text: "Appuie sur 🚀 Boost pour faire monter une chanson dans le classement. Tu as 3 boosts par soirée — utilise-les sur la ou les chansons que tu veux entendre en premier. Ils se libèrent automatiquement une fois la chanson jouée, pour un nouveau boost plus tard dans la soirée.",
     },
     en: {
-      subtitle: "Pick a song from my repertoire — I'll play it live!",
+      page_title: "🎤 My Repertoire",
       palmares_title: "🏆 Tonight's Top Requests",
       palmares_empty: "No requests yet — be the first to vote!",
       boost_remaining: (n) => `🚀 Boosts : ${n}`,
@@ -567,6 +588,8 @@
       request_btn: "▶ Play",
       request_added_toast: "🎶 Song requested!",
       confirm_request: (title) => `Confirm your request for "${title}"?`,
+      requests_remaining: (n) => `🎫 Requests: ${n}`,
+      requests_limit_reached: "You've reached your limit of 10 songs for now. Wait for one of your requests to be played!",
       error_toast: "Oops, try again in a moment.",
       song_count: (n) => `${n} song${n > 1 ? "s" : ""}`,
       admin_link_title: "Show mode",
@@ -576,8 +599,8 @@
       tour_next: "Next",
       tour_done: "Done!",
       genres: {
-        country: "Country", rock: "Rock", punk: "Punk", "classic-rock": "Classic Rock",
-        quebecois: "Québécois", francais: "French Songs", pop: "Pop", dance: "Dance",
+        franco: "French/Queb", country: "Country", rock: "Rock", punk: "Punk", "classic-rock": "Classic Rock",
+        pop: "Pop", dance: "Dance",
         folk: "Folk", "classic-folk": "Classic Folk", reggae: "Reggae",
       },
       tour1_title: "Welcome 👋",
@@ -606,12 +629,13 @@
     document.querySelectorAll(".jb-lang-btn").forEach((b) => {
       b.classList.toggle("jb-lang-active", b.dataset.lang === lang);
     });
-    document.getElementById("jb-subtitle").textContent = t("subtitle");
+    document.getElementById("jb-artist-name").textContent = t("page_title");
     document.getElementById("jb-palmares-title").textContent = t("palmares_title");
     document.getElementById("jb-quickpick-title").textContent = t("quickpick_title");
     document.getElementById("jb-style-title").textContent = t("style_title");
     document.getElementById("jb-back-btn").textContent = t("back_btn");
     document.getElementById("jb-search-input").placeholder = t("search_placeholder");
+    updateRequestBadge();
     document.querySelector(".jb-admin-link").title = t("admin_link_title");
     const tourBtn = document.getElementById("jb-tour-btn");
     if (tourBtn) tourBtn.title = t("tour_help_title");
@@ -659,7 +683,7 @@
         // vraie liste (style + artiste) plutôt qu'un résultat vide.
         const demoSong = catalogSongs.find((s) => (s.genres || []).length && s.artist);
         catalogView = demoSong
-          ? { type: "genre-song-list", key: demoSong.genres[0], artist: demoSong.artist }
+          ? { type: "genre-song-list", key: canonicalGenreKey(demoSong.genres[0]), artist: demoSong.artist }
           : { type: "genre-artists", key: GENRE_KEYS[0] };
         renderCatalog();
       },
@@ -876,6 +900,7 @@
   // la demande précédente ne compte plus et le client peut redemander — sans logique de
   // détection de changement fragile, juste une comparaison à chaque rendu.
   let requestedRounds = {};
+  const MAX_REQUESTS = 10; // nombre maximum de demandes actives par client, par soirée
   const MAX_BOOSTS = 3; // nombre maximum de boosts par client, par soirée
   const BOOST_RESET_MS = 15 * 60 * 1000; // filet de sécurité : renouvelle les 3 boosts après ce délai, même si aucune chanson boostée n'a joué
   // boostUsage : songId -> { count, token } — boosts actuellement "verrouillés" sur cette chanson
@@ -932,6 +957,33 @@
   }
   function alreadyRequested(id) {
     return requestedRounds[id] !== undefined && requestedRounds[id] === roundToken(votes[id]);
+  }
+  // Compte les demandes actuellement actives pour ce client, en libérant au passage celles
+  // dont la chanson a été jouée depuis (son jeton de tour a changé) — la limite de 10 se libère
+  // donc automatiquement dès que l'admin marque une de ses chansons comme jouée, exactement
+  // comme pour les boosts.
+  function activeRequestsCount() {
+    let total = 0;
+    let changed = false;
+    Object.keys(requestedRounds).forEach((id) => {
+      if (requestedRounds[id] === roundToken(votes[id])) {
+        total += 1;
+      } else {
+        delete requestedRounds[id];
+        changed = true;
+      }
+    });
+    if (changed) saveRequestedToStorage();
+    return total;
+  }
+  function requestsRemaining() {
+    return Math.max(0, MAX_REQUESTS - activeRequestsCount());
+  }
+  // Met à jour le badge "Demandes : N" à côté de la barre de recherche.
+  function updateRequestBadge() {
+    const el = document.getElementById("jb-request-remaining");
+    if (!el) return;
+    el.textContent = t("requests_remaining", requestsRemaining());
   }
 
   // ---------- Utilitaires ----------
@@ -1168,6 +1220,7 @@
   function renderAll() {
     renderPalmares();
     renderCatalog();
+    updateRequestBadge();
     renderAdminPalmares();
     renderAdminCatalog();
     renderCooldownList();
@@ -1374,7 +1427,7 @@
       titleWrap.hidden = false;
       document.querySelector(".jb-folder-title").textContent = `${catalogView.artist} · ${genreLabel(catalogView.key)}`;
       const wantedArtist = norm(catalogView.artist);
-      songs = catalogSongs.filter((s) => (s.genres || []).includes(catalogView.key) && norm(s.artist) === wantedArtist);
+      songs = catalogSongs.filter((s) => songHasGenre(s, catalogView.key) && norm(s.artist) === wantedArtist);
     }
 
     songs = [...songs].sort((a, b) => a.title.localeCompare(b.title, "fr"));
@@ -1394,7 +1447,7 @@
 
     const counts = {};
     catalogSongs.forEach((s) => {
-      if (s.artist && (s.genres || []).includes(key)) {
+      if (s.artist && songHasGenre(s, key)) {
         const k = norm(s.artist);
         if (!counts[k]) counts[k] = { name: s.artist, count: 0 };
         counts[k].count += 1;
@@ -1521,6 +1574,10 @@
         const id = btn.dataset.req;
         const song = catalogSongs.find((s) => s.id === id);
         if (!song) return;
+        if (requestsRemaining() <= 0) {
+          showToast(t("requests_limit_reached"));
+          return;
+        }
         if (!confirm(t("confirm_request", song.title))) return;
         requestSong(song);
       });
@@ -1540,9 +1597,31 @@
     renderCatalog();
   });
 
+  // Nombre de chansons actuellement affichées dans la liste où le client s'apprête à choisir
+  // (recherche, liste d'un artiste depuis Top Pick, ou liste artiste+style) — sert à décider,
+  // une fois la demande confirmée, si on le ramène à l'écran principal ou si on le laisse
+  // choisir une autre chanson dans la même liste.
+  function currentResultsCount() {
+    const search = norm(document.getElementById("jb-search-input").value);
+    if (search) {
+      return catalogSongs.filter((s) => norm(s.title).includes(search) || norm(s.artist).includes(search)).length;
+    }
+    if (!catalogView) return 0;
+    if (catalogView.type === "artist") {
+      const wanted = norm(catalogView.name);
+      return catalogSongs.filter((s) => norm(s.artist) === wanted).length;
+    }
+    if (catalogView.type === "genre-song-list") {
+      const wantedArtist = norm(catalogView.artist);
+      return catalogSongs.filter((s) => songHasGenre(s, catalogView.key) && norm(s.artist) === wantedArtist).length;
+    }
+    return 0;
+  }
+
   // ---------- Action : demander une chanson ----------
   async function requestSong(song) {
     if (alreadyRequested(song.id)) return;
+    const staySameList = currentResultsCount() > 1;
     const tokenAtRequest = roundToken(votes[song.id]);
     const ref = doc(db, "votes", song.id);
     try {
@@ -1561,6 +1640,7 @@
       requestedRounds[song.id] = tokenAtRequest;
       saveRequestedToStorage();
       showToast(t("request_added_toast"));
+      updateRequestBadge();
       // Compteur cumulatif par artiste (Top Pick) — jamais réinitialisé par "Nouvelle soirée",
       // pour refléter les tendances sur plusieurs soirées plutôt qu'une seule.
       if (song.artist) {
@@ -1569,13 +1649,18 @@
           counts: { [key]: { name: song.artist, count: increment(1) } },
         }, { merge: true }).catch((e) => console.error("artistDemand update", e));
       }
-      // Ramène le client à l'écran principal (Top Pick + Style + recherche) une fois sa demande
-      // confirmée, plutôt que de le laisser dans la liste où il vient de choisir sa chanson.
-      catalogView = null;
-      document.getElementById("jb-search-input").value = "";
-      renderCatalog();
-      const searchbar = document.getElementById("jb-catalog-searchbar");
-      if (searchbar) searchbar.scrollIntoView({ behavior: "smooth", block: "start" });
+      if (staySameList) {
+        // Plusieurs chansons dans cette liste : on y reste pour que le client puisse en
+        // demander une autre tout de suite, sans repartir de l'écran principal.
+        renderCatalog();
+      } else {
+        // Une seule chanson dans cette liste : plus rien à y faire, retour à l'écran principal.
+        catalogView = null;
+        document.getElementById("jb-search-input").value = "";
+        renderCatalog();
+        const searchbar = document.getElementById("jb-catalog-searchbar");
+        if (searchbar) searchbar.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
     } catch (e) {
       console.error(e);
       showToast(t("error_toast"));
@@ -1818,9 +1903,8 @@
           ? ` · refroidit (<span data-until="${v.cooldownUntil}"><span class="jb-cooldown-num">${formatCooldown(v)}</span></span>)`
           : v?.requests ? ` · ${v.requests} demande(s)` : "";
       const plusDisabled = burned || cooling;
-      const activeGenres = s.genres || [];
       const genreChips = GENRE_KEYS.map((key) => `
-        <button class="jb-genre-chip${activeGenres.includes(key) ? " jb-genre-chip-active" : ""}" data-songgenre="${s.id}|${key}">${escapeHtml(genreLabel(key))}</button>
+        <button class="jb-genre-chip${songHasGenre(s, key) ? " jb-genre-chip-active" : ""}" data-songgenre="${s.id}|${key}">${escapeHtml(genreLabel(key))}</button>
       `).join("");
       return `
         <div class="jb-admin-catalog-item">
@@ -1861,7 +1945,18 @@
     const song = catalogSongs.find((s) => s.id === songId);
     if (!song) return;
     const genres = new Set(song.genres || []);
-    if (genres.has(key)) genres.delete(key); else genres.add(key);
+    // Les anciennes clés fusionnées dans ce style (ex. "quebecois"/"francais" pour "franco")
+    // sont nettoyées à chaque bascule, pour que les chansons héritées de l'ancien classement
+    // se retrouvent proprement sous la nouvelle clé unique.
+    const aliases = GENRE_ALIASES[key] || [];
+    const wasActive = genres.has(key) || aliases.some((a) => genres.has(a));
+    if (wasActive) {
+      genres.delete(key);
+      aliases.forEach((a) => genres.delete(a));
+    } else {
+      aliases.forEach((a) => genres.delete(a));
+      genres.add(key);
+    }
     const newGenres = [...genres];
     song.genres = newGenres; // mise à jour locale optimiste : retour instantané dans l'admin
     renderAdminCatalog();
