@@ -87,6 +87,7 @@
   #jb-app .jb-special-request-block { padding: 6px 2px 4px; }
   #jb-app .jb-special-request-text { color: var(--text-dim); font-size: 0.88rem; margin: 0 0 12px; line-height: 1.4; }
   #jb-app .jb-special-request-btn { width: 100%; }
+  #jb-app .jb-special-request-btn:disabled { opacity: 0.6; cursor: default; }
 
   /* Palmarès */
   #jb-app .jb-admin-palmares { display: flex; flex-direction: column; gap: 2px; }
@@ -546,6 +547,10 @@
     messagingSenderId: "465762599450",
     appId: "1:465762599450:web:0c2dddeb5e5d1dbb3047a3",
   };
+  // Les demandes spéciales sont gratuites pour l'instant (voir submitSpecialRequest plus
+  // bas). Le paiement Stripe est prêt dans functions/index.js si jamais activé plus tard :
+  // il suffira de redéfinir ici une constante CLOUD_FUNCTIONS_BASE (URL de tes Fonctions
+  // Cloud) et de reverrouiller firestore.rules — voir GUIDE-paiement-demandes-speciales.md.
   // ============================================================
 
   // ---------- Stockage local sécurisé ----------
@@ -586,7 +591,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-09-17.16";
+  const APP_BUILD = "2026-09-17.20";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -2028,11 +2033,13 @@
     }
   }
 
-  // ---------- Demande spéciale (chanson introuvable dans le répertoire) ----------
-  // Envoie le texte tapé par le client dans une collection à part, consultée dans le panneau
-  // admin (colonne "Demandes spéciales", à côté du palmarès) — même approche optimiste que
-  // requestSong/boostSong : on confirme au client tout de suite, l'écriture se synchronise
-  // en arrière-plan.
+  // ---------- Demande spéciale (chanson introuvable dans le répertoire) — GRATUITE pour ---
+  // ---------- l'instant, le temps qu'Hubert bâtisse son répertoire et évalue le besoin. ----
+  // Écrit directement dans Firestore, comme requestSong/boostSong : approche optimiste, on
+  // confirme au client tout de suite, l'écriture se synchronise en arrière-plan. Une version
+  // payante (Stripe, autorisation + capture seulement si la chanson est jouée) est déjà prête
+  // dans functions/index.js si jamais Hubert décide de l'activer plus tard — il suffira de
+  // remettre l'appel à cette fonction Cloud ici et de reverrouiller firestore.rules.
   async function submitSpecialRequest() {
     const input = document.getElementById("jb-search-input");
     const text = input.value.trim();
@@ -2113,6 +2120,10 @@
   }
 
   // ---------- Rendu : Demandes spéciales admin (chansons introuvables cherchées par un client) ----------
+  // Gratuit pour l'instant (voir submitSpecialRequest) : juste une liste avec un bouton pour
+  // retirer une demande une fois lue/traitée. Si le paiement Stripe est activé plus tard, ces
+  // entrées auront un statut ("pending"/"captured"/...) et des boutons Accepter/Refuser — voir
+  // l'historique du fichier ou functions/index.js pour ce mécanisme déjà prêt.
   function renderAdminSpecial() {
     if (!isAdmin) return;
     const list = document.getElementById("jb-admin-special");
