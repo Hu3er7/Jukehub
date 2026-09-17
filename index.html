@@ -549,7 +549,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-09-17.4";
+  const APP_BUILD = "2026-09-17.5";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -1606,7 +1606,7 @@
       // catalogView.type === "genre-song-list" : artiste choisi depuis la liste d'un style.
       showArtist = false;
       titleWrap.hidden = false;
-      document.querySelector(".jb-folder-title").textContent = `${catalogView.artist} · ${genreLabel(catalogView.key)}`;
+      document.querySelector(".jb-folder-title").textContent = catalogView.artist;
       const wantedArtist = norm(catalogView.artist);
       songs = catalogSongs.filter((s) => songHasGenre(s, catalogView.key) && norm(s.artist) === wantedArtist);
     }
