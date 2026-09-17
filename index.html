@@ -547,7 +547,6 @@
       already_requested: "✅ Demandée",
       request_btn: "▶ Jouer",
       request_added_toast: "🎶 Chanson demandée !",
-      confirm_request: (title) => `Confirmer ta demande pour « ${title} » ?`,
       requests_remaining: (n) => `Demandes : ${n}`,
       requests_remaining_countdown: (time) => `Demandes : ${time}`,
       requests_limit_reached: "Tu as atteint ta limite de 10 chansons. Patiente 2 minutes (ou attends qu'une de tes chansons soit jouée) pour en récupérer une !",
@@ -599,7 +598,6 @@
       already_requested: "✅ Requested",
       request_btn: "▶ Play",
       request_added_toast: "🎶 Song requested!",
-      confirm_request: (title) => `Confirm your request for "${title}"?`,
       requests_remaining: (n) => `Requests: ${n}`,
       requests_remaining_countdown: (time) => `Requests: ${time}`,
       requests_limit_reached: "You've reached your limit of 10 songs. Wait 2 minutes (or until one of your songs gets played) to get one back!",
@@ -1682,7 +1680,6 @@
           pulseAttention(document.getElementById("jb-request-remaining"));
           return;
         }
-        if (!confirm(t("confirm_request", song.title))) return;
         requestSong(song);
       });
     });
