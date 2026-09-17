@@ -511,7 +511,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-09-17.1";
+  const APP_BUILD = "2026-09-17.2";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -572,7 +572,7 @@
       palmares_empty: "Aucune demande pour l'instant — sois le premier à voter !",
       boost_remaining: (n) => `🚀 Boosts : ${n}`,
       boost_remaining_countdown: (time) => `🚀 Boosts : ${time}`,
-      boost_used_up: "Tu as utilisé tes 3 boosts. Patiente 2 minutes (ou attends qu'une de tes chansons boostées joue) pour en récupérer un !",
+      boost_used_up: "Tu as utilisé tes 3 boosts. Patiente 2 minutes (ou attends qu'une de tes chansons boostées joue) pour en récupérer !",
       boost_added: "🚀 Boost ajouté !",
       boost_aria: "Booster cette chanson",
       boost_btn: "Boost",
@@ -590,7 +590,7 @@
       request_added_toast: "🎶 Chanson demandée !",
       requests_remaining: (n) => `Demandes : ${n}`,
       requests_remaining_countdown: (time) => `Demandes : ${time}`,
-      requests_limit_reached: "Tu as atteint ta limite de 10 chansons. Patiente 2 minutes (ou attends qu'une de tes chansons soit jouée) pour en récupérer une !",
+      requests_limit_reached: "Tu as atteint ta limite de 10 chansons. Patiente 2 minutes (ou attends qu'une de tes chansons soit jouée) pour en récupérer !",
       error_toast: "Oups, réessaie dans un instant.",
       song_count: (n) => `${n} chanson${n > 1 ? "s" : ""}`,
       admin_link_title: "Mode spectacle",
@@ -623,7 +623,7 @@
       palmares_empty: "No requests yet — be the first to vote!",
       boost_remaining: (n) => `🚀 Boosts : ${n}`,
       boost_remaining_countdown: (time) => `🚀 Boosts : ${time}`,
-      boost_used_up: "You've used all 3 of your boosts. Wait 2 minutes (or until one of your boosted songs gets played) to get one back!",
+      boost_used_up: "You've used all 3 of your boosts. Wait 2 minutes (or until one of your boosted songs gets played) to get more!",
       boost_added: "🚀 Boost added!",
       boost_aria: "Boost this song",
       boost_btn: "Boost",
@@ -641,7 +641,7 @@
       request_added_toast: "🎶 Song requested!",
       requests_remaining: (n) => `Requests: ${n}`,
       requests_remaining_countdown: (time) => `Requests: ${time}`,
-      requests_limit_reached: "You've reached your limit of 10 songs. Wait 2 minutes (or until one of your songs gets played) to get one back!",
+      requests_limit_reached: "You've reached your limit of 10 songs. Wait 2 minutes (or until one of your songs gets played) to get more!",
       error_toast: "Oops, try again in a moment.",
       song_count: (n) => `${n} song${n > 1 ? "s" : ""}`,
       admin_link_title: "Show mode",
@@ -952,12 +952,14 @@
   // détection de changement fragile, juste une comparaison à chaque rendu.
   let requestedRounds = {};
   const MAX_REQUESTS = 10; // nombre maximum de demandes actives par client, par soirée
-  const REQUEST_RESET_MS = 2 * 60 * 1000; // filet de sécurité : redonne 1 demande après ce délai une fois la banque de 10 épuisée
-  // requestResetAt : horodatage (ms) auquel le client récupérera 1 demande, une fois qu'il a
+  const REQUEST_RESET_MS = 2 * 60 * 1000; // filet de sécurité : redonne des demandes après ce délai une fois la banque de 10 épuisée
+  const REQUEST_RENEW_AMOUNT = 3; // nombre de demandes redonnées à chaque cycle de 2 min
+  // requestResetAt : horodatage (ms) auquel le client récupérera des demandes, une fois qu'il a
   // atteint sa limite de 10. 0 tant qu'il lui reste au moins une demande disponible.
   let requestResetAt = 0;
   const MAX_BOOSTS = 3; // nombre maximum de boosts par client, par soirée
-  const BOOST_RESET_MS = 2 * 60 * 1000; // filet de sécurité : redonne 1 boost après ce délai une fois les 3 épuisés
+  const BOOST_RESET_MS = 2 * 60 * 1000; // filet de sécurité : redonne des boosts après ce délai une fois les 3 épuisés
+  const BOOST_RENEW_AMOUNT = 3; // nombre de boosts redonnés à chaque cycle de 2 min
   // boostUsage : songId -> { count, token } — boosts actuellement "verrouillés" sur cette chanson
   // (token = roundToken au moment du boost ; libéré automatiquement dès que la chanson est jouée).
   let boostUsage = {};
@@ -1037,9 +1039,9 @@
   // demandées soit jouée.
   function maybeRenewRequests() {
     if (!requestResetAt || Date.now() < requestResetAt) return;
-    const ids = Object.keys(requestedRounds);
+    const ids = Object.keys(requestedRounds).slice(0, REQUEST_RENEW_AMOUNT);
     if (ids.length) {
-      delete requestedRounds[ids[0]];
+      ids.forEach((id) => delete requestedRounds[id]);
       saveRequestedToStorage();
     }
     requestResetAt = activeRequestsCount() >= MAX_REQUESTS ? Date.now() + REQUEST_RESET_MS : 0;
@@ -1187,19 +1189,27 @@
     if (changed) saveBoostsToStorage();
     return total;
   }
-  // Filet de sécurité : après 2 minutes à court de boosts, en redonne un seul (pas une remise à
-  // zéro complète) — puis relance aussitôt un nouveau cooldown de 2 min si le client est encore
-  // à 0, jusqu'à ce qu'il en retrouve un via ce mécanisme ou qu'une de ses chansons boostées joue.
+  // Filet de sécurité : après 2 minutes à court de boosts, en redonne BOOST_RENEW_AMOUNT (pas
+  // nécessairement une remise à zéro complète si jamais MAX_BOOSTS change) — puis relance aussitôt
+  // un nouveau cooldown de 2 min si le client est encore à 0, jusqu'à ce qu'il en retrouve via ce
+  // mécanisme ou qu'une de ses chansons boostées joue.
   function maybeRenewBoosts() {
     if (!boostResetAt || Date.now() < boostResetAt) return;
-    const ids = Object.keys(boostUsage);
-    if (ids.length) {
-      const id = ids[0];
+    let toRelease = BOOST_RENEW_AMOUNT;
+    let changed = false;
+    for (const id of Object.keys(boostUsage)) {
+      if (toRelease <= 0) break;
       const entry = boostUsage[id];
-      if (entry.count > 1) entry.count -= 1;
-      else delete boostUsage[id];
-      saveBoostsToStorage();
+      if (entry.count > toRelease) {
+        entry.count -= toRelease;
+        toRelease = 0;
+      } else {
+        toRelease -= entry.count;
+        delete boostUsage[id];
+      }
+      changed = true;
     }
+    if (changed) saveBoostsToStorage();
     boostResetAt = activeBoostsCount() >= MAX_BOOSTS ? Date.now() + BOOST_RESET_MS : 0;
     saveBoostResetToStorage();
   }
