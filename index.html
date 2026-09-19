@@ -47,17 +47,20 @@
   #jb-app .jb-view { width: 100%; margin: 0 auto; padding: 20px 24px 60px; }
 
   #jb-app .jb-top-bar {
-    display: flex; align-items: center; justify-content: space-between; gap: 10px; padding-top: 14px;
+    display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap;
+    gap: 10px; row-gap: 8px; padding-top: 14px;
   }
-  /* Groupe de gauche : logo + titre, ensemble, qui peut rétrécir sans écraser le groupe de droite */
-  #jb-app .jb-top-bar-left { display: flex; align-items: center; gap: 10px; min-width: 0; overflow: hidden; }
+  /* Groupe de gauche : logo (jamais rogné, voir .jb-avatar) + titre (jamais tronqué) */
+  #jb-app .jb-top-bar-left { display: flex; align-items: center; gap: 10px; }
   #jb-app .jb-top-bar h1 {
     font-family: 'Anton', -apple-system, sans-serif; font-size: 2.3rem; font-weight: 400;
-    color: var(--accent2); letter-spacing: 0.3px;
-    overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0;
+    color: var(--accent2); letter-spacing: 0.3px; white-space: nowrap;
   }
-  #jb-app .jb-top-bar-right { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
-  #jb-app .jb-avatar { height: 62px; width: auto; flex-shrink: 0; margin: -8px 0; display: block; }
+  /* Si le titre + le logo ne laissent pas assez de place, ce groupe passe sur sa propre
+     ligne (voir flex-wrap sur .jb-top-bar) plutôt que d'écraser le titre — et reste collé
+     à droite grâce à margin-left: auto, même seul sur sa ligne. */
+  #jb-app .jb-top-bar-right { display: flex; align-items: center; gap: 10px; flex-shrink: 0; margin-left: auto; }
+  #jb-app .jb-avatar { height: 62px; width: auto; flex-shrink: 0; display: block; }
   /* Bouton "?" qui relance le tutoriel à tout moment */
   #jb-app .jb-tour-help-btn {
     flex-shrink: 0; background: var(--card); border: 1px solid var(--border); color: var(--text-dim);
@@ -630,7 +633,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-09-19.8";
+  const APP_BUILD = "2026-09-19.9";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
