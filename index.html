@@ -104,8 +104,8 @@
   #jb-app .jb-rank-artist { color: var(--text-dim); font-size: 0.85rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   #jb-app .jb-rank-count { font-weight: 700; color: var(--accent2); font-size: 0.9rem; flex-shrink: 0; white-space: nowrap; }
   #jb-app .jb-palmares-heading {
-    display: flex; align-items: center; justify-content: space-between; flex-wrap: nowrap; gap: 8px;
-    position: sticky; top: 0; z-index: 20; background: var(--bg); padding: 8px 0; margin-bottom: 2px;
+    flex-shrink: 0; display: flex; align-items: center; justify-content: space-between;
+    flex-wrap: nowrap; gap: 8px; background: var(--bg); padding: 8px 0; margin-bottom: 2px;
   }
   #jb-app .jb-palmares-heading h2 {
     margin-bottom: 0; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
@@ -618,7 +618,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-09-19.3";
+  const APP_BUILD = "2026-09-19.7";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -1157,7 +1157,6 @@
   let palmaresOrderKeys = [];
   let palmaresAnimating = false;
   let palmaresAnimTimer = null;
-
   function isInCooldown(v) {
     return !!(v && v.cooldownUntil && v.cooldownUntil > Date.now());
   }
@@ -1616,6 +1615,15 @@
       .sort((a, b) => b[1].requests - a[1].requests);
 
     empty.hidden = ranked.length > 0;
+
+    if (ranked.length === 0) {
+      palmaresElByKey.forEach((el) => el.remove());
+      palmaresElByKey.clear();
+      palmaresOrderKeys = [];
+      list.innerHTML = "";
+      return;
+    }
+
     const newKeys = ranked.map(([id]) => id);
 
     // 1) FIRST — mémorise la position actuelle de chaque élément encore présent.
