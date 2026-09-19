@@ -388,9 +388,10 @@
   #jb-app .jb-tour-card p { font-size: 0.9rem; color: var(--text); line-height: 1.5; }
   #jb-app .jb-tour-actions { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 14px; }
   /* Mis en évidence (plutôt qu'un simple lien discret) pour que le client le remarque s'il
-     veut sauter le tuto — surtout maintenant que l'arrière-plan est bloqué à chaque étape. Un
-     léger halo blanc chaud pulse en continu autour du bouton (même couleur que l'animation
-     jouée quand on touche l'arrière-plan) pour attirer l'œil dessus sans avoir à le toucher. */
+     veut sauter le tuto — surtout maintenant que l'arrière-plan est bloqué à chaque étape. Le
+     halo blanc chaud ne s'allume que quand le client touche l'arrière-plan bloqué (classe
+     jb-pulse-attn-warm ajoutée par JS, en même temps que sur la fenêtre du tuto elle-même) —
+     voir le clic sur .jb-tour-backdrop plus bas. */
   @keyframes jb-tour-skip-glow {
     0%, 100% { box-shadow: 0 0 0 0 rgba(255, 248, 230, 0); }
     50% { box-shadow: 0 0 12px 4px rgba(255, 248, 230, 0.65); }
@@ -399,8 +400,8 @@
     background: var(--card2); border: 1px solid var(--border); color: var(--text);
     font-size: 0.82rem; font-weight: 700; text-decoration: none; cursor: pointer;
     padding: 8px 14px; border-radius: 999px;
-    animation: jb-tour-skip-glow 1.8s ease-in-out infinite;
   }
+  #jb-app .jb-tour-skip.jb-pulse-attn-warm { animation: jb-tour-skip-glow 0.45s ease-in-out 2; }
   #jb-app .jb-tour-nav { display: flex; gap: 8px; }
   #jb-app .jb-tour-nav-btn {
     background: var(--card2); border: 1px solid var(--border); color: var(--text);
@@ -617,7 +618,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-09-19.2";
+  const APP_BUILD = "2026-09-19.3";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -1034,10 +1035,11 @@
   document.getElementById("jb-tour-skip").addEventListener("click", endTour);
 
   // Toucher l'arrière-plan (bloqué pendant le tuto — voir .jb-tour-backdrop) ne fait plus
-  // rien passer en dessous : ça fait juste gonfler-dégonfler la fenêtre du tuto en blanc chaud,
-  // pour indiquer au client où toucher à la place ("Suivant" ou "Passer le tutoriel").
+  // rien passer en dessous : ça fait juste gonfler-dégonfler la fenêtre du tuto et s'allumer le
+  // bouton "Passer le tutoriel" en blanc chaud, pour indiquer au client où toucher à la place.
   document.getElementById("jb-tour-backdrop").addEventListener("click", () => {
     pulseAttention(document.getElementById("jb-tour-card"), "jb-pulse-attn-warm");
+    pulseAttention(document.getElementById("jb-tour-skip"), "jb-pulse-attn-warm");
   });
 
   // Le check est fait dans le setTimeout (pas tout de suite) pour être certain que
@@ -1264,6 +1266,11 @@
   document.getElementById("jb-tour-card").addEventListener("animationend", (e) => {
     if (e.animationName === "jb-pulse-attn-warm" || e.animationName === "jb-pulse-attn-warm-center") {
       document.getElementById("jb-tour-card").classList.remove("jb-pulse-attn-warm");
+    }
+  });
+  document.getElementById("jb-tour-skip").addEventListener("animationend", (e) => {
+    if (e.animationName === "jb-tour-skip-glow") {
+      document.getElementById("jb-tour-skip").classList.remove("jb-pulse-attn-warm");
     }
   });
 
