@@ -190,11 +190,6 @@
     #jb-app .jb-song-votes { width: 16px; font-size: 0.85rem; }
   }
 
-  /* Dossiers d'artistes (hérité — plus utilisé pour la navigation par défaut, laissé pour compat) */
-  #jb-app .jb-artist-row { cursor: pointer; }
-  #jb-app .jb-artist-row:active { background: var(--card2); }
-  #jb-app .jb-artist-name { font-weight: 700; font-size: 0.92rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  #jb-app .jb-artist-count { flex-shrink: 0; color: var(--text-dim); font-size: 0.8rem; white-space: nowrap; }
   #jb-app .jb-catalog-searchbar {
     position: sticky; top: 0; z-index: 20; display: flex; align-items: center; gap: 8px;
     background: var(--bg); padding: 6px 0; margin-bottom: 10px; flex-wrap: wrap;
@@ -351,6 +346,10 @@
 
   /* Tutoriel guidé (skippable à toute étape) */
   #jb-app .jb-tour { position: fixed; inset: 0; z-index: 1200; pointer-events: none; }
+  /* Capture TOUT clic/touche sur l'arrière-plan pendant le tuto (y compris sur l'élément
+     surligné par le "spot", qui reste lui-même non interactif) — le client ne peut plus
+     naviguer l'app en dessous tant que la fenêtre du tuto est ouverte. Voir showTourStep(). */
+  #jb-app .jb-tour-backdrop { position: fixed; inset: 0; pointer-events: auto; cursor: default; }
   #jb-app .jb-tour-spot {
     position: fixed; border-radius: 14px; border: 2px solid var(--accent);
     box-shadow: 0 0 0 9999px rgba(8, 4, 16, 0.72);
@@ -365,6 +364,20 @@
     transition: top 0.35s ease;
   }
   #jb-app .jb-tour-card.jb-tour-card-center { top: 50%; transform: translateY(-50%); }
+  /* Rappel visuel quand le client touche l'arrière-plan bloqué : la fenêtre du tuto elle-même
+     gonfle-dégonfle et s'illumine d'un blanc chaud (plutôt que le rose des badges "Demandes"/
+     "Boosts"), pour lui indiquer où toucher à la place. Deux variantes de keyframes (normale et
+     "centrée") pour ne pas écraser le translateY(-50%) du centrage vertical pendant l'animation. */
+  @keyframes jb-pulse-attn-warm {
+    0%, 100% { transform: scale(1); box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5); }
+    50% { transform: scale(1.035); box-shadow: 0 0 26px 8px rgba(255, 248, 230, 0.85), 0 10px 30px rgba(0, 0, 0, 0.5); }
+  }
+  @keyframes jb-pulse-attn-warm-center {
+    0%, 100% { transform: translateY(-50%) scale(1); box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5); }
+    50% { transform: translateY(-50%) scale(1.035); box-shadow: 0 0 26px 8px rgba(255, 248, 230, 0.85), 0 10px 30px rgba(0, 0, 0, 0.5); }
+  }
+  #jb-app .jb-tour-card.jb-pulse-attn-warm { animation: jb-pulse-attn-warm 0.45s ease-in-out 2; }
+  #jb-app .jb-tour-card.jb-tour-card-center.jb-pulse-attn-warm { animation: jb-pulse-attn-warm-center 0.45s ease-in-out 2; }
   #jb-app .jb-tour-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
   #jb-app .jb-tour-dots { display: flex; gap: 6px; }
   #jb-app .jb-tour-dot { width: 7px; height: 7px; border-radius: 999px; background: var(--border); }
@@ -374,9 +387,19 @@
   #jb-app .jb-tour-card h3 { font-size: 1.05rem; font-weight: 800; color: var(--accent2); margin-bottom: 6px; }
   #jb-app .jb-tour-card p { font-size: 0.9rem; color: var(--text); line-height: 1.5; }
   #jb-app .jb-tour-actions { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 14px; }
+  /* Mis en évidence (plutôt qu'un simple lien discret) pour que le client le remarque s'il
+     veut sauter le tuto — surtout maintenant que l'arrière-plan est bloqué à chaque étape. Un
+     léger halo blanc chaud pulse en continu autour du bouton (même couleur que l'animation
+     jouée quand on touche l'arrière-plan) pour attirer l'œil dessus sans avoir à le toucher. */
+  @keyframes jb-tour-skip-glow {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(255, 248, 230, 0); }
+    50% { box-shadow: 0 0 12px 4px rgba(255, 248, 230, 0.65); }
+  }
   #jb-app .jb-tour-skip {
-    background: none; color: var(--text-dim); font-size: 0.82rem; font-weight: 600;
-    text-decoration: underline; cursor: pointer; padding: 6px 0;
+    background: var(--card2); border: 1px solid var(--border); color: var(--text);
+    font-size: 0.82rem; font-weight: 700; text-decoration: none; cursor: pointer;
+    padding: 8px 14px; border-radius: 999px;
+    animation: jb-tour-skip-glow 1.8s ease-in-out infinite;
   }
   #jb-app .jb-tour-nav { display: flex; gap: 8px; }
   #jb-app .jb-tour-nav-btn {
@@ -451,6 +474,7 @@
     </footer>
 
     <div id="jb-tour" class="jb-tour" hidden>
+      <div id="jb-tour-backdrop" class="jb-tour-backdrop"></div>
       <div id="jb-tour-spot" class="jb-tour-spot"></div>
       <div id="jb-tour-fake-boost" class="jb-slot-boost jb-tour-fake-boost" hidden>🚀 Boost</div>
       <div id="jb-tour-card" class="jb-tour-card">
@@ -593,7 +617,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-09-17.26";
+  const APP_BUILD = "2026-09-19.2";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -678,7 +702,6 @@
       requests_remaining_countdown: (time) => `Demandes : ${time}`,
       requests_limit_reached: "Tu as atteint ta limite de 10 chansons. Patiente 2 minutes (ou attends qu'une de tes chansons soit jouée) pour en récupérer !",
       error_toast: "Oups, réessaie dans un instant.",
-      song_count: (n) => `${n} chanson${n > 1 ? "s" : ""}`,
       admin_link_title: "Mode spectacle",
       tour_help_title: "Revoir le tutoriel",
       tour_skip: "Passer le tutoriel",
@@ -692,21 +715,21 @@
         christmas: "Noël",
       },
       tour1_title: "Bienvenue 👋",
-      tour1_text: "Petit tour rapide pour te montrer comment ça marche. Tu peux passer cette étape (ou tout le tutoriel) à tout moment.",
+      tour1_text: "Petit tour rapide — passe à tout moment avec le bouton ci-dessous.",
       tour3_title: "1. Chercher une chanson",
-      tour3_text: "Fouille dans mon répertoire en inscrivant le titre ou le nom de l'artiste. Si tu ne trouves pas ta chanson, écris-la quand même : elle me parviendra. Qui sait ? Peut-être que je peux essayer de la faire !",
+      tour3_text: "Cherche par titre ou artiste — introuvable ? Écris-la quand même !",
       tour_quickpick_title: "2. Top Pick",
-      tour_quickpick_text: "Retrouve ici les artistes les plus demandés. Touche un nom pour voir directement toutes ses chansons.",
+      tour_quickpick_text: "Les artistes les plus demandés — touche un nom pour voir ses chansons.",
       tour2_title: "3. Choisis ton style",
-      tour2_text: "Touche un style (Country, rock, pop...) pour voir les chansons de ce genre.",
+      tour2_text: "Touche un style pour voir ses chansons.",
       tour2b_title: "4. Choisir une chanson",
-      tour2b_text: "Touche « ▶ Jouer » à côté de la chanson que tu veux demander. Utilise ⬅ RETOUR pour revenir aux styles.",
+      tour2b_text: "Touche « ▶ Jouer » pour demander une chanson.",
       tour_requests_title: "5. Tes demandes",
-      tour_requests_text: "Tu as un maximum de 10 demandes actives. Une fois ta limite atteinte, patiente 2 minutes (ou attends qu'une de tes chansons soit jouée) pour en récupérer.",
+      tour_requests_text: "Tu peux avoir jusqu'à 10 demandes actives à la fois.",
       tour4_title: "6. Le palmarès",
-      tour4_text: "Le palmarès montre toutes les chansons demandées ce soir, classées de la plus populaire à la moins populaire. Tu peux toujours voir exactement où se trouve ta demande.",
+      tour4_text: "Toutes les chansons demandées ce soir, classées par popularité.",
       tour4b_title: "7. Les boosts",
-      tour4b_text: "Appuie sur 🚀 Boost pour faire monter une chanson dans le classement. Tu as 3 boosts. Si tu utilises les 3, ils se renouvelleront après 2 minutes. Ils se renouvellent aussi quand la chanson est jouée.",
+      tour4b_text: "Appuie sur 🚀 Boost pour faire monter une chanson (3 boosts disponibles).",
     },
     en: {
       page_title: "My Repertoire",
@@ -738,7 +761,6 @@
       requests_remaining_countdown: (time) => `Requests: ${time}`,
       requests_limit_reached: "You've reached your limit of 10 songs. Wait 2 minutes (or until one of your songs gets played) to get more!",
       error_toast: "Oops, try again in a moment.",
-      song_count: (n) => `${n} song${n > 1 ? "s" : ""}`,
       admin_link_title: "Show mode",
       tour_help_title: "Replay the tutorial",
       tour_skip: "Skip tutorial",
@@ -752,21 +774,21 @@
         christmas: "Christmas",
       },
       tour1_title: "Welcome 👋",
-      tour1_text: "A quick tour of how this works. You can skip this step (or the whole tutorial) at any time.",
+      tour1_text: "A quick tour — skip anytime with the button below.",
       tour3_title: "1. Search for a song",
-      tour3_text: "Search my repertoire by typing the title or artist name. Can't find your song? Type it in anyway — it'll reach me. Who knows? Maybe I can try to learn it!",
+      tour3_text: "Search by title or artist — can't find it? Send it in anyway!",
       tour_quickpick_title: "2. Top Pick",
-      tour_quickpick_text: "Find the most-requested artists here. Tap a name to see all their songs right away.",
+      tour_quickpick_text: "The most-requested artists — tap a name to see their songs.",
       tour2_title: "3. Choose your style",
-      tour2_text: "Tap a style (Country, rock, pop...) to see the songs in that genre.",
+      tour2_text: "Tap a style to see its songs.",
       tour2b_title: "4. Pick a song",
-      tour2b_text: "Tap \"▶ Play\" next to the song you want to request. Use ⬅ BACK to return to the styles.",
+      tour2b_text: "Tap \"▶ Play\" to request a song.",
       tour_requests_title: "5. Your requests",
-      tour_requests_text: "You have a maximum of 10 active requests. Once you hit your limit, wait 2 minutes (or until one of your songs gets played) to get more.",
+      tour_requests_text: "You can have up to 10 active requests at once.",
       tour4_title: "6. The leaderboard",
-      tour4_text: "The leaderboard shows every song requested tonight, from most to least popular. You can always see exactly where your request stands.",
+      tour4_text: "Every song requested tonight, ranked by popularity.",
       tour4b_title: "7. Boosts",
-      tour4b_text: "Tap 🚀 Boost to push a song up the ranking. You get 3 boosts. If you use all 3, they'll renew after 2 minutes. They also renew as soon as the song gets played.",
+      tour4b_text: "Tap 🚀 Boost to push a song up the ranking (3 boosts available).",
     },
   };
   function genreLabel(key) {
@@ -851,15 +873,10 @@
       textKey: "tour2b_text",
       before: () => {
         document.getElementById("jb-search-input").value = "";
-        // Choisit une chanson déjà classée dans un style pour que la démo du tuto montre une
-        // vraie liste (style + artiste) plutôt qu'un résultat vide. Priorise les Backstreet Boys
-        // comme exemple (plus vendeur), avec un repli sur la première chanson classée disponible.
-        const demoSong =
-          catalogSongs.find((s) => (s.genres || []).length && s.artist && norm(s.artist) === norm("Backstreet Boys")) ||
-          catalogSongs.find((s) => (s.genres || []).length && s.artist);
-        catalogView = demoSong
-          ? { type: "genre-song-list", key: canonicalGenreKey(demoSong.genres[0]), artist: demoSong.artist }
-          : { type: "genre-artists", key: GENRE_KEYS[0] };
+        // Choisit un style déjà utilisé par au moins une chanson pour que la démo du tuto
+        // montre une vraie liste plutôt qu'un résultat vide.
+        const demoSong = catalogSongs.find((s) => (s.genres || []).length);
+        catalogView = { type: "genre-songs", key: demoSong ? canonicalGenreKey(demoSong.genres[0]) : GENRE_KEYS[0] };
         renderCatalog();
       },
     },
@@ -1016,6 +1033,13 @@
   });
   document.getElementById("jb-tour-skip").addEventListener("click", endTour);
 
+  // Toucher l'arrière-plan (bloqué pendant le tuto — voir .jb-tour-backdrop) ne fait plus
+  // rien passer en dessous : ça fait juste gonfler-dégonfler la fenêtre du tuto en blanc chaud,
+  // pour indiquer au client où toucher à la place ("Suivant" ou "Passer le tutoriel").
+  document.getElementById("jb-tour-backdrop").addEventListener("click", () => {
+    pulseAttention(document.getElementById("jb-tour-card"), "jb-pulse-attn-warm");
+  });
+
   // Le check est fait dans le setTimeout (pas tout de suite) pour être certain que
   // "nightId" (déclaré plus bas) a déjà été initialisé au moment de le lire. Protégé par un
   // try/catch : si le chargement de Firebase plus bas a échoué (Wi-Fi instable au moment de
@@ -1107,9 +1131,9 @@
   // épuisés. 0 tant qu'il lui reste au moins un boost disponible.
   let boostResetAt = 0;
   // catalogView : navigation active dans le catalogue public.
-  // null = vue par défaut (Top Pick + Style) ; sinon {type:"genre-artists", key} (liste des
-  // artistes d'un style), {type:"genre-song-list", key, artist} (chansons de cet artiste dans ce
-  // style), ou {type:"artist", name} (artiste choisi depuis Top Pick, toutes chansons).
+  // null = vue par défaut (Top Pick + Style) ; sinon {type:"genre-songs", key} (toutes les
+  // chansons d'un style, tous artistes confondus), ou {type:"artist", name} (artiste choisi
+  // depuis Top Pick, toutes chansons).
   let catalogView = null;
   // artistDemand : nom d'artiste -> {name, count} — nombre cumulatif (toutes les soirées) de
   // demandes reçues, utilisé pour la section Top Pick (les 5 artistes les plus demandés).
@@ -1221,19 +1245,26 @@
       el.textContent = t("requests_remaining", r);
     }
   }
-  // Rappel visuel : fait gonfler-dégonfler et s'illuminer-s'éteindre un badge un court instant,
-  // pour attirer l'attention du client dessus juste après qu'il ait changé (boost utilisé,
-  // chanson demandée). On enlève puis remet la classe pour pouvoir rejouer l'animation même
-  // si elle vient tout juste de se terminer.
-  function pulseAttention(el) {
+  // Rappel visuel : fait gonfler-dégonfler et s'illuminer-s'éteindre un élément un court
+  // instant, pour attirer l'attention du client dessus (badge juste après qu'il ait changé —
+  // boost utilisé, chanson demandée — ou fenêtre du tuto s'il touche l'arrière-plan bloqué).
+  // On enlève puis remet la classe pour pouvoir rejouer l'animation même si elle vient tout
+  // juste de se terminer. className : quelle variante d'animation jouer (rose par défaut pour
+  // les badges, "jb-pulse-attn-warm" en blanc chaud pour la fenêtre du tuto).
+  function pulseAttention(el, className = "jb-pulse-attn") {
     if (!el) return;
-    el.classList.remove("jb-pulse-attn");
+    el.classList.remove(className);
     void el.offsetWidth; // force le navigateur à "oublier" l'animation précédente
-    el.classList.add("jb-pulse-attn");
+    el.classList.add(className);
   }
   ["jb-boost-remaining", "jb-request-remaining"].forEach((id) => {
     const el = document.getElementById(id);
     if (el) el.addEventListener("animationend", () => el.classList.remove("jb-pulse-attn"));
+  });
+  document.getElementById("jb-tour-card").addEventListener("animationend", (e) => {
+    if (e.animationName === "jb-pulse-attn-warm" || e.animationName === "jb-pulse-attn-warm-center") {
+      document.getElementById("jb-tour-card").classList.remove("jb-pulse-attn-warm");
+    }
   });
 
   // ---------- Utilitaires ----------
@@ -1727,13 +1758,6 @@
       return;
     }
 
-    // Un style choisi passe d'abord par la liste des artistes de ce style, avant la liste
-    // des chansons — voir renderGenreArtistList().
-    if (!search && catalogView.type === "genre-artists") {
-      renderGenreArtistList(catalogView.key);
-      return;
-    }
-
     let songs;
     let showArtist = true;
     if (search) {
@@ -1750,13 +1774,16 @@
       const wanted = norm(catalogView.name);
       songs = catalogSongs.filter((s) => norm(s.artist) === wanted);
     } else {
-      // catalogView.type === "genre-song-list" : artiste choisi depuis la liste d'un style.
-      showArtist = false;
+      // catalogView.type === "genre-songs" : style choisi depuis la section "🎵 Style" — toutes
+      // les chansons de ce style, tous artistes confondus (le nom de l'artiste s'affiche sous
+      // chaque titre, comme en recherche texte), directement — sans passer par une liste
+      // d'artistes intermédiaire.
+      showArtist = true;
       titleWrap.hidden = false;
       positionRequestBadge("folder");
-      document.querySelector(".jb-folder-title").textContent = catalogView.artist;
-      const wantedArtist = norm(catalogView.artist);
-      songs = catalogSongs.filter((s) => songHasGenre(s, catalogView.key) && norm(s.artist) === wantedArtist);
+      const totalCount = catalogSongs.filter((s) => songHasGenre(s, catalogView.key)).length;
+      document.querySelector(".jb-folder-title").textContent = `${genreLabel(catalogView.key)} (${totalCount} ${t("genre_song_count_unit")})`;
+      songs = catalogSongs.filter((s) => songHasGenre(s, catalogView.key));
     }
 
     songs = [...songs].sort((a, b) => a.title.localeCompare(b.title, "fr"));
@@ -1774,49 +1801,6 @@
       document.getElementById("jb-special-request-text").textContent = t("special_request_text");
       document.getElementById("jb-special-request-btn").textContent = t("special_request_btn");
     }
-  }
-
-  // ---------- Liste des artistes d'un style donné (étape intermédiaire avant les chansons) ----------
-  function renderGenreArtistList(key) {
-    const titleWrap = document.getElementById("jb-folder-title-wrap");
-    const list = document.getElementById("jb-catalog-list");
-    const empty = document.getElementById("jb-catalog-empty");
-    titleWrap.hidden = false;
-    positionRequestBadge("folder");
-    // Nombre total de chansons de ce style, tous artistes confondus, affiché à côté du titre
-    // (ex. "Franco (42)") — donne un aperçu de la taille du répertoire pour ce style.
-    const totalCount = catalogSongs.filter((s) => songHasGenre(s, key)).length;
-    document.querySelector(".jb-folder-title").textContent = `${genreLabel(key)} (${totalCount} ${t("genre_song_count_unit")})`;
-
-    const counts = {};
-    catalogSongs.forEach((s) => {
-      if (s.artist && songHasGenre(s, key)) {
-        const k = norm(s.artist);
-        if (!counts[k]) counts[k] = { name: s.artist, count: 0 };
-        counts[k].count += 1;
-      }
-    });
-    const artists = Object.values(counts).sort((a, b) => a.name.localeCompare(b.name, "fr"));
-
-    list.innerHTML = "";
-    empty.hidden = artists.length > 0;
-    artists.forEach((a) => {
-      const li = document.createElement("li");
-      li.className = "jb-song-item jb-artist-row";
-      li.dataset.genreArtist = a.name;
-      li.innerHTML = `
-        <div class="jb-song-info">
-          <span class="jb-artist-name">${escapeHtml(a.name)}</span>
-        </div>
-        <span class="jb-artist-count">${escapeHtml(t("song_count", a.count))} ›</span>`;
-      list.appendChild(li);
-    });
-    list.querySelectorAll("[data-genre-artist]").forEach((row) => {
-      row.addEventListener("click", () => {
-        catalogView = { type: "genre-song-list", key, artist: row.dataset.genreArtist };
-        renderCatalog();
-      });
-    });
   }
 
   // ---------- Top Pick : les 5 artistes les plus demandés (toutes soirées confondues) ----------
@@ -1855,20 +1839,16 @@
     `).join("");
     list.querySelectorAll("[data-genre]").forEach((btn) => {
       btn.addEventListener("click", () => {
-        catalogView = { type: "genre-artists", key: btn.dataset.genre };
+        // Tombe directement dans la liste des chansons de ce style (tous artistes confondus),
+        // sans passer par une liste d'artistes intermédiaire.
+        catalogView = { type: "genre-songs", key: btn.dataset.genre };
         renderCatalog();
       });
     });
   }
 
   document.getElementById("jb-back-btn").addEventListener("click", () => {
-    // Depuis la liste des chansons d'un artiste (au sein d'un style), on revient d'abord à la
-    // liste des artistes de ce style, plutôt que de sauter directement à l'écran principal.
-    if (catalogView && catalogView.type === "genre-song-list") {
-      catalogView = { type: "genre-artists", key: catalogView.key };
-    } else {
-      catalogView = null;
-    }
+    catalogView = null;
     document.getElementById("jb-search-input").value = "";
     renderCatalog();
     document.querySelector(".jb-catalog").scrollIntoView({ behavior: "smooth", block: "nearest" });
@@ -1965,9 +1945,8 @@
       const wanted = norm(catalogView.name);
       return catalogSongs.filter((s) => norm(s.artist) === wanted).length;
     }
-    if (catalogView.type === "genre-song-list") {
-      const wantedArtist = norm(catalogView.artist);
-      return catalogSongs.filter((s) => songHasGenre(s, catalogView.key) && norm(s.artist) === wantedArtist).length;
+    if (catalogView.type === "genre-songs") {
+      return catalogSongs.filter((s) => songHasGenre(s, catalogView.key)).length;
     }
     return 0;
   }
@@ -2003,16 +1982,9 @@
       // Plusieurs chansons dans cette liste : on y reste pour que le client puisse en
       // demander une autre tout de suite, sans repartir de l'écran principal.
       renderCatalog();
-    } else if (catalogView && catalogView.type === "genre-song-list") {
-      // Une seule chanson pour cet artiste dans ce style : un seul niveau en arrière, vers la
-      // liste des artistes de ce style — pas jusqu'à l'écran principal.
-      catalogView = { type: "genre-artists", key: catalogView.key };
-      renderCatalog();
-      const searchbar = document.getElementById("jb-catalog-searchbar");
-      if (searchbar) searchbar.scrollIntoView({ behavior: "smooth", block: "start" });
     } else {
-      // Sinon (recherche texte, ou artiste choisi depuis Top Pick) : plus rien à y faire,
-      // retour à l'écran principal.
+      // Sinon (recherche texte, artiste choisi depuis Top Pick, ou dernière chanson d'un
+      // style) : plus rien à y faire dans cette liste, retour à l'écran principal.
       catalogView = null;
       document.getElementById("jb-search-input").value = "";
       renderCatalog();
