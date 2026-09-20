@@ -355,19 +355,25 @@
     border-radius: 12px; padding: 14px; margin: 16px; font-size: 0.88rem;
   }
 
-  /* Tutoriel guidé (skippable à toute étape) */
+  /* Tutoriel guidé et OBLIGATOIRE (voir startTour()/TOUR_MAJOR_STEPS) : le client doit le
+     compléter, il ne peut plus être passé. L'arrière-plan est totalement invisible pendant
+     tout le tuto — soit entièrement caché (étapes "immersives" : bienvenue, choix d'une
+     chanson, palmarès/boost, qui simulent l'appli avec de fausses données), soit caché
+     partout sauf l'élément ciblé (étapes "spot" : barre de recherche, Top Pick, styles) —
+     dans les deux cas via .jb-tour-spot, dont l'ombre 9999px est maintenant totalement
+     opaque plutôt que semi-transparente. */
   #jb-app .jb-tour { position: fixed; inset: 0; z-index: 1200; pointer-events: none; }
-  /* Capture TOUT clic/touche sur l'arrière-plan pendant le tuto (y compris sur l'élément
-     surligné par le "spot", qui reste lui-même non interactif) — le client ne peut plus
-     naviguer l'app en dessous tant que la fenêtre du tuto est ouverte. Voir showTourStep(). */
-  #jb-app .jb-tour-backdrop { position: fixed; inset: 0; pointer-events: auto; cursor: default; }
+  /* Capture TOUT clic/touche sur l'arrière-plan pendant le tuto — le client ne peut plus
+     naviguer l'app en dessous tant que la fenêtre du tuto est ouverte. Voir showTourStep().
+     Opaque (jb-tour-backdrop-opaque) pendant les étapes immersives, qui n'ont pas de vrai
+     élément à mettre en valeur — voir showImmersiveCard()/renderTourRealStep(). */
+  #jb-app .jb-tour-backdrop { position: fixed; inset: 0; pointer-events: auto; cursor: default; background: transparent; }
+  #jb-app .jb-tour-backdrop.jb-tour-backdrop-opaque { background: var(--bg); }
   #jb-app .jb-tour-spot {
     position: fixed; border-radius: 14px; border: 2px solid var(--accent);
-    box-shadow: 0 0 0 9999px rgba(8, 4, 16, 0.72);
+    box-shadow: 0 0 0 9999px var(--bg);
     transition: top 0.35s ease, left 0.35s ease, width 0.35s ease, height 0.35s ease;
   }
-  /* Bouton "boost" fictif utilisé pendant le tutoriel, pour l'expliquer même sans vraie chanson boostée */
-  #jb-app .jb-tour-fake-boost { position: fixed; transform: translateY(-50%); pointer-events: none; z-index: 1201; }
   #jb-app .jb-tour-card {
     position: fixed; left: 16px; right: 16px; max-width: 420px; margin: 0 auto;
     background: var(--card); border: 1px solid var(--accent); border-radius: var(--radius);
@@ -375,6 +381,48 @@
     transition: top 0.35s ease;
   }
   #jb-app .jb-tour-card.jb-tour-card-center { top: 50%; transform: translateY(-50%); }
+  /* Étapes "immersives" (bienvenue, choix d'une chanson, palmarès/boost) : comme il n'y a plus
+     rien de visible en dessous, la fenêtre peut prendre plus de place pour son contenu simulé. */
+  #jb-app .jb-tour-card.jb-tour-card-immersive {
+    max-width: 480px; left: 10px; right: 10px; max-height: 88vh; overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  #jb-app .jb-tour-extra { margin-top: 10px; }
+  #jb-app .jb-tour-extra:empty { margin-top: 0; }
+  #jb-app .jb-tour-extra .jb-catalog-list,
+  #jb-app .jb-tour-extra .jb-palmares-grid { margin-top: 8px; }
+  /* Met en surbrillance (en continu, tant que la phase est active) la ligne du palmarès qui
+     correspond à la chanson choisie par le client pendant le tuto — pour qu'il la retrouve
+     facilement pendant qu'il lit le texte, contrairement au simple rappel ponctuel utilisé
+     ailleurs (jb-pulse-attn-warm) pour dire "touche ici". */
+  @keyframes jb-tour-row-glow {
+    0%, 100% { box-shadow: none; background: var(--bg); }
+    50% { box-shadow: 0 0 16px 3px rgba(255, 248, 230, 0.75); background: var(--card2); }
+  }
+  #jb-app .jb-tour-highlight-row { animation: jb-tour-row-glow 1.4s ease-in-out infinite; border-radius: 8px; }
+  /* Rappel "il ne reste que 2 demandes/boosts" : le badge clignote SANS jamais s'arrêter tant
+     que le client reste sur cette sous-étape (contrairement à jb-pulse-attn, un court rappel
+     ponctuel utilisé ailleurs) — et le reste de la fenêtre (titre de section, liste/palmarès)
+     s'assombrit pour que seuls le titre, ce badge et le bouton "Suivant" restent bien visibles.
+     Voir renderTourPickSong()/renderTourPalmaresBoost(). */
+  @keyframes jb-tour-blink-forever {
+    0%, 100% { background: var(--card); color: var(--accent2); box-shadow: 0 0 0 0 rgba(255, 248, 230, 0); }
+    50% { background: #fff8e6; color: #2b0a1a; box-shadow: 0 0 12px 3px rgba(255, 248, 230, 0.85); }
+  }
+  #jb-app .jb-tour-blink-forever { animation: jb-tour-blink-forever 1.4s ease-in-out infinite; }
+  #jb-app .jb-tour-extra-dimmed .jb-style-heading-row h2,
+  #jb-app .jb-tour-extra-dimmed .jb-palmares-heading h2,
+  #jb-app .jb-tour-extra-dimmed .jb-catalog-list,
+  #jb-app .jb-tour-extra-dimmed .jb-palmares-grid {
+    opacity: 0.22; filter: grayscale(70%); transition: opacity 0.3s ease;
+  }
+  /* Fait pulser le bouton Boost lui-même pendant la sous-étape "boost", pour que le client
+     sache exactement où appuyer (voir renderTourPalmaresBoost()). */
+  @keyframes jb-tour-boost-glow {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(255, 248, 230, 0); }
+    50% { box-shadow: 0 0 14px 5px rgba(255, 248, 230, 0.9); }
+  }
+  #jb-app .jb-tour-boost-glow { animation: jb-tour-boost-glow 1.4s ease-in-out infinite; }
   /* Rappel visuel quand le client touche l'arrière-plan bloqué : la fenêtre du tuto elle-même
      gonfle-dégonfle et s'illumine d'un blanc chaud (plutôt que le rose des badges "Demandes"/
      "Boosts"), pour lui indiquer où toucher à la place. Deux variantes de keyframes (normale et
@@ -397,23 +445,11 @@
   #jb-app .jb-tour-lang .jb-lang-btn { padding: 4px 10px; font-size: 0.7rem; }
   #jb-app .jb-tour-card h3 { font-size: 1.05rem; font-weight: 800; color: var(--accent2); margin-bottom: 6px; }
   #jb-app .jb-tour-card p { font-size: 0.9rem; color: var(--text); line-height: 1.5; }
-  #jb-app .jb-tour-actions { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 14px; }
-  /* Mis en évidence (plutôt qu'un simple lien discret) pour que le client le remarque s'il
-     veut sauter le tuto — surtout maintenant que l'arrière-plan est bloqué à chaque étape. Le
-     halo blanc chaud ne s'allume que quand le client touche l'arrière-plan bloqué (classe
-     jb-pulse-attn-warm ajoutée par JS, en même temps que sur la fenêtre du tuto elle-même) —
-     voir le clic sur .jb-tour-backdrop plus bas. */
-  @keyframes jb-tour-skip-glow {
-    0%, 100% { box-shadow: 0 0 0 0 rgba(255, 248, 230, 0); }
-    50% { box-shadow: 0 0 12px 4px rgba(255, 248, 230, 0.65); }
-  }
-  #jb-app .jb-tour-skip {
-    background: var(--card2); border: 1px solid var(--border); color: var(--text);
-    font-size: 0.82rem; font-weight: 700; text-decoration: none; cursor: pointer;
-    padding: 8px 14px; border-radius: 999px;
-  }
-  #jb-app .jb-tour-skip.jb-pulse-attn-warm { animation: jb-tour-skip-glow 0.45s ease-in-out 2; }
-  #jb-app .jb-tour-nav { display: flex; gap: 8px; }
+  #jb-app .jb-tour-card p:empty { display: none; }
+  /* Le tuto est obligatoire (plus de bouton "Passer") : un seul bouton "Suivant"/"Terminer",
+     aligné à droite, cliquable seulement une fois l'action requise de l'étape accomplie
+     (voir setTourNext() en JS) — sinon il reste caché. */
+  #jb-app .jb-tour-actions { display: flex; align-items: center; justify-content: flex-end; margin-top: 14px; }
   #jb-app .jb-tour-nav-btn {
     background: var(--card2); border: 1px solid var(--border); color: var(--text);
     font-weight: 700; padding: 9px 14px; border-radius: 999px; font-size: 0.85rem; cursor: pointer;
@@ -491,7 +527,6 @@
     <div id="jb-tour" class="jb-tour" hidden>
       <div id="jb-tour-backdrop" class="jb-tour-backdrop"></div>
       <div id="jb-tour-spot" class="jb-tour-spot"></div>
-      <div id="jb-tour-fake-boost" class="jb-slot-boost jb-tour-fake-boost" hidden>🚀 Boost</div>
       <div id="jb-tour-card" class="jb-tour-card">
         <div class="jb-tour-top">
           <div id="jb-tour-dots" class="jb-tour-dots"></div>
@@ -502,12 +537,9 @@
         </div>
         <h3 id="jb-tour-title"></h3>
         <p id="jb-tour-text"></p>
+        <div id="jb-tour-extra" class="jb-tour-extra"></div>
         <div class="jb-tour-actions">
-          <button id="jb-tour-skip" class="jb-tour-skip"></button>
-          <div class="jb-tour-nav">
-            <button id="jb-tour-prev" class="jb-tour-nav-btn" hidden></button>
-            <button id="jb-tour-next" class="jb-tour-nav-btn jb-tour-next"></button>
-          </div>
+          <button id="jb-tour-next" class="jb-tour-nav-btn jb-tour-next"></button>
         </div>
       </div>
     </div>
@@ -632,7 +664,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-09-19.10";
+  const APP_BUILD = "2026-09-19.15";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -719,8 +751,6 @@
       error_toast: "Oups, réessaie dans un instant.",
       admin_link_title: "Mode spectacle",
       tour_help_title: "Revoir le tutoriel",
-      tour_skip: "Passer le tutoriel",
-      tour_prev: "Précédent",
       tour_next: "Suivant",
       tour_done: "Terminé !",
       genres: {
@@ -729,22 +759,21 @@
         folk: "Folk", "classic-folk": "Classique Folk", reggae: "Reggae", oldies: "Oldies", irish: "Irlandais",
         christmas: "Noël",
       },
-      tour1_title: "Bienvenue 👋",
-      tour1_text: "Petit tour rapide — passe à tout moment avec le bouton ci-dessous.",
-      tour3_title: "1. Chercher une chanson",
+      tour_welcome_title: "Bienvenue dans mon répertoire !",
+      tour_welcome_text: "Suis le guide, ça prend deux minutes.",
+      tour_pick_title: "Choisis parmi ces 4 chansons",
+      tour_pick_text: "Touche une chanson pour faire une demande, comme tu le feras plus tard.",
+      tour_pick_result_title: "Oups ! Il ne te reste que deux demandes",
+      tour_palmares_title: "Regarde !! Ta chanson est au quatrième rang du palmarès",
+      tour_palmares_text: "Voici le palmarès de la soirée, mis à jour en direct.",
+      tour_boost_title: "Boost ta chanson pour monter dans le palmarès",
+      tour_boost_result_title: "Oups ! Il ne te reste que deux boosts",
+      tour3_title: "Cherche une chanson",
       tour3_text: "Cherche par titre ou artiste — introuvable ? Écris-la quand même !",
-      tour_quickpick_title: "2. Top Pick",
+      tour_quickpick_title: "Top Pick",
       tour_quickpick_text: "Les artistes les plus demandés — touche un nom pour voir ses chansons.",
-      tour2_title: "3. Choisis ton style",
+      tour2_title: "Choisis ton style",
       tour2_text: "Touche un style pour voir ses chansons.",
-      tour2b_title: "4. Choisir une chanson",
-      tour2b_text: "Touche « ▶ Jouer » pour demander une chanson.",
-      tour_requests_title: "5. Tes demandes",
-      tour_requests_text: "Tu peux avoir jusqu'à 10 demandes actives à la fois.",
-      tour4_title: "6. Le palmarès",
-      tour4_text: "Toutes les chansons demandées ce soir, classées par popularité.",
-      tour4b_title: "7. Les boosts",
-      tour4b_text: "Appuie sur 🚀 Boost pour faire monter une chanson (3 boosts disponibles).",
     },
     en: {
       page_title: "My Repertoire",
@@ -778,8 +807,6 @@
       error_toast: "Oops, try again in a moment.",
       admin_link_title: "Show mode",
       tour_help_title: "Replay the tutorial",
-      tour_skip: "Skip tutorial",
-      tour_prev: "Back",
       tour_next: "Next",
       tour_done: "Done!",
       genres: {
@@ -788,22 +815,21 @@
         folk: "Folk", "classic-folk": "Classic Folk", reggae: "Reggae", oldies: "Oldies", irish: "Irish",
         christmas: "Christmas",
       },
-      tour1_title: "Welcome 👋",
-      tour1_text: "A quick tour — skip anytime with the button below.",
-      tour3_title: "1. Search for a song",
+      tour_welcome_title: "Welcome to My Repertoire!",
+      tour_welcome_text: "Follow along, it only takes two minutes.",
+      tour_pick_title: "Pick one of these 4 songs",
+      tour_pick_text: "Tap a song to request it, just like you'll do later.",
+      tour_pick_result_title: "Oops! You only have two requests left",
+      tour_palmares_title: "Look !! Your song is in fourth place",
+      tour_palmares_text: "Here's tonight's leaderboard, updated live.",
+      tour_boost_title: "Boost your song to climb the leaderboard",
+      tour_boost_result_title: "Oops! You only have two boosts left",
+      tour3_title: "Search for a song",
       tour3_text: "Search by title or artist — can't find it? Send it in anyway!",
-      tour_quickpick_title: "2. Top Pick",
+      tour_quickpick_title: "Top Pick",
       tour_quickpick_text: "The most-requested artists — tap a name to see their songs.",
-      tour2_title: "3. Choose your style",
+      tour2_title: "Choose your style",
       tour2_text: "Tap a style to see its songs.",
-      tour2b_title: "4. Pick a song",
-      tour2b_text: "Tap \"▶ Play\" to request a song.",
-      tour_requests_title: "5. Your requests",
-      tour_requests_text: "You can have up to 10 active requests at once.",
-      tour4_title: "6. The leaderboard",
-      tour4_text: "Every song requested tonight, ranked by popularity.",
-      tour4b_title: "7. Boosts",
-      tour4b_text: "Tap 🚀 Boost to push a song up the ranking (3 boosts available).",
     },
   };
   function genreLabel(key) {
@@ -825,6 +851,8 @@
     document.getElementById("jb-back-btn").textContent = t("back_btn");
     document.getElementById("jb-search-input").placeholder = t("search_placeholder");
     document.querySelector(".jb-admin-link").title = t("admin_link_title");
+    document.getElementById("jb-tour-help-btn").title = t("tour_help_title");
+    document.getElementById("jb-tour-help-btn").setAttribute("aria-label", t("tour_help_title"));
     if (!document.getElementById("jb-tour").hidden) renderTourStep();
     scheduleFitTopBar();
   }
@@ -886,12 +914,36 @@
   function tourSeenKey() {
     return "jb_tour_seen_" + (nightId || "default");
   }
-  const TOUR_STEPS = [
-    { target: () => document.querySelector(".jb-top-bar"), titleKey: "tour1_title", textKey: "tour1_text" },
-    {
-      // 1. Chercher une chanson — en premier, car c'est le raccourci le plus rapide pour un
-      // client qui sait déjà ce qu'il veut. Le texte explique aussi la demande spéciale.
-      target: () => document.getElementById("jb-search-input"),
+  // ---------- Tutoriel obligatoire et interactif ----------
+  // 6 grandes étapes. Les 3 premières sont "immersives" : rien de la vraie page n'est visible,
+  // tout le contenu (chansons, palmarès) est simulé avec de fausses données pour laisser le
+  // client s'exercer pour de vrai (choisir une chanson, booster) sans toucher à ses vraies
+  // demandes/boosts de la soirée. Les 3 dernières sont des étapes "spot" classiques : elles
+  // pointent un vrai élément de la page, avec absolument tout le reste caché autour (voir
+  // .jb-tour-spot, dont l'ombre est maintenant opaque plutôt que semi-transparente).
+  const TOUR_MAJOR_STEPS = ["welcome", "pick-song", "palmares-boost", "search", "toppick", "style"];
+
+  // Les 4 chansons proposées à l'étape "choisis une chanson" et les 3 fausses chansons déjà
+  // présentes devant la sienne à l'étape "palmarès" (peu importe celle choisie, elle atterrit
+  // toujours en 4e position — voir buildTourPalmaresRows()).
+  const TOUR_DEMO_SONGS = [
+    { title: "Sweet Caroline", artist: "Neil Diamond" },
+    { title: "Country Road", artist: "John Denver" },
+    { title: "Wonderwall", artist: "Oasis" },
+    { title: "Stand By Me", artist: "Ben E. King" },
+  ];
+  const TOUR_DEMO_FILLERS = [
+    { title: "Billie Jean", artist: "Michael Jackson", votes: 1 },
+    { title: "Hotel California", artist: "Eagles", votes: 1 },
+    { title: "Sweet Home Alabama", artist: "Lynyrd Skynyrd", votes: 1 },
+  ];
+
+  // Les 3 dernières étapes pointent un vrai élément de la page (déjà utilisées avant la
+  // refonte du tuto) — inchangées à part le fait que tout le reste de la page est maintenant
+  // complètement caché plutôt que simplement assombri.
+  const TOUR_REAL_STEPS = {
+    search: {
+      target: () => document.getElementById("jb-catalog-searchbar"),
       titleKey: "tour3_title",
       textKey: "tour3_text",
       before: () => {
@@ -900,8 +952,7 @@
         renderCatalog();
       },
     },
-    {
-      // 2. Top Pick.
+    toppick: {
       target: () => document.getElementById("jb-quickpick-section"),
       titleKey: "tour_quickpick_title",
       textKey: "tour_quickpick_text",
@@ -911,8 +962,7 @@
         renderCatalog();
       },
     },
-    {
-      // 3. Choisis ton style.
+    style: {
       target: () => document.querySelector(".jb-style-section"),
       titleKey: "tour2_title",
       textKey: "tour2_text",
@@ -922,40 +972,14 @@
         renderCatalog();
       },
     },
-    {
-      // 4. Choisir une chanson.
-      target: () => document.querySelector(".jb-catalog-results"),
-      titleKey: "tour2b_title",
-      textKey: "tour2b_text",
-      before: () => {
-        document.getElementById("jb-search-input").value = "";
-        // Choisit un style déjà utilisé par au moins une chanson pour que la démo du tuto
-        // montre une vraie liste plutôt qu'un résultat vide.
-        const demoSong = catalogSongs.find((s) => (s.genres || []).length);
-        catalogView = { type: "genre-songs", key: demoSong ? canonicalGenreKey(demoSong.genres[0]) : GENRE_KEYS[0] };
-        renderCatalog();
-      },
-    },
-    {
-      // 5. Tes demandes (max 10).
-      target: () => document.getElementById("jb-request-remaining"),
-      titleKey: "tour_requests_title",
-      textKey: "tour_requests_text",
-      before: () => {
-        catalogView = null;
-        document.getElementById("jb-search-input").value = "";
-        renderCatalog();
-      },
-    },
-    { target: () => document.querySelector(".jb-palmares"), titleKey: "tour4_title", textKey: "tour4_text" },
-    {
-      target: () => document.getElementById("jb-boost-remaining"),
-      titleKey: "tour4b_title",
-      textKey: "tour4b_text",
-    },
-  ];
+  };
+
   let tourStep = 0;
+  let tourPhase = ""; // sous-étape en cours pour "pick-song" / "palmares-boost"
   let tourReposition = null;
+  let tourChosenSong = null; // {title, artist} choisie par le client à l'étape "pick-song"
+  let tourPalmaresRows = null; // ordre courant des 4 lignes fictives du palmarès du tuto
+  let tourBoostAnimTimer = null;
 
   function positionTourSpot(rect) {
     const spot = document.getElementById("jb-tour-spot");
@@ -964,6 +988,19 @@
     spot.style.top = `${Math.max(4, rect.top - pad)}px`;
     spot.style.width = `${rect.width + pad * 2}px`;
     spot.style.height = `${rect.height + pad * 2}px`;
+  }
+
+  // Étapes immersives (pas de vrai élément à mettre en valeur) : place le "spot" hors écran,
+  // avec une taille nulle — son ombre de 9999px continue de couvrir tout l'écran visible
+  // (largement à l'intérieur du rayon de l'ombre), ce qui cache donc TOUTE la vraie page,
+  // sans le moindre "trou". Réutilise ainsi le même mécanisme que le découpage des étapes
+  // "spot", plutôt que d'ajouter un second calque opaque séparé.
+  function positionTourSpotOffscreen() {
+    const spot = document.getElementById("jb-tour-spot");
+    spot.style.left = "-9999px";
+    spot.style.top = "-9999px";
+    spot.style.width = "0px";
+    spot.style.height = "0px";
   }
 
   function positionTourCard(rect, centered) {
@@ -988,33 +1025,208 @@
     card.style.top = `${Math.max(margin, top)}px`;
   }
 
-  function renderTourStep() {
-    const step = TOUR_STEPS[tourStep];
-    if (!step) return;
-    document.getElementById("jb-tour-title").textContent = t(step.titleKey);
-    document.getElementById("jb-tour-text").textContent = t(step.textKey);
-    document.getElementById("jb-tour-skip").textContent = t("tour_skip");
-    document.getElementById("jb-tour-prev").textContent = t("tour_prev");
-    document.getElementById("jb-tour-next").textContent = tourStep === TOUR_STEPS.length - 1 ? t("tour_done") : t("tour_next");
-    document.getElementById("jb-tour-prev").hidden = tourStep === 0;
+  // Bascule la fenêtre du tuto en mode "immersif" : centrée, agrandie (voir CSS), et plus rien
+  // de la vraie page ne dépasse autour d'elle.
+  function showImmersiveCard() {
+    document.getElementById("jb-tour-card").classList.add("jb-tour-card-immersive");
+    positionTourCard(null, true);
+    positionTourSpotOffscreen();
+    document.getElementById("jb-tour-backdrop").classList.add("jb-tour-backdrop-opaque");
+    tourReposition = null;
+  }
 
-    const fakeBoost = document.getElementById("jb-tour-fake-boost");
-    if (fakeBoost && !fakeBoost.hidden) fakeBoost.textContent = `🚀 ${t("boost_btn")}`;
+  // Bouton "Suivant"/"Terminer" du bas : cliquable seulement une fois l'action requise de
+  // l'étape/sous-étape accomplie (choisir une chanson, booster…) — sinon il reste caché, pour
+  // que le client ne puisse pas avancer sans avoir fait l'action qui lui apprend à s'en servir.
+  function setTourNext(visible) {
+    const btn = document.getElementById("jb-tour-next");
+    btn.hidden = !visible;
+    btn.textContent = tourStep === TOUR_MAJOR_STEPS.length - 1 ? t("tour_done") : t("tour_next");
+  }
 
+  function renderTourDots() {
     const dots = document.getElementById("jb-tour-dots");
     dots.innerHTML = "";
-    TOUR_STEPS.forEach((_, i) => {
+    TOUR_MAJOR_STEPS.forEach((_, i) => {
       const dot = document.createElement("span");
       dot.className = "jb-tour-dot" + (i === tourStep ? " jb-tour-dot-active" : "");
       dots.appendChild(dot);
     });
+  }
+
+  function renderTourWelcome() {
+    document.getElementById("jb-tour-title").textContent = t("tour_welcome_title");
+    document.getElementById("jb-tour-text").textContent = t("tour_welcome_text");
+    document.getElementById("jb-tour-extra").innerHTML = "";
+    showImmersiveCard();
+    setTourNext(true);
+  }
+
+  // Étape "choisis une chanson" : le client DOIT toucher une des 4 chansons pour avancer — le
+  // bouton "Suivant" n'apparaît qu'une fois son choix fait (voir tourPhase "choose"/"picked").
+  function renderTourPickSong() {
+    showImmersiveCard();
+    if (tourPhase !== "picked") tourPhase = "choose";
+    const picked = tourPhase === "picked";
+    document.getElementById("jb-tour-title").textContent = t(picked ? "tour_pick_result_title" : "tour_pick_title");
+    document.getElementById("jb-tour-text").textContent = picked ? "" : t("tour_pick_text");
+
+    const remaining = picked ? 2 : 3;
+    const extra = document.getElementById("jb-tour-extra");
+    extra.classList.toggle("jb-tour-extra-dimmed", picked);
+    extra.innerHTML = `
+      <div class="jb-style-heading-row">
+        <h2>${escapeHtml(t("style_title"))}</h2>
+        <div id="jb-tour-fake-request-badge" class="jb-request-remaining${picked ? " jb-tour-blink-forever" : ""}">${escapeHtml(t("requests_remaining", remaining))}</div>
+      </div>
+      <ul class="jb-catalog-list">
+        ${TOUR_DEMO_SONGS.map((s, i) => {
+          const isChosen = !!(tourChosenSong && s.title === tourChosenSong.title);
+          const btnHtml = picked
+            ? (isChosen ? `<span class="jb-song-badge">${escapeHtml(t("already_requested"))}</span>` : `<button class="jb-btn-request" disabled>${escapeHtml(t("request_btn"))}</button>`)
+            : `<button class="jb-btn-request">${escapeHtml(t("request_btn"))}</button>`;
+          return `
+          <li class="jb-song-item${picked ? "" : " jb-song-item-clickable"}"${picked ? "" : ` data-tour-song="${i}"`}>
+            <span class="jb-song-votes">0</span>
+            <div class="jb-song-info">
+              <div class="jb-song-title">${escapeHtml(s.title)}</div>
+              <div class="jb-song-artist">${escapeHtml(s.artist)}</div>
+            </div>
+            ${btnHtml}
+          </li>`;
+        }).join("")}
+      </ul>`;
+
+    extra.querySelectorAll("[data-tour-song]").forEach((row) => {
+      row.addEventListener("click", () => {
+        tourChosenSong = TOUR_DEMO_SONGS[Number(row.dataset.tourSong)];
+        tourPhase = "picked";
+        renderTourPickSong();
+      });
+    });
+    setTourNext(picked);
+  }
+
+  // Les 4 lignes fictives du palmarès du tuto : les 3 mêmes "remplisseurs" devant, et la
+  // chanson choisie par le client à l'étape précédente toujours en 4e position.
+  function buildTourPalmaresRows() {
+    const chosen = tourChosenSong || TOUR_DEMO_SONGS[0];
+    return [
+      { ...TOUR_DEMO_FILLERS[0], isChosen: false },
+      { ...TOUR_DEMO_FILLERS[1], isChosen: false },
+      { ...TOUR_DEMO_FILLERS[2], isChosen: false },
+      { title: chosen.title, artist: chosen.artist, votes: 1, isChosen: true },
+    ];
+  }
+
+  // Étape "palmarès + boost" : 4 sous-phases dans la même fenêtre — reveal (4e position) →
+  // boost (bouton Boost apparaît) → boosting (animation, verrouillée) → result (monté en tête,
+  // "Suivant" apparaît). Voir tourDoBoost() pour l'animation.
+  function renderTourPalmaresBoost() {
+    showImmersiveCard();
+    if (!tourPalmaresRows) tourPalmaresRows = buildTourPalmaresRows();
+    if (!tourPhase) tourPhase = "reveal";
+
+    const titleKey = tourPhase === "result" ? "tour_boost_result_title"
+      : (tourPhase === "boost" || tourPhase === "boosting") ? "tour_boost_title"
+      : "tour_palmares_title";
+    document.getElementById("jb-tour-title").textContent = t(titleKey);
+    document.getElementById("jb-tour-text").textContent = tourPhase === "reveal" ? t("tour_palmares_text") : "";
+
+    const showBoostBtn = tourPhase === "boost";
+    const remaining = tourPhase === "result" ? 2 : 3;
+    const extra = document.getElementById("jb-tour-extra");
+    extra.classList.toggle("jb-tour-extra-dimmed", tourPhase === "result");
+    extra.innerHTML = `
+      <div class="jb-palmares-heading">
+        <h2>${escapeHtml(t("palmares_title"))}</h2>
+        <div id="jb-tour-fake-boost-badge" class="jb-boost-remaining${tourPhase === "result" ? " jb-tour-blink-forever" : ""}">${escapeHtml(t("boost_remaining", remaining))}</div>
+      </div>
+      <div id="jb-tour-palmares-grid" class="jb-palmares-grid">
+        ${tourPalmaresRows.map((row, i) => `
+          <div class="jb-slot${row.isChosen ? " jb-tour-highlight-row" : ""}">
+            <span class="jb-slot-rank">${i + 1}</span>
+            <span class="jb-slot-votes">${row.votes}</span>
+            <span class="jb-slot-info">
+              <span class="jb-slot-title">${escapeHtml(row.title)}</span>
+              <span class="jb-slot-artist">${escapeHtml(row.artist)}</span>
+            </span>
+            ${row.isChosen && showBoostBtn ? `<button id="jb-tour-boost-btn" class="jb-slot-boost jb-tour-boost-glow">🚀 ${escapeHtml(t("boost_btn"))}</button>` : ""}
+          </div>`).join("")}
+      </div>`;
+
+    const boostBtn = document.getElementById("jb-tour-boost-btn");
+    if (boostBtn) boostBtn.addEventListener("click", tourDoBoost);
+    setTourNext(tourPhase === "reveal" || tourPhase === "result");
+  }
+
+  // Anime la chanson choisie qui grimpe du 4e au 1er rang (même technique FLIP que le vrai
+  // palmarès — voir renderPalmares()), puis attend encore 2s avant de laisser apparaître le
+  // bouton "Suivant" et le rappel "il ne reste que 2 boosts".
+  function tourDoBoost() {
+    const grid = document.getElementById("jb-tour-palmares-grid");
+    if (!grid || tourPhase !== "boost") return;
+    const rowsBefore = Array.from(grid.children);
+    const firstRectsByTitle = {};
+    rowsBefore.forEach((el, i) => { firstRectsByTitle[tourPalmaresRows[i].title] = el.getBoundingClientRect(); });
+
+    const chosenIndex = tourPalmaresRows.findIndex((r) => r.isChosen);
+    const chosenRow = tourPalmaresRows[chosenIndex];
+    chosenRow.votes += 2; // les 3 autres restent à 1 vote pour éviter toute confusion
+    tourPalmaresRows.splice(chosenIndex, 1);
+    tourPalmaresRows.unshift(chosenRow);
+
+    tourPhase = "boosting";
+    renderTourPalmaresBoost();
+
+    const newGrid = document.getElementById("jb-tour-palmares-grid");
+    const newRows = Array.from(newGrid.children);
+    newRows.forEach((el, i) => {
+      const first = firstRectsByTitle[tourPalmaresRows[i].title];
+      if (!first) return;
+      const last = el.getBoundingClientRect();
+      const dx = first.left - last.left;
+      const dy = first.top - last.top;
+      if (Math.abs(dx) > 0.5 || Math.abs(dy) > 0.5) {
+        el.style.transition = "none";
+        el.style.transform = `translate(${dx}px, ${dy}px)`;
+        if (tourPalmaresRows[i].isChosen) el.style.zIndex = "5";
+      }
+    });
+    void newGrid.offsetHeight; // force le reflow avant de relâcher vers la position finale
+    requestAnimationFrame(() => {
+      newRows.forEach((el) => {
+        el.style.transition = "transform 1s cubic-bezier(0.4, 0, 0.2, 1)";
+        el.style.transform = "";
+      });
+    });
+
+    if (tourBoostAnimTimer) clearTimeout(tourBoostAnimTimer);
+    tourBoostAnimTimer = setTimeout(() => {
+      tourBoostAnimTimer = null;
+      tourPhase = "result";
+      renderTourPalmaresBoost();
+    }, 3000); // 1s d'animation + 2s d'attente, comme demandé
+  }
+
+  // Étapes "spot" (barre de recherche / Top Pick / styles) : un vrai élément de la page est
+  // mis en valeur, tout le reste est caché (voir .jb-tour-spot, maintenant opaque).
+  function renderTourRealStep(kind) {
+    const step = TOUR_REAL_STEPS[kind];
+    document.getElementById("jb-tour-card").classList.remove("jb-tour-card-immersive");
+    document.getElementById("jb-tour-backdrop").classList.remove("jb-tour-backdrop-opaque");
+    document.getElementById("jb-tour-title").textContent = t(step.titleKey);
+    document.getElementById("jb-tour-text").textContent = t(step.textKey);
+    document.getElementById("jb-tour-extra").innerHTML = "";
+    if (step.before) step.before();
+    setTourNext(true);
 
     const target = step.target();
     if (!target) return;
     const place = () => {
       const rect = target.getBoundingClientRect();
       positionTourSpot(rect);
-      positionTourCard(rect, !!step.center);
+      positionTourCard(rect, false);
     };
     place(); // positionnement immédiat (évite un flash), affiné une fois le scroll terminé
     target.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -1022,39 +1234,28 @@
     tourReposition = place;
   }
 
-  // Bouton "boost" fictif, ajouté temporairement sur la 1ère ligne du palmarès pour
-  // pouvoir l'expliquer même quand aucune vraie chanson n'a encore été boostée.
-  function showFakeBoost() {
-    const row = document.querySelector("#jb-palmares-list .jb-slot");
-    const fake = document.getElementById("jb-tour-fake-boost");
-    if (!row || !fake) return;
-    const place = () => {
-      const rect = row.getBoundingClientRect();
-      fake.style.top = `${rect.top + rect.height / 2}px`;
-      fake.style.right = `${window.innerWidth - rect.right + 4}px`;
-    };
-    fake.textContent = `🚀 ${t("boost_btn")}`;
-    fake.hidden = false;
-    place();
-    row.scrollIntoView({ behavior: "smooth", block: "center" });
-    setTimeout(place, 350);
-  }
-  function hideFakeBoost() {
-    const fake = document.getElementById("jb-tour-fake-boost");
-    if (fake) fake.hidden = true;
+  function renderTourStep() {
+    renderTourDots();
+    const kind = TOUR_MAJOR_STEPS[tourStep];
+    if (kind === "welcome") renderTourWelcome();
+    else if (kind === "pick-song") renderTourPickSong();
+    else if (kind === "palmares-boost") renderTourPalmaresBoost();
+    else renderTourRealStep(kind);
   }
 
   function showTourStep(i) {
-    if (i < 0 || i >= TOUR_STEPS.length) return;
-    hideFakeBoost();
+    if (i < 0 || i >= TOUR_MAJOR_STEPS.length) return;
     tourStep = i;
-    const step = TOUR_STEPS[tourStep];
-    if (step.before) step.before();
+    tourPhase = "";
     renderTourStep();
   }
 
   function startTour() {
     tourStep = 0;
+    tourPhase = "";
+    tourChosenSong = null;
+    tourPalmaresRows = null;
+    if (tourBoostAnimTimer) { clearTimeout(tourBoostAnimTimer); tourBoostAnimTimer = null; }
     document.getElementById("jb-tour").hidden = false;
     showTourStep(0);
     window.addEventListener("resize", handleTourReposition);
@@ -1063,13 +1264,16 @@
 
   function endTour() {
     document.getElementById("jb-tour").hidden = true;
-    hideFakeBoost();
+    document.getElementById("jb-tour-card").classList.remove("jb-tour-card-immersive");
+    document.getElementById("jb-tour-backdrop").classList.remove("jb-tour-backdrop-opaque");
+    document.getElementById("jb-tour-extra").classList.remove("jb-tour-extra-dimmed");
+    if (tourBoostAnimTimer) { clearTimeout(tourBoostAnimTimer); tourBoostAnimTimer = null; }
     safeStorageSet(tourSeenKey(), "1");
     window.removeEventListener("resize", handleTourReposition);
     window.removeEventListener("scroll", handleTourReposition, true);
-    // Le tuto navigue à travers plusieurs sections (style, liste d'artistes…) pour ses
-    // démonstrations : qu'il soit passé (skip) ou terminé au complet, on ramène toujours le
-    // client à l'écran principal (Top Pick + Style) plutôt que de le laisser dans un sous-écran.
+    // Le tuto navigue à travers plusieurs sections pour ses démonstrations : une fois terminé,
+    // on ramène toujours le client à l'écran principal (Top Pick + Style) plutôt que de le
+    // laisser dans un sous-écran.
     catalogView = null;
     document.getElementById("jb-search-input").value = "";
     renderCatalog();
@@ -1080,21 +1284,24 @@
     if (tourReposition) tourReposition();
   }
 
+  // Bouton "Suivant"/"Terminer" : le comportement dépend de l'étape/sous-étape en cours — voir
+  // setTourNext() pour quand ce bouton est visible/cliquable en premier lieu.
   document.getElementById("jb-tour-next").addEventListener("click", () => {
-    if (tourStep === TOUR_STEPS.length - 1) { endTour(); return; }
+    const kind = TOUR_MAJOR_STEPS[tourStep];
+    if (kind === "palmares-boost" && tourPhase === "reveal") {
+      tourPhase = "boost";
+      renderTourPalmaresBoost();
+      return;
+    }
+    if (tourStep === TOUR_MAJOR_STEPS.length - 1) { endTour(); return; }
     showTourStep(tourStep + 1);
   });
-  document.getElementById("jb-tour-prev").addEventListener("click", () => {
-    showTourStep(tourStep - 1);
-  });
-  document.getElementById("jb-tour-skip").addEventListener("click", endTour);
 
-  // Toucher l'arrière-plan (bloqué pendant le tuto — voir .jb-tour-backdrop) ne fait plus
-  // rien passer en dessous : ça fait juste gonfler-dégonfler la fenêtre du tuto et s'allumer le
-  // bouton "Passer le tutoriel" en blanc chaud, pour indiquer au client où toucher à la place.
+  // Le tuto est obligatoire (plus de bouton "Passer") : toucher l'arrière-plan bloqué (voir
+  // .jb-tour-backdrop) ne fait plus rien passer en dessous — ça fait juste gonfler-dégonfler la
+  // fenêtre du tuto en blanc chaud, pour indiquer au client de toucher plutôt à l'intérieur.
   document.getElementById("jb-tour-backdrop").addEventListener("click", () => {
     pulseAttention(document.getElementById("jb-tour-card"), "jb-pulse-attn-warm");
-    pulseAttention(document.getElementById("jb-tour-skip"), "jb-pulse-attn-warm");
   });
 
   // Le check est fait dans le setTimeout (pas tout de suite) pour être certain que
@@ -1320,11 +1527,6 @@
   document.getElementById("jb-tour-card").addEventListener("animationend", (e) => {
     if (e.animationName === "jb-pulse-attn-warm" || e.animationName === "jb-pulse-attn-warm-center") {
       document.getElementById("jb-tour-card").classList.remove("jb-pulse-attn-warm");
-    }
-  });
-  document.getElementById("jb-tour-skip").addEventListener("animationend", (e) => {
-    if (e.animationName === "jb-tour-skip-glow") {
-      document.getElementById("jb-tour-skip").classList.remove("jb-pulse-attn-warm");
     }
   });
 
