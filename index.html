@@ -116,7 +116,7 @@
   #jb-app .jb-rank-count { font-weight: 700; color: var(--accent2); font-size: 0.9rem; flex-shrink: 0; white-space: nowrap; }
   #jb-app .jb-palmares-heading {
     flex-shrink: 0; display: flex; align-items: center; justify-content: space-between;
-    flex-wrap: nowrap; gap: 8px; background: var(--bg); padding: 8px 0; margin-bottom: 2px;
+    flex-wrap: nowrap; gap: 8px; background: var(--bg); padding: 8px 6px 8px 0; margin-bottom: 2px;
   }
   #jb-app .jb-palmares-heading h2 {
     margin-bottom: 0; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
@@ -464,6 +464,17 @@
   #jb-app .jb-tour-dot.jb-tour-dot-active { background: var(--accent2); }
   #jb-app .jb-tour-lang { display: flex; gap: 6px; flex-shrink: 0; }
   #jb-app .jb-tour-lang .jb-lang-btn { padding: 4px 10px; font-size: 0.7rem; }
+  /* Permet d'afficher un badge (ex. "Demandes : 2") sur la même ligne que le titre, quand
+     l'étape du tuto en a besoin — voir #jb-tour-title-badge, rempli par renderTourPickSong()/
+     renderTourPalmaresBoost(). Le badge flotte à droite plutôt que d'être en flex à côté du
+     titre : comme le titre est parfois une phrase longue, un simple flex l'aurait fait passer
+     tout entier à la ligne suivante — avec un float, le texte du titre s'enroule autour du
+     badge et commence donc bien sur la même ligne que lui. Vide (cas normal), il ne prend
+     aucune place. */
+  #jb-app .jb-tour-title-row { overflow: hidden; margin-bottom: 6px; }
+  #jb-app .jb-tour-title-badge { float: right; margin-left: 8px; margin-bottom: 4px; }
+  #jb-app .jb-tour-title-badge:empty { display: none; margin: 0; }
+  #jb-app .jb-tour-title-row h3 { margin-bottom: 0; }
   #jb-app .jb-tour-card h3 { font-size: 1.05rem; font-weight: 800; color: var(--accent2); margin-bottom: 6px; }
   #jb-app .jb-tour-card p { font-size: 0.9rem; color: var(--text); line-height: 1.5; }
   #jb-app .jb-tour-card p:empty { display: none; }
@@ -559,7 +570,10 @@
             <button class="jb-lang-btn" data-lang="en">EN</button>
           </div>
         </div>
-        <h3 id="jb-tour-title"></h3>
+        <div class="jb-tour-title-row">
+          <div id="jb-tour-title-badge" class="jb-tour-title-badge"></div>
+          <h3 id="jb-tour-title"></h3>
+        </div>
         <p id="jb-tour-text"></p>
         <div id="jb-tour-extra" class="jb-tour-extra"></div>
         <div class="jb-tour-actions">
@@ -688,7 +702,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-09-19.21";
+  const APP_BUILD = "2026-09-19.23";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -1100,12 +1114,14 @@
     document.getElementById("jb-tour-text").textContent = "";
 
     const remaining = picked ? 2 : 3;
+    const badgeHtml = `<div id="jb-tour-fake-request-badge" class="jb-request-remaining${picked ? " jb-tour-blink-forever" : ""}">${escapeHtml(t("requests_remaining", remaining))}</div>`;
+    // "Oups, il ne reste que 2 demandes" : le badge se colle au titre plutôt que de rester
+    // dans la liste assombrie, pour que le client le voie du premier coup d'œil.
+    document.getElementById("jb-tour-title-badge").innerHTML = picked ? badgeHtml : "";
     const extra = document.getElementById("jb-tour-extra");
     extra.classList.toggle("jb-tour-extra-dimmed", picked);
     extra.innerHTML = `
-      <div class="jb-style-heading-row jb-tour-badge-only-row">
-        <div id="jb-tour-fake-request-badge" class="jb-request-remaining${picked ? " jb-tour-blink-forever" : ""}">${escapeHtml(t("requests_remaining", remaining))}</div>
-      </div>
+      ${picked ? "" : `<div class="jb-style-heading-row jb-tour-badge-only-row">${badgeHtml}</div>`}
       <ul class="jb-catalog-list${picked ? "" : " jb-tour-choice-frame"}">
         ${TOUR_DEMO_SONGS.map((s, i) => {
           const isChosen = !!(tourChosenSong && s.title === tourChosenSong.title);
@@ -1162,12 +1178,17 @@
 
     const showBoostBtn = tourPhase === "boost";
     const remaining = tourPhase === "result" ? 2 : 3;
+    const isResult = tourPhase === "result";
+    const badgeHtml = `<div id="jb-tour-fake-boost-badge" class="jb-boost-remaining${isResult ? " jb-tour-blink-forever" : ""}">${escapeHtml(t("boost_remaining", remaining))}</div>`;
+    // "Oups, il ne reste que 2 boosts" : le badge se colle au titre plutôt que de rester
+    // dans le palmarès assombri, pour que le client le voie du premier coup d'œil.
+    document.getElementById("jb-tour-title-badge").innerHTML = isResult ? badgeHtml : "";
     const extra = document.getElementById("jb-tour-extra");
-    extra.classList.toggle("jb-tour-extra-dimmed", tourPhase === "result");
+    extra.classList.toggle("jb-tour-extra-dimmed", isResult);
     extra.innerHTML = `
       <div class="jb-palmares-heading">
         <h2>${escapeHtml(t("palmares_title"))}</h2>
-        <div id="jb-tour-fake-boost-badge" class="jb-boost-remaining${tourPhase === "result" ? " jb-tour-blink-forever" : ""}">${escapeHtml(t("boost_remaining", remaining))}</div>
+        ${isResult ? "" : badgeHtml}
       </div>
       <div id="jb-tour-palmares-grid" class="jb-palmares-grid">
         ${tourPalmaresRows.map((row, i) => `
@@ -1263,6 +1284,10 @@
 
   function renderTourStep() {
     renderTourDots();
+    // Repart de zéro à chaque nouvelle étape majeure — pick-song/palmares-boost re-remplissent
+    // ce badge eux-mêmes si leur sous-phase en a besoin (voir renderTourPickSong()/
+    // renderTourPalmaresBoost()), sinon il doit rester vide.
+    document.getElementById("jb-tour-title-badge").innerHTML = "";
     const kind = TOUR_MAJOR_STEPS[tourStep];
     if (kind === "welcome") renderTourWelcome();
     else if (kind === "pick-song") renderTourPickSong();
