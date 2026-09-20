@@ -233,6 +233,11 @@
   #jb-app .jb-style-section { margin-bottom: 12px; }
   #jb-app .jb-style-heading-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 14px; }
   #jb-app .jb-style-heading-row h2 { margin-bottom: 0; font-size: 1.6rem; }
+  #jb-app .jb-style-title-wrap { display: flex; align-items: baseline; gap: 7px; min-width: 0; flex-wrap: wrap; }
+  #jb-app .jb-style-count { font-size: 0.85rem; font-weight: 600; color: var(--text-dim); white-space: nowrap; }
+  /* Étape "choisis une chanson" du tuto : plus de titre "Chansons" au-dessus des 4 exemples
+     (voir renderTourPickSong()), donc le badge "Demandes" seul se pousse à droite. */
+  #jb-app .jb-tour-badge-only-row { justify-content: flex-end; }
   #jb-app .jb-style-list { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; }
   #jb-app .jb-style-item {
     background: var(--card); border: 1px solid var(--border); color: var(--text);
@@ -379,6 +384,9 @@
     background: var(--card); border: 1px solid var(--accent); border-radius: var(--radius);
     padding: 16px 18px; pointer-events: auto; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
     transition: top 0.35s ease;
+    /* Empêche tout élément interne (badge, emoji) de déborder visuellement du cadre arrondi,
+       même de quelques pixels selon l'appareil (rendu des emojis notamment). */
+    overflow-x: hidden;
   }
   #jb-app .jb-tour-card.jb-tour-card-center { top: 50%; transform: translateY(-50%); }
   /* Étapes "immersives" (bienvenue, choix d'une chanson, palmarès/boost) : comme il n'y a plus
@@ -410,11 +418,24 @@
     50% { background: #fff8e6; color: #2b0a1a; box-shadow: 0 0 12px 3px rgba(255, 248, 230, 0.85); }
   }
   #jb-app .jb-tour-blink-forever { animation: jb-tour-blink-forever 1.4s ease-in-out infinite; }
+  /* Encadre les 4 chansons de démonstration pendant qu'il faut en choisir une (avant le
+     choix), pour bien montrer où le client doit toucher. Voir renderTourPickSong(). */
+  #jb-app .jb-tour-choice-frame {
+    border: 2px solid var(--accent); border-radius: 14px; padding: 8px;
+    box-shadow: 0 0 14px 2px rgba(255, 143, 195, 0.5);
+  }
   #jb-app .jb-tour-extra-dimmed .jb-style-heading-row h2,
   #jb-app .jb-tour-extra-dimmed .jb-palmares-heading h2,
   #jb-app .jb-tour-extra-dimmed .jb-catalog-list,
   #jb-app .jb-tour-extra-dimmed .jb-palmares-grid {
     opacity: 0.22; filter: grayscale(70%); transition: opacity 0.3s ease;
+  }
+  /* Photo de Hubert au bout du titre de bienvenue (voir renderTourWelcome()). Comme pour
+     .jb-avatar dans l'en-tête : hauteur fixe, largeur automatique, aucun recadrage — l'image
+     s'affiche en entier plutôt que d'être coupée dans un cercle trop petit. */
+  #jb-app .jb-tour-welcome-avatar {
+    height: 2.6em; width: auto;
+    vertical-align: middle; margin-left: 6px; display: inline-block;
   }
   /* Fait pulser le bouton Boost lui-même pendant la sous-étape "boost", pour que le client
      sache exactement où appuyer (voir renderTourPalmaresBoost()). */
@@ -489,7 +510,10 @@
         </div>
         <div class="jb-style-section">
           <div class="jb-style-heading-row">
-            <h2 id="jb-style-title">🎵 Style</h2>
+            <div class="jb-style-title-wrap">
+              <h2 id="jb-style-title">🎵 Style</h2>
+              <span id="jb-style-count" class="jb-style-count"></span>
+            </div>
             <div id="jb-request-remaining" class="jb-request-remaining">Demandes : 10</div>
           </div>
           <div id="jb-style-list" class="jb-style-list"></div>
@@ -664,7 +688,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-09-19.15";
+  const APP_BUILD = "2026-09-19.21";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -730,7 +754,7 @@
       boost_aria: "Booster cette chanson",
       boost_btn: "Boost",
       quickpick_title: "⭐ Top Pick",
-      style_title: "🎵 Style",
+      style_title: "🎵 Chansons",
       back_btn: "⬅ RETOUR",
       search_placeholder: "🔍 Cherche un titre ou un artiste…",
       catalog_empty: "Aucun résultat pour cette recherche.",
@@ -759,13 +783,13 @@
         folk: "Folk", "classic-folk": "Classique Folk", reggae: "Reggae", oldies: "Oldies", irish: "Irlandais",
         christmas: "Noël",
       },
-      tour_welcome_title: "Bienvenue dans mon répertoire !",
-      tour_welcome_text: "Suis le guide, ça prend deux minutes.",
+      tour_welcome_title: "Bienvenue dans mon répertoire",
+      tour_welcome_text: "",
       tour_pick_title: "Choisis parmi ces 4 chansons",
-      tour_pick_text: "Touche une chanson pour faire une demande, comme tu le feras plus tard.",
+      tour_pick_text: "",
       tour_pick_result_title: "Oups ! Il ne te reste que deux demandes",
-      tour_palmares_title: "Regarde !! Ta chanson est au quatrième rang du palmarès",
-      tour_palmares_text: "Voici le palmarès de la soirée, mis à jour en direct.",
+      tour_palmares_title: "Regarde !! Ta chanson est au 4e rang du palmarès",
+      tour_palmares_text: "",
       tour_boost_title: "Boost ta chanson pour monter dans le palmarès",
       tour_boost_result_title: "Oups ! Il ne te reste que deux boosts",
       tour3_title: "Cherche une chanson",
@@ -786,7 +810,7 @@
       boost_aria: "Boost this song",
       boost_btn: "Boost",
       quickpick_title: "⭐ Top Pick",
-      style_title: "🎵 Style",
+      style_title: "🎵 Songs",
       back_btn: "⬅ BACK",
       search_placeholder: "🔍 Search a title or artist…",
       catalog_empty: "No results for this search.",
@@ -815,13 +839,13 @@
         folk: "Folk", "classic-folk": "Classic Folk", reggae: "Reggae", oldies: "Oldies", irish: "Irish",
         christmas: "Christmas",
       },
-      tour_welcome_title: "Welcome to My Repertoire!",
-      tour_welcome_text: "Follow along, it only takes two minutes.",
+      tour_welcome_title: "Welcome to My Repertoire",
+      tour_welcome_text: "",
       tour_pick_title: "Pick one of these 4 songs",
-      tour_pick_text: "Tap a song to request it, just like you'll do later.",
+      tour_pick_text: "",
       tour_pick_result_title: "Oops! You only have two requests left",
       tour_palmares_title: "Look !! Your song is in fourth place",
-      tour_palmares_text: "Here's tonight's leaderboard, updated live.",
+      tour_palmares_text: "",
       tour_boost_title: "Boost your song to climb the leaderboard",
       tour_boost_result_title: "Oops! You only have two boosts left",
       tour3_title: "Search for a song",
@@ -1055,7 +1079,11 @@
   }
 
   function renderTourWelcome() {
-    document.getElementById("jb-tour-title").textContent = t("tour_welcome_title");
+    // Reprend directement la photo de l'en-tête (.jb-avatar) plutôt que de dupliquer le
+    // base64 ailleurs dans le fichier — voir l'avatar dans .jb-top-bar.
+    const avatarSrc = document.querySelector(".jb-avatar")?.getAttribute("src") || "";
+    document.getElementById("jb-tour-title").innerHTML =
+      `${escapeHtml(t("tour_welcome_title"))}${avatarSrc ? ` <img class="jb-tour-welcome-avatar" src="${avatarSrc}" alt="" />` : ""}`;
     document.getElementById("jb-tour-text").textContent = t("tour_welcome_text");
     document.getElementById("jb-tour-extra").innerHTML = "";
     showImmersiveCard();
@@ -1069,17 +1097,16 @@
     if (tourPhase !== "picked") tourPhase = "choose";
     const picked = tourPhase === "picked";
     document.getElementById("jb-tour-title").textContent = t(picked ? "tour_pick_result_title" : "tour_pick_title");
-    document.getElementById("jb-tour-text").textContent = picked ? "" : t("tour_pick_text");
+    document.getElementById("jb-tour-text").textContent = "";
 
     const remaining = picked ? 2 : 3;
     const extra = document.getElementById("jb-tour-extra");
     extra.classList.toggle("jb-tour-extra-dimmed", picked);
     extra.innerHTML = `
-      <div class="jb-style-heading-row">
-        <h2>${escapeHtml(t("style_title"))}</h2>
+      <div class="jb-style-heading-row jb-tour-badge-only-row">
         <div id="jb-tour-fake-request-badge" class="jb-request-remaining${picked ? " jb-tour-blink-forever" : ""}">${escapeHtml(t("requests_remaining", remaining))}</div>
       </div>
-      <ul class="jb-catalog-list">
+      <ul class="jb-catalog-list${picked ? "" : " jb-tour-choice-frame"}">
         ${TOUR_DEMO_SONGS.map((s, i) => {
           const isChosen = !!(tourChosenSong && s.title === tourChosenSong.title);
           const btnHtml = picked
@@ -1810,10 +1837,18 @@
     renderPalmares();
     renderCatalog();
     updateRequestBadge();
+    updateStyleCount();
     renderAdminPalmares();
     renderAdminSpecial();
     renderAdminCatalog();
     renderCooldownList();
+  }
+
+  // Nombre total de chansons dans le répertoire, affiché en petit à côté du titre "Chansons"
+  // (voir #jb-style-count dans le HTML) — se met à jour à chaque changement du répertoire.
+  function updateStyleCount() {
+    const el = document.getElementById("jb-style-count");
+    if (el) el.textContent = `(${catalogSongs.length})`;
   }
 
   // ---------- Compte à rebours en direct (sans re-rendu complet à chaque seconde) ----------
