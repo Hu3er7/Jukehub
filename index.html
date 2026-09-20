@@ -702,7 +702,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-09-19.23";
+  const APP_BUILD = "2026-09-19.25";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -717,6 +717,19 @@
         const html = await res.text();
         const match = html.match(/APP_BUILD\s*=\s*"([^"]+)"/);
         if (match && match[1] && match[1] !== APP_BUILD) {
+          // On ne bloque PAS tout rechargement pendant toute une session admin (elle peut durer
+          // des heures pendant un spectacle) : ça laisserait tourner du code périmé trop
+          // longtemps. On ne diffère le refresh que dans le cas précis qui causait la perte de
+          // données — du texte pas encore soumis dans "Ajouter des chansons au répertoire", ou
+          // des styles déjà cochés pour cet ajout. Dès que cette zone est vide (ajout fait ou
+          // pas commencé), la mise à jour s'applique normalement, comme pour n'importe quel
+          // visiteur.
+          const bulkInput = document.getElementById("jb-bulk-input");
+          const composingBulkAdd = isAdmin && (
+            (bulkInput && bulkInput.value.trim().length > 0) ||
+            (typeof bulkAddGenres !== "undefined" && bulkAddGenres.size > 0)
+          );
+          if (composingBulkAdd) return;
           window.location.reload();
         }
       } catch (e) {
