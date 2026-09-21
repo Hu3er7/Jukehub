@@ -558,14 +558,30 @@
   #jb-app .jb-offline-card p {
     font-size: 0.92rem; color: var(--text-dim); line-height: 1.5; margin: 0 0 18px;
   }
-  #jb-app .jb-offline-calendar { border-radius: var(--radius); overflow: hidden; }
-  #jb-app .jb-offline-calendar iframe {
-    width: 100%; height: 480px; border: 1px solid var(--border); border-radius: var(--radius); display: block;
+  /* Calendrier "maison" (agenda des prochains spectacles), redessiné pour reprendre le style de
+     l'appli plutôt que le widget Google Calendar brut — voir renderOfflineCalendar(). Seuls les
+     jours qui ont au moins un spectacle inscrit sur le calendrier Google de Hubert affichent une
+     ligne ; un mois sans aucun spectacle affiche une section vide (voir groupEventsByDay()). */
+  #jb-app .jb-offline-calendar { text-align: left; }
+  #jb-app .jb-cal-nav { display: flex; align-items: center; justify-content: center; gap: 16px; margin-bottom: 14px; }
+  #jb-app .jb-cal-nav-btn {
+    background: none; border: none; color: var(--accent); font-size: 1.05rem; cursor: pointer;
+    padding: 4px 10px; border-radius: 8px; width: auto; line-height: 1;
   }
-  #jb-app .jb-offline-calendar-missing {
-    font-size: 0.82rem; color: var(--text-dim); border: 1px dashed var(--border);
-    border-radius: var(--radius); padding: 14px; line-height: 1.4;
+  #jb-app .jb-cal-nav-btn:active { transform: scale(0.92); }
+  #jb-app .jb-cal-month-label {
+    font-size: 1.15rem; font-weight: 800; color: var(--accent2); white-space: nowrap;
   }
+  #jb-app .jb-cal-list { display: flex; flex-direction: column; }
+  #jb-app .jb-cal-row {
+    display: flex; align-items: flex-start; gap: 14px; padding: 11px 4px; border-bottom: 1px solid var(--border);
+  }
+  #jb-app .jb-cal-row:last-child { border-bottom: none; }
+  #jb-app .jb-cal-day {
+    font-size: 1.3rem; font-weight: 800; color: var(--accent2); width: 28px; flex-shrink: 0; text-align: center;
+  }
+  #jb-app .jb-cal-events { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; padding-top: 3px; }
+  #jb-app .jb-cal-event { font-size: 0.85rem; color: var(--text); line-height: 1.35; text-align: left; }
 </style>
 
 <div id="jb-app">
@@ -643,7 +659,14 @@
         </div>
         <h1 id="jb-offline-title"></h1>
         <p id="jb-offline-text"></p>
-        <div id="jb-offline-calendar" class="jb-offline-calendar"></div>
+        <div id="jb-offline-calendar" class="jb-offline-calendar">
+          <div class="jb-cal-nav">
+            <button id="jb-cal-prev" class="jb-cal-nav-btn" aria-label="Mois précédent">◀</button>
+            <h2 id="jb-cal-month-label" class="jb-cal-month-label"></h2>
+            <button id="jb-cal-next" class="jb-cal-nav-btn" aria-label="Mois suivant">▶</button>
+          </div>
+          <div id="jb-cal-list" class="jb-cal-list"></div>
+        </div>
       </div>
     </div>
 
@@ -890,7 +913,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-09-19.43";
+  const APP_BUILD = "2026-09-19.45";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -1023,7 +1046,6 @@
       tour2_text: "Recherche les chansons par genre.",
       offline_title: "Je ne suis pas en spectacle pour le moment",
       offline_text: "Reviens faire une demande pendant l'une de mes prochaines soirées — en attendant, voici mon calendrier :",
-      offline_calendar_missing: "Calendrier à venir.",
     },
     en: {
       page_title: "My Repertoire",
@@ -1090,7 +1112,6 @@
       tour2_text: "Search for songs by genre.",
       offline_title: "I'm not performing right now",
       offline_text: "Come back and make a request during one of my next shows — in the meantime, here's my calendar:",
-      offline_calendar_missing: "Calendar coming soon.",
     },
   };
   function genreLabel(key) {
@@ -1121,20 +1142,107 @@
     scheduleFitTopBar();
   }
 
-  // Colle ici l'URL de la version "Public URL"/iframe src de ton calendrier Google (Paramètres
-  // du calendrier > "Intégrer le calendrier" > copie l'adresse dans le code <iframe src="...">),
-  // ou laisse vide pour l'instant : un petit message "Calendrier à venir" s'affiche à la place
-  // tant que ce n'est pas rempli, plutôt qu'un cadre vide.
-  const GOOGLE_CALENDAR_EMBED_URL = "https://calendar.google.com/calendar/embed?src=hubertplante.gd%40gmail.com&ctz=America%2FToronto";
-  function renderOfflineCalendar() {
-    const container = document.getElementById("jb-offline-calendar");
-    if (!container) return;
-    if (GOOGLE_CALENDAR_EMBED_URL) {
-      container.innerHTML = `<iframe src="${escapeHtml(GOOGLE_CALENDAR_EMBED_URL)}" frameborder="0" scrolling="no"></iframe>`;
-    } else {
-      container.innerHTML = `<p class="jb-offline-calendar-missing">${escapeHtml(t("offline_calendar_missing"))}</p>`;
+  // ---------- Calendrier "maison" de la page "Pas en spectacle" ----------
+  // Plutôt que le widget Google Calendar brut (pas personnalisable visuellement), on va chercher
+  // les événements via l'API Google Calendar (lecture seule, calendrier public) et on les
+  // affiche nous-mêmes dans le style de l'appli — voir la maquette Photoshop de Hubert. Seuls
+  // les jours avec au moins un spectacle inscrit affichent une ligne ; un mois sans spectacle
+  // affiche une section vide, exactement comme demandé.
+  //
+  // GOOGLE_CALENDAR_API_KEY : à remplir une fois obtenue dans Google Cloud Console (Bibliothèque
+  // d'API > active "Google Calendar API" > Identifiants > Créer des identifiants > Clé API,
+  // puis restreins-la par référent HTTP à ton domaine GitHub Pages). Tant qu'elle est vide, la
+  // section reste vide (comme un mois sans spectacle) plutôt que d'essayer d'appeler l'API.
+  const GOOGLE_CALENDAR_API_KEY = "AIzaSyAtq83-fKbwZph3SOebhQdMMGdoYCcjxsg";
+  const GOOGLE_CALENDAR_ID = "hubertplante.gd@gmail.com";
+  const MONTH_NAMES_FR = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
+  const MONTH_NAMES_EN = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+  let calViewYear = null;
+  let calViewMonth = null; // 0-11
+  let calRenderToken = 0;
+
+  function monthLabel(year, month) {
+    const names = lang === "en" ? MONTH_NAMES_EN : MONTH_NAMES_FR;
+    return `${names[month]} ${year}`;
+  }
+  // "21h30", "17h" (jamais "17h00") — convention d'affichage habituelle en français.
+  function formatHourFr(date) {
+    const h = date.getHours();
+    const m = date.getMinutes();
+    return `${h}h${m > 0 ? String(m).padStart(2, "0") : ""}`;
+  }
+  async function fetchCalendarEvents(year, month) {
+    if (!GOOGLE_CALENDAR_API_KEY) return [];
+    const timeMin = new Date(year, month, 1, 0, 0, 0).toISOString();
+    const timeMax = new Date(year, month + 1, 1, 0, 0, 0).toISOString();
+    const url = `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(GOOGLE_CALENDAR_ID)}/events`
+      + `?key=${encodeURIComponent(GOOGLE_CALENDAR_API_KEY)}&timeMin=${encodeURIComponent(timeMin)}&timeMax=${encodeURIComponent(timeMax)}`
+      + `&singleEvents=true&orderBy=startTime`;
+    try {
+      const res = await fetch(url);
+      if (!res.ok) return [];
+      const data = await res.json();
+      return data.items || [];
+    } catch (e) {
+      console.error("calendar fetch", e);
+      return [];
     }
   }
+  // Regroupe par jour du mois (1-31) — plusieurs spectacles le même jour s'empilent dans la même
+  // ligne (voir la maquette : jours 5, 17, 18, 24, 25, 26). Le nom du spectacle vient du titre de
+  // l'événement Google Calendar ; l'heure vient de son heure de début/fin.
+  function groupEventsByDay(events) {
+    const byDay = new Map();
+    events.forEach((ev) => {
+      const startStr = ev.start?.dateTime || ev.start?.date;
+      if (!startStr) return;
+      const start = new Date(startStr);
+      const day = start.getDate();
+      const label = (ev.start?.dateTime && ev.end?.dateTime)
+        ? `${ev.summary || ""} ${formatHourFr(new Date(ev.start.dateTime))} - ${formatHourFr(new Date(ev.end.dateTime))}`.trim()
+        : (ev.summary || "");
+      if (!byDay.has(day)) byDay.set(day, []);
+      byDay.get(day).push(label);
+    });
+    return byDay;
+  }
+  async function renderOfflineCalendar() {
+    const labelEl = document.getElementById("jb-cal-month-label");
+    const listEl = document.getElementById("jb-cal-list");
+    if (!labelEl || !listEl) return;
+    if (calViewYear === null) {
+      const now = new Date();
+      calViewYear = now.getFullYear();
+      calViewMonth = now.getMonth();
+    }
+    labelEl.textContent = monthLabel(calViewYear, calViewMonth);
+    const token = ++calRenderToken;
+    const events = await fetchCalendarEvents(calViewYear, calViewMonth);
+    if (token !== calRenderToken) return; // une navigation plus récente a eu lieu entre-temps
+    const byDay = groupEventsByDay(events);
+    if (byDay.size === 0) {
+      listEl.innerHTML = "";
+      return;
+    }
+    const days = Array.from(byDay.keys()).sort((a, b) => a - b);
+    listEl.innerHTML = days.map((day) => `
+      <div class="jb-cal-row">
+        <span class="jb-cal-day">${day}</span>
+        <div class="jb-cal-events">
+          ${byDay.get(day).map((line) => `<span class="jb-cal-event">${escapeHtml(line)}</span>`).join("")}
+        </div>
+      </div>`).join("");
+  }
+  document.getElementById("jb-cal-prev").addEventListener("click", () => {
+    calViewMonth -= 1;
+    if (calViewMonth < 0) { calViewMonth = 11; calViewYear -= 1; }
+    renderOfflineCalendar();
+  });
+  document.getElementById("jb-cal-next").addEventListener("click", () => {
+    calViewMonth += 1;
+    if (calViewMonth > 11) { calViewMonth = 0; calViewYear += 1; }
+    renderOfflineCalendar();
+  });
 
   // ---------- Bandeau du haut : toujours sur une seule ligne ----------
   // Plutôt que de tronquer le titre ou de le passer à la ligne, on mesure l'espace vraiment
