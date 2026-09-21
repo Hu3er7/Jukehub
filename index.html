@@ -97,6 +97,9 @@
   #jb-app .jb-empty { color: var(--text-dim); font-size: 0.9rem; padding: 10px 2px; }
   #jb-app .jb-special-request-block { padding: 6px 2px 4px; }
   #jb-app .jb-special-request-text { color: var(--text-dim); font-size: 0.88rem; margin: 0 0 12px; line-height: 1.4; }
+  /* Prénom facultatif : collé à côté du texte de la demande dans la colonne "Demandes
+     spéciales" de l'admin (voir renderAdminSpecial()) — jamais obligatoire pour envoyer. */
+  #jb-app .jb-special-request-name-input { width: 100%; margin: 0 0 10px; box-sizing: border-box; }
   #jb-app .jb-special-request-btn { width: 100%; }
   #jb-app .jb-special-request-btn:disabled { opacity: 0.6; cursor: default; }
 
@@ -165,6 +168,16 @@
     color: var(--text-dim); font-weight: 400; font-size: 0.8rem; overflow: hidden;
     white-space: nowrap; text-overflow: ellipsis;
   }
+  /* Prénom (une seule personne a voté) ou les 3 plus gros contributeurs de votes/boosts sur
+     cette chanson (voir renderPalmares()) — contrairement au titre/artiste, on laisse ça
+     retourner à la ligne (jusqu'à 3 courts prénoms, 15 caractères max chacun — voir
+     ensureClientName()) plutôt que de tronquer avec des "...", mais on coupe quand même après 2
+     lignes par sécurité si jamais ça débordait sur un très petit écran. */
+  #jb-app .jb-slot-voters {
+    color: var(--text-dim); font-weight: 600; font-size: 0.72rem; margin-top: 2px;
+    white-space: normal; overflow-wrap: anywhere; line-height: 1.3;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  }
   #jb-app .jb-slot-placeholder { color: var(--text-dim); }
   #jb-app .jb-slot-boost {
     flex-shrink: 0; margin-left: auto; background: var(--card2); border: 1px solid var(--accent);
@@ -178,6 +191,7 @@
     #jb-app .jb-slot-votes { width: 16px; font-size: 0.85rem; }
     #jb-app .jb-slot-title { font-size: 0.82rem; }
     #jb-app .jb-slot-artist { font-size: 0.7rem; }
+    #jb-app .jb-slot-voters { font-size: 0.66rem; }
     #jb-app .jb-slot-boost { font-size: 0.72rem; padding: 6px 9px; }
   }
 
@@ -506,6 +520,24 @@
     animation: jb-tour-boost-glow 1.4s ease-in-out infinite;
   }
   #jb-app .jb-tour-nav-btn[hidden] { display: none; }
+
+  /* Demande de prénom facultative (voir ensureClientName()) — même langage visuel que la
+     fenêtre du tuto (carte centrée par-dessus un arrière-plan assombri), mais bien plus simple :
+     pas d'étapes, juste un champ et deux boutons. */
+  #jb-app .jb-name-prompt { position: fixed; inset: 0; z-index: 1300; pointer-events: none; }
+  #jb-app .jb-name-prompt[hidden] { display: none; }
+  #jb-app .jb-name-prompt-backdrop { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.6); pointer-events: auto; }
+  #jb-app .jb-name-prompt-card {
+    position: fixed; left: 16px; right: 16px; top: 50%; transform: translateY(-50%);
+    max-width: 380px; margin: 0 auto; background: var(--card); border: 1px solid var(--accent);
+    border-radius: var(--radius); padding: 18px; pointer-events: auto;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  }
+  #jb-app .jb-name-prompt-card h3 { font-size: 1.05rem; font-weight: 800; color: var(--accent2); margin-bottom: 6px; }
+  #jb-app .jb-name-prompt-card p { font-size: 0.88rem; color: var(--text-dim); line-height: 1.4; margin: 0 0 12px; }
+  #jb-app .jb-name-prompt-card input[type="text"] { width: 100%; box-sizing: border-box; margin: 0; }
+  #jb-app .jb-name-prompt-actions { display: flex; gap: 10px; margin-top: 12px; }
+  #jb-app .jb-name-prompt-actions button { flex: 1; width: auto; }
 </style>
 
 <div id="jb-app">
@@ -554,6 +586,7 @@
         <p id="jb-catalog-empty" class="jb-empty" hidden>Aucun résultat pour cette recherche.</p>
         <div id="jb-special-request-block" class="jb-special-request-block" hidden>
           <p id="jb-special-request-text" class="jb-special-request-text"></p>
+          <input id="jb-special-request-name" type="text" class="jb-special-request-name-input" autocomplete="off" maxlength="15" />
           <button id="jb-special-request-btn" class="jb-btn-primary jb-special-request-btn"></button>
         </div>
       </div>
@@ -591,6 +624,23 @@
         <div id="jb-tour-extra" class="jb-tour-extra"></div>
         <div class="jb-tour-actions">
           <button id="jb-tour-next" class="jb-tour-nav-btn jb-tour-next"></button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Demande de prénom, facultative : voir ensureClientName(). Affichée une seule fois par
+         appareil, juste avant la toute première demande OU le tout premier boost de la soirée
+         (jamais avant, pour ne pas ralentir l'arrivée du client) — son prénom sert ensuite à la
+         fois pour les demandes spéciales et pour apparaître sous les chansons du palmarès. -->
+    <div id="jb-name-prompt" class="jb-name-prompt" hidden>
+      <div class="jb-name-prompt-backdrop"></div>
+      <div class="jb-name-prompt-card">
+        <h3 id="jb-name-prompt-title"></h3>
+        <p id="jb-name-prompt-text"></p>
+        <input id="jb-name-prompt-input" type="text" autocomplete="off" maxlength="15" />
+        <div class="jb-name-prompt-actions">
+          <button id="jb-name-prompt-skip" class="jb-tour-nav-btn"></button>
+          <button id="jb-name-prompt-confirm" class="jb-btn-primary"></button>
         </div>
       </div>
     </div>
@@ -708,6 +758,61 @@
     }
   }
 
+  // ---------- Identité facultative du client (prénom) ----------
+  // Un seul prénom par appareil, réutilisé à la fois pour les demandes spéciales et pour
+  // apparaître sous les chansons du palmarès (voir renderVotersLine). Limité à 15 caractères
+  // partout (champ, coupure JS, règle Firestore) pour rester lisible une fois affiché sous une
+  // chanson à côté de deux autres prénoms. "jb_client_name_asked" retient qu'on a déjà proposé
+  // la fenêtre une fois, même si le client a choisi "Passer" — pour ne jamais la lui reproposer.
+  function sanitizeVoterKey(name) {
+    // Les clés de map Firestore ne doivent jamais contenir de point (utilisé comme séparateur
+    // dans la notation "voters.<clé>" pour ne mettre à jour qu'une seule clé de la map), ni les
+    // autres caractères réservés aux chemins de champs.
+    return String(name || "").trim().slice(0, 15).replace(/[.$#\[\]/~*]/g, "_");
+  }
+  function getClientName() {
+    return (safeStorageGet("jb_client_name") || "").trim().slice(0, 15);
+  }
+  let clientNamePromptPromise = null;
+  function ensureClientName() {
+    const existing = getClientName();
+    if (existing) return Promise.resolve(existing);
+    if (safeStorageGet("jb_client_name_asked")) return Promise.resolve("");
+    if (clientNamePromptPromise) return clientNamePromptPromise;
+    clientNamePromptPromise = new Promise((resolve) => {
+      const wrap = document.getElementById("jb-name-prompt");
+      const input = document.getElementById("jb-name-prompt-input");
+      const skipBtn = document.getElementById("jb-name-prompt-skip");
+      const confirmBtn = document.getElementById("jb-name-prompt-confirm");
+      if (!wrap || !input || !skipBtn || !confirmBtn) { resolve(""); clientNamePromptPromise = null; return; }
+      document.getElementById("jb-name-prompt-title").textContent = t("name_prompt_title");
+      document.getElementById("jb-name-prompt-text").textContent = t("name_prompt_text");
+      input.placeholder = t("name_prompt_placeholder");
+      input.value = "";
+      skipBtn.textContent = t("name_prompt_skip");
+      confirmBtn.textContent = t("name_prompt_confirm");
+      wrap.hidden = false;
+      function finish(name) {
+        safeStorageSet("jb_client_name_asked", "1");
+        if (name) safeStorageSet("jb_client_name", name);
+        wrap.hidden = true;
+        skipBtn.removeEventListener("click", onSkip);
+        confirmBtn.removeEventListener("click", onConfirm);
+        input.removeEventListener("keydown", onKeydown);
+        clientNamePromptPromise = null;
+        resolve(name);
+      }
+      function onSkip() { finish(""); }
+      function onConfirm() { finish(input.value.trim().slice(0, 15)); }
+      function onKeydown(e) { if (e.key === "Enter") onConfirm(); }
+      skipBtn.addEventListener("click", onSkip);
+      confirmBtn.addEventListener("click", onConfirm);
+      input.addEventListener("keydown", onKeydown);
+      setTimeout(() => input.focus(), 50);
+    });
+    return clientNamePromptPromise;
+  }
+
   // ---------- Mise à jour automatique (anti-cache) ----------
   // Marqueur de version : change à chaque déploiement. Le script ci-dessous
   // va périodiquement re-télécharger cette même page (en forçant le réseau,
@@ -715,7 +820,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-09-19.36";
+  const APP_BUILD = "2026-09-19.38";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -801,8 +906,14 @@
       catalog_empty: "Aucun résultat pour cette recherche.",
       genre_song_count_unit: "chansons",
       special_request_text: "Tu ne trouves pas ta chanson ? Écris-la quand même : elle me parviendra. Qui sait ? Peut-être que je peux essayer de la faire !",
+      special_request_name_placeholder: "Ton prénom (optionnel)",
       special_request_btn: "📨 Envoyer quand même",
       special_request_sent_toast: "📨 Envoyé ! Merci, on y jette un œil.",
+      name_prompt_title: "C'est quoi ton prénom ?",
+      name_prompt_text: "Facultatif — il apparaîtra à côté de tes demandes et sous tes chansons dans le palmarès.",
+      name_prompt_placeholder: "Ton prénom",
+      name_prompt_skip: "Passer",
+      name_prompt_confirm: "Confirmer",
       burned_badge: "🔥❌ Brûlée",
       cooldown_played_label: "Déjà Jouée",
       cooldown_available_label: "Disponible",
@@ -859,8 +970,14 @@
       catalog_empty: "No results for this search.",
       genre_song_count_unit: "songs",
       special_request_text: "Can't find your song? Type it in anyway — it'll reach me. Who knows? Maybe I can try to learn it!",
+      special_request_name_placeholder: "Your first name (optional)",
       special_request_btn: "📨 Send it anyway",
       special_request_sent_toast: "📨 Sent! Thanks, we'll take a look.",
+      name_prompt_title: "What's your first name?",
+      name_prompt_text: "Optional — it'll show up next to your requests and under your songs on the leaderboard.",
+      name_prompt_placeholder: "Your first name",
+      name_prompt_skip: "Skip",
+      name_prompt_confirm: "Confirm",
       burned_badge: "🔥❌ Unavailable",
       cooldown_played_label: "Already Played",
       cooldown_available_label: "Available",
@@ -1571,8 +1688,10 @@
   // artistDemand : nom d'artiste -> {name, count} — nombre cumulatif (toutes les soirées) de
   // demandes reçues, utilisé pour la section Top Pick (les 5 artistes les plus demandés).
   let artistDemand = {};
-  // specialRequests : id -> {text, createdAt} — recherches textuelles des clients restées sans
-  // résultat, envoyées volontairement à Hubert (colonne "Demandes spéciales" du panneau admin).
+  // specialRequests : id -> {text, createdAt, name?} — recherches textuelles des clients restées
+  // sans résultat, envoyées volontairement à Hubert (colonne "Demandes spéciales" du panneau
+  // admin). "name" est le prénom facultatif du client (voir submitSpecialRequest()), absent si
+  // laissé vide.
   let specialRequests = {};
   let isAdmin = false;
   // Style(s) sélectionné(s) pour le PROCHAIN lot de chansons collées dans "Ajouter des
@@ -1860,6 +1979,7 @@
       pulseAttention(document.getElementById("jb-boost-remaining"));
       return;
     }
+    await ensureClientName();
     const token = roundToken(v);
     // Même logique optimiste que pour requestSong() : on met à jour l'état local avant même que
     // l'écriture soit confirmée par le serveur, pour éviter un faux message d'erreur sur un wifi
@@ -1876,7 +1996,10 @@
     pulseAttention(document.getElementById("jb-boost-remaining"));
     showToast(t("boost_added"));
     try {
-      await updateDoc(doc(db, "votes", id), { requests: increment(1) });
+      const payload = { requests: increment(1) };
+      const clientName = getClientName();
+      if (clientName) payload[`voters.${sanitizeVoterKey(clientName)}`] = increment(1);
+      await updateDoc(doc(db, "votes", id), payload);
     } catch (e) {
       // Écriture non confirmée par le serveur (le plus souvent juste un wifi lent — Firestore la
       // renverra automatiquement dès que la connexion revient) : on ne défait rien côté client,
@@ -2034,6 +2157,20 @@
     if (list) list.classList.remove("jb-animating");
   }
 
+  // Ligne de prénom(s) sous une chanson du palmarès : le prénom du seul client qui a voté, ou
+  // les prénoms des 3 clients ayant mis le plus de votes (boosts + demande initiale confondus)
+  // sur cette chanson, du plus contributeur au moins. Rien du tout si personne n'a laissé son
+  // prénom (voters vide ou absent — champ resté facultatif).
+  function renderVotersLine(voters) {
+    if (!voters || typeof voters !== "object") return "";
+    const names = Object.keys(voters)
+      .filter((k) => (voters[k] || 0) > 0)
+      .sort((a, b) => (voters[b] || 0) - (voters[a] || 0))
+      .slice(0, 3);
+    if (!names.length) return "";
+    return `<span class="jb-slot-voters">${names.map(escapeHtml).join(" · ")}</span>`;
+  }
+
   function renderPalmares() {
     const list = document.getElementById("jb-palmares-list");
     const empty = document.getElementById("jb-palmares-empty");
@@ -2090,6 +2227,7 @@
         <span class="jb-slot-info">
           <span class="jb-slot-title">${escapeHtml(v.title)}</span>
           ${v.artist ? `<span class="jb-slot-artist">${escapeHtml(v.artist)}</span>` : ""}
+          ${renderVotersLine(v.voters)}
         </span>
         <button class="jb-slot-boost" data-boost="${escapeHtml(id)}" aria-label="${t("boost_aria")}" title="${t("boost_aria")}">🚀 ${t("boost_btn")}</button>`;
     });
@@ -2252,6 +2390,15 @@
     if (showSpecial) {
       document.getElementById("jb-special-request-text").textContent = t("special_request_text");
       document.getElementById("jb-special-request-btn").textContent = t("special_request_btn");
+      const nameInput = document.getElementById("jb-special-request-name");
+      nameInput.placeholder = t("special_request_name_placeholder");
+      // Pré-rempli avec le prénom déjà donné une fois (voir submitSpecialRequest()), sans jamais
+      // écraser ce que le client est en train de taper si ce rendu se redéclenche pendant qu'il
+      // écrit (ex. mise à jour du répertoire en direct pendant qu'il remplit le champ).
+      if (!nameInput.value) {
+        const savedName = safeStorageGet("jb_client_name");
+        if (savedName) nameInput.value = savedName;
+      }
     }
   }
 
@@ -2406,6 +2553,7 @@
   // ---------- Action : demander une chanson ----------
   async function requestSong(song) {
     if (alreadyRequested(song.id)) return;
+    await ensureClientName();
     const staySameList = currentResultsCount() > 1;
     const tokenAtRequest = roundToken(votes[song.id]);
     const ref = doc(db, "votes", song.id);
@@ -2449,12 +2597,15 @@
       // burned/cooldownUntil/playedAt ici (absents du merge), pour ne pas écraser leur état si
       // la chanson a déjà un historique ; increment() gère correctement les demandes
       // simultanées de plusieurs clients.
-      await setDoc(ref, {
+      const payload = {
         requests: increment(1),
         title: song.title,
         artist: song.artist || "",
         createdAt: serverTimestamp(),
-      }, { merge: true });
+      };
+      const clientName = getClientName();
+      if (clientName) payload[`voters.${sanitizeVoterKey(clientName)}`] = increment(1);
+      await setDoc(ref, payload, { merge: true });
       // Compteur cumulatif par artiste (Top Pick) — jamais réinitialisé par "Nouvelle soirée",
       // pour refléter les tendances sur plusieurs soirées plutôt qu'une seule.
       if (song.artist) {
@@ -2482,11 +2633,19 @@
     const input = document.getElementById("jb-search-input");
     const text = input.value.trim();
     if (!text) return;
+    // Prénom facultatif (voir renderCatalog()) : jamais bloquant si laissé vide. Retenu dans cet
+    // appareil pour être repré-rempli automatiquement la prochaine fois, pour ne pas avoir à le
+    // retaper à chaque demande spéciale de la soirée.
+    const nameInput = document.getElementById("jb-special-request-name");
+    const name = (nameInput?.value || "").trim().slice(0, 15);
+    if (name) safeStorageSet("jb_client_name", name);
     showToast(t("special_request_sent_toast"));
     document.getElementById("jb-special-request-block").hidden = true;
     try {
       const ref = doc(collection(db, "specialRequests"));
-      await setDoc(ref, { text, createdAt: serverTimestamp() });
+      const payload = { text, createdAt: serverTimestamp() };
+      if (name) payload.name = name;
+      await setDoc(ref, payload);
     } catch (e) {
       console.error(e);
     }
@@ -2548,6 +2707,7 @@
         <span class="jb-slot-info">
           <span class="jb-slot-title">${escapeHtml(v.title)}</span>
           ${v.artist ? `<span class="jb-slot-artist">${escapeHtml(v.artist)}</span>` : ""}
+          ${renderVotersLine(v.voters)}
         </span>
         <button class="jb-mark-played-btn" data-played="${id}">✅ Jouée</button>`;
       list.appendChild(li);
@@ -2582,6 +2742,7 @@
       li.innerHTML = `
         <span class="jb-slot-info">
           <span class="jb-slot-title">${escapeHtml(req.text || "")}</span>
+          ${req.name ? `<span class="jb-slot-artist">${escapeHtml(req.name)}</span>` : ""}
         </span>
         <button class="jb-dismiss-special-btn" data-dismiss="${id}">✖ Retirer</button>`;
       list.appendChild(li);
