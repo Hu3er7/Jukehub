@@ -574,13 +574,13 @@
   }
   #jb-app .jb-cal-list { display: flex; flex-direction: column; }
   #jb-app .jb-cal-row {
-    display: flex; align-items: flex-start; gap: 14px; padding: 11px 4px; border-bottom: 1px solid var(--border);
+    display: flex; flex-direction: column; gap: 6px; padding: 11px 4px; border-bottom: 1px solid var(--border);
   }
   #jb-app .jb-cal-row:last-child { border-bottom: none; }
   #jb-app .jb-cal-day {
-    font-size: 1.3rem; font-weight: 800; color: var(--accent2); width: 28px; flex-shrink: 0; text-align: center;
+    font-size: 1.05rem; font-weight: 800; color: var(--accent2); text-align: left;
   }
-  #jb-app .jb-cal-events { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; padding-top: 3px; }
+  #jb-app .jb-cal-events { min-width: 0; display: flex; flex-direction: column; gap: 10px; padding-left: 2px; }
   #jb-app .jb-cal-event { font-size: 0.85rem; color: var(--text); line-height: 1.35; text-align: left; }
 </style>
 
@@ -913,7 +913,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-09-19.45";
+  const APP_BUILD = "2026-09-21.2";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -1157,6 +1157,8 @@
   const GOOGLE_CALENDAR_ID = "hubertplante.gd@gmail.com";
   const MONTH_NAMES_FR = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
   const MONTH_NAMES_EN = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+  const WEEKDAY_NAMES_FR = ["Dimanche", "Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi"];
+  const WEEKDAY_NAMES_EN = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
   let calViewYear = null;
   let calViewMonth = null; // 0-11
   let calRenderToken = 0;
@@ -1164,6 +1166,12 @@
   function monthLabel(year, month) {
     const names = lang === "en" ? MONTH_NAMES_EN : MONTH_NAMES_FR;
     return `${names[month]} ${year}`;
+  }
+  // "Jeudi le 3" (FR) / "Thursday 3" (EN) — nom du jour de la semaine devant le quantième.
+  function dayLabel(year, month, day) {
+    const names = lang === "en" ? WEEKDAY_NAMES_EN : WEEKDAY_NAMES_FR;
+    const weekday = names[new Date(year, month, day).getDay()];
+    return lang === "en" ? `${weekday} ${day}` : `${weekday} le ${day}`;
   }
   // "21h30", "17h" (jamais "17h00") — convention d'affichage habituelle en français.
   function formatHourFr(date) {
@@ -1227,7 +1235,7 @@
     const days = Array.from(byDay.keys()).sort((a, b) => a - b);
     listEl.innerHTML = days.map((day) => `
       <div class="jb-cal-row">
-        <span class="jb-cal-day">${day}</span>
+        <span class="jb-cal-day">${escapeHtml(dayLabel(calViewYear, calViewMonth, day))}</span>
         <div class="jb-cal-events">
           ${byDay.get(day).map((line) => `<span class="jb-cal-event">${escapeHtml(line)}</span>`).join("")}
         </div>
