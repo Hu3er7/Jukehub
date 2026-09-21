@@ -420,6 +420,11 @@
     50% { background: #fff8e6; color: #2b0a1a; box-shadow: 0 0 12px 3px rgba(255, 248, 230, 0.85); }
   }
   #jb-app .jb-tour-blink-forever { animation: jb-tour-blink-forever 1.4s ease-in-out infinite; }
+  /* Une fois le faux décompte "figé" à 1:55 (voir startTourBoostCountdown()), le badge se grise
+     comme le reste de la fenêtre déjà assombrie (même traitement que .jb-tour-extra-dimmed
+     ci-dessous) — pour montrer clairement au client que le tuto ne le fait pas VRAIMENT
+     attendre 2 minutes. */
+  #jb-app .jb-tour-boost-badge-frozen { opacity: 0.22; filter: grayscale(70%); transition: opacity 0.3s ease; }
   /* Encadre les 4 chansons de démonstration pendant qu'il faut en choisir une (avant le
      choix), pour bien montrer où le client doit toucher. Voir renderTourPickSong(). */
   #jb-app .jb-tour-choice-frame {
@@ -710,7 +715,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-09-19.32";
+  const APP_BUILD = "2026-09-19.36";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -834,7 +839,7 @@
       tour_quickpick_title: "Top Pick",
       tour_quickpick_text: "Les artistes les plus demandés — touche un nom pour voir ses chansons.",
       tour2_title: "Choisis ton style",
-      tour2_text: "Touche un style pour voir ses chansons.",
+      tour2_text: "Recherche les chansons par genre.",
     },
     en: {
       page_title: "My Repertoire",
@@ -892,7 +897,7 @@
       tour_quickpick_title: "Top Pick",
       tour_quickpick_text: "The most-requested artists — tap a name to see their songs.",
       tour2_title: "Choose your style",
-      tour2_text: "Tap a style to see its songs.",
+      tour2_text: "Search for songs by genre.",
     },
   };
   function genreLabel(key) {
@@ -1214,6 +1219,12 @@
     ];
   }
 
+  // Nombre de secondes restantes auquel on FIGE le faux décompte (voir startTourBoostCountdown())
+  // — après 5s à défiler (2:00 -> 1:55), le badge se grise et arrête de clignoter, pour bien
+  // montrer au client que ce n'est qu'une démo et qu'il n'a pas vraiment à attendre 2 min ici
+  // (voir demande de Hubert). Le bouton "Suivant", lui, ne change pas.
+  const TOUR_BOOST_COUNTDOWN_FREEZE_AT = 115;
+
   // Démarre le faux décompte de 2 min (même durée que BOOST_RESET_MS en vrai) une fois les 3
   // boosts de démo épuisés, affiché dans le badge (voir renderTourPalmaresBoost(), phase
   // "exhausted") — indépendant du décompte global de la vraie page (celui-ci ne doit tourner
@@ -1225,8 +1236,14 @@
       const badge = document.getElementById("jb-tour-fake-boost-badge");
       if (!badge) { stopTourBoostCountdown(); return; }
       const totalSec = Math.max(0, Math.ceil((tourBoostCountdownUntil - Date.now()) / 1000));
+      if (totalSec <= TOUR_BOOST_COUNTDOWN_FREEZE_AT) {
+        badge.textContent = t("boost_remaining_countdown", formatMMSS(TOUR_BOOST_COUNTDOWN_FREEZE_AT));
+        badge.classList.remove("jb-tour-blink-forever");
+        badge.classList.add("jb-tour-boost-badge-frozen");
+        stopTourBoostCountdown();
+        return;
+      }
       badge.textContent = t("boost_remaining_countdown", formatMMSS(totalSec));
-      if (totalSec <= 0) stopTourBoostCountdown();
     }, 1000);
   }
   function stopTourBoostCountdown() {
@@ -1293,12 +1310,10 @@
     setTourNext(tourPhase === "reveal" || isExhausted);
   }
 
-  // Anime la chanson boostée qui grimpe en tête (même technique FLIP que le vrai palmarès —
-  // voir renderPalmares()). Le TOUT premier boost (guidé, sur la chanson choisie) garde un
-  // rythme pédagogique lent (1s d'animation + 2s de pause) pour laisser le temps de bien voir
-  // le changement de titre. Les boosts suivants (étape "boostMore", sur les 4 positions) sont
-  // beaucoup plus rapides — les boutons doivent se redébloquer presque tout de suite, sinon le
-  // client a l'impression que le tuto a figé (voir demande de Hubert : délai jugé trop long).
+  // Anime la chanson boostée qui grimpe dans le palmarès (même technique FLIP que le vrai
+  // palmarès — voir renderPalmares()). Même rythme rapide pour TOUS les boosts de la démo
+  // (guidé ou non) — les boutons doivent se redébloquer presque tout de suite, sinon le client
+  // a l'impression que le tuto a figé (voir demandes de Hubert : délai jugé trop long).
   function tourDoBoost(rowIndex) {
     const grid = document.getElementById("jb-tour-palmares-grid");
     if (!grid || (tourPhase !== "boost" && tourPhase !== "boostMore") || tourBoostsRemaining <= 0) return;
@@ -1307,14 +1322,16 @@
     rowsBefore.forEach((el, i) => { firstRectsByTitle[tourPalmaresRows[i].title] = el.getBoundingClientRect(); });
 
     const boostedRow = tourPalmaresRows[rowIndex];
-    boostedRow.votes += 2; // les autres restent inchangées pour éviter toute confusion
-    tourPalmaresRows.splice(rowIndex, 1);
-    tourPalmaresRows.unshift(boostedRow);
+    boostedRow.votes += 1; // +1 vote par boost, comme dans la vraie page (voir boostSong())
+    // Retrie par nombre de votes (comme le vrai palmarès), plutôt que d'envoyer d'office la
+    // chanson boostée en tête — sinon une chanson avec moins de votes qu'une autre pouvait se
+    // retrouver devant elle dans la démo (bogue rapporté par Hubert).
+    tourPalmaresRows.sort((a, b) => b.votes - a.votes);
     tourBoostsRemaining = Math.max(0, tourBoostsRemaining - 1);
 
     const wasFirstBoost = tourPhase === "boost";
-    const animMs = wasFirstBoost ? 1000 : 600;
-    const waitMs = wasFirstBoost ? 3000 : 1000; // délai total avant que les boutons redeviennent actifs
+    const animMs = 600;
+    const waitMs = 1000; // délai total avant que les boutons redeviennent actifs
     tourPhase = wasFirstBoost ? "boosting" : "boostingMore";
     renderTourPalmaresBoost();
 
