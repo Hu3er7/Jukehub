@@ -495,6 +495,10 @@
   }
   #jb-app .jb-tour-nav-btn.jb-tour-next {
     background: var(--accent); border-color: var(--accent); color: #2b0a1a;
+    /* Clignote en continu, sur TOUTES les fenêtres du tuto, dès qu'il est affiché (voir
+       setTourNext()) — même halo que le bouton Boost (jb-tour-boost-glow), pour bien guider le
+       client vers la suite à chaque étape. */
+    animation: jb-tour-boost-glow 1.4s ease-in-out infinite;
   }
   #jb-app .jb-tour-nav-btn[hidden] { display: none; }
 </style>
@@ -706,7 +710,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-09-19.26";
+  const APP_BUILD = "2026-09-19.29";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -823,7 +827,8 @@
       tour_palmares_title: "Regarde !! Ta chanson est au 4e rang du palmarès",
       tour_palmares_text: "",
       tour_boost_title: "Boost ta chanson pour monter dans le palmarès",
-      tour_boost_result_title: "Oups ! Il ne te reste que deux boosts",
+      tour_boost_more_title: "Hey ! Il te reste deux boosts, utilise-les ;)",
+      tour_boost_exhausted_title: "Oups ! Tu n'as plus de boosts ! Attends 2 min pour les récupérer.",
       tour3_title: "Cherche une chanson",
       tour3_text: "Cherche par titre ou artiste — introuvable ? Écris-la quand même !",
       tour_quickpick_title: "Top Pick",
@@ -880,7 +885,8 @@
       tour_palmares_title: "Look !! Your song is in fourth place",
       tour_palmares_text: "",
       tour_boost_title: "Boost your song to climb the leaderboard",
-      tour_boost_result_title: "Oops! You only have two boosts left",
+      tour_boost_more_title: "Hey! You have two boosts left, use them ;)",
+      tour_boost_exhausted_title: "Oops! You're out of boosts! Wait 2 min to get them back.",
       tour3_title: "Search for a song",
       tour3_text: "Search by title or artist — can't find it? Send it in anyway!",
       tour_quickpick_title: "Top Pick",
@@ -1062,6 +1068,9 @@
   let tourChosenSong = null; // {title, artist} choisie par le client à l'étape "pick-song"
   let tourPalmaresRows = null; // ordre courant des 4 lignes fictives du palmarès du tuto
   let tourBoostAnimTimer = null;
+  let tourBoostsRemaining = 3; // boosts de démo encore disponibles à l'étape "palmares-boost" (reflète MAX_BOOSTS)
+  let tourBoostCountdownUntil = 0; // horodatage (ms) simulé de fin d'attente, une fois les 3 boosts de démo épuisés
+  let tourBoostCountdownTimer = null;
 
   function positionTourSpot(rect) {
     const spot = document.getElementById("jb-tour-spot");
@@ -1205,30 +1214,61 @@
     ];
   }
 
-  // Étape "palmarès + boost" : 4 sous-phases dans la même fenêtre — reveal (4e position) →
-  // boost (bouton Boost apparaît) → boosting (animation, verrouillée) → result (monté en tête,
-  // "Suivant" apparaît). Voir tourDoBoost() pour l'animation.
+  // Démarre le faux décompte de 2 min (même durée que BOOST_RESET_MS en vrai) une fois les 3
+  // boosts de démo épuisés, affiché dans le badge (voir renderTourPalmaresBoost(), phase
+  // "exhausted") — indépendant du décompte global de la vraie page (celui-ci ne doit tourner
+  // que pendant cette sous-étape du tuto).
+  function startTourBoostCountdown() {
+    tourBoostCountdownUntil = Date.now() + 2 * 60 * 1000;
+    stopTourBoostCountdown();
+    tourBoostCountdownTimer = setInterval(() => {
+      const badge = document.getElementById("jb-tour-fake-boost-badge");
+      if (!badge) { stopTourBoostCountdown(); return; }
+      const totalSec = Math.max(0, Math.ceil((tourBoostCountdownUntil - Date.now()) / 1000));
+      badge.textContent = t("boost_remaining_countdown", formatMMSS(totalSec));
+      if (totalSec <= 0) stopTourBoostCountdown();
+    }, 1000);
+  }
+  function stopTourBoostCountdown() {
+    if (tourBoostCountdownTimer) { clearInterval(tourBoostCountdownTimer); tourBoostCountdownTimer = null; }
+  }
+
+  // Étape "palmarès + boost" : 5 sous-phases dans la même fenêtre — reveal (4e position) →
+  // boost (bouton Boost sur SA chanson) → boosting (animation, verrouillée) → boostMore (il
+  // reste 2 boosts, un bouton apparaît maintenant sur les 4 positions) → exhausted (les 3
+  // boosts de démo sont épuisés, décompte de 2 min, "Suivant" apparaît enfin). Voir
+  // tourDoBoost() pour l'animation, commune aux deux sous-étapes de boost.
   function renderTourPalmaresBoost() {
     showImmersiveCard();
     if (!tourPalmaresRows) tourPalmaresRows = buildTourPalmaresRows();
     if (!tourPhase) tourPhase = "reveal";
 
-    const titleKey = tourPhase === "result" ? "tour_boost_result_title"
+    const isExhausted = tourPhase === "exhausted";
+    const titleKey = isExhausted ? "tour_boost_exhausted_title"
+      : (tourPhase === "boostMore" || tourPhase === "boostingMore") ? "tour_boost_more_title"
       : (tourPhase === "boost" || tourPhase === "boosting") ? "tour_boost_title"
       : "tour_palmares_title";
     document.getElementById("jb-tour-title").textContent = t(titleKey);
     document.getElementById("jb-tour-text").textContent = tourPhase === "reveal" ? t("tour_palmares_text") : "";
 
-    const showBoostBtn = tourPhase === "boost";
-    const remaining = tourPhase === "result" ? 2 : 3;
-    const isResult = tourPhase === "result";
-    const badgeHtml = `<div id="jb-tour-fake-boost-badge" class="jb-boost-remaining${isResult ? " jb-tour-blink-forever" : ""}">${escapeHtml(t("boost_remaining", remaining))}</div>`;
+    // Le tout premier boost reste guidé (bouton uniquement sur SA chanson, en 4e position) ;
+    // une fois qu'il en reste 2, un bouton apparaît sur les 4 positions à la fois pour montrer
+    // que n'importe laquelle peut être boostée.
+    const showBoostOnChosenOnly = tourPhase === "boost";
+    const showBoostOnAll = tourPhase === "boostMore";
+    const badgeHtml = `<div id="jb-tour-fake-boost-badge" class="jb-boost-remaining${isExhausted ? " jb-tour-blink-forever" : ""}">${escapeHtml(
+      isExhausted
+        ? t("boost_remaining_countdown", formatMMSS(Math.max(0, Math.ceil((tourBoostCountdownUntil - Date.now()) / 1000))))
+        : t("boost_remaining", tourBoostsRemaining)
+    )}</div>`;
     // Contrairement au badge "Demandes" (collé au titre de l'étape), celui-ci reste dans la
     // boîte "Palmarès de la soirée", sur la même ligne que CE titre-là — comme dans la vraie
-    // page (voir .jb-palmares-heading), pas à côté du titre "Oups !" de la fenêtre du tuto.
+    // page (voir .jb-palmares-heading), pas à côté du titre "Oups !" de la fenêtre du tuto. Il
+    // reste toujours bien visible (jamais assombri, voir .jb-tour-extra-dimmed plus bas), même
+    // à la sous-étape "exhausted" où tout le reste de la fenêtre s'assombrit.
     document.getElementById("jb-tour-title-badge").innerHTML = "";
     const extra = document.getElementById("jb-tour-extra");
-    extra.classList.toggle("jb-tour-extra-dimmed", isResult);
+    extra.classList.toggle("jb-tour-extra-dimmed", isExhausted);
     extra.innerHTML = `
       <div class="jb-palmares-heading">
         <h2>${escapeHtml(t("palmares_title"))}</h2>
@@ -1243,32 +1283,39 @@
               <span class="jb-slot-title">${escapeHtml(row.title)}</span>
               <span class="jb-slot-artist">${escapeHtml(row.artist)}</span>
             </span>
-            ${row.isChosen && showBoostBtn ? `<button id="jb-tour-boost-btn" class="jb-slot-boost jb-tour-boost-glow">🚀 ${escapeHtml(t("boost_btn"))}</button>` : ""}
+            ${(showBoostOnAll || (showBoostOnChosenOnly && row.isChosen)) ? `<button data-tour-boost-row="${i}" class="jb-slot-boost jb-tour-boost-glow">🚀 ${escapeHtml(t("boost_btn"))}</button>` : ""}
           </div>`).join("")}
       </div>`;
 
-    const boostBtn = document.getElementById("jb-tour-boost-btn");
-    if (boostBtn) boostBtn.addEventListener("click", tourDoBoost);
-    setTourNext(tourPhase === "reveal" || tourPhase === "result");
+    extra.querySelectorAll("[data-tour-boost-row]").forEach((btn) => {
+      btn.addEventListener("click", () => tourDoBoost(Number(btn.dataset.tourBoostRow)));
+    });
+    setTourNext(tourPhase === "reveal" || isExhausted);
   }
 
-  // Anime la chanson choisie qui grimpe du 4e au 1er rang (même technique FLIP que le vrai
-  // palmarès — voir renderPalmares()), puis attend encore 2s avant de laisser apparaître le
-  // bouton "Suivant" et le rappel "il ne reste que 2 boosts".
-  function tourDoBoost() {
+  // Anime la chanson boostée qui grimpe en tête (même technique FLIP que le vrai palmarès —
+  // voir renderPalmares()). Le TOUT premier boost (guidé, sur la chanson choisie) garde un
+  // rythme pédagogique lent (1s d'animation + 2s de pause) pour laisser le temps de bien voir
+  // le changement de titre. Les boosts suivants (étape "boostMore", sur les 4 positions) sont
+  // beaucoup plus rapides — les boutons doivent se redébloquer presque tout de suite, sinon le
+  // client a l'impression que le tuto a figé (voir demande de Hubert : délai jugé trop long).
+  function tourDoBoost(rowIndex) {
     const grid = document.getElementById("jb-tour-palmares-grid");
-    if (!grid || tourPhase !== "boost") return;
+    if (!grid || (tourPhase !== "boost" && tourPhase !== "boostMore") || tourBoostsRemaining <= 0) return;
     const rowsBefore = Array.from(grid.children);
     const firstRectsByTitle = {};
     rowsBefore.forEach((el, i) => { firstRectsByTitle[tourPalmaresRows[i].title] = el.getBoundingClientRect(); });
 
-    const chosenIndex = tourPalmaresRows.findIndex((r) => r.isChosen);
-    const chosenRow = tourPalmaresRows[chosenIndex];
-    chosenRow.votes += 2; // les 3 autres restent à 1 vote pour éviter toute confusion
-    tourPalmaresRows.splice(chosenIndex, 1);
-    tourPalmaresRows.unshift(chosenRow);
+    const boostedRow = tourPalmaresRows[rowIndex];
+    boostedRow.votes += 2; // les autres restent inchangées pour éviter toute confusion
+    tourPalmaresRows.splice(rowIndex, 1);
+    tourPalmaresRows.unshift(boostedRow);
+    tourBoostsRemaining = Math.max(0, tourBoostsRemaining - 1);
 
-    tourPhase = "boosting";
+    const wasFirstBoost = tourPhase === "boost";
+    const animMs = wasFirstBoost ? 1000 : 600;
+    const waitMs = wasFirstBoost ? 3000 : 1000; // délai total avant que les boutons redeviennent actifs
+    tourPhase = wasFirstBoost ? "boosting" : "boostingMore";
     renderTourPalmaresBoost();
 
     const newGrid = document.getElementById("jb-tour-palmares-grid");
@@ -1288,7 +1335,7 @@
     void newGrid.offsetHeight; // force le reflow avant de relâcher vers la position finale
     requestAnimationFrame(() => {
       newRows.forEach((el) => {
-        el.style.transition = "transform 1s cubic-bezier(0.4, 0, 0.2, 1)";
+        el.style.transition = `transform ${animMs}ms cubic-bezier(0.4, 0, 0.2, 1)`;
         el.style.transform = "";
       });
     });
@@ -1296,9 +1343,14 @@
     if (tourBoostAnimTimer) clearTimeout(tourBoostAnimTimer);
     tourBoostAnimTimer = setTimeout(() => {
       tourBoostAnimTimer = null;
-      tourPhase = "result";
+      if (tourBoostsRemaining <= 0) {
+        tourPhase = "exhausted";
+        startTourBoostCountdown();
+      } else {
+        tourPhase = "boostMore";
+      }
       renderTourPalmaresBoost();
-    }, 3000); // 1s d'animation + 2s d'attente, comme demandé
+    }, waitMs);
   }
 
   // Étapes "spot" (barre de recherche / Top Pick / styles) : un vrai élément de la page est
@@ -1343,6 +1395,7 @@
     if (i < 0 || i >= TOUR_MAJOR_STEPS.length) return;
     tourStep = i;
     tourPhase = "";
+    stopTourBoostCountdown();
     renderTourStep();
   }
 
@@ -1351,6 +1404,8 @@
     tourPhase = "";
     tourChosenSong = null;
     tourPalmaresRows = null;
+    tourBoostsRemaining = 3;
+    stopTourBoostCountdown();
     if (tourBoostAnimTimer) { clearTimeout(tourBoostAnimTimer); tourBoostAnimTimer = null; }
     document.getElementById("jb-tour").hidden = false;
     showTourStep(0);
@@ -1364,6 +1419,7 @@
     document.getElementById("jb-tour-backdrop").classList.remove("jb-tour-backdrop-opaque");
     document.getElementById("jb-tour-extra").classList.remove("jb-tour-extra-dimmed");
     if (tourBoostAnimTimer) { clearTimeout(tourBoostAnimTimer); tourBoostAnimTimer = null; }
+    stopTourBoostCountdown();
     safeStorageSet(tourSeenKey(), "1");
     window.removeEventListener("resize", handleTourReposition);
     window.removeEventListener("scroll", handleTourReposition, true);
