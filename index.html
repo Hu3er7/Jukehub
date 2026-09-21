@@ -761,12 +761,36 @@
     }
   }
 
+  // Même principe que safeStorageGet/Set ci-dessus, mais avec sessionStorage plutôt que
+  // localStorage : ce qui y est écrit disparaît automatiquement quand le client ferme
+  // complètement son onglet/sa page (contrairement à localStorage, qui survit indéfiniment).
+  // Utilisé uniquement pour le prénom du client (voir plus bas) : Hubert veut qu'il soit oublié
+  // dès que le client quitte la page, pas qu'il traîne pour la prochaine visite.
+  const memorySessionStorageFallback = {};
+  function safeSessionStorageGet(key) {
+    try {
+      return window.sessionStorage.getItem(key);
+    } catch (e) {
+      return Object.prototype.hasOwnProperty.call(memorySessionStorageFallback, key) ? memorySessionStorageFallback[key] : null;
+    }
+  }
+  function safeSessionStorageSet(key, value) {
+    try {
+      window.sessionStorage.setItem(key, value);
+    } catch (e) {
+      memorySessionStorageFallback[key] = value;
+    }
+  }
+
   // ---------- Identité facultative du client (prénom) ----------
-  // Un seul prénom par appareil, réutilisé à la fois pour les demandes spéciales et pour
+  // Un seul prénom par onglet, réutilisé à la fois pour les demandes spéciales et pour
   // apparaître sous les chansons du palmarès (voir renderVotersLine). Limité à 15 caractères
   // partout (champ, coupure JS, règle Firestore) pour rester lisible une fois affiché sous une
-  // chanson à côté de deux autres prénoms. "jb_client_name_asked" retient qu'on a déjà proposé
-  // la fenêtre une fois, même si le client a choisi "Passer" — pour ne jamais la lui reproposer.
+  // chanson à côté de deux autres prénoms. Stocké dans sessionStorage (pas localStorage) — sur
+  // demande explicite de Hubert, le prénom doit être oublié dès que le client ferme sa page,
+  // pas traîner pour une prochaine visite. "jb_client_name_asked" retient qu'on a déjà proposé
+  // la fenêtre une fois pendant cette visite, même si le client a choisi "Passer" — pour ne
+  // jamais la lui reproposer avant qu'il rouvre la page.
   function sanitizeVoterKey(name) {
     // Les clés de map Firestore ne doivent jamais contenir de point (utilisé comme séparateur
     // dans la notation "voters.<clé>" pour ne mettre à jour qu'une seule clé de la map), ni les
@@ -774,13 +798,13 @@
     return String(name || "").trim().slice(0, 15).replace(/[.$#\[\]/~*]/g, "_");
   }
   function getClientName() {
-    return (safeStorageGet("jb_client_name") || "").trim().slice(0, 15);
+    return (safeSessionStorageGet("jb_client_name") || "").trim().slice(0, 15);
   }
   let clientNamePromptPromise = null;
   function ensureClientName() {
     const existing = getClientName();
     if (existing) return Promise.resolve(existing);
-    if (safeStorageGet("jb_client_name_asked")) return Promise.resolve("");
+    if (safeSessionStorageGet("jb_client_name_asked")) return Promise.resolve("");
     if (clientNamePromptPromise) return clientNamePromptPromise;
     clientNamePromptPromise = new Promise((resolve) => {
       const wrap = document.getElementById("jb-name-prompt");
@@ -796,8 +820,8 @@
       confirmBtn.textContent = t("name_prompt_confirm");
       wrap.hidden = false;
       function finish(name) {
-        safeStorageSet("jb_client_name_asked", "1");
-        if (name) safeStorageSet("jb_client_name", name);
+        safeSessionStorageSet("jb_client_name_asked", "1");
+        if (name) safeSessionStorageSet("jb_client_name", name);
         wrap.hidden = true;
         skipBtn.removeEventListener("click", onSkip);
         confirmBtn.removeEventListener("click", onConfirm);
@@ -823,7 +847,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-09-19.39";
+  const APP_BUILD = "2026-09-19.40";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -1663,6 +1687,10 @@
   // votes: songId -> {requests, burned, cooldownUntil, playedAt, title, artist}
   let votes = {};
   let nightId = null;
+  // Sert à détecter un nouveau signal "kickedAt" écrit par l'admin à la déconnexion (voir plus
+  // bas) : null au départ pour ne PAS déclencher un reload dès le tout premier snapshot reçu au
+  // chargement de la page (sinon boucle de reload infinie dès l'ouverture).
+  let kickedAt = null;
   // requestedRounds : songId -> le "jeton de tour" (playedAtMillis) au moment de la demande.
   // Comparé au jeton ACTUEL de la chanson : si la chanson a été rejouée depuis (nouveau jeton),
   // la demande précédente ne compte plus et le client peut redemander — sans logique de
@@ -2075,6 +2103,18 @@
       loadBoostResetFromStorage();
       renderAll();
     }
+    // "Kick" global : quand Hubert se déconnecte de l'admin, un nouveau signal "kickedAt" est
+    // écrit dans ce même document (voir le bouton Déconnexion plus bas) — tous les appareils
+    // ouverts (clients ET tout autre onglet admin) rechargent alors la page tout seuls. On
+    // ignore volontairement le tout premier snapshot (kickedAt === null) pour ne pas recharger
+    // en boucle un client qui vient tout juste d'ouvrir la page.
+    const newKickedAt = data?.kickedAt?.toMillis ? data.kickedAt.toMillis() : 0;
+    if (kickedAt === null) {
+      kickedAt = newKickedAt;
+    } else if (newKickedAt !== kickedAt) {
+      kickedAt = newKickedAt;
+      location.reload();
+    }
   }, (err) => console.error("config onSnapshot", err));
 
   onSnapshot(doc(db, "catalog", "all"), (snap) => {
@@ -2399,7 +2439,7 @@
       // écraser ce que le client est en train de taper si ce rendu se redéclenche pendant qu'il
       // écrit (ex. mise à jour du répertoire en direct pendant qu'il remplit le champ).
       if (!nameInput.value) {
-        const savedName = safeStorageGet("jb_client_name");
+        const savedName = safeSessionStorageGet("jb_client_name");
         if (savedName) nameInput.value = savedName;
       }
     }
@@ -2636,12 +2676,13 @@
     const input = document.getElementById("jb-search-input");
     const text = input.value.trim();
     if (!text) return;
-    // Prénom facultatif (voir renderCatalog()) : jamais bloquant si laissé vide. Retenu dans cet
-    // appareil pour être repré-rempli automatiquement la prochaine fois, pour ne pas avoir à le
-    // retaper à chaque demande spéciale de la soirée.
+    // Prénom facultatif (voir renderCatalog()) : jamais bloquant si laissé vide. Retenu pour
+    // cet onglet (sessionStorage) pour être repré-rempli automatiquement la prochaine fois dans
+    // la même visite, sans avoir à le retaper à chaque demande spéciale — mais oublié dès que
+    // le client ferme sa page (voir la section "Identité facultative du client" plus haut).
     const nameInput = document.getElementById("jb-special-request-name");
     const name = (nameInput?.value || "").trim().slice(0, 15);
-    if (name) safeStorageSet("jb_client_name", name);
+    if (name) safeSessionStorageSet("jb_client_name", name);
     showToast(t("special_request_sent_toast"));
     document.getElementById("jb-special-request-block").hidden = true;
     try {
@@ -2683,7 +2724,17 @@
     }
   });
 
-  document.getElementById("jb-logout-btn").addEventListener("click", () => signOut(auth));
+  // La déconnexion écrit d'abord le signal "kickedAt" (pendant qu'on est encore authentifié —
+  // "config" exige request.auth != null en écriture) pour que tous les appareils ouverts (clients
+  // ET tout autre onglet admin) rechargent leur page tout seuls, PUIS déconnecte réellement.
+  document.getElementById("jb-logout-btn").addEventListener("click", async () => {
+    try {
+      await setDoc(doc(db, "config", "settings"), { kickedAt: serverTimestamp() }, { merge: true });
+    } catch (e) {
+      console.error(e);
+    }
+    signOut(auth);
+  });
 
   // ---------- Rendu : Palmarès admin (avec bouton "jouée") ----------
   function renderAdminPalmares() {
