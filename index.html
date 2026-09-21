@@ -174,7 +174,10 @@
      ensureClientName()) plutôt que de tronquer avec des "...", mais on coupe quand même après 2
      lignes par sécurité si jamais ça débordait sur un très petit écran. */
   #jb-app .jb-slot-voters {
-    color: var(--text-dim); font-weight: 600; font-size: 0.72rem; margin-top: 2px;
+    /* Couleur volontairement différente de .jb-slot-artist (même var(--text-dim) que le nom
+       d'artiste rendait les deux lignes confuses — signalé par Hubert) : on reprend l'accent
+       rose clair déjà utilisé ailleurs pour les éléments à mettre en valeur (rang, compteur…). */
+    color: var(--accent2); font-weight: 600; font-size: 0.72rem; margin-top: 2px;
     white-space: normal; overflow-wrap: anywhere; line-height: 1.3;
     display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
   }
@@ -820,7 +823,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-09-19.38";
+  const APP_BUILD = "2026-09-19.39";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -2168,7 +2171,7 @@
       .sort((a, b) => (voters[b] || 0) - (voters[a] || 0))
       .slice(0, 3);
     if (!names.length) return "";
-    return `<span class="jb-slot-voters">${names.map(escapeHtml).join(" · ")}</span>`;
+    return `<span class="jb-slot-voters">${names.map((n) => `${escapeHtml(n)} 👍`).join(" · ")}</span>`;
   }
 
   function renderPalmares() {
