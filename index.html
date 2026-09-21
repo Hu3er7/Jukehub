@@ -212,7 +212,14 @@
     flex-shrink: 0; font-size: 0.78rem; font-weight: 700; color: var(--accent2); background: var(--card);
     border: 1px solid var(--border); border-radius: 999px; padding: 5px 11px; white-space: nowrap;
   }
-  #jb-app .jb-folder-title-wrap { margin-bottom: 14px; }
+  /* Reste visible avec la barre de recherche (elle aussi "sticky") pendant qu'on fait défiler
+     la liste des chansons d'un style/dossier — voir fitStickyHeader() pour --jb-searchbar-h.
+     L'espacement du bas est en padding (pas margin) pour que le fond opaque le couvre aussi :
+     sinon, le texte de la liste qui défile en dessous apparaît furtivement dans cette marge. */
+  #jb-app .jb-folder-title-wrap {
+    padding-bottom: 14px; position: sticky; top: var(--jb-searchbar-h, 52px); z-index: 15;
+    background: var(--bg); padding-top: 6px; margin-top: -6px;
+  }
   #jb-app .jb-folder-title-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 
   /* Top Pick (artistes les plus demandés) */
@@ -233,11 +240,6 @@
   #jb-app .jb-style-section { margin-bottom: 12px; }
   #jb-app .jb-style-heading-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 14px; }
   #jb-app .jb-style-heading-row h2 { margin-bottom: 0; font-size: 1.6rem; }
-  #jb-app .jb-style-title-wrap { display: flex; align-items: baseline; gap: 7px; min-width: 0; flex-wrap: wrap; }
-  #jb-app .jb-style-count { font-size: 0.85rem; font-weight: 600; color: var(--text-dim); white-space: nowrap; }
-  /* Étape "choisis une chanson" du tuto : plus de titre "Chansons" au-dessus des 4 exemples
-     (voir renderTourPickSong()), donc le badge "Demandes" seul se pousse à droite. */
-  #jb-app .jb-tour-badge-only-row { justify-content: flex-end; }
   #jb-app .jb-style-list { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; }
   #jb-app .jb-style-item {
     background: var(--card); border: 1px solid var(--border); color: var(--text);
@@ -246,13 +248,13 @@
   }
   #jb-app .jb-style-item:active { background: var(--card2); border-color: var(--accent); }
   #jb-app .jb-folder-title {
-    font-family: 'Anton', -apple-system, sans-serif; font-weight: 400; font-size: 2rem;
-    letter-spacing: 0.3px; line-height: 1.1; color: var(--text); text-align: left;
+    font-family: 'Anton', -apple-system, sans-serif; font-weight: 400; font-size: 1.5rem;
+    letter-spacing: 0.3px; line-height: 1.15; color: var(--text); text-align: left;
     background: none; border-radius: 0; padding: 0; flex: 1; min-width: 0;
-    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    overflow: visible; text-overflow: unset; white-space: normal;
   }
   @media (max-width: 420px) {
-    #jb-app .jb-folder-title { font-size: 1.6rem; }
+    #jb-app .jb-folder-title { font-size: 1.2rem; }
   }
   #jb-app .jb-song-badge { font-size: 0.72rem; color: var(--success); margin-top: 2px; display: inline-block; }
   #jb-app .jb-btn-request {
@@ -471,8 +473,13 @@
      tout entier à la ligne suivante — avec un float, le texte du titre s'enroule autour du
      badge et commence donc bien sur la même ligne que lui. Vide (cas normal), il ne prend
      aucune place. */
-  #jb-app .jb-tour-title-row { overflow: hidden; margin-bottom: 6px; }
-  #jb-app .jb-tour-title-badge { float: right; margin-left: 8px; margin-bottom: 4px; }
+  /* clearfix par pseudo-élément plutôt que overflow:hidden : ce dernier coupait en carré la
+     moitié gauche du halo du badge (son ombre déborde du float, donc du côté où overflow
+     tronque). z-index sur le badge pour qu'il peigne par-dessus le titre plutôt que dessous
+     (sinon le titre rogne aussi une partie du halo, même sans overflow:hidden). */
+  #jb-app .jb-tour-title-row { margin-bottom: 6px; }
+  #jb-app .jb-tour-title-row::after { content: ""; display: table; clear: both; }
+  #jb-app .jb-tour-title-badge { float: right; margin-left: 8px; margin-bottom: 4px; position: relative; z-index: 1; }
   #jb-app .jb-tour-title-badge:empty { display: none; margin: 0; }
   #jb-app .jb-tour-title-row h3 { margin-bottom: 0; }
   #jb-app .jb-tour-card h3 { font-size: 1.05rem; font-weight: 800; color: var(--accent2); margin-bottom: 6px; }
@@ -521,10 +528,7 @@
         </div>
         <div class="jb-style-section">
           <div class="jb-style-heading-row">
-            <div class="jb-style-title-wrap">
-              <h2 id="jb-style-title">🎵 Style</h2>
-              <span id="jb-style-count" class="jb-style-count"></span>
-            </div>
+            <h2 id="jb-style-title">🎵 Style</h2>
             <div id="jb-request-remaining" class="jb-request-remaining">Demandes : 10</div>
           </div>
           <div id="jb-style-list" class="jb-style-list"></div>
@@ -702,7 +706,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-09-19.25";
+  const APP_BUILD = "2026-09-19.26";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -782,6 +786,7 @@
       boost_btn: "Boost",
       quickpick_title: "⭐ Top Pick",
       style_title: "🎵 Chansons",
+      style_title_count: (n) => `🎵 ${n} Chansons`,
       back_btn: "⬅ RETOUR",
       search_placeholder: "🔍 Cherche un titre ou un artiste…",
       catalog_empty: "Aucun résultat pour cette recherche.",
@@ -814,7 +819,7 @@
       tour_welcome_text: "",
       tour_pick_title: "Choisis parmi ces 4 chansons",
       tour_pick_text: "",
-      tour_pick_result_title: "Oups ! Il ne te reste que deux demandes",
+      tour_pick_result_title: "Bravo ! Tu as fait ta première demande. Il t'en reste 2.",
       tour_palmares_title: "Regarde !! Ta chanson est au 4e rang du palmarès",
       tour_palmares_text: "",
       tour_boost_title: "Boost ta chanson pour monter dans le palmarès",
@@ -838,6 +843,7 @@
       boost_btn: "Boost",
       quickpick_title: "⭐ Top Pick",
       style_title: "🎵 Songs",
+      style_title_count: (n) => `🎵 ${n} Songs`,
       back_btn: "⬅ BACK",
       search_placeholder: "🔍 Search a title or artist…",
       catalog_empty: "No results for this search.",
@@ -870,7 +876,7 @@
       tour_welcome_text: "",
       tour_pick_title: "Pick one of these 4 songs",
       tour_pick_text: "",
-      tour_pick_result_title: "Oops! You only have two requests left",
+      tour_pick_result_title: "Nice! You made your first request. You have 2 left.",
       tour_palmares_title: "Look !! Your song is in fourth place",
       tour_palmares_text: "",
       tour_boost_title: "Boost your song to climb the leaderboard",
@@ -941,6 +947,31 @@
     // rendu et changer la largeur du titre : on remesure une fois qu'elle est prête.
     document.fonts.ready.then(scheduleFitTopBar).catch(() => {});
   }
+
+  // ---------- En-tête collant du catalogue : titre du dossier juste sous la barre de recherche ----------
+  // La barre de recherche (#jb-catalog-searchbar) est déjà "sticky" en haut. Le titre du
+  // dossier/style ouvert (+ son badge "Demandes", voir positionRequestBadge()) doit rester
+  // visible avec elle pendant qu'on fait défiler la liste des chansons — donc lui aussi
+  // "sticky", juste en dessous. On mesure la hauteur réelle de la barre de recherche plutôt que
+  // de la fixer en dur, car elle peut varier (retour à la ligne sur un très petit écran).
+  function fitStickyHeader() {
+    const bar = document.getElementById("jb-catalog-searchbar");
+    if (!bar) return;
+    document.documentElement.style.setProperty("--jb-searchbar-h", `${bar.offsetHeight}px`);
+  }
+  let stickyHeaderRaf = null;
+  function scheduleFitStickyHeader() {
+    if (stickyHeaderRaf) cancelAnimationFrame(stickyHeaderRaf);
+    stickyHeaderRaf = requestAnimationFrame(() => {
+      stickyHeaderRaf = requestAnimationFrame(fitStickyHeader);
+    });
+  }
+  window.addEventListener("resize", scheduleFitStickyHeader);
+  window.addEventListener("orientationchange", scheduleFitStickyHeader);
+  if (document.fonts && document.fonts.ready) {
+    document.fonts.ready.then(scheduleFitStickyHeader).catch(() => {});
+  }
+  scheduleFitStickyHeader();
 
   applyStaticTranslations();
   document.querySelectorAll(".jb-lang-btn[data-lang]").forEach((btn) => {
@@ -1128,13 +1159,12 @@
 
     const remaining = picked ? 2 : 3;
     const badgeHtml = `<div id="jb-tour-fake-request-badge" class="jb-request-remaining${picked ? " jb-tour-blink-forever" : ""}">${escapeHtml(t("requests_remaining", remaining))}</div>`;
-    // "Oups, il ne reste que 2 demandes" : le badge se colle au titre plutôt que de rester
-    // dans la liste assombrie, pour que le client le voie du premier coup d'œil.
-    document.getElementById("jb-tour-title-badge").innerHTML = picked ? badgeHtml : "";
+    // Le badge se colle toujours au titre (sur la même ligne), plutôt que de rester plus bas
+    // dans la liste — que le client soit encore en train de choisir ou qu'il vienne de choisir.
+    document.getElementById("jb-tour-title-badge").innerHTML = badgeHtml;
     const extra = document.getElementById("jb-tour-extra");
     extra.classList.toggle("jb-tour-extra-dimmed", picked);
     extra.innerHTML = `
-      ${picked ? "" : `<div class="jb-style-heading-row jb-tour-badge-only-row">${badgeHtml}</div>`}
       <ul class="jb-catalog-list${picked ? "" : " jb-tour-choice-frame"}">
         ${TOUR_DEMO_SONGS.map((s, i) => {
           const isChosen = !!(tourChosenSong && s.title === tourChosenSong.title);
@@ -1193,15 +1223,16 @@
     const remaining = tourPhase === "result" ? 2 : 3;
     const isResult = tourPhase === "result";
     const badgeHtml = `<div id="jb-tour-fake-boost-badge" class="jb-boost-remaining${isResult ? " jb-tour-blink-forever" : ""}">${escapeHtml(t("boost_remaining", remaining))}</div>`;
-    // "Oups, il ne reste que 2 boosts" : le badge se colle au titre plutôt que de rester
-    // dans le palmarès assombri, pour que le client le voie du premier coup d'œil.
-    document.getElementById("jb-tour-title-badge").innerHTML = isResult ? badgeHtml : "";
+    // Contrairement au badge "Demandes" (collé au titre de l'étape), celui-ci reste dans la
+    // boîte "Palmarès de la soirée", sur la même ligne que CE titre-là — comme dans la vraie
+    // page (voir .jb-palmares-heading), pas à côté du titre "Oups !" de la fenêtre du tuto.
+    document.getElementById("jb-tour-title-badge").innerHTML = "";
     const extra = document.getElementById("jb-tour-extra");
     extra.classList.toggle("jb-tour-extra-dimmed", isResult);
     extra.innerHTML = `
       <div class="jb-palmares-heading">
         <h2>${escapeHtml(t("palmares_title"))}</h2>
-        ${isResult ? "" : badgeHtml}
+        ${badgeHtml}
       </div>
       <div id="jb-tour-palmares-grid" class="jb-palmares-grid">
         ${tourPalmaresRows.map((row, i) => `
@@ -1882,11 +1913,11 @@
     renderCooldownList();
   }
 
-  // Nombre total de chansons dans le répertoire, affiché en petit à côté du titre "Chansons"
-  // (voir #jb-style-count dans le HTML) — se met à jour à chaque changement du répertoire.
+  // Nombre total de chansons dans le répertoire, écrit à gauche du mot "Chansons" avec la même
+  // taille de texte (voir style_title_count) — se met à jour à chaque changement du répertoire.
   function updateStyleCount() {
-    const el = document.getElementById("jb-style-count");
-    if (el) el.textContent = `(${catalogSongs.length})`;
+    const el = document.getElementById("jb-style-title");
+    if (el) el.textContent = t("style_title_count", catalogSongs.length);
   }
 
   // ---------- Compte à rebours en direct (sans re-rendu complet à chaque seconde) ----------
