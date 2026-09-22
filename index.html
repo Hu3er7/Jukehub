@@ -932,7 +932,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-09-22.8";
+  const APP_BUILD = "2026-09-22.9";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -1926,6 +1926,13 @@
   // bas) : null au départ pour ne PAS déclencher un reload dès le tout premier snapshot reçu au
   // chargement de la page (sinon boucle de reload infinie dès l'ouverture).
   let kickedAt = null;
+  // Vrai juste après que CET onglet ait lui-même écrit le signal "kickedAt" (voir performLogout()
+  // plus bas) : évite qu'il se recharge lui aussi en boucle via le mécanisme ci-dessous, qui sert
+  // avant tout à prévenir/déconnecter les AUTRES onglets/appareils. Ce même onglet gère déjà son
+  // retour à l'écran de connexion instantanément via signOut()/onAuthStateChanged — un rechargement
+  // complet en plus était non seulement inutile mais risquait, si mal synchronisé avec la fin de
+  // signOut(), de rouvrir brièvement le tableau de bord au lieu de l'écran de connexion.
+  let skipNextKickReload = false;
 
   // ---------- "En spectacle" ou non : voir isLiveNow()/renderLiveGate() ----------
   // "live" = Hubert est connecté à son panneau admin (écrit à true à la connexion, à false à la
@@ -2423,7 +2430,14 @@
       kickedAt = newKickedAt;
     } else if (newKickedAt !== kickedAt) {
       kickedAt = newKickedAt;
-      location.reload();
+      if (skipNextKickReload) {
+        // C'est notre propre signal de déconnexion qui revient : cet onglet a déjà géré son
+        // retour à l'écran de connexion localement (voir performLogout()), donc on ne recharge
+        // pas — seuls les AUTRES onglets/appareils ont besoin de ce rechargement.
+        skipNextKickReload = false;
+      } else {
+        location.reload();
+      }
     }
     // "En spectacle" ou non (voir isLiveNow()) : mis à jour à chaque snapshot pour que la page
     // "Pas en spectacle" apparaisse/disparaisse chez tout le monde sans recharger, dès que Hubert
@@ -3064,6 +3078,8 @@
   // plutôt que de déconnecter Hubert en le laissant croire, à tort, que c'est réglé.
   async function writeLogoutSignal() {
     const MAX_ATTEMPTS = 3;
+    skipNextKickReload = true; // voir la déclaration plus haut : cet onglet gère son propre retour
+                                // à l'écran de connexion sans passer par un rechargement complet.
     for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
       try {
         await setDoc(doc(db, "config", "settings"), { live: false, kickedAt: serverTimestamp() }, { merge: true });
@@ -3073,6 +3089,7 @@
         if (attempt < MAX_ATTEMPTS) await new Promise((r) => setTimeout(r, 700));
       }
     }
+    skipNextKickReload = false; // l'écriture n'est jamais partie : rien à ignorer côté snapshot.
     return false;
   }
   let loggingOut = false;
