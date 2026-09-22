@@ -315,6 +315,10 @@
 
   /* Admin */
   #jb-app .jb-login { max-width: 360px; margin: 60px auto; display: flex; flex-direction: column; gap: 10px; text-align: center; }
+  /* Sans cette règle, le "display: flex" ci-dessus (plus spécifique que le [hidden] par défaut du
+     navigateur) l'emporte même une fois l'attribut "hidden" posé après la connexion — le
+     formulaire de connexion restait donc affiché, empilé au-dessus du panneau admin. */
+  #jb-app .jb-login[hidden] { display: none; }
   #jb-app .jb-login h2 { text-align: center; margin-bottom: 6px; }
   #jb-app .jb-back-link { color: var(--text-dim); font-size: 0.85rem; margin-top: 8px; }
   #jb-app .jb-error { color: var(--danger); font-size: 0.85rem; }
@@ -928,7 +932,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-09-22.7";
+  const APP_BUILD = "2026-09-22.8";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
