@@ -500,6 +500,14 @@
      moitié gauche du halo du badge (son ombre déborde du float, donc du côté où overflow
      tronque). z-index sur le badge pour qu'il peigne par-dessus le titre plutôt que dessous
      (sinon le titre rogne aussi une partie du halo, même sans overflow:hidden). */
+  /* Petite étiquette "Étape N" affichée au-dessus du titre de certaines étapes seulement (voir
+     setTourKicker()) — les états de récompense/rappel ("Bravo !", "Il te reste 2 boosts"...)
+     n'en ont pas, seule la toute première invite de chaque grande étape en a une. */
+  #jb-app .jb-tour-kicker {
+    font-size: 0.72rem; font-weight: 800; letter-spacing: 0.02em; color: var(--accent2);
+    margin: 0 0 2px 0; text-transform: none;
+  }
+  #jb-app .jb-tour-kicker:empty { display: none; margin: 0; }
   #jb-app .jb-tour-title-row { margin-bottom: 6px; }
   #jb-app .jb-tour-title-row::after { content: ""; display: table; clear: both; }
   #jb-app .jb-tour-title-badge { float: right; margin-left: 8px; margin-bottom: 4px; position: relative; z-index: 1; }
@@ -699,6 +707,7 @@
             <button class="jb-lang-btn" data-lang="en">EN</button>
           </div>
         </div>
+        <p id="jb-tour-kicker" class="jb-tour-kicker"></p>
         <div class="jb-tour-title-row">
           <div id="jb-tour-title-badge" class="jb-tour-title-badge"></div>
           <h3 id="jb-tour-title"></h3>
@@ -932,7 +941,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-09-22.9";
+  const APP_BUILD = "2026-09-22.10";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -1038,9 +1047,11 @@
       requests_limit_reached: "Tu as atteint ta limite de 10 chansons. Patiente 2 minutes (ou attends qu'une de tes chansons soit jouée) pour en récupérer !",
       error_toast: "Oups, réessaie dans un instant.",
       tour_help_title: "Revoir le tutoriel",
-      tour_next: "Suivant",
+      tour_start_btn: "Débuter le Tutoriel",
+      tour_next: "Étape Suivante",
       tour_done: "Bonne soirée ;)",
       tour_skip: "Passer le tutoriel",
+      tour_step_label: (n) => `Étape ${n}`,
       genres: {
         franco: "Franco", country: "Country", rock: "Rock", punk: "Punk", "classic-rock": "Classique Rock",
         pop: "Pop", dance: "Dance",
@@ -1048,8 +1059,8 @@
         christmas: "Noël",
       },
       tour_welcome_title: "Bienvenue dans mon répertoire",
-      tour_welcome_text: "",
-      tour_pick_title: "Choisis parmi ces 4 chansons",
+      tour_welcome_text: "Voici un petit tutoriel en quelques étapes simples",
+      tour_pick_title: "Choisis parmi ces chansons",
       tour_pick_text: "",
       tour_pick_result_title: "Bravo ! Tu as fait ta première demande. Il t'en reste 2.",
       tour_palmares_title: "Regarde !! Ta chanson est au 4e rang du palmarès",
@@ -1104,9 +1115,11 @@
       requests_limit_reached: "You've reached your limit of 10 songs. Wait 2 minutes (or until one of your songs gets played) to get more!",
       error_toast: "Oops, try again in a moment.",
       tour_help_title: "Replay the tutorial",
-      tour_next: "Next",
+      tour_start_btn: "Start the Tutorial",
+      tour_next: "Next Step",
       tour_done: "Have a great night ;)",
       tour_skip: "Skip tutorial",
+      tour_step_label: (n) => `Step ${n}`,
       genres: {
         franco: "French/Queb", country: "Country", rock: "Rock", punk: "Punk", "classic-rock": "Classic Rock",
         pop: "Pop", dance: "Dance",
@@ -1114,8 +1127,8 @@
         christmas: "Christmas",
       },
       tour_welcome_title: "Welcome to My Repertoire",
-      tour_welcome_text: "",
-      tour_pick_title: "Pick one of these 4 songs",
+      tour_welcome_text: "Here's a short step-by-step tutorial",
+      tour_pick_title: "Pick one of these songs",
       tour_pick_text: "",
       tour_pick_result_title: "Nice! You made your first request. You have 2 left.",
       tour_palmares_title: "Look !! Your song is in fourth place",
@@ -1401,6 +1414,7 @@
   // complètement caché plutôt que simplement assombri.
   const TOUR_REAL_STEPS = {
     search: {
+      stepNumber: 3,
       target: () => document.getElementById("jb-catalog-searchbar"),
       titleKey: "tour3_title",
       textKey: "tour3_text",
@@ -1411,6 +1425,7 @@
       },
     },
     toppick: {
+      stepNumber: 4,
       target: () => document.getElementById("jb-quickpick-section"),
       titleKey: "tour_quickpick_title",
       textKey: "tour_quickpick_text",
@@ -1421,6 +1436,7 @@
       },
     },
     style: {
+      stepNumber: 5,
       target: () => document.querySelector(".jb-style-section"),
       titleKey: "tour2_title",
       textKey: "tour2_text",
@@ -1441,6 +1457,10 @@
   let tourBoostsRemaining = 3; // boosts de démo encore disponibles à l'étape "palmares-boost" (reflète MAX_BOOSTS)
   let tourBoostCountdownUntil = 0; // horodatage (ms) simulé de fin d'attente, une fois les 3 boosts de démo épuisés
   let tourBoostCountdownTimer = null;
+  // Voir tourDoBoost()/setTourNext() : le bouton "Étape Suivante" de la sous-étape "exhausted"
+  // reste caché 3 secondes après l'arrivée du message "Tu n'as plus de boosts !".
+  let tourExhaustedNextReady = false;
+  let tourExhaustedNextTimer = null;
 
   function positionTourSpot(rect) {
     const spot = document.getElementById("jb-tour-spot");
@@ -1502,7 +1522,16 @@
   function setTourNext(visible) {
     const btn = document.getElementById("jb-tour-next");
     btn.hidden = !visible;
-    btn.textContent = tourStep === TOUR_MAJOR_STEPS.length - 1 ? t("tour_done") : t("tour_next");
+    btn.textContent = tourStep === 0 ? t("tour_start_btn")
+      : tourStep === TOUR_MAJOR_STEPS.length - 1 ? t("tour_done")
+      : t("tour_next");
+  }
+
+  // Étiquette "Étape N" au-dessus du titre — voir le commentaire CSS de .jb-tour-kicker : vide
+  // par défaut à chaque nouvelle étape (voir renderTourStep()), rempli seulement par la toute
+  // première invite de chaque grande étape qui en a une.
+  function setTourKicker(n) {
+    document.getElementById("jb-tour-kicker").textContent = n ? t("tour_step_label", n) : "";
   }
 
   function renderTourDots() {
@@ -1533,6 +1562,7 @@
     showImmersiveCard();
     if (tourPhase !== "picked") tourPhase = "choose";
     const picked = tourPhase === "picked";
+    setTourKicker(picked ? null : 1);
     document.getElementById("jb-tour-title").textContent = t(picked ? "tour_pick_result_title" : "tour_pick_title");
     document.getElementById("jb-tour-text").textContent = "";
 
@@ -1630,6 +1660,9 @@
       : (tourPhase === "boostMore" || tourPhase === "boostingMore") ? "tour_boost_more_title"
       : (tourPhase === "boost" || tourPhase === "boosting") ? "tour_boost_title"
       : "tour_palmares_title";
+    // "Étape 2" seulement sur la toute première invite de boost — pas sur "Regarde !!" (réservé
+    // comme "Bravo !" à l'étape précédente), ni répétée sur les sous-phases suivantes.
+    setTourKicker(tourPhase === "boost" ? 2 : null);
     document.getElementById("jb-tour-title").textContent = t(titleKey);
     document.getElementById("jb-tour-text").textContent = tourPhase === "reveal" ? t("tour_palmares_text") : "";
 
@@ -1672,7 +1705,10 @@
     extra.querySelectorAll("[data-tour-boost-row]").forEach((btn) => {
       btn.addEventListener("click", () => tourDoBoost(Number(btn.dataset.tourBoostRow)));
     });
-    setTourNext(tourPhase === "reveal" || isExhausted);
+    // À la sous-étape "exhausted" (plus de boosts), le bouton reste caché 3 secondes de plus
+    // (voir tourExhaustedNextReady/tourDoBoost()) pour laisser le temps de lire le message,
+    // plutôt que d'apparaître en même temps que lui.
+    setTourNext(tourPhase === "reveal" || (isExhausted && tourExhaustedNextReady));
   }
 
   // Anime la chanson boostée qui grimpe dans le palmarès (même technique FLIP que le vrai
@@ -1728,6 +1764,16 @@
       if (tourBoostsRemaining <= 0) {
         tourPhase = "exhausted";
         startTourBoostCountdown();
+        // Laisse le message "Tu n'as plus de boosts !" seul 3 secondes avant de révéler le
+        // bouton "Étape Suivante" (voir tourExhaustedNextReady et setTourNext() ci-dessus) —
+        // plutôt que de le faire apparaître en même temps, ce qui allait trop vite pour le lire.
+        tourExhaustedNextReady = false;
+        if (tourExhaustedNextTimer) clearTimeout(tourExhaustedNextTimer);
+        tourExhaustedNextTimer = setTimeout(() => {
+          tourExhaustedNextTimer = null;
+          tourExhaustedNextReady = true;
+          setTourNext(true);
+        }, 3000);
       } else {
         tourPhase = "boostMore";
       }
@@ -1741,6 +1787,7 @@
     const step = TOUR_REAL_STEPS[kind];
     document.getElementById("jb-tour-card").classList.remove("jb-tour-card-immersive");
     document.getElementById("jb-tour-backdrop").classList.remove("jb-tour-backdrop-opaque");
+    setTourKicker(step.stepNumber);
     document.getElementById("jb-tour-title").textContent = t(step.titleKey);
     document.getElementById("jb-tour-text").textContent = t(step.textKey);
     document.getElementById("jb-tour-extra").innerHTML = "";
@@ -1764,8 +1811,10 @@
     renderTourDots();
     // Repart de zéro à chaque nouvelle étape majeure — pick-song/palmares-boost re-remplissent
     // ce badge eux-mêmes si leur sous-phase en a besoin (voir renderTourPickSong()/
-    // renderTourPalmaresBoost()), sinon il doit rester vide.
+    // renderTourPalmaresBoost()), sinon il doit rester vide. Même chose pour l'étiquette
+    // "Étape N" (voir setTourKicker()).
     document.getElementById("jb-tour-title-badge").innerHTML = "";
+    setTourKicker(null);
     const kind = TOUR_MAJOR_STEPS[tourStep];
     if (kind === "welcome") renderTourWelcome();
     else if (kind === "pick-song") renderTourPickSong();
@@ -1778,6 +1827,8 @@
     tourStep = i;
     tourPhase = "";
     stopTourBoostCountdown();
+    tourExhaustedNextReady = false;
+    if (tourExhaustedNextTimer) { clearTimeout(tourExhaustedNextTimer); tourExhaustedNextTimer = null; }
     renderTourStep();
   }
 
@@ -1789,6 +1840,8 @@
     tourBoostsRemaining = 3;
     stopTourBoostCountdown();
     if (tourBoostAnimTimer) { clearTimeout(tourBoostAnimTimer); tourBoostAnimTimer = null; }
+    tourExhaustedNextReady = false;
+    if (tourExhaustedNextTimer) { clearTimeout(tourExhaustedNextTimer); tourExhaustedNextTimer = null; }
     document.getElementById("jb-tour").hidden = false;
     showTourStep(0);
     window.addEventListener("resize", handleTourReposition);
@@ -1801,6 +1854,7 @@
     document.getElementById("jb-tour-backdrop").classList.remove("jb-tour-backdrop-opaque");
     document.getElementById("jb-tour-extra").classList.remove("jb-tour-extra-dimmed");
     if (tourBoostAnimTimer) { clearTimeout(tourBoostAnimTimer); tourBoostAnimTimer = null; }
+    if (tourExhaustedNextTimer) { clearTimeout(tourExhaustedNextTimer); tourExhaustedNextTimer = null; }
     stopTourBoostCountdown();
     safeStorageSet(tourSeenKey(), "1");
     window.removeEventListener("resize", handleTourReposition);
