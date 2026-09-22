@@ -913,7 +913,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-09-22.2";
+  const APP_BUILD = "2026-09-22.3";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -1198,13 +1198,20 @@
   }
   // Regroupe par jour du mois (1-31) — plusieurs spectacles le même jour s'empilent dans la même
   // ligne (voir la maquette : jours 5, 17, 18, 24, 25, 26). Le nom du spectacle vient du titre de
-  // l'événement Google Calendar ; l'heure vient de son heure de début/fin.
-  function groupEventsByDay(events) {
+  // l'événement Google Calendar ; l'heure vient de son heure de début/fin. "year"/"month" = le
+  // mois actuellement affiché (voir renderOfflineCalendar()) : un événement dont la vraie date
+  // (une fois converti en heure locale) tombe hors de ce mois est ignoré ici plutôt que classé
+  // sous son seul numéro de jour — sinon un événement du 1er décembre par ex. (jour "1", mais
+  // dont l'API renvoie parfois l'instant juste avant/après la frontière du mois, notamment
+  // autour du changement d'heure) pouvait se retrouver affiché à tort dans la liste de novembre,
+  // avec un numéro de jour (31) qui n'existe même pas dans ce mois-là.
+  function groupEventsByDay(events, year, month) {
     const byDay = new Map();
     events.forEach((ev) => {
       const startStr = ev.start?.dateTime || ev.start?.date;
       if (!startStr) return;
       const start = new Date(startStr);
+      if (start.getFullYear() !== year || start.getMonth() !== month) return;
       const day = start.getDate();
       const label = (ev.start?.dateTime && ev.end?.dateTime)
         ? `${ev.summary || ""} ${formatHourFr(new Date(ev.start.dateTime))} - ${formatHourFr(new Date(ev.end.dateTime))}`.trim()
@@ -1227,7 +1234,7 @@
     const token = ++calRenderToken;
     const events = await fetchCalendarEvents(calViewYear, calViewMonth);
     if (token !== calRenderToken) return; // une navigation plus récente a eu lieu entre-temps
-    const byDay = groupEventsByDay(events);
+    const byDay = groupEventsByDay(events, calViewYear, calViewMonth);
     if (byDay.size === 0) {
       listEl.innerHTML = "";
       return;
