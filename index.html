@@ -313,9 +313,6 @@
   }
 
 
-  #jb-app .jb-footer { text-align: center; margin-top: 40px; opacity: 0.35; }
-  #jb-app .jb-admin-link { font-size: 1.3rem; }
-
   /* Admin */
   #jb-app .jb-login { max-width: 360px; margin: 60px auto; display: flex; flex-direction: column; gap: 10px; text-align: center; }
   #jb-app .jb-login h2 { text-align: center; margin-bottom: 6px; }
@@ -687,10 +684,6 @@
       </div>
     </div>
 
-    <footer class="jb-footer">
-      <a href="#admin" class="jb-admin-link" title="Mode spectacle">🎤</a>
-    </footer>
-
     <div id="jb-tour" class="jb-tour" hidden>
       <div id="jb-tour-backdrop" class="jb-tour-backdrop"></div>
       <div id="jb-tour-spot" class="jb-tour-spot"></div>
@@ -935,7 +928,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-09-22.5";
+  const APP_BUILD = "2026-09-22.6";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -1040,7 +1033,6 @@
       requests_remaining_countdown: (time) => `Demandes : ${time}`,
       requests_limit_reached: "Tu as atteint ta limite de 10 chansons. Patiente 2 minutes (ou attends qu'une de tes chansons soit jouée) pour en récupérer !",
       error_toast: "Oups, réessaie dans un instant.",
-      admin_link_title: "Mode spectacle",
       tour_help_title: "Revoir le tutoriel",
       tour_next: "Suivant",
       tour_done: "Bonne soirée ;)",
@@ -1107,7 +1099,6 @@
       requests_remaining_countdown: (time) => `Requests: ${time}`,
       requests_limit_reached: "You've reached your limit of 10 songs. Wait 2 minutes (or until one of your songs gets played) to get more!",
       error_toast: "Oops, try again in a moment.",
-      admin_link_title: "Show mode",
       tour_help_title: "Replay the tutorial",
       tour_next: "Next",
       tour_done: "Have a great night ;)",
@@ -1156,7 +1147,6 @@
     document.getElementById("jb-style-title").textContent = t("style_title");
     document.getElementById("jb-back-btn").textContent = t("back_btn");
     document.getElementById("jb-search-input").placeholder = t("search_placeholder");
-    document.querySelector(".jb-admin-link").title = t("admin_link_title");
     document.getElementById("jb-tour-help-btn").title = t("tour_help_title");
     document.getElementById("jb-tour-help-btn").setAttribute("aria-label", t("tour_help_title"));
     document.getElementById("jb-tour-skip").textContent = t("tour_skip");
