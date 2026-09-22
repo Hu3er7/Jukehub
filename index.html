@@ -569,6 +569,8 @@
     padding: 4px 10px; border-radius: 8px; width: auto; line-height: 1;
   }
   #jb-app .jb-cal-nav-btn:active { transform: scale(0.92); }
+  #jb-app .jb-cal-nav-btn:disabled { opacity: 0.25; cursor: default; }
+  #jb-app .jb-cal-nav-btn:disabled:active { transform: none; }
   #jb-app .jb-cal-month-label {
     font-size: 1.15rem; font-weight: 800; color: var(--accent2); white-space: nowrap;
   }
@@ -913,7 +915,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-09-22.3";
+  const APP_BUILD = "2026-09-22.4";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -1231,6 +1233,14 @@
       calViewMonth = now.getMonth();
     }
     labelEl.textContent = monthLabel(calViewYear, calViewMonth);
+    // On ne laisse jamais reculer avant le mois en cours (voir aussi le clic sur "jb-cal-prev"
+    // plus bas) : ça ne sert à rien d'aller voir un mois déjà passé. La flèche "précédent" se
+    // désactive donc dès qu'on est rendu sur le mois courant.
+    const today = new Date();
+    const prevBtn = document.getElementById("jb-cal-prev");
+    if (prevBtn) {
+      prevBtn.disabled = calViewYear === today.getFullYear() && calViewMonth === today.getMonth();
+    }
     const token = ++calRenderToken;
     const events = await fetchCalendarEvents(calViewYear, calViewMonth);
     if (token !== calRenderToken) return; // une navigation plus récente a eu lieu entre-temps
@@ -1249,6 +1259,10 @@
       </div>`).join("");
   }
   document.getElementById("jb-cal-prev").addEventListener("click", () => {
+    const today = new Date();
+    // Garde-fou en plus de la désactivation visuelle du bouton (voir renderOfflineCalendar()) :
+    // ne jamais reculer avant le mois en cours.
+    if (calViewYear === today.getFullYear() && calViewMonth === today.getMonth()) return;
     calViewMonth -= 1;
     if (calViewMonth < 0) { calViewMonth = 11; calViewYear -= 1; }
     renderOfflineCalendar();
