@@ -913,7 +913,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-09-22.1";
+  const APP_BUILD = "2026-09-22.2";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -2279,7 +2279,18 @@
       // Rattrape le cas où le site devient "live" APRÈS le délai initial de maybeAutoStartTour()
       // (ex. Hubert se connecte juste après qu'un client ait ouvert la page) — pas d'effet si le
       // tuto a déjà démarré ou si le client l'a déjà vu (voir le drapeau/la clé dans la fonction).
-      if (live) maybeAutoStartTour();
+      if (live) {
+        maybeAutoStartTour();
+        // #jb-app-content démarre "hidden" (voir plus haut, pour éviter un flash de l'appli au
+        // chargement/rechargement — voir aussi le correctif du bug de rechargement en boucle).
+        // La toute première mesure de fitStickyHeader()/fitTopBar() se faisait donc pendant que
+        // l'appli était encore cachée (offsetWidth/offsetHeight = 0), et rien ne la relançait
+        // ensuite — le titre de style + badge "Demandes" ne se recalait plus correctement sous
+        // la barre de recherche une fois l'appli révélée. On remesure donc à chaque fois que
+        // l'appli redevient visible.
+        scheduleFitStickyHeader();
+        scheduleFitTopBar();
+      }
     }
     if (isAdmin && !live && liveFlag && !autoLogoutDone) {
       autoLogoutDone = true;
