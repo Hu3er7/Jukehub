@@ -507,9 +507,10 @@
   #jb-app .jb-tour-card h3 { font-size: 1.05rem; font-weight: 800; color: var(--accent2); margin-bottom: 6px; }
   #jb-app .jb-tour-card p { font-size: 0.9rem; color: var(--text); line-height: 1.5; }
   #jb-app .jb-tour-card p:empty { display: none; }
-  /* Le tuto est obligatoire (plus de bouton "Passer") : un seul bouton "Suivant"/"Terminer",
-     aligné à droite, cliquable seulement une fois l'action requise de l'étape accomplie
-     (voir setTourNext() en JS) — sinon il reste caché. */
+  /* Dans la fenêtre du tuto elle-même, un seul bouton "Suivant"/"Terminer", aligné à droite,
+     cliquable seulement une fois l'action requise de l'étape accomplie (voir setTourNext() en
+     JS) — sinon il reste caché. Pas de bouton "Passer" ICI (voir .jb-tour-skip plus bas pour
+     celui-là, toujours visible en bas de l'écran, en dehors de la fenêtre). */
   #jb-app .jb-tour-actions { display: flex; align-items: center; justify-content: flex-end; margin-top: 14px; }
   #jb-app .jb-tour-nav-btn {
     background: var(--card2); border: 1px solid var(--border); color: var(--text);
@@ -523,6 +524,20 @@
     animation: jb-tour-boost-glow 1.4s ease-in-out infinite;
   }
   #jb-app .jb-tour-nav-btn[hidden] { display: none; }
+  /* Bouton "Passer le tutoriel" : discret (texte souligné, opacité réduite, pas de fond), mais
+     TOUJOURS accessible visuellement pendant le tuto — épinglé en bas de l'écran ("position:
+     fixed", même principe que la barre de recherche collante en haut, voir .jb-catalog-searchbar
+     — sauf qu'ici c'est le bas plutôt que le haut), peu importe l'étape en cours ou le défilement
+     de la page derrière. Volontairement à l'écart du bouton "Suivant" (voir .jb-tour-actions plus
+     haut) pour ne jamais être cliqué par erreur. */
+  #jb-app .jb-tour-skip {
+    position: fixed; left: 50%; bottom: 14px; transform: translateX(-50%);
+    z-index: 1250; pointer-events: auto;
+    background: none; border: none; color: var(--text-dim); font-size: 0.8rem;
+    opacity: 0.55; cursor: pointer; padding: 8px 16px;
+    text-decoration: underline; text-underline-offset: 3px;
+  }
+  #jb-app .jb-tour-skip:active { opacity: 0.9; }
 
   /* Demande de prénom facultative (voir ensureClientName()) — même langage visuel que la
      fenêtre du tuto (carte centrée par-dessus un arrière-plan assombri), mais bien plus simple :
@@ -697,6 +712,11 @@
           <button id="jb-tour-next" class="jb-tour-nav-btn jb-tour-next"></button>
         </div>
       </div>
+      <!-- Toujours visible pendant le tuto, peu importe l'étape ou le défilement (voir CSS
+           .jb-tour-skip, "position: fixed" comme la barre de recherche collante — même principe,
+           mais épinglé en bas plutôt qu'en haut) — discret, pour ne pas concurrencer le bouton
+           "Suivant", mais jamais caché. -->
+      <button id="jb-tour-skip" class="jb-tour-skip"></button>
     </div>
 
     <!-- Demande de prénom, facultative : voir ensureClientName(). Affichée une seule fois par
@@ -915,7 +935,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-09-22.4";
+  const APP_BUILD = "2026-09-22.5";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -1024,6 +1044,7 @@
       tour_help_title: "Revoir le tutoriel",
       tour_next: "Suivant",
       tour_done: "Bonne soirée ;)",
+      tour_skip: "Passer le tutoriel",
       genres: {
         franco: "Franco", country: "Country", rock: "Rock", punk: "Punk", "classic-rock": "Classique Rock",
         pop: "Pop", dance: "Dance",
@@ -1090,6 +1111,7 @@
       tour_help_title: "Replay the tutorial",
       tour_next: "Next",
       tour_done: "Have a great night ;)",
+      tour_skip: "Skip tutorial",
       genres: {
         franco: "French/Queb", country: "Country", rock: "Rock", punk: "Punk", "classic-rock": "Classic Rock",
         pop: "Pop", dance: "Dance",
@@ -1137,6 +1159,7 @@
     document.querySelector(".jb-admin-link").title = t("admin_link_title");
     document.getElementById("jb-tour-help-btn").title = t("tour_help_title");
     document.getElementById("jb-tour-help-btn").setAttribute("aria-label", t("tour_help_title"));
+    document.getElementById("jb-tour-skip").textContent = t("tour_skip");
     document.getElementById("jb-offline-title").textContent = t("offline_title");
     document.getElementById("jb-offline-text").textContent = t("offline_text");
     renderOfflineCalendar();
@@ -1814,11 +1837,16 @@
     showTourStep(tourStep + 1);
   });
 
-  // Le tuto est obligatoire (plus de bouton "Passer") : toucher l'arrière-plan bloqué (voir
-  // .jb-tour-backdrop) ne fait plus rien passer en dessous — ça fait juste gonfler-dégonfler la
-  // fenêtre du tuto en blanc chaud, pour indiquer au client de toucher plutôt à l'intérieur.
+  // Toucher l'arrière-plan bloqué (voir .jb-tour-backdrop) ne fait pas passer en dessous — ça
+  // fait juste gonfler-dégonfler la fenêtre du tuto en blanc chaud, pour indiquer au client de
+  // toucher plutôt à l'intérieur (ou d'utiliser le bouton "Passer le tutoriel" toujours visible
+  // en bas de l'écran, voir .jb-tour-skip, pour sortir du tuto pour de bon).
   document.getElementById("jb-tour-backdrop").addEventListener("click", () => {
     pulseAttention(document.getElementById("jb-tour-card"), "jb-pulse-attn-warm");
+  });
+
+  document.getElementById("jb-tour-skip").addEventListener("click", () => {
+    endTour();
   });
 
   // Ne lance le tuto automatique QUE si le site est vraiment "en spectacle" (voir isLiveNow()) —
