@@ -928,7 +928,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-09-22.6";
+  const APP_BUILD = "2026-09-22.7";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -2350,8 +2350,16 @@
   // une reconnexion propre dès que la page redevient visible / active / en ligne, pour que
   // le palmarès et le reste se remettent à jour sans que le client ait à rafraîchir.
   let reconnecting = false;
+  // Mis à vrai pendant l'écriture critique de performLogout() (voir plus bas) : on évite de
+  // couper/rétablir le réseau (disableNetwork/enableNetwork) PENDANT cette écriture, sinon la
+  // requête en vol peut être annulée par le SDK et échouer silencieusement — un vrai bug trouvé
+  // en revoyant ce code : Hubert changeait d'onglet juste avant de cliquer "Déconnexion" (pour
+  // vérifier la page client), ce qui déclenchait forceReconnect() via "visibilitychange" pile au
+  // moment de l'écriture de "live: false"/"kickedAt", et l'échec était avalé par le catch ci-
+  // dessous sans que la déconnexion (locale, elle, toujours réussie) ne le laisse paraître.
+  let criticalWriteInFlight = false;
   function forceReconnect() {
-    if (reconnecting) return;
+    if (reconnecting || criticalWriteInFlight) return;
     reconnecting = true;
     disableNetwork(db)
       .then(() => enableNetwork(db))
@@ -3044,12 +3052,45 @@
   // "config" exige request.auth != null en écriture) pour que tous les appareils ouverts (clients
   // ET tout autre onglet admin) basculent sur la page "Pas en spectacle"/rechargent tout seuls,
   // PUIS déconnecte réellement.
+  // Écrit "live: false"/"kickedAt" avec plusieurs tentatives : un échec silencieux ici (réseau
+  // instable, course avec forceReconnect ci-dessus, etc.) laissait auparavant Hubert repartir sur
+  // l'écran de connexion (signOut() local, toujours immédiat) alors que la page publique restait
+  // "en spectacle" indéfiniment pour tout le monde, sans aucun indice du problème. On réessaie
+  // donc quelques fois avant d'abandonner, et on prévient clairement si ça échoue pour de bon —
+  // plutôt que de déconnecter Hubert en le laissant croire, à tort, que c'est réglé.
+  async function writeLogoutSignal() {
+    const MAX_ATTEMPTS = 3;
+    for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+      try {
+        await setDoc(doc(db, "config", "settings"), { live: false, kickedAt: serverTimestamp() }, { merge: true });
+        return true;
+      } catch (e) {
+        console.error("logout write attempt " + attempt, e);
+        if (attempt < MAX_ATTEMPTS) await new Promise((r) => setTimeout(r, 700));
+      }
+    }
+    return false;
+  }
+  let loggingOut = false;
   async function performLogout(auto) {
+    if (loggingOut) return;
+    loggingOut = true;
+    criticalWriteInFlight = true;
+    const btn = document.getElementById("jb-logout-btn");
+    if (btn && !auto) btn.disabled = true;
     if (auto) showToast("🌙 Déconnecté automatiquement (6h) — bonne nuit !");
-    try {
-      await setDoc(doc(db, "config", "settings"), { live: false, kickedAt: serverTimestamp() }, { merge: true });
-    } catch (e) {
-      console.error(e);
+    const ok = await writeLogoutSignal();
+    criticalWriteInFlight = false;
+    if (btn && !auto) btn.disabled = false;
+    loggingOut = false;
+    if (!ok) {
+      showToast("⚠️ Problème de connexion — réessaie la déconnexion dans un instant.");
+      // Pour la coupure auto (personne devant l'écran à 6h) : on laisse renderLiveGate()
+      // retenter toute seule à la prochaine vérification (60s) plutôt que d'abandonner.
+      if (auto) autoLogoutDone = false;
+      return; // on NE déconnecte PAS localement : le bouton reste dispo pour réessayer, plutôt
+              // que de laisser croire à Hubert que c'est réglé alors que le site est resté "en
+              // spectacle" pour tout le monde.
     }
     signOut(auth);
   }
