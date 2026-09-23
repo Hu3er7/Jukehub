@@ -10,7 +10,7 @@
 </head>
 <body style="margin:0;">
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Anton&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Anton&family=Orbitron:wght@500;700;900&family=Share+Tech+Mono&display=swap');
   /* ===== Système de demandes de chansons — styles isolés sous #jb-app ===== */
   #jb-app, #jb-app * { box-sizing: border-box; }
   #jb-app {
@@ -600,6 +600,160 @@
   }
   #jb-app .jb-cal-events { min-width: 0; display: flex; flex-direction: column; gap: 10px; padding-left: 2px; }
   #jb-app .jb-cal-event { font-size: 0.85rem; color: var(--text); line-height: 1.35; text-align: left; }
+
+  /* =====================================================================
+     THÈME CYBERPUNK — appliqué uniquement au côté client (#jb-public).
+     Le panneau admin (#jb-admin) garde le thème d'origine ci-dessus : comme
+     les composants utilisent déjà les variables --bg/--card/--accent/etc.,
+     les redéfinir ici (elles sont posées directement sur #jb-public, donc
+     prioritaires sur l'héritage depuis #jb-app pour tout ce qui est dans
+     #jb-public — dont le tuto, imbriqué dedans) suffit à retourner tout le
+     visuel du côté public sans dupliquer chaque règle individuellement.
+     Demandé par Hubert (maquette Cyberpunk 2077) : côté client seulement,
+     rendu fidèle à fond, palette 100% cyan/jaune/rouge (pas de rose gardé).
+     ===================================================================== */
+  #jb-public {
+    --bg: #05100e;
+    --bg2: #081716;
+    --card: #071716;
+    --card2: #0d2422;
+    --text: #f472d4;
+    --text-dim: #5f9296;
+    --accent: #18f1ff;
+    --accent2: #f4ff2b;
+    --danger: #ff2d4d;
+    --success: #2bffa6;
+    --border: #124b48;
+    --radius: 6px;
+
+    /* Fixe la couleur de texte par défaut directement ici : beaucoup d'éléments
+       (ex. .jb-song-title) n'ont pas de "color" propre et héritent normalement
+       de la couleur déjà calculée sur #jb-app (le blanc/bleu d'origine), pas de
+       la variable --text réévaluée plus bas. En la posant ici, tout le texte
+       "par défaut" du côté client (celui qui n'a pas sa propre couleur d'accent
+       jaune/cyan/vert) devient rose, comme demandé — sans toucher aux badges/
+       boutons qui définissent déjà leur propre couleur. */
+    color: var(--text);
+
+    /* Lueur néon façon "texte qui fluoresce" : text-shadow hérite lui aussi
+       normalement, et currentColor reprend la couleur RÉELLE de chaque texte
+       (rose pour le texte par défaut, mais aussi cyan pour les titres "//",
+       jaune pour les badges, etc.) — donc chaque élément fluoresce dans sa
+       propre couleur au lieu d'un halo rose plaqué partout. */
+    text-shadow: 0 0 2px currentColor, 0 0 5px currentColor;
+
+    /* Repeint tout le fond du côté client par-dessus le --bg d'origine de
+       #jb-app (sinon l'ancien violet resterait visible dans les marges de
+       .jb-view, qui n'a pas de fond propre) + grille de points façon HUD. */
+    background-color: var(--bg);
+    background-image: radial-gradient(circle, rgba(24, 241, 255, 0.28) 1px, transparent 1.4px);
+    background-size: 24px 24px;
+    min-height: 100vh;
+    min-height: 100dvh;
+  }
+
+  /* Logo / titre : police techno + lueur jaune néon (esprit du wordmark
+     Cyberpunk 2077). Garde le calc(... * var(--jb-topbar-scale, 1)) de la
+     règle d'origine pour que fitTopBar() (JS, inchangé) continue de tout
+     réduire ensemble si le bandeau ne tient pas sur une ligne. */
+  #jb-public .jb-top-bar h1 {
+    font-family: 'Orbitron', sans-serif;
+    font-weight: 900;
+    font-size: calc(1.9rem * var(--jb-topbar-scale, 1));
+    letter-spacing: 0.5px;
+    text-shadow: 0 0 6px var(--accent2), 0 0 20px rgba(244, 255, 43, 0.45);
+  }
+
+  /* Ligne "circuit" sous le bandeau du haut + petit accent rouge en coin,
+     clin d'œil aux bordures/panneaux de la maquette. Décoratif uniquement
+     (pointer-events non nécessaire : ce sont des pseudo-éléments, jamais
+     au-dessus des vrais boutons dans l'ordre de peinture du bandeau). */
+  #jb-public .jb-top-bar { position: relative; padding-bottom: 16px; }
+  #jb-public .jb-top-bar::after {
+    content: "";
+    position: absolute; left: -24px; right: -24px; bottom: 0; height: 10px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='10'%3E%3Cpath d='M0 5 H12 L16 1 H24 L28 9 H40' stroke='%2318f1ff' stroke-width='1.5' fill='none'/%3E%3Crect x='14' y='3.5' width='3' height='3' fill='%2318f1ff'/%3E%3C/svg%3E");
+    background-repeat: repeat-x;
+    background-size: 40px 10px;
+    filter: drop-shadow(0 0 4px rgba(24, 241, 255, 0.65));
+  }
+  #jb-public .jb-top-bar::before {
+    content: "";
+    position: absolute; top: -14px; right: -24px; width: 30px; height: 30px;
+    background: var(--danger);
+    clip-path: polygon(100% 0, 100% 100%, 0 0);
+    opacity: 0.9;
+    filter: drop-shadow(0 0 6px rgba(255, 45, 77, 0.6));
+  }
+
+  /* Titres de section façon terminal : "// label" en mono, majuscules. */
+  #jb-public h2 {
+    font-family: 'Share Tech Mono', monospace;
+    font-weight: 700;
+    text-transform: uppercase;
+    font-size: 1rem;
+    letter-spacing: 1.5px;
+    color: var(--accent);
+  }
+  #jb-public h2::before { content: "// "; color: var(--accent2); }
+  #jb-public .jb-style-heading-row h2 { font-size: 1.15rem; }
+  #jb-public .jb-folder-title { font-family: 'Share Tech Mono', monospace; text-transform: none; }
+
+  /* Textes secondaires (artiste, prénoms, messages vides) en police mono,
+     pour l'esprit "lecture d'écran HUD" plutôt que la police système. */
+  #jb-public .jb-song-artist,
+  #jb-public .jb-slot-artist,
+  #jb-public .jb-slot-voters,
+  #jb-public .jb-empty,
+  #jb-public .jb-cooldown-explicit,
+  #jb-public .jb-burned-badge {
+    font-family: 'Share Tech Mono', monospace;
+  }
+
+  #jb-public input[type="text"] {
+    font-family: 'Share Tech Mono', monospace;
+    border-radius: 4px;
+  }
+  #jb-public input:focus {
+    outline: 2px solid var(--accent);
+    box-shadow: 0 0 10px rgba(24, 241, 255, 0.5);
+  }
+
+  #jb-public .jb-btn-primary,
+  #jb-public .jb-special-request-btn {
+    font-family: 'Share Tech Mono', monospace;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    box-shadow: 0 0 14px rgba(24, 241, 255, 0.35);
+  }
+
+  #jb-public .jb-slot-boost,
+  #jb-public .jb-btn-request,
+  #jb-public .jb-request-remaining,
+  #jb-public .jb-boost-remaining,
+  #jb-public .jb-quickpick-item,
+  #jb-public .jb-back-btn,
+  #jb-public .jb-tour-nav-btn {
+    font-family: 'Share Tech Mono', monospace;
+  }
+
+  /* Cartes/lignes : lueur cyan très fine au lieu du violet plein d'origine. */
+  #jb-public .jb-song-item,
+  #jb-public .jb-quickpick-item,
+  #jb-public .jb-style-item,
+  #jb-public .jb-admin-catalog-item {
+    box-shadow: 0 0 0 1px rgba(24, 241, 255, 0.05) inset;
+  }
+  #jb-public .jb-song-item-clickable:active,
+  #jb-public .jb-style-item:active { border-color: var(--accent); }
+
+  /* Page "hors ligne" et fenêtre "ton prénom" : mono + lueur cyan sur les
+     éléments interactifs, pour rester dans le même esprit HUD. */
+  #jb-public .jb-offline-card h1,
+  #jb-public .jb-name-prompt-card h3 { font-family: 'Orbitron', sans-serif; }
+  #jb-public .jb-cal-day,
+  #jb-public .jb-cal-event,
+  #jb-public .jb-cal-month-label { font-family: 'Share Tech Mono', monospace; }
 </style>
 
 <div id="jb-app">
@@ -932,7 +1086,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-09-23.3";
+  const APP_BUILD = "2026-09-23.8";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
