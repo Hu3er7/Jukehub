@@ -848,6 +848,25 @@
     font-family: 'Share Tech Mono', monospace;
   }
 
+  /* Cadre "futuristique" demandé par Hubert (captures à l'appui) : dans une section ouverte
+     (résultat de recherche, artiste, ou genre de musique — les 3 partagent ce même
+     #jb-catalog-list), la liste de chansons défile maintenant À L'INTÉRIEUR de ce cadre plutôt
+     que de faire défiler toute la page. Tout ce qui l'entoure (bandeau, barre de recherche,
+     titre du dossier/badge "Demandes" juste au-dessus, section Palmarès juste en dessous —
+     un frère du conteneur, pas un enfant, voir le HTML) reste toujours à sa place. Ciblé par
+     ID (#jb-catalog-list, plus spécifique que la règle .jb-catalog-list de base ci-dessus) pour
+     ne pas toucher la même classe réutilisée par la démo du tuto (renderTourPickSong()), qui
+     n'a que 4 chansons et n'a jamais besoin de défiler. */
+  #jb-public #jb-catalog-list {
+    max-height: 48vh;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    border: 2px solid var(--accent);
+    border-radius: 14px;
+    padding: 8px;
+    box-shadow: 0 0 14px 2px rgba(24, 241, 255, 0.35);
+  }
+
   /* Cartes/lignes : lueur cyan très fine au lieu du violet plein d'origine. */
   #jb-public .jb-song-item,
   #jb-public .jb-quickpick-item,
@@ -1216,7 +1235,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-09-24.10";
+  const APP_BUILD = "2026-09-24.11";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
