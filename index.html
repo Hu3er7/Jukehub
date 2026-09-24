@@ -345,6 +345,17 @@
   #jb-app .jb-admin-rank-item { display: flex; align-items: center; gap: 10px; }
   #jb-app .jb-mark-played-btn { background: var(--success); color: #062420; font-weight: 700; padding: 7px 12px; border-radius: 999px; font-size: 0.8rem; flex-shrink: 0; cursor: pointer; white-space: nowrap; }
   #jb-app .jb-mark-played-btn:active { transform: scale(0.96); }
+  /* Bouton "Jouée" armé (1er clic) : remplace l'ancienne fenêtre confirm() du navigateur —
+     demande explicite de Hubert d'un "double clic" (1er clic = armer, 2e clic = confirmer),
+     voir handleMarkPlayedClick() en JS. Couleur/animation distinctes pour bien signaler qu'un
+     second appui est attendu. */
+  #jb-app .jb-mark-played-btn.jb-mark-played-armed {
+    background: var(--danger); color: #fff; animation: jb-mark-played-pulse 0.9s ease-in-out infinite;
+  }
+  @keyframes jb-mark-played-pulse {
+    0%, 100% { box-shadow: none; }
+    50% { box-shadow: 0 0 10px 2px var(--danger); }
+  }
   #jb-app .jb-unmark-btn { background: var(--card2); color: var(--text-dim); font-weight: 600; padding: 6px 10px; border-radius: 8px; font-size: 0.75rem; cursor: pointer; }
 
   #jb-app .jb-cooldown-list { display: flex; flex-direction: column; gap: 8px; }
@@ -1226,7 +1237,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-09-24.7";
+  const APP_BUILD = "2026-09-24.8";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -3667,13 +3678,48 @@
           ${v.artist ? `<span class="jb-slot-artist">${escapeHtml(v.artist)}</span>` : ""}
           ${renderVotersLine(v.voters)}
         </span>
-        <button class="jb-mark-played-btn" data-played="${id}">✅ Jouée</button>`;
+        <button class="jb-mark-played-btn${isMarkPlayedArmed(id) ? " jb-mark-played-armed" : ""}" data-played="${id}">${isMarkPlayedArmed(id) ? "❓ Confirmer ?" : "✅ Jouée"}</button>`;
       list.appendChild(li);
     });
 
     list.querySelectorAll("[data-played]").forEach((btn) => {
-      btn.addEventListener("click", () => markPlayed(btn.dataset.played));
+      btn.addEventListener("click", () => handleMarkPlayedClick(btn.dataset.played));
     });
+  }
+
+  // Bouton "Jouée" à deux clics — remplace l'ancienne fenêtre confirm() du navigateur (Hubert ne
+  // veut plus "aller confirmer [son] choix dans une autre fenêtre"). 1er clic : arme le bouton
+  // (devient rouge/clignotant "Confirmer ?", voir CSS .jb-mark-played-armed) sans rien écrire.
+  // 2e clic sur ce MÊME bouton, pendant que l'armement est actif : exécute réellement
+  // markPlayed() — "comme le double clique d'une souris", précision explicite de Hubert.
+  // Un armement non confirmé s'annule tout seul après MARK_PLAYED_ARM_MS.
+  // L'état armé est gardé ici (hors du DOM), pas seulement sur le bouton lui-même, car
+  // renderAdminPalmares() peut être redéclenché entre les deux clics (dès qu'un AUTRE client
+  // demande/boost une chanson, voir l'écouteur onSnapshot(collection(db, "votes"))) : sans ça,
+  // ce nouveau rendu remettrait le bouton dans son état de départ avant même le second clic.
+  const MARK_PLAYED_ARM_MS = 4000;
+  const markPlayedArmedUntil = {}; // id -> timestamp ms où l'armement expire
+
+  function isMarkPlayedArmed(id) {
+    return (markPlayedArmedUntil[id] || 0) > Date.now();
+  }
+
+  function handleMarkPlayedClick(id) {
+    if (isMarkPlayedArmed(id)) {
+      delete markPlayedArmedUntil[id];
+      markPlayed(id);
+      renderAdminPalmares();
+      return;
+    }
+    markPlayedArmedUntil[id] = Date.now() + MARK_PLAYED_ARM_MS;
+    renderAdminPalmares();
+    setTimeout(() => {
+      // Ne redessine que si toujours armé sans confirmation (pas déjà confirmé/réarmé entre-temps).
+      if (markPlayedArmedUntil[id] && markPlayedArmedUntil[id] <= Date.now()) {
+        delete markPlayedArmedUntil[id];
+        renderAdminPalmares();
+      }
+    }, MARK_PLAYED_ARM_MS + 30);
   }
 
   // ---------- Rendu : Demandes spéciales admin (chansons introuvables cherchées par un client) ----------
@@ -3720,8 +3766,6 @@
   }
 
   async function markPlayed(id) {
-    const title = votes[id]?.title || catalogSongs.find((s) => s.id === id)?.title || "";
-    if (!confirm(`Marquer « ${title} » comme jouée ?`)) return;
     try {
       await updateDoc(doc(db, "votes", id), {
         cooldownUntil: Date.now() + COOLDOWN_MS,
