@@ -853,19 +853,46 @@
      #jb-catalog-list), la liste de chansons défile maintenant À L'INTÉRIEUR de ce cadre plutôt
      que de faire défiler toute la page. Tout ce qui l'entoure (bandeau, barre de recherche,
      titre du dossier/badge "Demandes" juste au-dessus, section Palmarès juste en dessous —
-     un frère du conteneur, pas un enfant, voir le HTML) reste toujours à sa place. Ciblé par
+     un frère de .jb-catalog-frame, pas un enfant, voir le HTML) reste toujours à sa place.
+     Style "capsule segmenté" retenu par Hubert parmi 5 propositions de mockup envoyées en
+     aperçu (option C) — inspiré de ses deux captures de référence : un contour fin en continu
+     + des pastilles pleines qui viennent le souligner par endroits, en haut et en bas. Ciblé par
      ID (#jb-catalog-list, plus spécifique que la règle .jb-catalog-list de base ci-dessus) pour
      ne pas toucher la même classe réutilisée par la démo du tuto (renderTourPickSong()), qui
-     n'a que 4 chansons et n'a jamais besoin de défiler. */
+     n'a que 4 chansons et n'a jamais besoin de défiler ni de ce cadre. */
+  #jb-public .jb-catalog-frame { position: relative; }
   #jb-public #jb-catalog-list {
     max-height: 48vh;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
-    border: 2px solid var(--accent);
+    /* Rouge flash demandé par Hubert (var(--danger), déjà utilisé ailleurs dans le thème pour
+       ce même rouge vif — plutôt qu'une couleur arbitraire en plus). */
+    border: 2px solid rgba(255, 45, 77, 0.65);
     border-radius: 14px;
     padding: 8px;
-    box-shadow: 0 0 14px 2px rgba(24, 241, 255, 0.35);
+    box-shadow: 0 0 14px 2px rgba(255, 45, 77, 0.45);
+    /* Barre de défilement du navigateur cachée (demande de Hubert : ça casse l'allure du cadre) —
+       le défilement reste entièrement fonctionnel (scroll tactile/molette), seul le rendu visuel
+       de la barre elle-même disparaît. scrollbar-width pour Firefox, ::-webkit-scrollbar juste
+       en dessous pour Chrome/Safari/la plupart des navigateurs mobiles. */
+    scrollbar-width: none;
+    -ms-overflow-style: none;
   }
+  #jb-public #jb-catalog-list::-webkit-scrollbar { display: none; width: 0; height: 0; }
+  /* Rangées de pastilles ("capsules") posées à cheval sur le contour, en haut et en bas du
+     cadre — purement décoratif (voir aria-hidden dans le HTML), jamais affecté par le
+     défilement puisqu'en dehors de #jb-catalog-list (le vrai conteneur qui défile). */
+  #jb-public .jb-catalog-frame-caps {
+    position: absolute; left: 24px; display: flex; align-items: center; gap: 6px;
+    z-index: 1; pointer-events: none;
+  }
+  #jb-public .jb-catalog-frame-caps-top { top: 0; transform: translateY(-50%); }
+  #jb-public .jb-catalog-frame-caps-bottom { bottom: 0; transform: translateY(50%); }
+  #jb-public .jb-catalog-frame-cap {
+    width: 18px; height: 7px; border-radius: 999px; background: var(--danger);
+    box-shadow: 0 0 6px 1px rgba(255, 45, 77, 0.85);
+  }
+  #jb-public .jb-catalog-frame-cap-lg { width: 46px; }
 
   /* Cartes/lignes : lueur cyan très fine au lieu du violet plein d'origine. */
   #jb-public .jb-song-item,
@@ -940,7 +967,26 @@
             <div class="jb-folder-title"></div>
           </div>
         </div>
-        <ul id="jb-catalog-list" class="jb-catalog-list"></ul>
+        <!-- Cadre "capsule segmenté" choisi par Hubert (parmi 5 propositions de mockup) pour le
+             cadre qui entoure la liste de chansons d'une section ouverte — voir CSS
+             .jb-catalog-frame et notes juste avant #jb-public #jb-catalog-list. Les pastilles
+             (.jb-catalog-frame-caps) sont purement décoratives (pointer-events: none, aria-hidden)
+             et posées par-dessus le contour de #jb-catalog-list, en haut et en bas. -->
+        <div class="jb-catalog-frame">
+          <div class="jb-catalog-frame-caps jb-catalog-frame-caps-top" aria-hidden="true">
+            <span class="jb-catalog-frame-cap jb-catalog-frame-cap-lg"></span>
+            <span class="jb-catalog-frame-cap"></span>
+            <span class="jb-catalog-frame-cap"></span>
+            <span class="jb-catalog-frame-cap"></span>
+          </div>
+          <ul id="jb-catalog-list" class="jb-catalog-list"></ul>
+          <div class="jb-catalog-frame-caps jb-catalog-frame-caps-bottom" aria-hidden="true">
+            <span class="jb-catalog-frame-cap jb-catalog-frame-cap-lg"></span>
+            <span class="jb-catalog-frame-cap"></span>
+            <span class="jb-catalog-frame-cap"></span>
+            <span class="jb-catalog-frame-cap"></span>
+          </div>
+        </div>
         <p id="jb-catalog-empty" class="jb-empty" hidden>Aucun résultat pour cette recherche.</p>
         <div id="jb-special-request-block" class="jb-special-request-block" hidden>
           <p id="jb-special-request-text" class="jb-special-request-text"></p>
@@ -1235,7 +1281,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-09-24.11";
+  const APP_BUILD = "2026-09-24.14";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
