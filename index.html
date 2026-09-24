@@ -662,8 +662,14 @@
     border-radius: var(--radius); padding: 18px; pointer-events: auto;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
   }
-  #jb-app .jb-name-prompt-card h3 { font-size: 1.05rem; font-weight: 800; color: var(--accent2); margin-bottom: 6px; }
-  #jb-app .jb-name-prompt-card p { font-size: 0.88rem; color: var(--text-dim); line-height: 1.4; margin: 0 0 12px; }
+  #jb-app .jb-name-prompt-card h3 { font-size: 1.05rem; font-weight: 800; color: var(--accent2); margin-bottom: 6px; padding-right: 64px; }
+  #jb-app .jb-name-prompt-card p { font-size: 0.88rem; color: var(--text-dim); line-height: 1.4; margin: 0 0 12px; padding-right: 64px; }
+  /* FR/EN en haut-droite de la fenêtre "donne-toi un nom", demandé par Hubert — .jb-name-prompt-card
+     est déjà "position: fixed" (voir plus haut), donc un contexte de positionnement valide pour ce
+     coin absolu. padding-right ci-dessus sur h3/p réserve la place pour que le titre/texte ne
+     passent jamais dessous, même si "Donne toi un nom !" s'allonge (ex. traduction plus longue). */
+  #jb-app .jb-name-prompt-lang { position: absolute; top: 14px; right: 14px; display: flex; gap: 6px; }
+  #jb-app .jb-name-prompt-lang .jb-lang-btn { padding: 4px 9px; font-size: 0.68rem; }
   #jb-app .jb-name-prompt-card input[type="text"] { width: 100%; box-sizing: border-box; margin: 0; }
   #jb-app .jb-name-prompt-actions { display: flex; gap: 10px; margin-top: 12px; }
   #jb-app .jb-name-prompt-actions button { flex: 1; width: auto; }
@@ -1072,6 +1078,15 @@
     <div id="jb-name-prompt" class="jb-name-prompt" hidden>
       <div class="jb-name-prompt-backdrop"></div>
       <div class="jb-name-prompt-card">
+        <!-- Boutons FR/EN demandés par Hubert, coin haut-droite de la fenêtre — même bouton
+             réutilisé partout ailleurs (.jb-lang-btn) : le clic est déjà câblé automatiquement
+             sur TOUT .jb-lang-btn[data-lang] au chargement (voir plus bas dans le JS), et son
+             état actif suit déjà la langue courante via applyStaticTranslations(), donc rien à
+             ajouter côté JS pour celui-ci. -->
+        <div class="jb-name-prompt-lang">
+          <button class="jb-lang-btn" data-lang="fr">FR</button>
+          <button class="jb-lang-btn" data-lang="en">EN</button>
+        </div>
         <h3 id="jb-name-prompt-title"></h3>
         <p id="jb-name-prompt-text"></p>
         <input id="jb-name-prompt-input" type="text" autocomplete="off" maxlength="15" />
@@ -1281,7 +1296,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-09-24.14";
+  const APP_BUILD = "2026-09-24.18";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -1370,9 +1385,9 @@
       special_request_name_placeholder: "Ton prénom (optionnel)",
       special_request_btn: "📨 Envoyer quand même",
       special_request_sent_toast: "📨 Envoyé ! Merci, on y jette un œil.",
-      name_prompt_title: "C'est quoi ton prénom ?",
-      name_prompt_text: "Facultatif — il apparaîtra à côté de tes demandes et sous tes chansons dans le palmarès.",
-      name_prompt_placeholder: "Ton prénom",
+      name_prompt_title: "Donne toi un nom !",
+      name_prompt_text: "Ça l'apparaitra dans le palmarès (Facultatif).",
+      name_prompt_placeholder: "Nom",
       name_prompt_skip: "Passer",
       name_prompt_confirm: "Confirmer",
       burned_badge: "🔥❌ Brûlée",
@@ -1446,9 +1461,9 @@
       special_request_name_placeholder: "Your first name (optional)",
       special_request_btn: "📨 Send it anyway",
       special_request_sent_toast: "📨 Sent! Thanks, we'll take a look.",
-      name_prompt_title: "What's your first name?",
-      name_prompt_text: "Optional — it'll show up next to your requests and under your songs on the leaderboard.",
-      name_prompt_placeholder: "Your first name",
+      name_prompt_title: "Give yourself a name!",
+      name_prompt_text: "It'll show up on the leaderboard (Optional).",
+      name_prompt_placeholder: "Name",
       name_prompt_skip: "Skip",
       name_prompt_confirm: "Confirm",
       burned_badge: "🔥❌ Unavailable",
@@ -1506,6 +1521,22 @@
     document.querySelectorAll(".jb-lang-btn").forEach((b) => {
       b.classList.toggle("jb-lang-active", b.dataset.lang === lang);
     });
+    // Fenêtre "donne-toi un nom" : maintenant qu'elle a ses propres boutons FR/EN (demande de
+    // Hubert), son texte doit se retraduire tout de suite si le client clique dessus PENDANT
+    // qu'elle est ouverte — avant, elle ne se (re)remplissait qu'à l'ouverture, dans
+    // ensureClientName(), ce qui suffisait tant qu'aucun bouton de langue n'y vivait. On ne
+    // touche pas à input.value ici (juste le placeholder) pour ne jamais effacer ce que le
+    // client est en train de taper.
+    const npTitle = document.getElementById("jb-name-prompt-title");
+    if (npTitle) npTitle.textContent = t("name_prompt_title");
+    const npText = document.getElementById("jb-name-prompt-text");
+    if (npText) npText.textContent = t("name_prompt_text");
+    const npInput = document.getElementById("jb-name-prompt-input");
+    if (npInput) npInput.placeholder = t("name_prompt_placeholder");
+    const npSkip = document.getElementById("jb-name-prompt-skip");
+    if (npSkip) npSkip.textContent = t("name_prompt_skip");
+    const npConfirm = document.getElementById("jb-name-prompt-confirm");
+    if (npConfirm) npConfirm.textContent = t("name_prompt_confirm");
     document.getElementById("jb-artist-name").textContent = t("page_title");
     document.getElementById("jb-palmares-title").textContent = t("palmares_title");
     document.getElementById("jb-quickpick-title").textContent = t("quickpick_title");
