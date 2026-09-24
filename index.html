@@ -1296,7 +1296,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-09-24.20";
+  const APP_BUILD = "2026-09-24.21";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -3676,6 +3676,15 @@
       await signInWithEmailAndPassword(auth, email, pass);
       autoLogoutDone = false;
       await setDoc(doc(db, "config", "settings"), { live: true, loginAt: serverTimestamp() }, { merge: true });
+      // Recharge la page tout de suite après une connexion réussie. Ça peut sembler inutile
+      // (onAuthStateChanged bascule déjà l'affichage vers le tableau de bord sans ça), mais
+      // Safari/iOS n'offre à peu près jamais d'enregistrer un mot de passe si la page ne navigue
+      // JAMAIS après l'envoi du formulaire — c'est une limite connue de Safari avec les applis
+      // "une seule page" comme celle-ci. La session Firebase reste connectée après le rechargement
+      // (elle est sauvegardée automatiquement), donc l'utilisateur atterrit directement sur le
+      // tableau de bord, comme si de rien n'était — sauf que, cette fois, Safari propose bel et
+      // bien d'enregistrer le mot de passe.
+      location.reload();
     } catch (e) {
       errEl.textContent = "Courriel ou mot de passe incorrect.";
       errEl.hidden = false;
