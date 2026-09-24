@@ -380,18 +380,21 @@
     border-radius: 12px; padding: 14px; margin: 16px; font-size: 0.88rem;
   }
 
-  /* Tutoriel guidé et OBLIGATOIRE (voir startTour()/TOUR_MAJOR_STEPS) : le client doit le
-     compléter, il ne peut plus être passé. L'arrière-plan est totalement invisible pendant
-     tout le tuto — soit entièrement caché (étapes "immersives" : bienvenue, choix d'une
-     chanson, palmarès/boost, qui simulent l'appli avec de fausses données), soit caché
-     partout sauf l'élément ciblé (étapes "spot" : barre de recherche, Top Pick, styles) —
-     dans les deux cas via .jb-tour-spot, dont l'ombre 9999px est maintenant totalement
-     opaque plutôt que semi-transparente. */
+  /* Tutoriel guidé (voir startTour()/TOUR_MAJOR_STEPS) — skippable à tout moment via
+     .jb-tour-skip ("Passer le tutoriel", voir renderTourWelcome() et les autres renderTour*()).
+     Les 4 premières étapes (accueil, choix d'une chanson, 1er boost, boosts suivants) prennent
+     tout l'écran et simulent l'appli avec de fausses données démo — voir
+     .jb-tour-card-fullscreen/setTourFullscreen(). La 5e et dernière étape reprend l'ancien
+     mécanisme "spot" (fenêtre flottante + un vrai élément de la page mis en valeur, tout le
+     reste caché) pour la barre de recherche, Top Pick et les styles — via .jb-tour-spot, dont
+     l'ombre 9999px est totalement opaque plutôt que semi-transparente. */
   #jb-app .jb-tour { position: fixed; inset: 0; z-index: 1200; pointer-events: none; }
-  /* Capture TOUT clic/touche sur l'arrière-plan pendant le tuto — le client ne peut plus
-     naviguer l'app en dessous tant que la fenêtre du tuto est ouverte. Voir showTourStep().
-     Opaque (jb-tour-backdrop-opaque) pendant les étapes immersives, qui n'ont pas de vrai
-     élément à mettre en valeur — voir showImmersiveCard()/renderTourRealStep(). */
+  /* Capture TOUT clic/touche sur l'arrière-plan pendant le tuto — le client ne peut pas
+     naviguer l'app en dessous tant que la fenêtre du tuto est ouverte (il doit utiliser le
+     geste de swipe, le bouton "Suivant" à la 5e étape, ou "Passer le tutoriel"). Voir
+     showTourStep(). Opaque (jb-tour-backdrop-opaque) pendant les 4 premières étapes plein
+     écran, qui n'ont pas de vrai élément à mettre en valeur — voir
+     setTourFullscreen()/renderTourRealStep(). */
   #jb-app .jb-tour-backdrop { position: fixed; inset: 0; pointer-events: auto; cursor: default; background: transparent; }
   #jb-app .jb-tour-backdrop.jb-tour-backdrop-opaque { background: var(--bg); }
   #jb-app .jb-tour-spot {
@@ -451,8 +454,15 @@
   }
   #jb-app .jb-tour-extra-dimmed .jb-style-heading-row h2,
   #jb-app .jb-tour-extra-dimmed .jb-palmares-heading h2,
-  #jb-app .jb-tour-extra-dimmed .jb-catalog-list,
-  #jb-app .jb-tour-extra-dimmed .jb-palmares-grid {
+  #jb-app .jb-tour-extra-dimmed .jb-catalog-list {
+    opacity: 0.22; filter: grayscale(70%); transition: opacity 0.3s ease;
+  }
+  /* Le palmarès s'assombrit ligne par ligne (plutôt qu'en bloc sur .jb-palmares-grid) pour que
+     la ligne mise en évidence (jb-tour-highlight-row, la chanson du client) reste au premier
+     plan, bien visible — assombrir le conteneur entier l'aurait aussi assombrie, l'opacité d'un
+     parent s'appliquant à tous ses enfants peu importe leur propre opacité (bogue rapporté par
+     Hubert : sa chanson restait grisée comme les autres). */
+  #jb-app .jb-tour-extra-dimmed .jb-palmares-grid > .jb-slot:not(.jb-tour-highlight-row) {
     opacity: 0.22; filter: grayscale(70%); transition: opacity 0.3s ease;
   }
   /* Photo de Hubert au bout du titre de bienvenue (voir renderTourWelcome()). Comme pour
@@ -469,6 +479,11 @@
     50% { box-shadow: 0 0 14px 5px rgba(255, 248, 230, 0.9); }
   }
   #jb-app .jb-tour-boost-glow { animation: jb-tour-boost-glow 1.4s ease-in-out infinite; }
+  /* Bouton Boost visible mais indisponible (animation en cours, boosts épuisés) — reste affiché,
+     juste assombri, plutôt que de disparaître complètement comme avant (précision de Hubert).
+     Même traitement visuel que le vrai palmarès pendant son animation FLIP, voir
+     .jb-palmares-grid.jb-animating .jb-slot-boost ci-dessus. */
+  #jb-app .jb-tour-boost-disabled { opacity: 0.55; pointer-events: none; cursor: default; }
   /* Rappel visuel quand le client touche l'arrière-plan bloqué : la fenêtre du tuto elle-même
      gonfle-dégonfle et s'illumine d'un blanc chaud (plutôt que le rose des badges "Demandes"/
      "Boosts"), pour lui indiquer où toucher à la place. Deux variantes de keyframes (normale et
@@ -505,8 +520,8 @@
   #jb-app .jb-tour-title-badge { float: right; margin-left: 8px; margin-bottom: 4px; position: relative; z-index: 1; }
   #jb-app .jb-tour-title-badge:empty { display: none; margin: 0; }
   #jb-app .jb-tour-title-row h3 { margin-bottom: 0; }
-  #jb-app .jb-tour-card h3 { font-size: 1.05rem; font-weight: 800; color: var(--accent2); margin-bottom: 6px; }
-  #jb-app .jb-tour-card p { font-size: 0.9rem; color: var(--text); line-height: 1.5; }
+  #jb-app .jb-tour-card h3 { font-size: 1.05rem; font-weight: 800; color: var(--text); margin-bottom: 6px; }
+  #jb-app .jb-tour-card p { font-size: 0.9rem; color: var(--text); font-weight: 700; line-height: 1.5; }
   #jb-app .jb-tour-card p:empty { display: none; }
   /* Dans la fenêtre du tuto elle-même, un seul bouton "Suivant"/"Terminer", aligné à droite,
      cliquable seulement une fois l'action requise de l'étape accomplie (voir setTourNext() en
@@ -539,6 +554,90 @@
     text-decoration: underline; text-underline-offset: 3px;
   }
   #jb-app .jb-tour-skip:active { opacity: 0.9; }
+
+  /* ===================================================================
+     Tutoriel plein écran façon "Tinder" (étapes 1 à 4 : bienvenue, choix
+     d'une chanson, 1er boost, boosts restants) — demandé par Hubert en
+     remplacement des anciennes fenêtres flottantes pour ces étapes-là.
+     Le geste de swipe d'origine a depuis été entièrement retiré (demande
+     explicite de Hubert) et remplacé par un bouton "Débuter"/"Suivant"
+     unique, fixe à l'écran — voir .jb-tour-fs-next plus bas et
+     setTourFsNext() en JS.
+     La 5e étape (barre de recherche / Top Pick / styles) garde l'ancien
+     mécanisme (fenêtre flottante + bouton "Suivant", voir plus haut),
+     inchangé à part la couleur/graisse du texte (déjà appliqué ci-dessus).
+     ===================================================================== */
+  /* La carte occupe tout l'écran : plus de marges, coins, ombre ni largeur
+     max. Le contenu (titre/texte/démo) est centré verticalement. Le bouton
+     "Débuter"/"Suivant" (voir .jb-tour-fs-next) est en "position: fixed" et
+     n'affecte donc jamais cette mise en page, peu importe son état. */
+  #jb-app .jb-tour-card.jb-tour-card-fullscreen {
+    position: fixed; inset: 0; left: 0; right: 0; top: 0; max-width: none; margin: 0;
+    border: none; border-radius: 0; box-shadow: none; background: var(--bg);
+    padding: 22px 22px 96px; display: flex; flex-direction: column; justify-content: center;
+    max-height: none; overflow-y: auto; -webkit-overflow-scrolling: touch;
+  }
+  #jb-app .jb-tour-card.jb-tour-card-fullscreen .jb-tour-title-row { margin-top: 8px; }
+  #jb-app .jb-tour-card.jb-tour-card-fullscreen h3 { font-size: 1.3rem; text-align: center; }
+  #jb-app .jb-tour-card.jb-tour-card-fullscreen p { font-size: 1rem; text-align: center; }
+  #jb-app .jb-tour-card.jb-tour-card-fullscreen .jb-tour-actions { display: none; }
+  /* Les points/langue/passer restent en place (voir #jb-tour.jb-tour-fs plus bas) même quand la
+     carte glisse sous le doigt : ils sont "position: fixed", donc jamais affectés par le
+     transform posé sur .jb-tour-card pendant le drag. */
+  #jb-app .jb-tour-badge-row { display: flex; justify-content: center; margin: 10px 0; }
+  /* Badge "Demande" (chansons de démo de l'étape "choix" du tuto : garde le chiffre fusionné
+     dedans, "N Demande" — voir renderTourPickSong()) ou juste le mot (répertoire réel :
+     renderSongRow() met le chiffre à part, voir .jb-song-right ci-dessous — précision de Hubert :
+     le chiffre ne doit jamais être à l'intérieur du badge). Reprend le style pilule de
+     .jb-request-remaining, en un peu plus compact pour tenir dans une ligne de chanson. */
+  #jb-app .jb-song-request-badge { font-size: 0.74rem; padding: 5px 10px; }
+  /* Regroupe le compteur de demandes (nombre brut, sans le mot "Demande" — voir
+     .jb-song-request-badge ci-dessus pour la version avec mot) et le bouton Boost à droite
+     d'une ligne de palmarès (démo du tuto ET vrai palmarès, voir
+     renderTourPalmaresRowHtml()/renderPalmares()) — remplace l'ancienne colonne de votes
+     séparée à gauche. */
+  #jb-app .jb-slot-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; margin-left: auto; }
+  #jb-app .jb-slot-right .jb-slot-boost { margin-left: 0; }
+  /* Même principe que .jb-slot-right ci-dessus, mais pour une ligne du vrai répertoire de
+     chansons (renderSongRow()) : le chiffre de demandes reste TOUJOURS un élément à part,
+     collé à gauche du badge "Demande" (ou du bouton Boost une fois la chanson demandée) —
+     jamais fusionné dedans, jamais renvoyé à gauche du titre. Précision explicite de Hubert. */
+  #jb-app .jb-song-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; margin-left: auto; }
+  #jb-app .jb-song-right .jb-song-votes { width: auto; }
+
+  /* Repositionne langue (haut-droite) et points/passer (bas), seulement pendant les étapes
+     plein écran — inchangé pour la 5e étape (voir renderTourRealStep()/setTourFullscreen()). */
+  #jb-app .jb-tour.jb-tour-fs .jb-tour-lang {
+    position: fixed; top: 16px; right: 16px; z-index: 1260;
+  }
+  #jb-app .jb-tour.jb-tour-fs .jb-tour-dots {
+    position: fixed; left: 50%; bottom: 28px; transform: translateX(-50%); z-index: 1260; gap: 8px;
+  }
+  #jb-app .jb-tour.jb-tour-fs .jb-tour-skip {
+    left: 22px; bottom: 30px; transform: none;
+  }
+
+  /* Bouton "Débuter"/"Suivant" des étapes plein écran (voir setTourFsNext() en JS) — remplace
+     l'ancien indice de swipe. Nouvelle demande explicite de Hubert (captures annotées ✅/❌) :
+     (1) il ne doit JAMAIS être visible tant qu'il n'est pas actif — "enabled: false" le cache
+     désormais ENTIÈREMENT (voir setTourFsNext()), plutôt que de l'assombrir en restant visible ;
+     (2) sa position dépend de l'étape : par défaut (étape "bienvenue"), il reste dans le flux
+     normal du document, collé juste en dessous du texte d'intro (voir .jb-tour-card-fullscreen,
+     "display:flex; flex-direction:column" — "align-self: center" le centre horizontalement) ;
+     pour les étapes "choix d'une chanson" et "boosts restants", le modificateur
+     .jb-tour-fs-next-overlay (ajouté via setTourFsNext({ overlay: true })) le fait passer en
+     "position: fixed" centré à l'écran, PAR-DESSUS la liste de chansons/palmarès. */
+  #jb-app .jb-tour-fs-next {
+    display: block; align-self: center; margin: 18px auto 0; z-index: 1240;
+    background: var(--accent); border: 1px solid var(--accent); color: #2b0a1a;
+    font-weight: 800; padding: 13px 30px; border-radius: 999px; font-size: 0.95rem; cursor: pointer;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5); white-space: nowrap;
+    animation: jb-tour-boost-glow 1.4s ease-in-out infinite;
+  }
+  #jb-app .jb-tour-fs-next[hidden] { display: none; }
+  #jb-app .jb-tour-fs-next-overlay {
+    position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); margin: 0;
+  }
 
   /* Demande de prénom facultative (voir ensureClientName()) — même langage visuel que la
      fenêtre du tuto (carte centrée par-dessus un arrière-plan assombri), mais bien plus simple :
@@ -754,6 +853,39 @@
   #jb-public .jb-cal-day,
   #jb-public .jb-cal-event,
   #jb-public .jb-cal-month-label { font-family: 'Share Tech Mono', monospace; }
+
+  /* Lueur jaune réduite : le jaune (--accent2, utilisé sur les compteurs, badges,
+     boutons et titres ci-dessous) fluorescait trop fort avec la lueur générale
+     héritée de #jb-public — on la réduit spécifiquement ici pour ces éléments,
+     sans toucher au rose/cyan/vert ailleurs. */
+  #jb-public .jb-rank-num,
+  #jb-public .jb-rank-count,
+  #jb-public .jb-boost-remaining,
+  #jb-public .jb-slot-voters,
+  #jb-public .jb-slot-boost,
+  #jb-public .jb-song-votes,
+  #jb-public .jb-back-btn,
+  #jb-public .jb-request-remaining,
+  #jb-public .jb-quickpick-item,
+  #jb-public .jb-btn-request,
+  #jb-public .jb-cooldown-badge,
+  #jb-public .jb-cooldown-wait-seg .jb-cooldown-num,
+  #jb-public .jb-genre-chip.jb-genre-chip-active,
+  #jb-public .jb-icon-btn.jb-plus,
+  #jb-public .jb-tour-card h3,
+  #jb-public .jb-name-prompt-card h3,
+  #jb-public .jb-offline-card h1,
+  #jb-public .jb-cal-month-label,
+  #jb-public .jb-cal-day,
+  #jb-public .jb-lang-btn.jb-lang-active,
+  #jb-public h2::before {
+    text-shadow: 0 0 1px currentColor, 0 0 3px currentColor;
+  }
+
+  /* Logo du bandeau : même idée, glow jaune atténué (était 6px/20px). */
+  #jb-public .jb-top-bar h1 {
+    text-shadow: 0 0 3px var(--accent2), 0 0 9px rgba(244, 255, 43, 0.35);
+  }
 </style>
 
 <div id="jb-app">
@@ -859,6 +991,14 @@
         </div>
         <p id="jb-tour-text"></p>
         <div id="jb-tour-extra" class="jb-tour-extra"></div>
+        <!-- Bouton unique "Débuter"/"Suivant" des étapes plein écran (1 à 4) — remplace
+             ENTIÈREMENT l'ancien geste de swipe (retiré à la demande explicite de Hubert).
+             Caché tant qu'il n'est pas actif (jamais assombri-mais-visible pour CE bouton en
+             particulier — voir setTourFsNext() en JS). Position selon l'étape : dans le flux
+             normal, juste sous le texte, pour "bienvenue" ; centré à l'écran par-dessus la
+             démo (classe .jb-tour-fs-next-overlay) pour "choix d'une chanson"/"boosts
+             restants" — voir CSS .jb-tour-fs-next. -->
+        <button id="jb-tour-fs-next" class="jb-tour-fs-next" hidden></button>
         <div class="jb-tour-actions">
           <button id="jb-tour-next" class="jb-tour-nav-btn jb-tour-next"></button>
         </div>
@@ -1086,7 +1226,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-09-23.8";
+  const APP_BUILD = "2026-09-24.7";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -1186,6 +1326,14 @@
       cooldown_in_label: "Dans",
       already_requested: "✅ Demandée",
       request_btn: "▶ Jouer",
+      // Badge "N Demande" affiché sur chaque chanson de démo du tuto (voir renderTourPickSong())
+      // — remplace le bouton "Jouer" séparé du compteur de votes, à la demande de Hubert.
+      tour_song_request_badge: (n) => `${n} Demande`,
+      // Juste le mot, sans le chiffre : dans le vrai répertoire (renderSongRow()), le chiffre est
+      // maintenant un élément à part, indépendant, toujours affiché à gauche de ce badge (ou du
+      // bouton Boost une fois la chanson demandée) — jamais fusionné dedans ni renvoyé à gauche
+      // du titre. Voir la précision de Hubert.
+      song_request_word: "Demande",
       request_added_toast: "🎶 Chanson demandée !",
       requests_remaining: (n) => `Demandes : ${n}`,
       requests_remaining_countdown: (time) => `Demandes : ${time}`,
@@ -1193,6 +1341,9 @@
       error_toast: "Oups, réessaie dans un instant.",
       tour_help_title: "Revoir le tutoriel",
       tour_next: "Suivant",
+      // Bouton de la toute première étape du tuto (accueil) — remplace l'ancien geste de swipe,
+      // entièrement retiré à la demande de Hubert (voir renderTourWelcome()/setTourFsNext()).
+      tour_start_btn: "Débuter",
       tour_done: "Bonne soirée ;)",
       tour_skip: "Passer le tutoriel",
       genres: {
@@ -1202,15 +1353,14 @@
         christmas: "Noël",
       },
       tour_welcome_title: "Bienvenue dans mon répertoire",
-      tour_welcome_text: "",
-      tour_pick_title: "Choisis parmi ces 4 chansons",
+      tour_welcome_text: "Voici un petit tutoriel en quelques étapes simples",
+      tour_pick_title: "Choisis parmi ces chansons",
       tour_pick_text: "",
-      tour_pick_result_title: "Bravo ! Tu as fait ta première demande. Il t'en reste 2.",
-      tour_palmares_title: "Regarde !! Ta chanson est au 4e rang du palmarès",
-      tour_palmares_text: "",
+      tour_pick_result_title: "Bravo !",
+      tour_pick_result_text: (n) => `Tu as fait ta première demande. Il t'en reste ${n}.`,
       tour_boost_title: "Boost ta chanson pour monter dans le palmarès",
-      tour_boost_more_title: "Il te reste 2 boosts, utilise-les ;)",
-      tour_boost_exhausted_title: "Tu n'as plus de boosts ! Attends 2 min pour les récupérer.",
+      tour_boost_more_title: "Il te reste des boosts. Utilise-les ;)",
+      tour_boost_exhausted_title: "Tu n'as plus de boost. Récupères-en 1, chaque minute.",
       tour3_title: "Cherche une chanson",
       tour3_text: "Cherche par titre ou artiste — introuvable ? Écris-la quand même !",
       tour_quickpick_title: "Top Pick",
@@ -1252,6 +1402,8 @@
       cooldown_in_label: "In",
       already_requested: "✅ Requested",
       request_btn: "▶ Play",
+      tour_song_request_badge: (n) => `${n} Request`,
+      song_request_word: "Request",
       request_added_toast: "🎶 Song requested!",
       requests_remaining: (n) => `Requests: ${n}`,
       requests_remaining_countdown: (time) => `Requests: ${time}`,
@@ -1259,6 +1411,7 @@
       error_toast: "Oops, try again in a moment.",
       tour_help_title: "Replay the tutorial",
       tour_next: "Next",
+      tour_start_btn: "Start",
       tour_done: "Have a great night ;)",
       tour_skip: "Skip tutorial",
       genres: {
@@ -1268,15 +1421,14 @@
         christmas: "Christmas",
       },
       tour_welcome_title: "Welcome to My Repertoire",
-      tour_welcome_text: "",
-      tour_pick_title: "Pick one of these 4 songs",
+      tour_welcome_text: "Here's a quick tutorial in a few simple steps",
+      tour_pick_title: "Pick one of these songs",
       tour_pick_text: "",
-      tour_pick_result_title: "Nice! You made your first request. You have 2 left.",
-      tour_palmares_title: "Look !! Your song is in fourth place",
-      tour_palmares_text: "",
+      tour_pick_result_title: "Nice!",
+      tour_pick_result_text: (n) => `You made your first request. You have ${n} left.`,
       tour_boost_title: "Boost your song to climb the leaderboard",
-      tour_boost_more_title: "You have 2 boosts left, use them ;)",
-      tour_boost_exhausted_title: "You're out of boosts! Wait 2 min to get them back.",
+      tour_boost_more_title: "You still have boosts. Use them ;)",
+      tour_boost_exhausted_title: "You're out of boosts. Get 1 back, every minute.",
       tour3_title: "Search for a song",
       tour3_text: "Search by title or artist — can't find it? Send it in anyway!",
       tour_quickpick_title: "Top Pick",
@@ -1527,13 +1679,19 @@
     return "jb_tour_seen_" + (nightId || "default");
   }
   // ---------- Tutoriel obligatoire et interactif ----------
-  // 6 grandes étapes. Les 3 premières sont "immersives" : rien de la vraie page n'est visible,
-  // tout le contenu (chansons, palmarès) est simulé avec de fausses données pour laisser le
-  // client s'exercer pour de vrai (choisir une chanson, booster) sans toucher à ses vraies
-  // demandes/boosts de la soirée. Les 3 dernières sont des étapes "spot" classiques : elles
-  // pointent un vrai élément de la page, avec absolument tout le reste caché autour (voir
-  // .jb-tour-spot, dont l'ombre est maintenant opaque plutôt que semi-transparente).
-  const TOUR_MAJOR_STEPS = ["welcome", "pick-song", "palmares-boost", "search", "toppick", "style"];
+  // 5 grandes étapes (= 5 points en bas de l'écran). Les 4 premières sont "plein écran" (voir
+  // setTourFullscreen()) : rien de la vraie page n'est visible, tout le contenu (chansons,
+  // palmarès) est simulé avec de fausses données pour laisser le client s'exercer pour de vrai
+  // (choisir une chanson, booster) sans toucher à ses vraies demandes/boosts de la soirée. On
+  // avance en appuyant sur le bouton "Débuter"/"Suivant" (voir .jb-tour-fs-next/setTourFsNext())
+  // — cliquable seulement une fois la démonstration de l'étape en cours terminée ; plus aucun
+  // geste de swipe (entièrement retiré à la demande explicite de Hubert). La 5e (et dernière)
+  // étape regroupe les 3 anciennes étapes "spot" (barre de recherche / Top Pick / styles) sous
+  // un seul point : elle garde l'ancien mécanisme (fenêtre flottante + bouton "Suivant", voir
+  // renderTourRealStep()) puisqu'elle pointe vers de vrais éléments de la page plutôt que du
+  // contenu simulé — voir TOUR_REAL_KEYS pour la navigation interne entre ses 3 sous-étapes.
+  const TOUR_MAJOR_STEPS = ["welcome", "pick-song", "boost-first", "boost-more", "real"];
+  const TOUR_REAL_KEYS = ["search", "toppick", "style"];
 
   // Les 4 chansons proposées à l'étape "choisis une chanson" et les 3 fausses chansons déjà
   // présentes devant la sienne à l'étape "palmarès" (peu importe celle choisie, elle atterrit
@@ -1587,14 +1745,72 @@
   };
 
   let tourStep = 0;
-  let tourPhase = ""; // sous-étape en cours pour "pick-song" / "palmares-boost"
+  let tourPhase = ""; // sous-étape en cours (voir chaque fonction renderTour*)
+  let tourRealSubStep = 0; // sous-étape courante DANS la 5e étape (voir TOUR_REAL_KEYS) — ne change pas tourStep/le point actif
   let tourReposition = null;
   let tourChosenSong = null; // {title, artist} choisie par le client à l'étape "pick-song"
   let tourPalmaresRows = null; // ordre courant des 4 lignes fictives du palmarès du tuto
   let tourBoostAnimTimer = null;
-  let tourBoostsRemaining = 3; // boosts de démo encore disponibles à l'étape "palmares-boost" (reflète MAX_BOOSTS)
+  let tourBoostsRemaining = 3; // boosts de démo encore disponibles aux étapes "boost-first"/"boost-more" (reflète MAX_BOOSTS)
   let tourBoostCountdownUntil = 0; // horodatage (ms) simulé de fin d'attente, une fois les 3 boosts de démo épuisés
   let tourBoostCountdownTimer = null;
+  // Minuteur générique pour les transitions automatiques (ex. "attends 1s puis assombris et
+  // affiche l'indice de swipe") — un seul à la fois, toujours annulé avant d'en programmer un
+  // autre (changement d'étape, fin du tuto) pour ne jamais en laisser un déclencher en retard
+  // sur une étape qu'on a déjà quittée.
+  let tourAutoTimer = null;
+  function clearTourAutoTimer() {
+    if (tourAutoTimer) { clearTimeout(tourAutoTimer); tourAutoTimer = null; }
+  }
+  function scheduleTourAuto(ms, fn) {
+    clearTourAutoTimer();
+    tourAutoTimer = setTimeout(() => { tourAutoTimer = null; fn(); }, ms);
+  }
+
+  // Bouton unique "Débuter"/"Suivant" des étapes plein écran (voir .jb-tour-fs-next dans le
+  // CSS) — remplace ENTIÈREMENT l'ancien geste de swipe et son indice "glisse à gauche".
+  // Demande explicite de Hubert (captures annotées ✅/❌) : contrairement aux boutons Boost du
+  // palmarès (qui restent visibles-mais-assombris), CE bouton doit être ENTIÈREMENT CACHÉ tant
+  // qu'il n'est pas actif/cliquable — "enabled: false" le cache donc complètement, il ne
+  // s'affiche que lorsque "enabled: true".
+  // opts : { visible, enabled, overlay, label, onClick } — visible:false cache le bouton
+  // entièrement (étape "boost-first" qui avance seule sans bouton, et 5e étape "real" qui garde
+  // l'ancien bouton .jb-tour-next) ; enabled:false le cache aussi, tant que la démonstration en
+  // cours n'est pas terminée ; overlay:true le centre à l'écran par-dessus le contenu (étapes
+  // "choix d'une chanson"/"boosts restants") plutôt que de le garder dans le flux normal, juste
+  // sous le texte (étape "bienvenue", overlay absent/false).
+  function setTourFsNext(opts) {
+    const btn = document.getElementById("jb-tour-fs-next");
+    if (!btn) return;
+    if (!opts || !opts.visible || !opts.enabled) {
+      btn.hidden = true;
+      btn.disabled = true;
+      btn.onclick = null;
+      return;
+    }
+    btn.hidden = false;
+    btn.disabled = false;
+    btn.classList.toggle("jb-tour-fs-next-overlay", !!opts.overlay);
+    btn.textContent = opts.label;
+    btn.onclick = opts.onClick || null;
+  }
+
+  // Bascule entre le nouveau mode "plein écran" (étapes 1 à 4, voir .jb-tour-card-fullscreen
+  // dans le CSS) et l'ancien mode "fenêtre flottante + spot" (5e étape uniquement, inchangé).
+  function setTourFullscreen(on) {
+    document.getElementById("jb-tour").classList.toggle("jb-tour-fs", on);
+    document.getElementById("jb-tour-card").classList.toggle("jb-tour-card-fullscreen", on);
+    document.getElementById("jb-tour-card").classList.remove("jb-tour-card-immersive", "jb-tour-card-center");
+    document.getElementById("jb-tour-backdrop").classList.toggle("jb-tour-backdrop-opaque", on);
+    document.getElementById("jb-tour-card").style.transform = "";
+    document.getElementById("jb-tour-card").style.opacity = "";
+    // positionTourCard() (5e étape) fixe un "top" en pixels sur la carte — sans ce reset, ce
+    // "top" inline restait collé une fois revenu en plein écran (ex. relancer le tuto avec le
+    // bouton "?" après l'avoir déjà terminé une fois) et décalait tout le contenu plein écran
+    // vers le bas au lieu de le garder toujours à la même place (bogue rapporté par Hubert).
+    if (on) document.getElementById("jb-tour-card").style.top = "";
+    if (on) positionTourSpotOffscreen();
+  }
 
   function positionTourSpot(rect) {
     const spot = document.getElementById("jb-tour-spot");
@@ -1640,23 +1856,14 @@
     card.style.top = `${Math.max(margin, top)}px`;
   }
 
-  // Bascule la fenêtre du tuto en mode "immersif" : centrée, agrandie (voir CSS), et plus rien
-  // de la vraie page ne dépasse autour d'elle.
-  function showImmersiveCard() {
-    document.getElementById("jb-tour-card").classList.add("jb-tour-card-immersive");
-    positionTourCard(null, true);
-    positionTourSpotOffscreen();
-    document.getElementById("jb-tour-backdrop").classList.add("jb-tour-backdrop-opaque");
-    tourReposition = null;
-  }
-
-  // Bouton "Suivant"/"Terminer" du bas : cliquable seulement une fois l'action requise de
-  // l'étape/sous-étape accomplie (choisir une chanson, booster…) — sinon il reste caché, pour
-  // que le client ne puisse pas avancer sans avoir fait l'action qui lui apprend à s'en servir.
+  // Bouton "Suivant"/"Terminer" : n'existe plus que pour la 5e étape (voir renderTourRealStep())
+  // — les 4 premières utilisent leur propre bouton "Débuter"/"Suivant" plein écran, voir
+  // .jb-tour-fs-next/setTourFsNext().
   function setTourNext(visible) {
     const btn = document.getElementById("jb-tour-next");
     btn.hidden = !visible;
-    btn.textContent = tourStep === TOUR_MAJOR_STEPS.length - 1 ? t("tour_done") : t("tour_next");
+    const isLast = tourStep === TOUR_MAJOR_STEPS.length - 1 && tourRealSubStep === TOUR_REAL_KEYS.length - 1;
+    btn.textContent = isLast ? t("tour_done") : t("tour_next");
   }
 
   function renderTourDots() {
@@ -1669,44 +1876,64 @@
     });
   }
 
+  // Étape 1 : simple message d'accueil. Bouton "Débuter" actif en tout temps, juste en dessous
+  // du texte (précision explicite de Hubert : "je veux qu'il soit actif en tout temps" — plus
+  // de délai de 1s avant qu'il devienne cliquable).
   function renderTourWelcome() {
+    setTourFullscreen(true);
+    clearTourAutoTimer();
     // Reprend directement la photo de l'en-tête (.jb-avatar) plutôt que de dupliquer le
     // base64 ailleurs dans le fichier — voir l'avatar dans .jb-top-bar.
     const avatarSrc = document.querySelector(".jb-avatar")?.getAttribute("src") || "";
     document.getElementById("jb-tour-title").innerHTML =
       `${escapeHtml(t("tour_welcome_title"))}${avatarSrc ? ` <img class="jb-tour-welcome-avatar" src="${avatarSrc}" alt="" />` : ""}`;
     document.getElementById("jb-tour-text").textContent = t("tour_welcome_text");
+    document.getElementById("jb-tour-title-badge").innerHTML = "";
     document.getElementById("jb-tour-extra").innerHTML = "";
-    showImmersiveCard();
-    setTourNext(true);
+    document.getElementById("jb-tour-extra").classList.remove("jb-tour-extra-dimmed");
+    setTourFsNext({
+      visible: true,
+      enabled: true,
+      label: t("tour_start_btn"),
+      onClick: () => showTourStep(tourStep + 1),
+    });
   }
 
-  // Étape "choisis une chanson" : le client DOIT toucher une des 4 chansons pour avancer — le
-  // bouton "Suivant" n'apparaît qu'une fois son choix fait (voir tourPhase "choose"/"picked").
+  // Étape 2 : le client DOIT toucher une des chansons pour avancer (bouton "Suivant" désactivé
+  // avant ça). 3 sous-phases : "choose" (en attente du choix) → "picked" (choix mis en évidence,
+  // "Suivant" encore désactivé le temps de lire "Bravo !") → 1s plus tard, "dimmed" (tout
+  // s'assombrit sauf le titre/texte, bouton "Suivant" activé).
   function renderTourPickSong() {
-    showImmersiveCard();
-    if (tourPhase !== "picked") tourPhase = "choose";
-    const picked = tourPhase === "picked";
-    document.getElementById("jb-tour-title").textContent = t(picked ? "tour_pick_result_title" : "tour_pick_title");
-    document.getElementById("jb-tour-text").textContent = "";
+    setTourFullscreen(true);
+    clearTourAutoTimer();
+    if (!tourPhase) tourPhase = "choose";
+    const picked = tourPhase === "picked" || tourPhase === "dimmed";
+    const dimmed = tourPhase === "dimmed";
 
+    document.getElementById("jb-tour-title").textContent = t(picked ? "tour_pick_result_title" : "tour_pick_title");
+    document.getElementById("jb-tour-text").textContent = picked ? t("tour_pick_result_text", 2) : "";
+    document.getElementById("jb-tour-title-badge").innerHTML = "";
+
+    // Même badge "Demandes : N" affiché deux fois (au-dessus ET en dessous du bloc de
+    // chansons, tous deux centrés) plutôt qu'une fois collé au titre — mise en page demandée
+    // par Hubert pour cette étape en plein écran.
     const remaining = picked ? 2 : 3;
-    const badgeHtml = `<div id="jb-tour-fake-request-badge" class="jb-request-remaining${picked ? " jb-tour-blink-forever" : ""}">${escapeHtml(t("requests_remaining", remaining))}</div>`;
-    // Le badge se colle toujours au titre (sur la même ligne), plutôt que de rester plus bas
-    // dans la liste — que le client soit encore en train de choisir ou qu'il vienne de choisir.
-    document.getElementById("jb-tour-title-badge").innerHTML = badgeHtml;
+    const badgeHtml = `<div class="jb-request-remaining${picked ? " jb-tour-blink-forever" : ""}">${escapeHtml(t("requests_remaining", remaining))}</div>`;
     const extra = document.getElementById("jb-tour-extra");
-    extra.classList.toggle("jb-tour-extra-dimmed", picked);
+    extra.classList.toggle("jb-tour-extra-dimmed", dimmed);
     extra.innerHTML = `
+      <div class="jb-tour-badge-row">${badgeHtml}</div>
       <ul class="jb-catalog-list${picked ? "" : " jb-tour-choice-frame"}">
         ${TOUR_DEMO_SONGS.map((s, i) => {
           const isChosen = !!(tourChosenSong && s.title === tourChosenSong.title);
+          // Un seul badge "0 Demande" à droite (plutôt qu'un compteur de votes séparé à gauche
+          // ET un bouton "Jouer" à droite) — mise en page demandée par Hubert : le nombre de
+          // demandes vient directement remplacer le mot "Jouer".
           const btnHtml = picked
-            ? (isChosen ? `<span class="jb-song-badge">${escapeHtml(t("already_requested"))}</span>` : `<button class="jb-btn-request" disabled>${escapeHtml(t("request_btn"))}</button>`)
-            : `<button class="jb-btn-request">${escapeHtml(t("request_btn"))}</button>`;
+            ? (isChosen ? `<span class="jb-song-badge">${escapeHtml(t("already_requested"))}</span>` : `<span class="jb-request-remaining jb-song-request-badge">${escapeHtml(t("tour_song_request_badge", 0))}</span>`)
+            : `<span class="jb-request-remaining jb-song-request-badge">${escapeHtml(t("tour_song_request_badge", 0))}</span>`;
           return `
           <li class="jb-song-item${picked ? "" : " jb-song-item-clickable"}"${picked ? "" : ` data-tour-song="${i}"`}>
-            <span class="jb-song-votes">0</span>
             <div class="jb-song-info">
               <div class="jb-song-title">${escapeHtml(s.title)}</div>
               <div class="jb-song-artist">${escapeHtml(s.artist)}</div>
@@ -1714,16 +1941,25 @@
             ${btnHtml}
           </li>`;
         }).join("")}
-      </ul>`;
+      </ul>
+      <div class="jb-tour-badge-row">${badgeHtml}</div>`;
 
     extra.querySelectorAll("[data-tour-song]").forEach((row) => {
       row.addEventListener("click", () => {
         tourChosenSong = TOUR_DEMO_SONGS[Number(row.dataset.tourSong)];
         tourPhase = "picked";
         renderTourPickSong();
+        scheduleTourAuto(1000, () => { tourPhase = "dimmed"; renderTourPickSong(); });
       });
     });
-    setTourNext(picked);
+
+    setTourFsNext({
+      visible: true,
+      enabled: dimmed,
+      overlay: true,
+      label: t("tour_next"),
+      onClick: () => showTourStep(tourStep + 1),
+    });
   }
 
   // Les 4 lignes fictives du palmarès du tuto : les 3 mêmes "remplisseurs" devant, et la
@@ -1739,17 +1975,17 @@
   }
 
   // Nombre de secondes restantes auquel on FIGE le faux décompte (voir startTourBoostCountdown())
-  // — après 5s à défiler (2:00 -> 1:55), le badge se grise et arrête de clignoter, pour bien
-  // montrer au client que ce n'est qu'une démo et qu'il n'a pas vraiment à attendre 2 min ici
-  // (voir demande de Hubert). Le bouton "Suivant", lui, ne change pas.
-  const TOUR_BOOST_COUNTDOWN_FREEZE_AT = 115;
+  // — après 5s à défiler (1:00 -> 0:55), le badge se grise et arrête de clignoter, pour bien
+  // montrer au client que ce n'est qu'une démo et qu'il n'a pas vraiment à attendre 1 min ici
+  // (voir demande de Hubert). L'indice de swipe apparaît au même moment (voir renderTourBoostMore()).
+  const TOUR_BOOST_COUNTDOWN_FREEZE_AT = 55;
 
-  // Démarre le faux décompte de 2 min (même durée que BOOST_RESET_MS en vrai) une fois les 3
-  // boosts de démo épuisés, affiché dans le badge (voir renderTourPalmaresBoost(), phase
-  // "exhausted") — indépendant du décompte global de la vraie page (celui-ci ne doit tourner
-  // que pendant cette sous-étape du tuto).
+  // Démarre le faux décompte d'1 min (même durée que BOOST_RESET_MS en vrai, voir plus bas) une
+  // fois les 3 boosts de démo épuisés, affiché dans le badge (voir renderTourBoostMore(), phase
+  // "exhausted"/"dimmed") — indépendant du décompte global de la vraie page (celui-ci ne doit
+  // tourner que pendant cette sous-étape du tuto).
   function startTourBoostCountdown() {
-    tourBoostCountdownUntil = Date.now() + 2 * 60 * 1000;
+    tourBoostCountdownUntil = Date.now() + 60 * 1000;
     stopTourBoostCountdown();
     tourBoostCountdownTimer = setInterval(() => {
       const badge = document.getElementById("jb-tour-fake-boost-badge");
@@ -1769,73 +2005,47 @@
     if (tourBoostCountdownTimer) { clearInterval(tourBoostCountdownTimer); tourBoostCountdownTimer = null; }
   }
 
-  // Étape "palmarès + boost" : 5 sous-phases dans la même fenêtre — reveal (4e position) →
-  // boost (bouton Boost sur SA chanson) → boosting (animation, verrouillée) → boostMore (il
-  // reste 2 boosts, un bouton apparaît maintenant sur les 4 positions) → exhausted (les 3
-  // boosts de démo sont épuisés, décompte de 2 min, "Suivant" apparaît enfin). Voir
-  // tourDoBoost() pour l'animation, commune aux deux sous-étapes de boost.
-  function renderTourPalmaresBoost() {
-    showImmersiveCard();
-    if (!tourPalmaresRows) tourPalmaresRows = buildTourPalmaresRows();
-    if (!tourPhase) tourPhase = "reveal";
-
-    const isExhausted = tourPhase === "exhausted";
-    const titleKey = isExhausted ? "tour_boost_exhausted_title"
-      : (tourPhase === "boostMore" || tourPhase === "boostingMore") ? "tour_boost_more_title"
-      : (tourPhase === "boost" || tourPhase === "boosting") ? "tour_boost_title"
-      : "tour_palmares_title";
-    document.getElementById("jb-tour-title").textContent = t(titleKey);
-    document.getElementById("jb-tour-text").textContent = tourPhase === "reveal" ? t("tour_palmares_text") : "";
-
-    // Le tout premier boost reste guidé (bouton uniquement sur SA chanson, en 4e position) ;
-    // une fois qu'il en reste 2, un bouton apparaît sur les 4 positions à la fois pour montrer
-    // que n'importe laquelle peut être boostée.
-    const showBoostOnChosenOnly = tourPhase === "boost";
-    const showBoostOnAll = tourPhase === "boostMore";
-    const badgeHtml = `<div id="jb-tour-fake-boost-badge" class="jb-boost-remaining${isExhausted ? " jb-tour-blink-forever" : ""}">${escapeHtml(
-      isExhausted
-        ? t("boost_remaining_countdown", formatMMSS(Math.max(0, Math.ceil((tourBoostCountdownUntil - Date.now()) / 1000))))
-        : t("boost_remaining", tourBoostsRemaining)
-    )}</div>`;
-    // Contrairement au badge "Demandes" (collé au titre de l'étape), celui-ci reste dans la
-    // boîte "Palmarès de la soirée", sur la même ligne que CE titre-là — comme dans la vraie
-    // page (voir .jb-palmares-heading), pas à côté du titre "Oups !" de la fenêtre du tuto. Il
-    // reste toujours bien visible (jamais assombri, voir .jb-tour-extra-dimmed plus bas), même
-    // à la sous-étape "exhausted" où tout le reste de la fenêtre s'assombrit.
-    document.getElementById("jb-tour-title-badge").innerHTML = "";
-    const extra = document.getElementById("jb-tour-extra");
-    extra.classList.toggle("jb-tour-extra-dimmed", isExhausted);
-    extra.innerHTML = `
-      <div class="jb-palmares-heading">
-        <h2>${escapeHtml(t("palmares_title"))}</h2>
-        ${badgeHtml}
-      </div>
-      <div id="jb-tour-palmares-grid" class="jb-palmares-grid">
-        ${tourPalmaresRows.map((row, i) => `
-          <div class="jb-slot${row.isChosen ? " jb-tour-highlight-row" : ""}">
-            <span class="jb-slot-rank">${i + 1}</span>
-            <span class="jb-slot-votes">${row.votes}</span>
-            <span class="jb-slot-info">
-              <span class="jb-slot-title">${escapeHtml(row.title)}</span>
-              <span class="jb-slot-artist">${escapeHtml(row.artist)}</span>
-            </span>
-            ${(showBoostOnAll || (showBoostOnChosenOnly && row.isChosen)) ? `<button data-tour-boost-row="${i}" class="jb-slot-boost jb-tour-boost-glow">🚀 ${escapeHtml(t("boost_btn"))}</button>` : ""}
-          </div>`).join("")}
+  // Construit le HTML commun d'une ligne du palmarès de démo (utilisé par les étapes 3 et 4).
+  // Le nombre de demandes (row.votes) est affiché juste à côté du bouton Boost (à droite),
+  // plutôt que dans sa propre colonne à gauche — mise en page demandée par Hubert. Contrairement
+  // aux chansons du répertoire (renderSongRow()) et de l'étape "choix" du tuto
+  // (renderTourPickSong()), le mot "Demande" ne doit PAS apparaître ici : juste le nombre brut,
+  // comme l'ancienne colonne de votes (.jb-slot-votes) — précision de Hubert après coup.
+  // boostMode : "active" (bouton cliquable, halo) | "disabled" (bouton visible mais assombri/
+  // inactif — PAS caché, précision explicite de Hubert : le bouton ne doit jamais disparaître,
+  // seulement devenir indisponible) | falsy (aucun bouton sur cette ligne, ex. les lignes non
+  // choisies de l'étape "boost-first", qui n'en ont jamais eu).
+  function renderTourPalmaresRowHtml(row, i, boostMode) {
+    let boostBtnHtml = "";
+    if (boostMode === "active") {
+      boostBtnHtml = `<button data-tour-boost-row="${i}" class="jb-slot-boost jb-tour-boost-glow">🚀 ${escapeHtml(t("boost_btn"))}</button>`;
+    } else if (boostMode === "disabled") {
+      // Même traitement visuel (opacité 0.55, pointer-events désactivé) que le vrai palmarès
+      // pendant son animation FLIP — voir .jb-palmares-grid.jb-animating .jb-slot-boost.
+      boostBtnHtml = `<button class="jb-slot-boost jb-tour-boost-disabled" disabled>🚀 ${escapeHtml(t("boost_btn"))}</button>`;
+    }
+    return `
+      <div class="jb-slot${row.isChosen ? " jb-tour-highlight-row" : ""}">
+        <span class="jb-slot-rank">${i + 1}</span>
+        <span class="jb-slot-info">
+          <span class="jb-slot-title">${escapeHtml(row.title)}</span>
+          <span class="jb-slot-artist">${escapeHtml(row.artist)}</span>
+        </span>
+        <span class="jb-slot-right">
+          <span class="jb-slot-votes">${row.votes}</span>
+          ${boostBtnHtml}
+        </span>
       </div>`;
-
-    extra.querySelectorAll("[data-tour-boost-row]").forEach((btn) => {
-      btn.addEventListener("click", () => tourDoBoost(Number(btn.dataset.tourBoostRow)));
-    });
-    setTourNext(tourPhase === "reveal" || isExhausted);
   }
 
   // Anime la chanson boostée qui grimpe dans le palmarès (même technique FLIP que le vrai
-  // palmarès — voir renderPalmares()). Même rythme rapide pour TOUS les boosts de la démo
-  // (guidé ou non) — les boutons doivent se redébloquer presque tout de suite, sinon le client
-  // a l'impression que le tuto a figé (voir demandes de Hubert : délai jugé trop long).
-  function tourDoBoost(rowIndex) {
-    const grid = document.getElementById("jb-tour-palmares-grid");
-    if (!grid || (tourPhase !== "boost" && tourPhase !== "boostMore") || tourBoostsRemaining <= 0) return;
+  // palmarès — voir renderPalmares()). Rythme rapide (les boutons se redébloquent presque tout
+  // de suite) pour tous les boosts de la démo — voir demandes de Hubert (délai jugé trop long
+  // dans une version précédente). "afterMs" est appelé une fois l'animation + le court délai
+  // d'attente terminés, avec le nouveau tourBoostsRemaining déjà à jour.
+  function tourAnimateBoost(rowIndex, gridId, renderFn, afterMs) {
+    const grid = document.getElementById(gridId);
+    if (!grid) return;
     const rowsBefore = Array.from(grid.children);
     const firstRectsByTitle = {};
     rowsBefore.forEach((el, i) => { firstRectsByTitle[tourPalmaresRows[i].title] = el.getBoundingClientRect(); });
@@ -1848,14 +2058,12 @@
     tourPalmaresRows.sort((a, b) => b.votes - a.votes);
     tourBoostsRemaining = Math.max(0, tourBoostsRemaining - 1);
 
-    const wasFirstBoost = tourPhase === "boost";
     const animMs = 600;
     const waitMs = 1000; // délai total avant que les boutons redeviennent actifs
-    tourPhase = wasFirstBoost ? "boosting" : "boostingMore";
-    renderTourPalmaresBoost();
+    renderFn();
 
-    const newGrid = document.getElementById("jb-tour-palmares-grid");
-    const newRows = Array.from(newGrid.children);
+    const newGrid = document.getElementById(gridId);
+    const newRows = newGrid ? Array.from(newGrid.children) : [];
     newRows.forEach((el, i) => {
       const first = firstRectsByTitle[tourPalmaresRows[i].title];
       if (!first) return;
@@ -1868,7 +2076,7 @@
         if (tourPalmaresRows[i].isChosen) el.style.zIndex = "5";
       }
     });
-    void newGrid.offsetHeight; // force le reflow avant de relâcher vers la position finale
+    if (newGrid) void newGrid.offsetHeight; // force le reflow avant de relâcher vers la position finale
     requestAnimationFrame(() => {
       newRows.forEach((el) => {
         el.style.transition = `transform ${animMs}ms cubic-bezier(0.4, 0, 0.2, 1)`;
@@ -1879,25 +2087,152 @@
     if (tourBoostAnimTimer) clearTimeout(tourBoostAnimTimer);
     tourBoostAnimTimer = setTimeout(() => {
       tourBoostAnimTimer = null;
-      if (tourBoostsRemaining <= 0) {
-        tourPhase = "exhausted";
-        startTourBoostCountdown();
-      } else {
-        tourPhase = "boostMore";
-      }
-      renderTourPalmaresBoost();
+      afterMs();
     }, waitMs);
   }
 
-  // Étapes "spot" (barre de recherche / Top Pick / styles) : un vrai élément de la page est
-  // mis en valeur, tout le reste est caché (voir .jb-tour-spot, maintenant opaque).
-  function renderTourRealStep(kind) {
-    const step = TOUR_REAL_STEPS[kind];
-    document.getElementById("jb-tour-card").classList.remove("jb-tour-card-immersive");
-    document.getElementById("jb-tour-backdrop").classList.remove("jb-tour-backdrop-opaque");
+  // Étape 3 : présente le palmarès (chanson choisie en 4e position) et le 1er boost. Le bouton
+  // Boost de la chanson choisie apparaît IMMÉDIATEMENT, en même temps que le reste de la page —
+  // plus de délai "reveal" séparé avant qu'il n'apparaisse (précision explicite de Hubert).
+  // Sous-phases : "boost" (assombri, bouton Boost sur SA chanson) → tap → "boosting" (animation)
+  // → "boosted" (chanson montée, mise en évidence, PAS assombri) → 1s plus tard, avance
+  // AUTOMATIQUEMENT à l'étape suivante, sans bouton "Suivant" — pas besoin d'action manuelle
+  // pour cette transition précise (demande explicite de Hubert), voir tourDoBoostFirst().
+  function renderTourBoostFirst() {
+    setTourFullscreen(true);
+    clearTourAutoTimer();
+    if (!tourPalmaresRows) tourPalmaresRows = buildTourPalmaresRows();
+    if (!tourPhase) tourPhase = "boost";
+
+    const dimmed = tourPhase === "boost";
+
+    document.getElementById("jb-tour-title").textContent = t("tour_boost_title");
+    document.getElementById("jb-tour-text").textContent = "";
+    document.getElementById("jb-tour-title-badge").innerHTML = "";
+
+    // Le bouton Boost de la chanson choisie ne doit jamais disparaître une fois apparu (même
+    // pendant l'animation "boosting" / juste après en "boosted") — il reste visible, juste
+    // assombri/inactif entre-temps (précision explicite de Hubert). Les autres lignes n'ont
+    // jamais de bouton à cette étape (par design, voir renderTourPalmaresRowHtml()).
+    const chosenBoostMode = (tourPhase === "boost") ? "active" : "disabled"; // "boosting"/"boosted"
+    const extra = document.getElementById("jb-tour-extra");
+    extra.classList.toggle("jb-tour-extra-dimmed", dimmed);
+    extra.innerHTML = `
+      <div class="jb-palmares-heading">
+        <h2>${escapeHtml(t("palmares_title"))}</h2>
+        <div class="jb-boost-remaining">${escapeHtml(t("boost_remaining", tourBoostsRemaining))}</div>
+      </div>
+      <div id="jb-tour-palmares-grid" class="jb-palmares-grid">
+        ${tourPalmaresRows.map((row, i) => renderTourPalmaresRowHtml(row, i, row.isChosen ? chosenBoostMode : null)).join("")}
+      </div>`;
+
+    extra.querySelectorAll("[data-tour-boost-row]").forEach((btn) => {
+      btn.addEventListener("click", () => tourDoBoostFirst(Number(btn.dataset.tourBoostRow)));
+    });
+
+    // Pas de bouton "Suivant" ici : cette étape avance seule (voir tourDoBoostFirst()).
+    setTourFsNext({ visible: false });
+  }
+
+  function tourDoBoostFirst(rowIndex) {
+    if (tourPhase !== "boost") return;
+    tourPhase = "boosting";
+    tourAnimateBoost(rowIndex, "jb-tour-palmares-grid", renderTourBoostFirst, () => {
+      tourPhase = "boosted";
+      renderTourBoostFirst();
+      // Passe direct à l'étape suivante ("boost-more") après 1s, sans action manuelle — Hubert
+      // ne veut pas que le client ait à cliquer un bouton pour cette transition précise.
+      scheduleTourAuto(1000, () => showTourStep(tourStep + 1));
+    });
+  }
+
+  // Étape 4 : les 2 boosts de démo restants, puis le décompte de récupération.
+  // Sous-phases : "boostMore" (bouton Boost sur les 4 lignes) → tap × 2 →
+  // "boostingMore" (transitoire) → "exhausted" (0 boost, décompte démarré, PAS encore
+  // assombri) → 1s plus tard, "dimmed" (assombri, bouton "Suivant" activé — le décompte
+  // continue et se fige tout seul à 00:55, voir startTourBoostCountdown()).
+  function renderTourBoostMore() {
+    setTourFullscreen(true);
+    clearTourAutoTimer();
+    if (!tourPhase) tourPhase = "boostMore";
+
+    const dimmed = tourPhase === "dimmed";
+    const isExhausted = tourPhase === "exhausted" || dimmed;
+
+    // Démarre le décompte (fixe tourBoostCountdownUntil) AVANT de calculer le texte du badge
+    // juste en dessous — sinon, au tout premier rendu de la phase "exhausted", le badge
+    // affichait "00:00" pendant jusqu'à 1s, le temps que le premier tick de l'intervalle
+    // corrige l'affichage (bogue trouvé pendant la vérification).
+    if (tourPhase === "exhausted" && !tourBoostCountdownTimer) startTourBoostCountdown();
+
+    const titleKey = isExhausted ? "tour_boost_exhausted_title" : "tour_boost_more_title";
+    document.getElementById("jb-tour-title").textContent = t(titleKey);
+    document.getElementById("jb-tour-text").textContent = "";
+    document.getElementById("jb-tour-title-badge").innerHTML = "";
+
+    // Les 4 boutons Boost restent TOUJOURS visibles à cette étape (jamais cachés/disparus, même
+    // pendant l'animation "boostingMore" ou une fois épuisés) — juste assombris/inactifs quand
+    // ils ne sont pas cliquables. Précision explicite de Hubert : "je ne veux pas qu'ils
+    // disparaissent [...] ils deviennent assombris (indisponible) mais il reste visible."
+    const boostMode = tourPhase === "boostMore" ? "active" : "disabled";
+    const badgeHtml = `<div id="jb-tour-fake-boost-badge" class="jb-boost-remaining${isExhausted ? " jb-tour-blink-forever" : ""}">${escapeHtml(
+      isExhausted
+        ? t("boost_remaining_countdown", formatMMSS(Math.max(0, Math.ceil((tourBoostCountdownUntil - Date.now()) / 1000))))
+        : t("boost_remaining", tourBoostsRemaining)
+    )}</div>`;
+    const extra = document.getElementById("jb-tour-extra");
+    extra.classList.toggle("jb-tour-extra-dimmed", dimmed);
+    extra.innerHTML = `
+      <div class="jb-palmares-heading">
+        <h2>${escapeHtml(t("palmares_title"))}</h2>
+        ${badgeHtml}
+      </div>
+      <div id="jb-tour-palmares-grid" class="jb-palmares-grid">
+        ${tourPalmaresRows.map((row, i) => renderTourPalmaresRowHtml(row, i, boostMode)).join("")}
+      </div>`;
+
+    extra.querySelectorAll("[data-tour-boost-row]").forEach((btn) => {
+      btn.addEventListener("click", () => tourDoBoostMore(Number(btn.dataset.tourBoostRow)));
+    });
+
+    setTourFsNext({
+      visible: true,
+      enabled: dimmed,
+      overlay: true,
+      label: t("tour_next"),
+      onClick: () => showTourStep(tourStep + 1),
+    });
+
+    if (tourPhase === "exhausted") {
+      scheduleTourAuto(1000, () => { tourPhase = "dimmed"; renderTourBoostMore(); });
+    }
+  }
+
+  function tourDoBoostMore(rowIndex) {
+    if (tourPhase !== "boostMore" || tourBoostsRemaining <= 0) return;
+    tourPhase = "boostingMore";
+    tourAnimateBoost(rowIndex, "jb-tour-palmares-grid", renderTourBoostMore, () => {
+      tourPhase = tourBoostsRemaining <= 0 ? "exhausted" : "boostMore";
+      renderTourBoostMore();
+    });
+  }
+
+  // Étape 5 (dernière, un seul point) : regroupe les 3 anciennes étapes "spot" (barre de
+  // recherche / Top Pick / styles) — un vrai élément de la page est mis en valeur, tout le
+  // reste caché (voir .jb-tour-spot). Seule étape à garder l'ancien mécanisme (fenêtre
+  // flottante + bouton .jb-tour-next "Suivant"/"Terminer") puisqu'elle pointe vers de vrais
+  // éléments de la page plutôt que du contenu simulé plein écran. Navigue via tourRealSubStep
+  // plutôt que tourStep, pour rester sur le même (dernier) point pendant ses 3 sous-étapes.
+  function renderTourRealStep() {
+    setTourFullscreen(false);
+    clearTourAutoTimer();
+    setTourFsNext({ visible: false }); // cette étape garde l'ancien bouton .jb-tour-next
+    const step = TOUR_REAL_STEPS[TOUR_REAL_KEYS[tourRealSubStep]];
     document.getElementById("jb-tour-title").textContent = t(step.titleKey);
     document.getElementById("jb-tour-text").textContent = t(step.textKey);
+    document.getElementById("jb-tour-title-badge").innerHTML = "";
     document.getElementById("jb-tour-extra").innerHTML = "";
+    document.getElementById("jb-tour-extra").classList.remove("jb-tour-extra-dimmed");
     if (step.before) step.before();
     setTourNext(true);
 
@@ -1916,21 +2251,23 @@
 
   function renderTourStep() {
     renderTourDots();
-    // Repart de zéro à chaque nouvelle étape majeure — pick-song/palmares-boost re-remplissent
-    // ce badge eux-mêmes si leur sous-phase en a besoin (voir renderTourPickSong()/
-    // renderTourPalmaresBoost()), sinon il doit rester vide.
-    document.getElementById("jb-tour-title-badge").innerHTML = "";
     const kind = TOUR_MAJOR_STEPS[tourStep];
     if (kind === "welcome") renderTourWelcome();
     else if (kind === "pick-song") renderTourPickSong();
-    else if (kind === "palmares-boost") renderTourPalmaresBoost();
-    else renderTourRealStep(kind);
+    else if (kind === "boost-first") renderTourBoostFirst();
+    else if (kind === "boost-more") renderTourBoostMore();
+    else renderTourRealStep();
   }
 
+  // i : nouvel index d'étape majeure (= nouveau point actif). Repart toujours de zéro dans
+  // cette étape (voir chaque renderTour*) — y compris en reculant (swipe vers la droite), pour
+  // rester simple plutôt que de tenter de restaurer un état intermédiaire précis.
   function showTourStep(i) {
     if (i < 0 || i >= TOUR_MAJOR_STEPS.length) return;
     tourStep = i;
     tourPhase = "";
+    if (TOUR_MAJOR_STEPS[i] !== "real") tourRealSubStep = 0;
+    clearTourAutoTimer();
     stopTourBoostCountdown();
     renderTourStep();
   }
@@ -1938,9 +2275,11 @@
   function startTour() {
     tourStep = 0;
     tourPhase = "";
+    tourRealSubStep = 0;
     tourChosenSong = null;
     tourPalmaresRows = null;
     tourBoostsRemaining = 3;
+    clearTourAutoTimer();
     stopTourBoostCountdown();
     if (tourBoostAnimTimer) { clearTimeout(tourBoostAnimTimer); tourBoostAnimTimer = null; }
     document.getElementById("jb-tour").hidden = false;
@@ -1951,9 +2290,14 @@
 
   function endTour() {
     document.getElementById("jb-tour").hidden = true;
-    document.getElementById("jb-tour-card").classList.remove("jb-tour-card-immersive");
+    document.getElementById("jb-tour").classList.remove("jb-tour-fs");
+    document.getElementById("jb-tour-card").classList.remove("jb-tour-card-immersive", "jb-tour-card-fullscreen");
+    document.getElementById("jb-tour-card").style.transform = "";
+    document.getElementById("jb-tour-card").style.opacity = "";
     document.getElementById("jb-tour-backdrop").classList.remove("jb-tour-backdrop-opaque");
     document.getElementById("jb-tour-extra").classList.remove("jb-tour-extra-dimmed");
+    setTourFsNext({ visible: false });
+    clearTourAutoTimer();
     if (tourBoostAnimTimer) { clearTimeout(tourBoostAnimTimer); tourBoostAnimTimer = null; }
     stopTourBoostCountdown();
     safeStorageSet(tourSeenKey(), "1");
@@ -1972,25 +2316,28 @@
     if (tourReposition) tourReposition();
   }
 
-  // Bouton "Suivant"/"Terminer" : le comportement dépend de l'étape/sous-étape en cours — voir
-  // setTourNext() pour quand ce bouton est visible/cliquable en premier lieu.
-  document.getElementById("jb-tour-next").addEventListener("click", () => {
-    const kind = TOUR_MAJOR_STEPS[tourStep];
-    if (kind === "palmares-boost" && tourPhase === "reveal") {
-      tourPhase = "boost";
-      renderTourPalmaresBoost();
-      return;
-    }
-    if (tourStep === TOUR_MAJOR_STEPS.length - 1) { endTour(); return; }
-    showTourStep(tourStep + 1);
-  });
+  // Le geste de swipe qui vivait ici a été entièrement retiré (demande explicite de Hubert) et
+  // remplacé par le bouton "Débuter"/"Suivant" plein écran — voir .jb-tour-fs-next dans le CSS
+  // et setTourFsNext() plus haut.
 
-  // Toucher l'arrière-plan bloqué (voir .jb-tour-backdrop) ne fait pas passer en dessous — ça
-  // fait juste gonfler-dégonfler la fenêtre du tuto en blanc chaud, pour indiquer au client de
-  // toucher plutôt à l'intérieur (ou d'utiliser le bouton "Passer le tutoriel" toujours visible
-  // en bas de l'écran, voir .jb-tour-skip, pour sortir du tuto pour de bon).
+  // Toucher l'arrière-plan bloqué (voir .jb-tour-backdrop — ne se produit plus qu'à la 5e
+  // étape, les 4 premières couvrant tout l'écran) ne fait pas passer en dessous — ça fait juste
+  // gonfler-dégonfler la fenêtre du tuto en blanc chaud, pour indiquer au client de toucher
+  // plutôt à l'intérieur (ou d'utiliser le bouton "Passer le tutoriel" toujours visible en bas
+  // de l'écran, voir .jb-tour-skip, pour sortir du tuto pour de bon).
   document.getElementById("jb-tour-backdrop").addEventListener("click", () => {
     pulseAttention(document.getElementById("jb-tour-card"), "jb-pulse-attn-warm");
+  });
+
+  // Bouton "Suivant"/"Terminer" : n'existe plus que pour la 5e étape (voir setTourNext()) — les
+  // 4 premières utilisent leur propre bouton .jb-tour-fs-next (voir setTourFsNext()).
+  document.getElementById("jb-tour-next").addEventListener("click", () => {
+    if (tourRealSubStep < TOUR_REAL_KEYS.length - 1) {
+      tourRealSubStep += 1;
+      renderTourRealStep();
+      return;
+    }
+    endTour();
   });
 
   document.getElementById("jb-tour-skip").addEventListener("click", () => {
@@ -2121,8 +2468,11 @@
   // atteint sa limite de 10. 0 tant qu'il lui reste au moins une demande disponible.
   let requestResetAt = 0;
   const MAX_BOOSTS = 3; // nombre maximum de boosts par client, par soirée
-  const BOOST_RESET_MS = 2 * 60 * 1000; // filet de sécurité : redonne des boosts après ce délai une fois les 3 épuisés
-  const BOOST_RENEW_AMOUNT = 3; // nombre de boosts redonnés à chaque cycle de 2 min
+  // Récupération : 1 boost redonné chaque minute (jusqu'au max ci-dessus), plutôt que les 3 d'un
+  // coup après 2 min (changé à la demande de Hubert — voir aussi la démo du tuto, sous-étape
+  // "boost-more"/startTourBoostCountdown(), qui reprend maintenant le même rythme d'1 min).
+  const BOOST_RESET_MS = 60 * 1000;
+  const BOOST_RENEW_AMOUNT = 1;
   // boostUsage : songId -> { count, token } — boosts actuellement "verrouillés" sur cette chanson
   // (token = roundToken au moment du boost ; libéré automatiquement dès que la chanson est jouée).
   let boostUsage = {};
@@ -2368,10 +2718,10 @@
     if (changed) saveBoostsToStorage();
     return total;
   }
-  // Filet de sécurité : après 2 minutes à court de boosts, en redonne BOOST_RENEW_AMOUNT (pas
-  // nécessairement une remise à zéro complète si jamais MAX_BOOSTS change) — puis relance aussitôt
-  // un nouveau cooldown de 2 min si le client est encore à 0, jusqu'à ce qu'il en retrouve via ce
-  // mécanisme ou qu'une de ses chansons boostées joue.
+  // Récupération graduelle : redonne BOOST_RENEW_AMOUNT (1) boost chaque minute — pas une remise
+  // à zéro complète d'un coup. Tant qu'il reste au moins un boost "verrouillé" (utilisé), on
+  // relance aussitôt un nouveau cooldown d'1 min (plutôt que seulement si encore à 0/3), pour que
+  // la récupération continue de ticker jusqu'à ce que les 3 soient de nouveau disponibles.
   function maybeRenewBoosts() {
     if (!boostResetAt || Date.now() < boostResetAt) return;
     let toRelease = BOOST_RENEW_AMOUNT;
@@ -2389,7 +2739,7 @@
       changed = true;
     }
     if (changed) saveBoostsToStorage();
-    boostResetAt = activeBoostsCount() >= MAX_BOOSTS ? Date.now() + BOOST_RESET_MS : 0;
+    boostResetAt = activeBoostsCount() > 0 ? Date.now() + BOOST_RESET_MS : 0;
     saveBoostResetToStorage();
   }
   function boostsRemaining() {
@@ -2748,15 +3098,20 @@
         palmaresElByKey.set(key, el);
       }
       el.className = "jb-slot";
+      // Nombre de demandes déplacé à côté du bouton Boost (plutôt que sa propre colonne à
+      // gauche) — même mise en page que le palmarès de démo du tuto, à la demande de Hubert.
+      // Juste le nombre brut ici, sans le mot "Demande" (contrairement à renderSongRow()).
       el.innerHTML = `
         <span class="jb-slot-rank">${i + 1}</span>
-        <span class="jb-slot-votes">${v.requests}</span>
         <span class="jb-slot-info">
           <span class="jb-slot-title">${escapeHtml(v.title)}</span>
           ${v.artist ? `<span class="jb-slot-artist">${escapeHtml(v.artist)}</span>` : ""}
           ${renderVotersLine(v.voters)}
         </span>
-        <button class="jb-slot-boost" data-boost="${escapeHtml(id)}" aria-label="${t("boost_aria")}" title="${t("boost_aria")}">🚀 ${t("boost_btn")}</button>`;
+        <span class="jb-slot-right">
+          <span class="jb-slot-votes">${v.requests}</span>
+          <button class="jb-slot-boost" data-boost="${escapeHtml(id)}" aria-label="${t("boost_aria")}" title="${t("boost_aria")}">🚀 ${t("boost_btn")}</button>
+        </span>`;
     });
 
     // 4) LAST — replace les éléments dans le bon ordre dans le DOM.
@@ -2988,9 +3343,12 @@
     const li = document.createElement("li");
     li.className = "jb-song-item";
 
+    const voteCount = v?.requests || 0;
     let btnHtml;
+    let showLeftCount = false; // compteur à l'ancienne place, à gauche du titre (burned/cooldown)
     if (isBurned(v)) {
       btnHtml = `<div class="jb-burned-badge">${t("burned_badge")}</div>`;
+      showLeftCount = true;
     } else if (isInCooldown(v)) {
       btnHtml = `<div class="jb-cooldown-explicit" data-until="${v.cooldownUntil}">
         <div class="jb-cooldown-played-seg">${t("cooldown_played_label")}</div>
@@ -2999,21 +3357,32 @@
           <span>${t("cooldown_in_label")} <span class="jb-cooldown-num">${formatCooldown(v)}</span></span>
         </div>
       </div>`;
+      showLeftCount = true;
     } else if (requested) {
       // Jamais désactivé, même à 0 boost restant : cliquer déclenche quand même boostSong(),
       // qui affiche le toast et fait clignoter le badge "Boosts" pour rappeler au client qu'il
       // doit patienter — un bouton disabled empêcherait ce rappel visuel de se déclencher.
-      btnHtml = `<button class="jb-slot-boost" data-boost="${escapeHtml(song.id)}" aria-label="${t("boost_aria")}" title="${t("boost_aria")}">🚀 ${t("boost_btn")}</button>`;
+      // Précision de Hubert : le chiffre reste un élément À PART (jamais fusionné dans le badge,
+      // jamais renvoyé à gauche du titre) et reste TOUJOURS juste à gauche du bouton — voir
+      // .jb-song-right ci-dessous, même principe que .jb-slot-right du palmarès.
+      btnHtml = `<span class="jb-song-right">
+        <span class="jb-song-votes">${voteCount}</span>
+        <button class="jb-slot-boost" data-boost="${escapeHtml(song.id)}" aria-label="${t("boost_aria")}" title="${t("boost_aria")}">🚀 ${t("boost_btn")}</button>
+      </span>`;
     } else {
       // Pas de data-req sur le bouton lui-même : c'est toute la ligne (li) qui porte le
       // data-req et le clic, pour que le client puisse appuyer n'importe où sur la chanson,
-      // pas seulement sur le bouton "Jouer" — voir wireSongRowEvents().
-      btnHtml = `<button class="jb-btn-request">${t("request_btn")}</button>`;
+      // pas seulement sur ce badge — voir wireSongRowEvents(). Le badge "Demande" ne contient
+      // plus le chiffre (précision de Hubert : chiffre à part, toujours à gauche du badge/bouton,
+      // jamais à l'intérieur, jamais ailleurs) — voir .jb-song-right ci-dessous.
+      btnHtml = `<span class="jb-song-right">
+        <span class="jb-song-votes">${voteCount}</span>
+        <span class="jb-request-remaining jb-song-request-badge">${escapeHtml(t("song_request_word"))}</span>
+      </span>`;
     }
 
-    const voteCount = v?.requests || 0;
     li.innerHTML = `
-      <span class="jb-song-votes">${voteCount}</span>
+      ${showLeftCount ? `<span class="jb-song-votes">${voteCount}</span>` : ""}
       <div class="jb-song-info">
         <div class="jb-song-title">${escapeHtml(song.title)}</div>
         ${showArtist && song.artist ? `<div class="jb-song-artist">${escapeHtml(song.artist)}</div>` : ""}
@@ -3659,5 +4028,4 @@
     return String(str).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   }
 </script>
-</body>
-</html>
+</body></html>
