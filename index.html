@@ -1099,14 +1099,14 @@
   </div>
 
   <div id="jb-admin" class="jb-view" hidden>
-    <div id="jb-login" class="jb-login">
+    <form id="jb-login" class="jb-login">
       <h2>🔐 Mode spectacle</h2>
-      <input id="jb-login-email" type="email" placeholder="Courriel" autocomplete="username" />
-      <input id="jb-login-pass" type="password" placeholder="Mot de passe" autocomplete="current-password" />
-      <button id="jb-login-btn" class="jb-btn-primary">Se connecter</button>
+      <input id="jb-login-email" type="email" name="username" placeholder="Courriel" autocomplete="username" />
+      <input id="jb-login-pass" type="password" name="password" placeholder="Mot de passe" autocomplete="current-password" />
+      <button id="jb-login-btn" type="submit" class="jb-btn-primary">Se connecter</button>
       <p id="jb-login-error" class="jb-error" hidden></p>
       <a href="#" class="jb-back-link">← Retour au site public</a>
-    </div>
+    </form>
 
     <div id="jb-dashboard" class="jb-dashboard" hidden>
       <div class="jb-admin-topbar">
@@ -1296,7 +1296,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-09-24.19";
+  const APP_BUILD = "2026-09-24.20";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -3662,7 +3662,12 @@
   // Écrit "live: true" + l'heure de CETTE connexion (loginAt) UNIQUEMENT sur une connexion
   // explicite (jamais sur une reprise de session au chargement de la page, sinon rafraîchir
   // l'onglet repousserait indéfiniment l'heure de déconnexion automatique — voir isLiveNow()).
-  document.getElementById("jb-login-btn").addEventListener("click", async () => {
+  document.getElementById("jb-login").addEventListener("submit", async (e) => {
+    // preventDefault() est essentiel : sans lui, le fait d'avoir mis ces champs dans un vrai
+    // <form> (nécessaire pour que Safari/iOS propose d'enregistrer et de remplir automatiquement
+    // le courriel/mot de passe) ferait recharger la page au clic sur "Se connecter" ou à la
+    // touche "Entrée", comme un vrai envoi de formulaire vers l'URL courante.
+    e.preventDefault();
     const email = document.getElementById("jb-login-email").value.trim();
     const pass = document.getElementById("jb-login-pass").value;
     const errEl = document.getElementById("jb-login-error");
