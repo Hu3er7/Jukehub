@@ -224,7 +224,7 @@
   }
   #jb-app .jb-back-btn { flex-shrink: 0; background: var(--card); border: 1px solid var(--accent); color: var(--accent2); font-weight: 700; padding: 8px 12px; border-radius: 999px; font-size: 0.78rem; cursor: pointer; }
   #jb-app .jb-back-btn[hidden] { display: none; }
-  #jb-app .jb-catalog-searchbar input[type="text"] { flex: 1; min-width: 0; margin: 0; padding: 9px 12px; font-size: 0.92rem; }
+  #jb-app .jb-catalog-searchbar input[type="text"] { flex: 1; min-width: 0; margin: 0; padding: 9px 12px; font-size: 16px; }
   #jb-app .jb-request-remaining {
     flex-shrink: 0; font-size: 0.78rem; font-weight: 700; color: var(--accent2); background: var(--card);
     border: 1px solid var(--border); border-radius: 999px; padding: 5px 11px; white-space: nowrap;
@@ -1296,7 +1296,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-09-24.18";
+  const APP_BUILD = "2026-09-24.19";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
