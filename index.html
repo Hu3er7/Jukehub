@@ -53,6 +53,17 @@
     display: flex; align-items: center; justify-content: space-between; flex-wrap: nowrap;
     gap: calc(10px * var(--jb-topbar-scale, 1)); padding-top: 14px;
   }
+  /* Pendant le tuto (voir "jb-tour-open" posée par startTour()/retirée par endTour()), le bandeau
+     du haut (nom du site à gauche, "?"/FR/EN à droite) reste visible PAR-DESSUS l'assombrissement
+     du tuto (voir .jb-tour, z-index 1200) plutôt que d'être caché avec le reste de la page en
+     dessous — demande explicite de Hubert, capture d'écran à l'appui. En dessous de la fenêtre du
+     tuto elle-même (.jb-tour-card, z-index 1250) : elle doit toujours rester au premier plan.
+     Fond plein (var(--bg), sans la grille de points du thème client — voir #jb-public) posé
+     UNIQUEMENT ici, pendant le tuto, pour raccorder proprement avec l'assombrissement du reste de
+     la page (même couleur unie) sans jamais altérer l'apparence normale du bandeau hors tuto. */
+  #jb-app.jb-tour-open .jb-top-bar {
+    position: relative; z-index: 1201; background: var(--bg);
+  }
   #jb-app .jb-top-bar-left { display: flex; align-items: center; gap: calc(10px * var(--jb-topbar-scale, 1)); min-width: 0; }
   #jb-app .jb-top-bar h1 {
     font-family: 'Anton', -apple-system, sans-serif; font-weight: 400;
@@ -391,8 +402,10 @@
     border-radius: 12px; padding: 14px; margin: 16px; font-size: 0.88rem;
   }
 
-  /* Tutoriel guidé (voir startTour()/TOUR_MAJOR_STEPS) — skippable à tout moment via
-     .jb-tour-skip ("Passer le tutoriel", voir renderTourWelcome() et les autres renderTour*()).
+  /* Tutoriel guidé (voir startTour()/TOUR_MAJOR_STEPS) — plus de bouton "Passer le tutoriel"
+     (retiré entièrement à la demande explicite de Hubert) : le tuto se limite maintenant à la
+     démo de la barre de recherche (voir TOUR_REAL_KEYS), qui se termine par le bouton "Accéder à
+     mon répertoire" (voir tour_done/setTourNext()).
      Les 4 premières étapes (accueil, choix d'une chanson, 1er boost, boosts suivants) prennent
      tout l'écran et simulent l'appli avec de fausses données démo — voir
      .jb-tour-card-fullscreen/setTourFullscreen(). La 5e et dernière étape reprend l'ancien
@@ -428,6 +441,34 @@
   #jb-app .jb-tour-card.jb-tour-card-immersive {
     max-width: 480px; left: 10px; right: 10px; max-height: 88vh; overflow-y: auto;
     -webkit-overflow-scrolling: touch;
+  }
+  /* Version "juste le bouton" de la fenêtre du tuto (demande explicite de Hubert) : plus de
+     points/langue, de titre ni de texte — seul le bouton "Suivant"/"Terminer" reste visible,
+     sans le cadre (fond/bordure/ombre) qui l'entourait avant, pour ne plus ressembler à une
+     fenêtre de texte du tout. Utilisée pour la seule étape du tuto restante (voir
+     renderTourRealStep()) — .jb-tour-top/.jb-tour-title-row/#jb-tour-text/.jb-tour-extra sont
+     cachés plutôt que retirés du DOM, pour ne rien casser si une future étape en a de nouveau
+     besoin. */
+  #jb-app .jb-tour-card.jb-tour-card-minimal {
+    background: none; border: none; box-shadow: none; padding: 0;
+    /* .jb-tour-card de base coupe le débordement horizontal (overflow-x: hidden, voir plus haut)
+       pour empêcher le badge/l'emoji du titre de déborder du cadre arrondi — mais ce titre est
+       justement caché ci-dessous en mode "minimal" (il ne reste que le bouton), donc ce risque ne
+       s'applique plus ici. En revanche, avec padding:0, ce overflow-x:hidden coupait aussi
+       l'éclairage en haut/en bas du bouton "Accéder à mon répertoire" (overflow-x non "visible"
+       force overflow-y à se comporter comme "auto" plutôt que "visible", selon la spec CSS) —
+       demande explicite de Hubert, capture d'écran à l'appui : l'éclairage doit être entier. */
+    overflow: visible;
+  }
+  #jb-app .jb-tour-card.jb-tour-card-minimal .jb-tour-top,
+  #jb-app .jb-tour-card.jb-tour-card-minimal .jb-tour-title-row,
+  #jb-app .jb-tour-card.jb-tour-card-minimal #jb-tour-text,
+  #jb-app .jb-tour-card.jb-tour-card-minimal .jb-tour-extra {
+    display: none;
+  }
+  #jb-app .jb-tour-card.jb-tour-card-minimal .jb-tour-actions { margin-top: 0; justify-content: center; }
+  #jb-app .jb-tour-card.jb-tour-card-minimal .jb-tour-nav-btn {
+    padding: 16px 40px; font-size: 1.05rem; min-width: 220px; text-align: center;
   }
   #jb-app .jb-tour-extra { margin-top: 10px; }
   #jb-app .jb-tour-extra:empty { margin-top: 0; }
@@ -490,6 +531,20 @@
     50% { box-shadow: 0 0 14px 5px rgba(255, 248, 230, 0.9); }
   }
   #jb-app .jb-tour-boost-glow { animation: jb-tour-boost-glow 1.4s ease-in-out infinite; }
+  /* Illumine brièvement la ligne d'une chanson dans le cadre de recherche démonstratif pour
+     montrer qu'elle vient d'être sélectionnée, juste avant de rejoindre le palmarès (demande
+     explicite de Hubert — voir illuminateDemoRow() dans startTourSearchDemo()). Deux pulsations
+     courtes (0.45s × 2) plutôt qu'une boucle infinie : l'effet doit se terminer de lui-même. */
+  @keyframes jb-tour-select-glow {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(224, 86, 143, 0); background: var(--card); }
+    50% { box-shadow: 0 0 20px 6px rgba(224, 86, 143, 0.85); background: var(--card2); }
+  }
+  #jb-app .jb-tour-select-glow { animation: jb-tour-select-glow 0.45s ease-in-out 2; border-radius: 12px; }
+  /* Même pulsation que .jb-tour-select-glow ci-dessus, réutilisée sur le VRAI bouton Boost de la
+     chanson démo à chaque boost simulé (voir boostDemoSong()) — demande explicite de Hubert.
+     border-radius 999px (au lieu de 12px) pour garder la forme "pilule" du bouton, voir
+     .jb-slot-boost. */
+  #jb-app .jb-tour-boost-flash { animation: jb-tour-select-glow 0.45s ease-in-out 2; border-radius: 999px; }
   /* Bouton Boost visible mais indisponible (animation en cours, boosts épuisés) — reste affiché,
      juste assombri, plutôt que de disparaître complètement comme avant (précision de Hubert).
      Même traitement visuel que le vrai palmarès pendant son animation FLIP, voir
@@ -534,10 +589,10 @@
   #jb-app .jb-tour-card h3 { font-size: 1.05rem; font-weight: 800; color: var(--text); margin-bottom: 6px; }
   #jb-app .jb-tour-card p { font-size: 0.9rem; color: var(--text); font-weight: 700; line-height: 1.5; }
   #jb-app .jb-tour-card p:empty { display: none; }
-  /* Dans la fenêtre du tuto elle-même, un seul bouton "Suivant"/"Terminer", aligné à droite,
-     cliquable seulement une fois l'action requise de l'étape accomplie (voir setTourNext() en
-     JS) — sinon il reste caché. Pas de bouton "Passer" ICI (voir .jb-tour-skip plus bas pour
-     celui-là, toujours visible en bas de l'écran, en dehors de la fenêtre). */
+  /* Dans la fenêtre du tuto elle-même, un seul bouton — "Accéder à mon répertoire" une fois la
+     démo terminée (voir setTourNext()/tour_done) — aligné à droite, cliquable seulement une fois
+     l'action requise de l'étape accomplie, sinon il reste caché. Plus de bouton "Passer" séparé
+     (retiré entièrement à la demande de Hubert). */
   #jb-app .jb-tour-actions { display: flex; align-items: center; justify-content: flex-end; margin-top: 14px; }
   #jb-app .jb-tour-nav-btn {
     background: var(--card2); border: 1px solid var(--border); color: var(--text);
@@ -551,20 +606,6 @@
     animation: jb-tour-boost-glow 1.4s ease-in-out infinite;
   }
   #jb-app .jb-tour-nav-btn[hidden] { display: none; }
-  /* Bouton "Passer le tutoriel" : discret (texte souligné, opacité réduite, pas de fond), mais
-     TOUJOURS accessible visuellement pendant le tuto — épinglé en bas de l'écran ("position:
-     fixed", même principe que la barre de recherche collante en haut, voir .jb-catalog-searchbar
-     — sauf qu'ici c'est le bas plutôt que le haut), peu importe l'étape en cours ou le défilement
-     de la page derrière. Volontairement à l'écart du bouton "Suivant" (voir .jb-tour-actions plus
-     haut) pour ne jamais être cliqué par erreur. */
-  #jb-app .jb-tour-skip {
-    position: fixed; left: 50%; bottom: 14px; transform: translateX(-50%);
-    z-index: 1250; pointer-events: auto;
-    background: none; border: none; color: var(--text-dim); font-size: 0.8rem;
-    opacity: 0.55; cursor: pointer; padding: 8px 16px;
-    text-decoration: underline; text-underline-offset: 3px;
-  }
-  #jb-app .jb-tour-skip:active { opacity: 0.9; }
 
   /* ===================================================================
      Tutoriel plein écran façon "Tinder" (étapes 1 à 4 : bienvenue, choix
@@ -624,10 +665,6 @@
   #jb-app .jb-tour.jb-tour-fs .jb-tour-dots {
     position: fixed; left: 50%; bottom: 28px; transform: translateX(-50%); z-index: 1260; gap: 8px;
   }
-  #jb-app .jb-tour.jb-tour-fs .jb-tour-skip {
-    left: 22px; bottom: 30px; transform: none;
-  }
-
   /* Bouton "Débuter"/"Suivant" des étapes plein écran (voir setTourFsNext() en JS) — remplace
      l'ancien indice de swipe. Nouvelle demande explicite de Hubert (captures annotées ✅/❌) :
      (1) il ne doit JAMAIS être visible tant qu'il n'est pas actif — "enabled: false" le cache
@@ -1064,11 +1101,6 @@
           <button id="jb-tour-next" class="jb-tour-nav-btn jb-tour-next"></button>
         </div>
       </div>
-      <!-- Toujours visible pendant le tuto, peu importe l'étape ou le défilement (voir CSS
-           .jb-tour-skip, "position: fixed" comme la barre de recherche collante — même principe,
-           mais épinglé en bas plutôt qu'en haut) — discret, pour ne pas concurrencer le bouton
-           "Suivant", mais jamais caché. -->
-      <button id="jb-tour-skip" class="jb-tour-skip"></button>
     </div>
 
     <!-- Demande de prénom, facultative : voir ensureClientName(). Affichée une seule fois par
@@ -1296,7 +1328,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-09-24.21";
+  const APP_BUILD = "2026-09-28.16";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -1414,8 +1446,9 @@
       // Bouton de la toute première étape du tuto (accueil) — remplace l'ancien geste de swipe,
       // entièrement retiré à la demande de Hubert (voir renderTourWelcome()/setTourFsNext()).
       tour_start_btn: "Débuter",
-      tour_done: "Bonne soirée ;)",
-      tour_skip: "Passer le tutoriel",
+      // Bouton en bas de la fenêtre du tuto (voir setTourNext()) — demande explicite de Hubert :
+      // plus la seule étape "recherche" ne reste, ce bouton doit inviter à y accéder directement.
+      tour_done: "Accéder à mon répertoire",
       genres: {
         franco: "Franco", country: "Country", rock: "Rock", punk: "Punk", "classic-rock": "Classique Rock",
         pop: "Pop", dance: "Dance",
@@ -1482,8 +1515,7 @@
       tour_help_title: "Replay the tutorial",
       tour_next: "Next",
       tour_start_btn: "Start",
-      tour_done: "Have a great night ;)",
-      tour_skip: "Skip tutorial",
+      tour_done: "Go to My Repertoire",
       genres: {
         franco: "French/Queb", country: "Country", rock: "Rock", punk: "Punk", "classic-rock": "Classic Rock",
         pop: "Pop", dance: "Dance",
@@ -1545,7 +1577,6 @@
     document.getElementById("jb-search-input").placeholder = t("search_placeholder");
     document.getElementById("jb-tour-help-btn").title = t("tour_help_title");
     document.getElementById("jb-tour-help-btn").setAttribute("aria-label", t("tour_help_title"));
-    document.getElementById("jb-tour-skip").textContent = t("tour_skip");
     document.getElementById("jb-offline-title").textContent = t("offline_title");
     document.getElementById("jb-offline-text").textContent = t("offline_text");
     renderOfflineCalendar();
@@ -1765,19 +1796,19 @@
     return "jb_tour_seen_" + (nightId || "default");
   }
   // ---------- Tutoriel obligatoire et interactif ----------
-  // 5 grandes étapes (= 5 points en bas de l'écran). Les 4 premières sont "plein écran" (voir
-  // setTourFullscreen()) : rien de la vraie page n'est visible, tout le contenu (chansons,
-  // palmarès) est simulé avec de fausses données pour laisser le client s'exercer pour de vrai
-  // (choisir une chanson, booster) sans toucher à ses vraies demandes/boosts de la soirée. On
-  // avance en appuyant sur le bouton "Débuter"/"Suivant" (voir .jb-tour-fs-next/setTourFsNext())
-  // — cliquable seulement une fois la démonstration de l'étape en cours terminée ; plus aucun
-  // geste de swipe (entièrement retiré à la demande explicite de Hubert). La 5e (et dernière)
-  // étape regroupe les 3 anciennes étapes "spot" (barre de recherche / Top Pick / styles) sous
-  // un seul point : elle garde l'ancien mécanisme (fenêtre flottante + bouton "Suivant", voir
-  // renderTourRealStep()) puisqu'elle pointe vers de vrais éléments de la page plutôt que du
-  // contenu simulé — voir TOUR_REAL_KEYS pour la navigation interne entre ses 3 sous-étapes.
-  const TOUR_MAJOR_STEPS = ["welcome", "pick-song", "boost-first", "boost-more", "real"];
-  const TOUR_REAL_KEYS = ["search", "toppick", "style"];
+  // Raccourci sur demande explicite de Hubert : les clients ne prêtaient pas attention aux
+  // anciennes étapes plein écran (accueil, choisir une chanson, 1er boost, boosts suivants —
+  // voir renderTourWelcome()/renderTourPickSong()/renderTourBoostFirst()/renderTourBoostMore()
+  // ci-dessous, gardées mais plus jamais atteintes) et ça ajoutait de la confusion pour rien.
+  // Le tuto démarre maintenant directement à l'étape "real", qui pointe un vrai élément de la
+  // page (barre de recherche → Top Pick → styles, voir TOUR_REAL_KEYS) plutôt que du contenu
+  // simulé — un seul point dans TOUR_MAJOR_STEPS, la navigation entre les 3 sous-étapes se fait
+  // via tourRealSubStep (voir renderTourRealStep()/renderTourDots(), qui affiche maintenant un
+  // point par sous-étape réelle plutôt qu'un point par étape majeure).
+  const TOUR_MAJOR_STEPS = ["real"];
+  // Réduit à la seule démo de la barre de recherche (demande explicite de Hubert : "enlève tout
+  // les autres étapes du tutoriel") — "toppick"/"style" existaient ici avant, voir l'historique.
+  const TOUR_REAL_KEYS = ["search"];
 
   // Les 4 chansons proposées à l'étape "choisis une chanson" et les 3 fausses chansons déjà
   // présentes devant la sienne à l'étape "palmarès" (peu importe celle choisie, elle atterrit
@@ -1800,35 +1831,113 @@
   const TOUR_REAL_STEPS = {
     search: {
       target: () => document.getElementById("jb-catalog-searchbar"),
+      // Le spot (et le bouton "Suivant", voir renderTourRealStep()) doivent englober la barre
+      // de recherche, la liste de 3 résultats ET le palmarès — sinon l'ombre du tuto (voir
+      // positionTourSpot()) cache une partie de la démo. Demande explicite de Hubert (vidéo à
+      // l'appui) : PLUS AUCUN mouvement du cadre une fois posé — ni pendant la frappe, ni quand
+      // la chanson démo rejoint le palmarès. Voir computeTourSearchDemoRect() : le rectangle est
+      // calculé UNE SEULE FOIS, sur la base de la taille FINALE de chaque zone (liste de
+      // résultats déjà figée à 3 lignes dès le départ, palmarès mesuré à l'avance avec la
+      // chanson démo déjà "dedans" — voir startTourSearchDemo()), puis ne bouge plus.
+      rect: () => computeTourSearchDemoRect(),
+      // Voir positionTourSpot()/positionTourCard() : coupe la transition CSS pour CETTE étape,
+      // pour qu'aucun "saut" animé ne soit visible entre le tout premier positionnement
+      // générique (juste la barre de recherche, avant que la démo n'ait rien construit) et la
+      // taille finale posée par runTourSearchDemo() — demande explicite de Hubert : rien ne
+      // bouge, pas même une animation de croissance.
+      instant: true,
       titleKey: "tour3_title",
       textKey: "tour3_text",
       before: () => {
         catalogView = null;
-        document.getElementById("jb-search-input").value = "";
-        renderCatalog();
-      },
-    },
-    toppick: {
-      target: () => document.getElementById("jb-quickpick-section"),
-      titleKey: "tour_quickpick_title",
-      textKey: "tour_quickpick_text",
-      before: () => {
-        catalogView = null;
-        document.getElementById("jb-search-input").value = "";
-        renderCatalog();
-      },
-    },
-    style: {
-      target: () => document.querySelector(".jb-style-section"),
-      titleKey: "tour2_title",
-      textKey: "tour2_text",
-      before: () => {
-        catalogView = null;
-        document.getElementById("jb-search-input").value = "";
-        renderCatalog();
+        stopTourSearchDemo();
+        // Construit tout de suite (avant même le tout premier positionnement du cadre, voir
+        // place() plus bas dans renderTourRealStep()) la liste figée à 3 résultats ET la
+        // prévisualisation du palmarès — pour que computeTourSearchDemoRect() calcule la bonne
+        // taille FINALE dès son tout premier appel, sans avoir besoin d'un second appel (donc
+        // d'un saut visible, même instantané) une fois le délai de démarrage de l'animation
+        // écoulé. Demande explicite de Hubert (vidéo à l'appui) : rien ne bouge, jamais, pas même
+        // un saut sans transition.
+        prepareTourSearchDemo();
       },
     },
   };
+
+  // Fausse entrée de palmarès injectée temporairement (voir selectDemoSong() plus bas) pendant
+  // la démo animée de la barre de recherche, pour montrer "Sweet Caroline" se placer dans le
+  // VRAI palmarès sans jamais rien écrire dans Firestore (pas de vraie demande : ça pollueraient
+  // les vraies statistiques de la soirée à chaque fois qu'un client voit le tuto). Lue par
+  // renderPalmares() ci-dessous, qui l'ajoute au classement comme une chanson normale tant
+  // qu'elle est non-nulle. Contrairement à tourDemoPalmaresFillers (voir plus bas), reste null
+  // jusqu'à la sélection de "Sweet Caroline" (voir illuminateDemoRow()/selectDemoSong()).
+  let tourDemoPalmaresEntry = null;
+  // Les 1-2 "autres" vraies chansons déjà présentes devant "Sweet Caroline" dans le cadre de
+  // recherche figé (voir computeTourSearchFreeze()/prepareTourSearchDemo() plus bas) — les mêmes
+  // exactement, avec les mêmes faux votes (3 et 2, demande explicite de Hubert), réapparaissent
+  // ici comme concurrentes dans le palmarès : visuellement la même petite course, à la fois dans
+  // la recherche et dans le palmarès. Posées dès prepareTourSearchDemo() (donc dès l'ouverture de
+  // l'étape) et y restent VISIBLES EN TOUT TEMPS jusqu'à la fin de la visite de cette étape
+  // (demande explicite de Hubert) — contrairement à tourDemoPalmaresEntry, qui va et vient à
+  // chaque boucle de la démo. Même mécanisme : injectées uniquement au rendu (renderPalmares()),
+  // jamais écrites dans Firestore.
+  let tourDemoPalmaresFillers = null;
+  // {entryPreview} — le MÊME objet que selectDemoSong() posera réellement dans
+  // tourDemoPalmaresEntry un peu plus tard, préparé dès prepareTourSearchDemo() et utilisé ICI
+  // seulement pour mesurer à l'avance la hauteur finale du palmarès (voir
+  // computeTourSearchDemoRect() ci-dessous — tourDemoPalmaresFillers, lui, est déjà réel à ce
+  // stade, donc n'a plus besoin d'être prévisualisé), afin que le cadre soit dimensionné une
+  // bonne fois pour toutes AVANT que quoi que ce soit ne bouge à l'écran (demande explicite de
+  // Hubert : "rien ne bouge"). Remis à null par stopTourSearchDemo().
+  let tourSearchDemoPreview = null;
+  // Calcule le rectangle englobant la barre de recherche, la liste de résultats (déjà figée à 3
+  // lignes dès le départ, voir startTourSearchDemo()) et le palmarès — SANS jamais faire grandir
+  // ou rétrécir ce rectangle au fil de la démo : si "Sweet Caroline" n'est pas encore ajoutée au
+  // palmarès pour de vrai, un rendu temporaire et synchrone (donc jamais visible à l'écran, voir
+  // tourSearchDemoPreview ci-dessus) mesure la hauteur qu'il aura une fois qu'elle le sera, puis
+  // restaure aussitôt l'état réel. Le rectangle obtenu est donc TOUJOURS le même, que la chanson
+  // soit déjà dans le palmarès ou non — le cadre peut ainsi être posé une seule fois et ne plus
+  // jamais bouger ensuite, y compris si cette fonction est rappelée (redimensionnement d'écran).
+  function computeTourSearchDemoRect() {
+    const bar = document.getElementById("jb-catalog-searchbar");
+    if (!bar) return null;
+    const barRect = bar.getBoundingClientRect();
+    const resultsWrap = document.getElementById("jb-catalog-results");
+    let top = barRect.top, left = barRect.left, right = barRect.right, bottom = barRect.bottom;
+    if (resultsWrap && !resultsWrap.hidden) {
+      const r = resultsWrap.getBoundingClientRect();
+      top = Math.min(top, r.top);
+      left = Math.min(left, r.left);
+      right = Math.max(right, r.right);
+      bottom = Math.max(bottom, r.bottom);
+    }
+    const palmaresSection = document.querySelector(".jb-palmares");
+    if (palmaresSection) {
+      // Les concurrentes (tourDemoPalmaresFillers) sont déjà réelles et visibles en tout temps
+      // dès prepareTourSearchDemo() — seule "Sweet Caroline" (tourDemoPalmaresEntry) peut encore
+      // manquer avant sa sélection ; on ne prévisualise donc plus qu'elle ici, temporairement et
+      // synchrone (donc jamais visible à l'écran), pour mesurer d'avance la hauteur finale à 3
+      // lignes du palmarès.
+      const hadEntry = tourDemoPalmaresEntry;
+      if (!hadEntry && tourSearchDemoPreview) {
+        tourDemoPalmaresEntry = tourSearchDemoPreview.entryPreview;
+        renderPalmares();
+      }
+      const pRect = palmaresSection.getBoundingClientRect();
+      top = Math.min(top, pRect.top);
+      left = Math.min(left, pRect.left);
+      right = Math.max(right, pRect.right);
+      bottom = Math.max(bottom, pRect.bottom);
+      if (!hadEntry && tourSearchDemoPreview) {
+        tourDemoPalmaresEntry = hadEntry;
+        renderPalmares();
+      }
+    }
+    // Ne dépasse jamais le bas de l'écran (répertoire avec beaucoup de résultats, ou palmarès
+    // haut) — sinon le cadre déborderait et le bouton n'aurait plus nulle part où se placer
+    // proprement en dessous.
+    bottom = Math.min(bottom, window.innerHeight - 8);
+    return { top, left, right, bottom, width: right - left, height: bottom - top };
+  }
 
   let tourStep = 0;
   let tourPhase = ""; // sous-étape en cours (voir chaque fonction renderTour*)
@@ -1851,6 +1960,284 @@
   function scheduleTourAuto(ms, fn) {
     clearTourAutoTimer();
     tourAutoTimer = setTimeout(() => { tourAutoTimer = null; fn(); }, ms);
+  }
+
+  // ---------- Démo animée de l'étape "barre de recherche" ----------
+  // Version "tout est figé" (demande explicite de Hubert, vidéo à l'appui — les versions
+  // précédentes faisaient bouger/grandir le cadre à chaque lettre tapée puis encore quand le
+  // palmarès apparaissait, ce qu'il ne voulait plus DU TOUT) : la liste de résultats (3 vraies
+  // chansons du répertoire — voir computeTourSearchFreeze()) est construite UNE SEULE FOIS, tout
+  // de suite, via le vrai renderCatalog() (donc le vrai rendu de chaque ligne), puis n'est plus
+  // JAMAIS retouchée pour le reste de la visite de cette étape — seul le texte de la barre de
+  // recherche continue d'animer une frappe lettre par lettre, purement décorative, sans plus
+  // jamais re-filtrer ni redimensionner quoi que ce soit en dessous. Le cadre en surbrillance
+  // (voir computeTourSearchDemoRect()) est lui aussi posé une seule fois, sur la base de sa
+  // taille FINALE (résultats + palmarès une fois la chanson ajoutée) mesurée à l'avance — la
+  // barre de recherche, le cadre à 3 sélections et le palmarès restent donc tous les trois
+  // exactement à leur place du début à la fin. Une fois la frappe "terminée" (retenue à un
+  // préfixe qui donne pile ces 3 résultats), la ligne de la chanson choisie s'illumine
+  // brièvement (voir illuminateDemoRow()) pour bien montrer qu'elle vient d'être sélectionnée —
+  // et C'EST SEULEMENT APRÈS le déclenchement de cette illumination qu'elle rejoint le VRAI
+  // palmarès juste en dessous (voir selectDemoSong()), en dernière position derrière les 1-2
+  // mêmes chansons déjà vues dans le cadre de recherche. Enchaîne ensuite sur des boosts simulés
+  // (boostDemoSong()) qui la font grimper jusqu'en 1re place, puis reprend depuis "S" pour
+  // rejouer la démo. Le client ne peut de toute façon rien taper/cliquer lui-même pendant cette
+  // étape (le fond du tuto capture tous les clics/touches, voir .jb-tour-backdrop), donc aucun
+  // risque de conflit avec une vraie interaction. Boucle tant que le client reste sur cette
+  // sous-étape ; stopTourSearchDemo() annule tout minuteur en attente ET retire la fausse entrée
+  // du palmarès dès qu'on en sort (sous-étape suivante, "Passer le tutoriel", ou fin du tuto),
+  // pour ne jamais laisser une lettre s'écrire ou une chanson factice traîner une fois le tuto
+  // refermé.
+  const TOUR_SEARCH_DEMO_TYPE_MS = 140;
+  const TOUR_SEARCH_DEMO_HOLD_MS = 1200;
+  // Durée de l'effet d'illumination sur la ligne choisie avant qu'elle ne rejoigne le palmarès
+  // (voir illuminateDemoRow()/.jb-tour-select-glow en CSS — demande explicite de Hubert : elle
+  // doit d'abord "s'illuminer" pour montrer sa sélection, et ne rejoindre le palmarès qu'ENSUITE).
+  const TOUR_SEARCH_DEMO_ILLUMINATE_MS = 900;
+  // Durée d'affichage du classement de départ (dernière position) avant que les boosts simulés
+  // ne commencent à la faire grimper (voir selectDemoSong()/boostDemoSong() plus bas).
+  const TOUR_SEARCH_DEMO_RANK_HOLD_MS = 1400;
+  // Chaque "boost" simulé ajoute exactement 1 demande — comme un vrai clic sur le bouton Boost
+  // (demande explicite de Hubert : le chiffre affiché doit correspondre à ce qu'un vrai boost
+  // fait réellement, pas un bond arbitraire) — avec ce délai entre chaque, pour un total de
+  // TOUR_SEARCH_DEMO_BOOST_CLICKS boosts avant de tenir la 1re position puis reprendre depuis "S".
+  const TOUR_SEARCH_DEMO_BOOST_INCREMENT = 1;
+  const TOUR_SEARCH_DEMO_BOOST_STEP_MS = 700;
+  const TOUR_SEARCH_DEMO_BOOST_CLICKS = 3;
+  const TOUR_SEARCH_DEMO_TOP_HOLD_MS = 1800;
+  const TOUR_SEARCH_DEMO_GAP_MS = 600;
+  // Faux nombres de demandes affichés sur les 1-2 "autres" vraies chansons du cadre de recherche
+  // figé (voir computeTourSearchFreeze()) — dans l'ordre d'affichage, en excluant la chanson
+  // choisie. Sert UNIQUEMENT au badge affiché dans le cadre de recherche (voir
+  // prepareTourSearchDemo()) — depuis la demande explicite de Hubert ci-dessous, le palmarès,
+  // lui, utilise 2 chansons fixes indépendantes (voir TOUR_PALMARES_DEMO_FILLERS).
+  const TOUR_SEARCH_DEMO_DECOY_VOTES = [3, 2];
+  // Les 2 "concurrentes" fixes affichées dans le VRAI palmarès pendant toute la démo, en tout
+  // temps (voir prepareTourSearchDemo()/renderPalmares()) — demande explicite de Hubert : ces
+  // 2 chansons précises plutôt que les autres résultats de recherche réels vus dans le cadre.
+  const TOUR_PALMARES_DEMO_FILLERS = [
+    { title: "Billie Jean", artist: "Michael Jackson", requests: 3 },
+    { title: "Country Road", artist: "John Denver", requests: 2 },
+  ];
+  let tourSearchDemoTimer = null;
+  // État préparé à l'avance par prepareTourSearchDemo() (voir plus bas) — réutilisé par
+  // startTourSearchDemo()/runTourSearchDemo() une fois le délai de démarrage écoulé, pour ne
+  // JAMAIS reconstruire la liste ou remesurer quoi que ce soit à ce moment-là (voir le
+  // commentaire de before() dans TOUR_REAL_STEPS.search plus haut).
+  let tourSearchDemoState = null;
+  // Retire SEULEMENT la chanson démo elle-même ("Sweet Caroline") du palmarès — les 1-2
+  // concurrentes (tourDemoPalmaresFillers) restent affichées, y compris entre deux boucles de la
+  // démo (voir resetToS() plus bas) : demande explicite de Hubert, elles doivent être visibles en
+  // tout temps, "Sweet Caroline" ne les rejoint qu'une fois sélectionnée.
+  function hideTourDemoEntry() {
+    if (!tourDemoPalmaresEntry) return;
+    tourDemoPalmaresEntry = null;
+    renderPalmares();
+  }
+  // Nettoyage complet (fin du tuto, changement de sous-étape) : retire la chanson démo ET les
+  // concurrentes.
+  function hideTourDemoPalmaresEntry() {
+    if (!tourDemoPalmaresEntry && !tourDemoPalmaresFillers) return;
+    tourDemoPalmaresEntry = null;
+    tourDemoPalmaresFillers = null;
+    renderPalmares();
+  }
+  function stopTourSearchDemo() {
+    if (tourSearchDemoTimer) { clearTimeout(tourSearchDemoTimer); tourSearchDemoTimer = null; }
+    hideTourDemoPalmaresEntry();
+    tourSearchDemoPreview = null;
+    tourSearchDemoState = null;
+  }
+  // "Sweet Caroline" est plus vendeur/reconnaissable qu'une chanson prise au hasard en tête du
+  // répertoire (demande explicite de Hubert) — utilisée si elle s'y trouve vraiment (sinon la
+  // recherche ne trouverait jamais rien à afficher), avec repli sur la première chanson du
+  // répertoire si elle n'y est pas (ou plus).
+  function pickTourSearchDemoSong() {
+    if (!catalogSongs.length) return null;
+    return catalogSongs.find((s) => norm(s.title) === norm("Sweet Caroline")) || catalogSongs[0];
+  }
+  // Cherche le plus court préfixe du titre pour lequel la VRAIE recherche (même logique de
+  // filtre/tri que renderCatalog() — volontairement dupliquée ici plutôt que d'altérer
+  // renderCatalog() pour ce seul besoin) ne donne plus que 3 résultats réels (ou moins) — c'est
+  // CE préfixe qui sera affiché tel quel dans la barre (voir startTourSearchDemo()), pour que le
+  // cadre de démonstration montre TOUJOURS exactement ces 3 chansons (demande explicite de
+  // Hubert, capture d'écran à l'appui), jamais plus, jamais moins, jamais un autre nombre.
+  function computeTourSearchFreeze(title) {
+    for (let i = 1; i <= title.length; i++) {
+      const q = norm(title.slice(0, i));
+      const matches = catalogSongs
+        .filter((s) => norm(s.title).includes(q) || norm(s.artist).includes(q))
+        .sort((a, b) => a.title.localeCompare(b.title, "fr"));
+      if (matches.length <= 3) return { prefixLen: i, matches };
+    }
+    // Repli improbable (répertoire immense où même le titre complet a plus de 3 correspondances,
+    // p. ex. plusieurs versions du même titre) : tape le titre en entier comme avant.
+    return { prefixLen: title.length, matches: catalogSongs.filter((s) => norm(s.title) === norm(title)) };
+  }
+  // Construit tout de suite (appelée depuis before(), donc AVANT le tout premier positionnement
+  // du cadre — voir renderTourRealStep()) tout ce dont la démo aura besoin : la liste figée à 3
+  // résultats (déjà rendue via le vrai renderCatalog()) et la prévisualisation du palmarès
+  // (tourSearchDemoPreview, lue par computeTourSearchDemoRect()). Rien n'est encore animé à ce
+  // stade — juste construit et mesurable — pour que le rectangle de démonstration soit déjà à sa
+  // taille finale dès le tout premier calcul, sans second positionnement (même instantané) une
+  // fois le délai de démarrage de l'animation écoulé (demande explicite de Hubert, vidéo à
+  // l'appui : rien ne bouge, jamais, pas même un saut sans transition).
+  function prepareTourSearchDemo() {
+    const demoSong = pickTourSearchDemoSong();
+    if (!demoSong) { tourSearchDemoState = null; return; } // rien à démontrer si le répertoire est vide
+    const demoTitle = demoSong.title;
+    const freeze = computeTourSearchFreeze(demoTitle);
+    // Les 1-2 "autres" vraies chansons affichées à côté de la sienne dans le cadre figé —
+    // réutilisées telles quelles comme concurrentes dans le palmarès (voir selectDemoSong()) :
+    // visuellement la même petite course, à la fois dans la recherche et dans le palmarès.
+    const decoys = freeze.matches.filter((s) => s.id !== demoSong.id);
+    const input = document.getElementById("jb-search-input");
+
+    // Affiche IMMÉDIATEMENT et UNE SEULE FOIS la liste figée à 3 résultats — via le vrai
+    // renderCatalog() (même rendu que pour une vraie recherche), avec la barre déjà réglée sur le
+    // préfixe figé. Elle ne sera plus jamais reconstruite pendant cette visite de l'étape.
+    input.value = demoTitle.slice(0, freeze.prefixLen);
+    renderCatalog();
+    const list = document.getElementById("jb-catalog-list");
+    // Faux nombres de demandes (voir TOUR_SEARCH_DEMO_DECOY_VOTES) sur les 1-2 "autres" vraies
+    // chansons — juste le texte du badge affiché, jamais écrit dans Firestore ni dans le vrai
+    // objet `votes` (voir renderSongRow(), qui lit v?.requests — ceci ne fait que réécrire le
+    // texte APRÈS coup sur les vraies lignes déjà rendues ci-dessus). La ligne de "Sweet
+    // Caroline" elle-même n'est pas touchée : elle garde son vrai "0" jusqu'à sa sélection.
+    decoys.forEach((s, i) => {
+      const value = TOUR_SEARCH_DEMO_DECOY_VOTES[i];
+      if (value === undefined || !list) return;
+      const row = list.querySelector(`li[data-req="${CSS.escape(String(s.id))}"]`);
+      const badge = row && row.querySelector(".jb-song-votes");
+      if (badge) badge.textContent = String(value);
+    });
+    // Ligne de "Sweet Caroline" elle-même, capturée une fois pour l'effet d'illumination (voir
+    // illuminateDemoRow()) — pas besoin de la re-chercher à chaque fois, la liste ne bouge plus.
+    const demoRow = list ? list.querySelector(`li[data-req="${CSS.escape(String(demoSong.id))}"]`) : null;
+
+    // "entryPreview" : le MÊME objet que celui posé pour de vrai un peu plus loin dans
+    // selectDemoSong() — préparé ici pour que computeTourSearchDemoRect() (voir plus haut)
+    // puisse mesurer par avance la hauteur finale du palmarès (chanson démo + concurrentes) et
+    // poser le cadre une bonne fois pour toutes, AVANT que la démo ne commence à s'animer.
+    const entryPreview = { requests: 1, title: demoSong.title, artist: demoSong.artist || "", voters: {} };
+    // Objets frais à chaque préparation (plutôt que de réutiliser TOUR_PALMARES_DEMO_FILLERS tel
+    // quel) — au cas improbable où un ancien objet resterait référencé ailleurs, même si rien ne
+    // les mute jamais (contrairement à entryPreview, voir boostDemoSong()).
+    const fillersPreview = TOUR_PALMARES_DEMO_FILLERS.map((f) => ({ ...f, voters: {} }));
+    tourSearchDemoPreview = { entryPreview };
+    // Les 1-2 concurrentes rejoignent le VRAI palmarès tout de suite, dès l'ouverture de l'étape
+    // — et y restent visibles en tout temps pour toute la durée de la démo (demande explicite de
+    // Hubert). Seule "Sweet Caroline" (tourDemoPalmaresEntry) attend encore l'illumination de sa
+    // ligne avant de les rejoindre (voir selectDemoSong()).
+    tourDemoPalmaresFillers = fillersPreview;
+    renderPalmares();
+    // Vide la barre tout de suite : elle n'a servi ci-dessus qu'à CONSTRUIRE la liste figée (via
+    // le vrai renderCatalog()), pas à afficher quoi que ce soit au client — la liste ne bouge
+    // plus une fois construite, donc le texte de la barre est déjà découplé (voir typeChar() dans
+    // runTourSearchDemo()). Sans ça, "Swe" resterait affiché pendant tout le délai de démarrage de
+    // l'animation, avant même que celle-ci ne vide la barre à son tour — demande explicite de
+    // Hubert : rien ne doit être écrit dès le tout début.
+    input.value = "";
+    tourSearchDemoState = { demoSong, demoTitle, freeze, input, demoRow, entryPreview, fillersPreview };
+  }
+  // Ne fait plus que lancer l'ANIMATION (frappe/illumination/sélection/boosts), en réutilisant
+  // tel quel l'état déjà construit par prepareTourSearchDemo() (voir before() dans
+  // TOUR_REAL_STEPS.search) — plus rien n'est construit ni mesuré ici, donc plus aucun
+  // repositionnement du cadre ne peut survenir à ce moment (même instantané).
+  function startTourSearchDemo() {
+    if (tourSearchDemoTimer) { clearTimeout(tourSearchDemoTimer); tourSearchDemoTimer = null; }
+    if (!tourSearchDemoState) return;
+    // Attend que le défilement vers la barre de recherche (scrollIntoView(), voir
+    // renderTourRealStep()) soit terminé avant de démarrer l'animation de frappe — un peu plus
+    // longtemps que son propre setTimeout(place, 350) de rattrapage, pour ne jamais l'entamer
+    // pendant que la page bouge encore (demande explicite de Hubert : rien ne bouge, jamais).
+    tourSearchDemoTimer = setTimeout(runTourSearchDemo, 400);
+  }
+  function runTourSearchDemo() {
+    if (TOUR_REAL_KEYS[tourRealSubStep] !== "search" || !tourSearchDemoState) return;
+    const { demoTitle, input, demoRow, entryPreview } = tourSearchDemoState;
+
+    // Montre d'abord la barre VIDE, un court instant, avant de commencer à écrire — demande
+    // explicite de Hubert : "au départ, il n'y ait rien d'écrit". La liste figée à 3 résultats
+    // (déjà construite par prepareTourSearchDemo(), voir plus haut) reste affichée en dessous
+    // sans bouger pendant ce temps, exactement comme pendant la frappe.
+    function showEmpty() {
+      if (TOUR_REAL_KEYS[tourRealSubStep] !== "search") return;
+      input.value = "";
+      tourSearchDemoTimer = setTimeout(() => typeChar(1), TOUR_SEARCH_DEMO_GAP_MS);
+    }
+    function typeChar(i) {
+      // Le client a changé de sous-étape (ou quitté le tuto) pendant le délai : on arrête là,
+      // sans reprogrammer de suite — évite qu'une frappe fantôme continue en arrière-plan.
+      if (TOUR_REAL_KEYS[tourRealSubStep] !== "search") return;
+      // Purement décoratif : la liste de résultats en dessous ne bouge plus (voir plus haut).
+      // Écrit le titre EN ENTIER (pas seulement le préfixe figé qui a servi à construire la
+      // liste, voir prepareTourSearchDemo()) — demande explicite de Hubert : "Sweet Caroline"
+      // doit être écrit au complet.
+      input.value = demoTitle.slice(0, i);
+      tourSearchDemoTimer = i < demoTitle.length
+        ? setTimeout(() => typeChar(i + 1), TOUR_SEARCH_DEMO_TYPE_MS)
+        : setTimeout(illuminateDemoRow, TOUR_SEARCH_DEMO_HOLD_MS);
+    }
+    // Illumine brièvement la ligne de "Sweet Caroline" dans le cadre (voir .jb-tour-select-glow
+    // en CSS) pour bien montrer qu'elle vient d'être choisie — et ce n'est QU'APRÈS ça qu'elle
+    // rejoint le palmarès (voir selectDemoSong()), demande explicite de Hubert.
+    function illuminateDemoRow() {
+      if (TOUR_REAL_KEYS[tourRealSubStep] !== "search") return;
+      if (demoRow) demoRow.classList.add("jb-tour-select-glow");
+      tourSearchDemoTimer = setTimeout(() => {
+        if (demoRow) demoRow.classList.remove("jb-tour-select-glow");
+        selectDemoSong();
+      }, TOUR_SEARCH_DEMO_ILLUMINATE_MS);
+    }
+    // Montre "Sweet Caroline" se placer dans le VRAI palmarès (même rendu/animation que pour une
+    // vraie demande — voir renderPalmares()), aux côtés des 1-2 mêmes chansons déjà visibles en
+    // tout temps depuis le début de l'étape (voir tourDemoPalmaresFillers/decoys ci-dessus, posées
+    // par prepareTourSearchDemo()) — sans jamais rien écrire dans Firestore (voir
+    // hideTourDemoEntry()). Pas besoin de repositionner le cadre ici : il a déjà été dimensionné
+    // pour cette taille finale dès le départ (voir tourSearchDemoPreview/
+    // computeTourSearchDemoRect() plus haut). Enchaîne ensuite sur boostDemoSong() pour la faire
+    // grimper jusqu'en 1re place.
+    function selectDemoSong() {
+      if (TOUR_REAL_KEYS[tourRealSubStep] !== "search") return;
+      // Remet à 1 à chaque (re)sélection : boostDemoSong() incrémente ce MÊME objet en place
+      // (réutilisé d'une boucle à l'autre, voir prepareTourSearchDemo()) — sans ce reset, une
+      // deuxième boucle de démo afficherait la chanson déjà à 4 demandes au lieu de repartir de 1.
+      entryPreview.requests = 1;
+      tourDemoPalmaresEntry = entryPreview;
+      renderPalmares();
+      tourSearchDemoTimer = setTimeout(() => boostDemoSong(0), TOUR_SEARCH_DEMO_RANK_HOLD_MS);
+    }
+    // Simule "step+1" clics sur le bouton Boost de la chanson démo, un par un, en incrémentant
+    // directement tourDemoPalmaresEntry.requests et en ré-affichant le palmarès (même animation
+    // FLIP que pour un vrai boost — voir renderPalmares()) — JAMAIS en appelant le vrai
+    // boostSong() ni en simulant un clic réel, pour ne jamais toucher Firestore. Une réorganisation
+    // ne change pas la hauteur du palmarès (juste l'ordre des mêmes 3 lignes), donc pas besoin de
+    // repositionner le cadre ici non plus.
+    function boostDemoSong(step) {
+      if (TOUR_REAL_KEYS[tourRealSubStep] !== "search" || !tourDemoPalmaresEntry) return;
+      tourDemoPalmaresEntry.requests += TOUR_SEARCH_DEMO_BOOST_INCREMENT;
+      renderPalmares();
+      // Illumine le VRAI bouton Boost de "Sweet Caroline" (fraîchement recréé par renderPalmares()
+      // ci-dessus, voir son innerHTML) pour bien montrer que CE boost vient d'être ajouté —
+      // demande explicite de Hubert. Pas besoin de le retirer ensuite : bouton tout neuf à chaque
+      // rendu, l'animation (2 pulsations, voir .jb-tour-boost-flash en CSS) se termine d'elle-même.
+      const boostBtn = document.querySelector('#jb-palmares-list [data-boost="__tour_demo__"]');
+      if (boostBtn) boostBtn.classList.add("jb-tour-boost-flash");
+      const next = step + 1;
+      tourSearchDemoTimer = next < TOUR_SEARCH_DEMO_BOOST_CLICKS
+        ? setTimeout(() => boostDemoSong(next), TOUR_SEARCH_DEMO_BOOST_STEP_MS)
+        : setTimeout(resetToS, TOUR_SEARCH_DEMO_TOP_HOLD_MS);
+    }
+    function resetToS() {
+      if (TOUR_REAL_KEYS[tourRealSubStep] !== "search") return;
+      // Retire seulement "Sweet Caroline" — les concurrentes restent affichées, visibles en tout
+      // temps même pendant que la démo reprend depuis le début (demande explicite de Hubert).
+      hideTourDemoEntry();
+      if (demoRow) demoRow.classList.remove("jb-tour-select-glow"); // sécurité, normalement déjà enlevé
+      showEmpty();
+    }
+    showEmpty(); // démarre avec la barre vide (demande explicite de Hubert), puis écrit le titre au complet
   }
 
   // Bouton unique "Débuter"/"Suivant" des étapes plein écran (voir .jb-tour-fs-next dans le
@@ -1898,13 +2285,24 @@
     if (on) positionTourSpotOffscreen();
   }
 
-  function positionTourSpot(rect) {
+  // instant:true coupe la transition CSS (top/left/width/height, voir .jb-tour-spot) juste pour
+  // CE positionnement — utilisé par l'étape "barre de recherche" (voir TOUR_REAL_STEPS.search /
+  // computeTourSearchDemoRect()) pour poser le cadre à sa taille finale d'un coup, sans "sauter"
+  // visiblement depuis le premier positionnement générique (juste la barre de recherche, avant
+  // que la démo n'ait construit son contenu) jusqu'à la taille définitive — demande explicite de
+  // Hubert : rien ne doit bouger, pas même une animation de croissance.
+  function positionTourSpot(rect, instant) {
     const spot = document.getElementById("jb-tour-spot");
+    if (instant) spot.style.transition = "none";
     const pad = 6;
     spot.style.left = `${Math.max(4, rect.left - pad)}px`;
     spot.style.top = `${Math.max(4, rect.top - pad)}px`;
     spot.style.width = `${rect.width + pad * 2}px`;
     spot.style.height = `${rect.height + pad * 2}px`;
+    if (instant) {
+      void spot.offsetWidth; // force le navigateur à appliquer la position AVANT de réactiver la transition
+      spot.style.transition = "";
+    }
   }
 
   // Étapes immersives (pas de vrai élément à mettre en valeur) : place le "spot" hors écran,
@@ -1920,7 +2318,8 @@
     spot.style.height = "0px";
   }
 
-  function positionTourCard(rect, centered) {
+  // instant : voir positionTourSpot() ci-dessus, même principe pour le bouton "Suivant".
+  function positionTourCard(rect, centered, instant) {
     const card = document.getElementById("jb-tour-card");
     if (centered) {
       card.classList.add("jb-tour-card-center");
@@ -1928,6 +2327,7 @@
       return;
     }
     card.classList.remove("jb-tour-card-center");
+    if (instant) card.style.transition = "none";
     const margin = 12;
     const vh = window.innerHeight;
     const cardH = card.getBoundingClientRect().height;
@@ -1940,6 +2340,10 @@
       top = rect.top - cardH - margin;
     }
     card.style.top = `${Math.max(margin, top)}px`;
+    if (instant) {
+      void card.offsetWidth;
+      card.style.transition = "";
+    }
   }
 
   // Bouton "Suivant"/"Terminer" : n'existe plus que pour la 5e étape (voir renderTourRealStep())
@@ -1952,12 +2356,15 @@
     btn.textContent = isLast ? t("tour_done") : t("tour_next");
   }
 
+  // Un point par sous-étape réelle — inutile (et masqué) tant qu'il n'y en a qu'une seule (voir
+  // TOUR_REAL_KEYS, réduit à la seule démo de recherche à la demande de Hubert).
   function renderTourDots() {
     const dots = document.getElementById("jb-tour-dots");
     dots.innerHTML = "";
-    TOUR_MAJOR_STEPS.forEach((_, i) => {
+    dots.hidden = TOUR_REAL_KEYS.length <= 1;
+    TOUR_REAL_KEYS.forEach((_, i) => {
       const dot = document.createElement("span");
-      dot.className = "jb-tour-dot" + (i === tourStep ? " jb-tour-dot-active" : "");
+      dot.className = "jb-tour-dot" + (i === tourRealSubStep ? " jb-tour-dot-active" : "");
       dots.appendChild(dot);
     });
   }
@@ -2303,16 +2710,20 @@
     });
   }
 
-  // Étape 5 (dernière, un seul point) : regroupe les 3 anciennes étapes "spot" (barre de
-  // recherche / Top Pick / styles) — un vrai élément de la page est mis en valeur, tout le
-  // reste caché (voir .jb-tour-spot). Seule étape à garder l'ancien mécanisme (fenêtre
-  // flottante + bouton .jb-tour-next "Suivant"/"Terminer") puisqu'elle pointe vers de vrais
-  // éléments de la page plutôt que du contenu simulé plein écran. Navigue via tourRealSubStep
-  // plutôt que tourStep, pour rester sur le même (dernier) point pendant ses 3 sous-étapes.
+  // Seule et unique étape du tuto depuis son raccourci (barre de recherche / Top Pick / styles,
+  // voir plus haut) : un vrai élément de la page est mis en valeur, tout le reste caché (voir
+  // .jb-tour-spot). Garde l'ancien mécanisme (fenêtre flottante + bouton .jb-tour-next
+  // "Suivant"/"Terminer") puisqu'elle pointe vers de vrais éléments de la page plutôt que du
+  // contenu simulé plein écran. Navigue via tourRealSubStep — re-rend aussi les points (un par
+  // sous-étape réelle, voir renderTourDots()) à chaque appel pour que le point actif avance.
   function renderTourRealStep() {
+    renderTourDots();
     setTourFullscreen(false);
     clearTourAutoTimer();
     setTourFsNext({ visible: false }); // cette étape garde l'ancien bouton .jb-tour-next
+    // Fenêtre "juste le bouton" (voir .jb-tour-card-minimal en CSS, demande explicite de
+    // Hubert) : titre/texte restent renseignés ci-dessous (au cas où) mais ne s'affichent plus.
+    document.getElementById("jb-tour-card").classList.add("jb-tour-card-minimal");
     const step = TOUR_REAL_STEPS[TOUR_REAL_KEYS[tourRealSubStep]];
     document.getElementById("jb-tour-title").textContent = t(step.titleKey);
     document.getElementById("jb-tour-text").textContent = t(step.textKey);
@@ -2324,15 +2735,31 @@
 
     const target = step.target();
     if (!target) return;
+    // step.rect() (quand présent — voir TOUR_REAL_STEPS.search/computeTourSearchDemoRect())
+    // calcule un rectangle qui peut englober plus que le seul élément cible (résultats de
+    // recherche + palmarès pendant la démo), figé sur sa taille FINALE dès le premier appel —
+    // demande explicite de Hubert, vidéo à l'appui : plus aucun mouvement du cadre, jamais,
+    // une fois posé. Le bouton "Suivant" se place toujours EN DESSOUS de ce même rectangle
+    // (spotRect), pas seulement sous la barre de recherche — sinon il se retrouvait planté
+    // par-dessus les résultats affichés.
     const place = () => {
-      const rect = target.getBoundingClientRect();
-      positionTourSpot(rect);
-      positionTourCard(rect, false);
+      const spotRect = step.rect ? step.rect() : target.getBoundingClientRect();
+      if (!spotRect) return;
+      positionTourSpot(spotRect, step.instant);
+      positionTourCard(spotRect, false, step.instant);
     };
     place(); // positionnement immédiat (évite un flash), affiné une fois le scroll terminé
     target.scrollIntoView({ behavior: "smooth", block: "center" });
     setTimeout(place, 350);
     tourReposition = place;
+
+    // Démo animée (voir startTourSearchDemo() plus haut) : seulement pendant la sous-étape
+    // "barre de recherche", arrêtée dès qu'on la quitte pour Top Pick/styles. Lancée APRÈS avoir
+    // posé tourReposition ci-dessus, pour que chaque lettre tapée (voir setValue() dans
+    // startTourSearchDemo()) fasse grandir/rétrécir le spot en repositionnant avec la bonne
+    // fonction dès la toute première frappe.
+    if (TOUR_REAL_KEYS[tourRealSubStep] === "search") startTourSearchDemo();
+    else stopTourSearchDemo();
   }
 
   function renderTourStep() {
@@ -2355,6 +2782,7 @@
     if (TOUR_MAJOR_STEPS[i] !== "real") tourRealSubStep = 0;
     clearTourAutoTimer();
     stopTourBoostCountdown();
+    stopTourSearchDemo();
     renderTourStep();
   }
 
@@ -2367,8 +2795,12 @@
     tourBoostsRemaining = 3;
     clearTourAutoTimer();
     stopTourBoostCountdown();
+    stopTourSearchDemo();
     if (tourBoostAnimTimer) { clearTimeout(tourBoostAnimTimer); tourBoostAnimTimer = null; }
     document.getElementById("jb-tour").hidden = false;
+    // Garde le bandeau du haut (nom du site + "?"/FR/EN) visible par-dessus l'assombrissement du
+    // tuto — voir #jb-app.jb-tour-open .jb-top-bar en CSS, demande explicite de Hubert.
+    document.getElementById("jb-app").classList.add("jb-tour-open");
     showTourStep(0);
     window.addEventListener("resize", handleTourReposition);
     window.addEventListener("scroll", handleTourReposition, true);
@@ -2376,8 +2808,9 @@
 
   function endTour() {
     document.getElementById("jb-tour").hidden = true;
+    document.getElementById("jb-app").classList.remove("jb-tour-open");
     document.getElementById("jb-tour").classList.remove("jb-tour-fs");
-    document.getElementById("jb-tour-card").classList.remove("jb-tour-card-immersive", "jb-tour-card-fullscreen");
+    document.getElementById("jb-tour-card").classList.remove("jb-tour-card-immersive", "jb-tour-card-fullscreen", "jb-tour-card-minimal");
     document.getElementById("jb-tour-card").style.transform = "";
     document.getElementById("jb-tour-card").style.opacity = "";
     document.getElementById("jb-tour-backdrop").classList.remove("jb-tour-backdrop-opaque");
@@ -2386,6 +2819,7 @@
     clearTourAutoTimer();
     if (tourBoostAnimTimer) { clearTimeout(tourBoostAnimTimer); tourBoostAnimTimer = null; }
     stopTourBoostCountdown();
+    stopTourSearchDemo();
     safeStorageSet(tourSeenKey(), "1");
     window.removeEventListener("resize", handleTourReposition);
     window.removeEventListener("scroll", handleTourReposition, true);
@@ -2409,24 +2843,21 @@
   // Toucher l'arrière-plan bloqué (voir .jb-tour-backdrop — ne se produit plus qu'à la 5e
   // étape, les 4 premières couvrant tout l'écran) ne fait pas passer en dessous — ça fait juste
   // gonfler-dégonfler la fenêtre du tuto en blanc chaud, pour indiquer au client de toucher
-  // plutôt à l'intérieur (ou d'utiliser le bouton "Passer le tutoriel" toujours visible en bas
-  // de l'écran, voir .jb-tour-skip, pour sortir du tuto pour de bon).
+  // plutôt à l'intérieur (le bouton "Accéder à mon répertoire" en bas de la fenêtre, une fois la
+  // démo terminée — plus de bouton "Passer" séparé, retiré à la demande de Hubert).
   document.getElementById("jb-tour-backdrop").addEventListener("click", () => {
     pulseAttention(document.getElementById("jb-tour-card"), "jb-pulse-attn-warm");
   });
 
-  // Bouton "Suivant"/"Terminer" : n'existe plus que pour la 5e étape (voir setTourNext()) — les
-  // 4 premières utilisent leur propre bouton .jb-tour-fs-next (voir setTourFsNext()).
+  // Bouton "Accéder à mon répertoire" : n'existe plus que pour la 5e étape (voir setTourNext()) —
+  // les 4 premières utilisent leur propre bouton .jb-tour-fs-next (voir setTourFsNext()). Comme
+  // TOUR_REAL_KEYS ne contient plus que "search", ce clic termine toujours le tuto directement.
   document.getElementById("jb-tour-next").addEventListener("click", () => {
     if (tourRealSubStep < TOUR_REAL_KEYS.length - 1) {
       tourRealSubStep += 1;
       renderTourRealStep();
       return;
     }
-    endTour();
-  });
-
-  document.getElementById("jb-tour-skip").addEventListener("click", () => {
     endTour();
   });
 
@@ -3148,6 +3579,23 @@
       .filter(([, v]) => v.requests > 0 && !isUnavailable(v))
       .sort((a, b) => b[1].requests - a[1].requests);
 
+    // Démo animée de la barre de recherche (voir prepareTourSearchDemo()/selectDemoSong()) :
+    // les 1-2 "autres" vraies chansons (tourDemoPalmaresFillers) sont ajoutées au classement DÈS
+    // le début de l'étape, et y restent visibles en tout temps (demande explicite de Hubert) —
+    // "Sweet Caroline" (tourDemoPalmaresEntry) ne les rejoint qu'une fois sélectionnée (juste
+    // après l'illumination de sa ligne, voir illuminateDemoRow()). Exactement comme de vraies
+    // chansons, sans jamais rien écrire dans Firestore — retirées avec stopTourSearchDemo()/
+    // hideTourDemoEntry() dès que la démo passe à autre chose.
+    if (tourDemoPalmaresFillers) {
+      tourDemoPalmaresFillers.forEach((f, i) => ranked.push([`__tour_demo_filler_${i}__`, f]));
+    }
+    if (tourDemoPalmaresEntry) {
+      ranked.push(["__tour_demo__", tourDemoPalmaresEntry]);
+    }
+    if (tourDemoPalmaresFillers || tourDemoPalmaresEntry) {
+      ranked.sort((a, b) => b[1].requests - a[1].requests);
+    }
+
     empty.hidden = ranked.length > 0;
 
     if (ranked.length === 0) {
@@ -3475,6 +3923,7 @@
       <div class="jb-song-info">
         <div class="jb-song-title">${escapeHtml(song.title)}</div>
         ${showArtist && song.artist ? `<div class="jb-song-artist">${escapeHtml(song.artist)}</div>` : ""}
+        ${requested ? renderVotersLine(v?.voters) : ""}
       </div>
       ${btnHtml}`;
     if (!isBurned(v) && !isInCooldown(v) && !requested) {
@@ -3578,19 +4027,49 @@
     }
 
     try {
-      // setDoc + merge (plutôt qu'une transaction avec lecture préalable). On ne touche jamais
-      // burned/cooldownUntil/playedAt ici (absents du merge), pour ne pas écraser leur état si
-      // la chanson a déjà un historique ; increment() gère correctement les demandes
-      // simultanées de plusieurs clients.
-      const payload = {
-        requests: increment(1),
-        title: song.title,
-        artist: song.artist || "",
-        createdAt: serverTimestamp(),
-      };
+      // Transaction (lecture + une SEULE écriture), plutôt que setDoc+updateDoc séparés comme
+      // avant : les règles Firestore (voir firestore.rules, /votes/{songId}) exigent qu'une
+      // écriture anonyme sur un document déjà existant ne touche QUE les champs "requests" (en
+      // l'augmentant de EXACTEMENT 1) et "voters", rien d'autre — sinon le serveur REJETTE
+      // l'écriture (permission-denied). L'ancienne version faisait deux écritures qui violaient
+      // toutes les deux cette règle dès que la chanson avait déjà un document ce soir (donc pour
+      // tout le monde sauf le tout premier client à la demander) : le setDoc() réécrivait aussi
+      // title/artist/createdAt (interdit en update), et l'updateDoc() séparé pour le prénom ne
+      // touchait jamais "requests" (donc jamais égal à ancienne_valeur + 1, interdit aussi). Les
+      // deux étaient donc rejetées par le serveur — mais le SDK Firestore applique d'abord le
+      // changement de façon optimiste dans le cache local (le prénom apparaît un instant dans le
+      // palmarès), puis l'annule automatiquement dès que le refus du serveur arrive (le prénom
+      // disparaît juste après) : exactement le "apparaît très brièvement puis disparaît" observé.
+      // Une seule écriture qui respecte les règles du premier coup règle le problème.
       const clientName = getClientName();
-      if (clientName) payload[`voters.${sanitizeVoterKey(clientName)}`] = increment(1);
-      await setDoc(ref, payload, { merge: true });
+      await runTransaction(db, async (tx) => {
+        const snap = await tx.get(ref);
+        if (!snap.exists()) {
+          // Première demande de la soirée pour cette chanson : création complète.
+          const payload = {
+            requests: 1,
+            burned: false,
+            title: song.title,
+            artist: song.artist || "",
+            createdAt: serverTimestamp(),
+          };
+          if (clientName) payload.voters = { [sanitizeVoterKey(clientName)]: 1 };
+          tx.set(ref, payload);
+        } else {
+          // Déjà demandée ce soir : on ne touche QUE requests (+1) et voters, jamais
+          // title/artist/createdAt (qui n'ont pas changé et que les règles interdisent de
+          // réécrire ici).
+          const data = snap.data();
+          const payload = { requests: (data.requests || 0) + 1 };
+          if (clientName) {
+            const key = sanitizeVoterKey(clientName);
+            const voters = { ...(data.voters || {}) };
+            voters[key] = (voters[key] || 0) + 1;
+            payload.voters = voters;
+          }
+          tx.update(ref, payload);
+        }
+      });
       // Compteur cumulatif par artiste (Top Pick) — jamais réinitialisé par "Nouvelle soirée",
       // pour refléter les tendances sur plusieurs soirées plutôt qu'une seule.
       if (song.artist) {
