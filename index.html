@@ -167,13 +167,30 @@
     #jb-app .jb-boost-remaining { font-size: 0.72rem; padding: 4px 9px; }
   }
 
-  /* Rappel visuel (badges "Boosts" / "Demandes") : gonfle-dégonfle + s'illumine-s'éteint au
-     même rythme, pour attirer l'œil du client sur son compteur juste après qu'il ait changé. */
+  /* Rappel visuel (badges "Boosts" / "Demandes" DANS LA PAGE PRINCIPALE — pas seulement le tuto,
+     voir pulseAttention() plus bas dans le JS, appelée depuis les VRAIES boostSong()/requestSong())
+     : gonfle-dégonfle + s'illumine-s'éteint UNE SEULE FOIS en blanc chaud, pour attirer l'œil du
+     client sur son compteur juste après qu'il ait changé — demande explicite de Hubert : "je ne
+     veux qu'un seul flash" (pas 2 pulsations) et "je veux que ça reste blanc chaud" (pas la couleur
+     d'accent cyan du thème). */
   @keyframes jb-pulse-attn {
     0%, 100% { transform: scale(1); background: var(--card); box-shadow: none; }
-    50% { transform: scale(1.22); background: var(--accent); color: #2b0a1a; box-shadow: 0 0 12px 2px var(--accent); }
+    50% { transform: scale(1.22); background: #fff8e6; color: #2b1a06; box-shadow: 0 0 12px 2px rgba(255, 248, 230, 0.85); }
   }
-  #jb-app .jb-pulse-attn { animation: jb-pulse-attn 0.5s ease-in-out 2; }
+  #jb-app .jb-pulse-attn { animation: jb-pulse-attn 0.5s ease-in-out 1; }
+
+  /* Variante de .jb-pulse-attn pour les éléments PLEINE LARGEUR (ligne du cadre rouge, case du
+     palmarès) : même couleur/lueur/rythme (blanc chaud, un seul flash de 0.5s) que la pulsation
+     ci-dessus, mais SANS l'agrandissement de 22%, qui n'a de sens que sur un petit badge/bouton
+     compact (voir captures : appliqué tel quel à une ligne pleine largeur, ce zoom la fait déborder
+     de son cadre des deux côtés et coupe le titre).
+     Utilisée par illuminateDemoRow() (ligne du cadre rouge) et renderPalmares() (apparition dans
+     le palmarès) — voir pulseAttention(el, "jb-pulse-attn-row") à ces deux endroits. */
+  @keyframes jb-pulse-attn-row {
+    0%, 100% { background: var(--card); box-shadow: none; }
+    50% { background: #fff8e6; color: #2b1a06; box-shadow: 0 0 12px 2px rgba(255, 248, 230, 0.85); }
+  }
+  #jb-app .jb-pulse-attn-row { animation: jb-pulse-attn-row 0.5s ease-in-out 1; }
 
   /* Palmarès public : liste pleine largeur, 10 positions de haut en bas */
   #jb-app .jb-palmares-grid { display: flex; flex-direction: column; gap: 2px; position: relative; }
@@ -190,8 +207,12 @@
     font-weight: 800; font-size: 1.15rem; color: var(--text-dim); width: 26px;
     flex-shrink: 0; text-align: center;
   }
+  /* Chiffre de votes agrandi une 1re fois (0.95rem -> 1.3rem), puis ENCORE agrandi (1.3rem ->
+     1.7rem) — demande explicite de Hubert : "grossie encore plus les chiffres du nombre de
+     vote". Largeur augmentée en conséquence à chaque étape (22px -> 28px -> 34px) pour ne pas
+     couper les chiffres à deux chiffres. */
   #jb-app .jb-slot-votes {
-    font-weight: 800; font-size: 0.95rem; color: var(--accent2); width: 22px;
+    font-weight: 800; font-size: 1.7rem; color: var(--accent2); width: 34px;
     flex-shrink: 0; text-align: center;
   }
   #jb-app .jb-slot-info { flex: 1; min-width: 0; display: flex; flex-direction: column; overflow: hidden; }
@@ -225,7 +246,7 @@
   @media (max-width: 420px) {
     #jb-app .jb-slot { gap: 6px; padding: 8px 1px; }
     #jb-app .jb-slot-rank { width: 20px; font-size: 1rem; }
-    #jb-app .jb-slot-votes { width: 16px; font-size: 0.85rem; }
+    #jb-app .jb-slot-votes { width: 28px; font-size: 1.4rem; }
     #jb-app .jb-slot-title { font-size: 0.82rem; }
     #jb-app .jb-slot-artist { font-size: 0.7rem; }
     #jb-app .jb-slot-voters { font-size: 0.66rem; }
@@ -244,12 +265,14 @@
   #jb-app .jb-song-info { flex: 1; min-width: 0; }
   #jb-app .jb-song-title { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   #jb-app .jb-song-artist { color: var(--text-dim); font-size: 0.83rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  /* Même agrandissement que .jb-slot-votes ci-dessus (0.95rem -> 1.3rem -> 1.7rem) — demande
+     explicite de Hubert : "le chiffre n'est pas assez apparent", puis "grossie encore plus". */
   #jb-app .jb-song-votes {
-    font-weight: 800; font-size: 0.95rem; color: var(--accent2); width: 22px;
+    font-weight: 800; font-size: 1.7rem; color: var(--accent2); width: 34px;
     flex-shrink: 0; text-align: center;
   }
   @media (max-width: 420px) {
-    #jb-app .jb-song-votes { width: 16px; font-size: 0.85rem; }
+    #jb-app .jb-song-votes { width: 28px; font-size: 1.4rem; }
   }
 
   #jb-app .jb-catalog-searchbar {
@@ -554,59 +577,22 @@
     50% { box-shadow: 0 0 14px 5px rgba(255, 248, 230, 0.9); }
   }
   #jb-app .jb-tour-boost-glow { animation: jb-tour-boost-glow 1.4s ease-in-out infinite; }
-  /* Illumine brièvement la ligne d'une chanson dans le cadre de recherche démonstratif pour
-     montrer qu'elle vient d'être sélectionnée, juste avant de rejoindre le palmarès (demande
-     explicite de Hubert — voir illuminateDemoRow() dans startTourSearchDemo()). UNE SEULE
-     pulsation courte (0.45s × 1) plutôt qu'une boucle infinie : l'effet doit se terminer de
-     lui-même — demande explicite de Hubert : une première version à 2 pulsations (0.45s × 2)
-     faisait "deux flash", il n'en voulait qu'un seul (voir aussi TOUR_SEARCH_DEMO_ILLUMINATE_MS
-     plus bas dans le script, réduit en conséquence pour rester synchronisé avec cette durée).
-     Blanc chaud (même teinte que .jb-pulse-attn-warm/.jb-tour-boost-glow ci-dessus) plutôt que le
-     rose/rouge des badges — et plus intense (rayon/étalement/opacité tous augmentés) — demande
-     explicite de Hubert : l'ancienne couleur rouge ne convenait pas et l'effet était trop faible. */
   /* Apparition de "Sweet Caroline" (la chanson démo) dans le palmarès du tuto : pas d'un coup
      sec, devient visible GRADUELLEMENT en 0.5s, puis (une fois cette apparition terminée)
-     l'animation d'illumination .jb-tour-select-glow ci-dessous s'enchaîne — demande explicite de
-     Hubert (capture à l'appui). Voir renderPalmares(), seul endroit où la ligne est créée pour la
-     première fois. */
+     enchaîne sur .jb-pulse-attn (voir plus bas) — demande explicite de Hubert (capture à
+     l'appui). Voir renderPalmares(), seul endroit où la ligne est créée pour la première fois. */
   @keyframes jb-slot-fade-in {
     from { opacity: 0; }
     to { opacity: 1; }
   }
   #jb-app .jb-slot-fade-in { animation: jb-slot-fade-in 0.5s ease-out; }
-  @keyframes jb-tour-select-glow {
-    0%, 100% { box-shadow: 0 0 0 0 rgba(255, 248, 230, 0); background: var(--card); }
-    /* Demande explicite de Hubert, captures à l'appui : "je veux voir s'illuminer toute
-       l'intérieur de la case" — pas juste un fond légèrement différent (var(--card2), à peine
-       visible), mais un véritable remplissage blanc chaud de TOUTE la case (même teinte que le
-       contour ci-dessus), aussi bien pour la ligne sélectionnée dans le cadre rouge que pour le
-       bouton/badge Boost. */
-    50% { box-shadow: 0 0 34px 12px rgba(255, 248, 230, 1); background: rgba(255, 248, 230, 0.95); }
-  }
-  #jb-app .jb-tour-select-glow { animation: jb-tour-select-glow 0.45s ease-in-out 1; border-radius: 12px; }
-  /* Demande explicite de Hubert : pas SEULEMENT le contour (box-shadow ci-dessus) — l'INTÉRIEUR
-     (le titre de la chanson, et l'icône/texte du bouton ou badge Boost) doit lui aussi devenir
-     blanc chaud pendant le flash, même teinte que le contour. "color" pour le texte (le titre,
-     le mot "Boost") + "filter: brightness()" en plus pour que l'icône 🚀 elle-même s'éclaircisse
-     (un emoji ignore "color", qui n'agit que sur du texte). */
-  @keyframes jb-tour-illum-inner {
-    0%, 100% { color: inherit; filter: none; }
-    50% { color: rgb(255, 248, 230); filter: brightness(1.6); }
-  }
-  #jb-app .jb-tour-select-glow .jb-song-title,
-  #jb-app .jb-tour-select-glow .jb-slot-title {
-    animation: jb-tour-illum-inner 0.45s ease-in-out 1;
-  }
-  /* Même pulsation que .jb-tour-select-glow ci-dessus, réutilisée sur le VRAI bouton Boost de la
-     chanson démo à chaque boost simulé (voir boostDemoSong()), ET sur le VRAI badge "Boosts : N"
-     du haut de page (idem, voir boostDemoSong()) — demande explicite de Hubert : "à chaque fois
-     qu'un boost est utilisé". border-radius 999px (au lieu de 12px) pour garder la forme "pilule"
-     du bouton/badge, voir .jb-slot-boost/.jb-boost-remaining. Combinée avec jb-tour-illum-inner
-     ci-dessus pour que l'icône 🚀 et le texte s'éclaircissent en même temps que le contour. */
-  #jb-app .jb-tour-boost-flash {
-    animation: jb-tour-select-glow 0.45s ease-in-out 1, jb-tour-illum-inner 0.45s ease-in-out 1;
-    border-radius: 999px;
-  }
+  /* Les illuminations du tuto (ligne sélectionnée dans le cadre rouge, apparition dans le
+     palmarès, bouton et badge Boost) réutilisent maintenant TOUTES .jb-pulse-attn (voir plus
+     haut dans ce fichier, la VRAIE pulsation déjà utilisée pour les badges "Boosts"/"Demandes"
+     partout ailleurs dans l'appli, via pulseAttention()) — demande explicite de Hubert : "je veux
+     les animations d'illuminations du tutoriel soit les mêmes que dans le système d'opération".
+     Les anciennes animations propres au tuto (glow blanc chaud, keyframes jb-tour-select-glow/
+     jb-tour-illum-inner/jb-tour-boost-flash) ont donc été retirées d'ici. */
   /* Bouton Boost visible mais indisponible (animation en cours, boosts épuisés) — reste affiché,
      juste assombri, plutôt que de disparaître complètement comme avant (précision de Hubert).
      Même traitement visuel que le vrai palmarès pendant son animation FLIP, voir
@@ -1390,7 +1376,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-09-29.28";
+  const APP_BUILD = "2026-09-29.32";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -2098,13 +2084,16 @@
   const TOUR_SEARCH_DEMO_TYPE_FAST_MS = 130;
   const TOUR_SEARCH_DEMO_HOLD_MS = 1200;
   // Durée de l'effet d'illumination sur la ligne choisie avant qu'elle ne rejoigne le palmarès
-  // (voir illuminateDemoRow()/.jb-tour-select-glow en CSS — demande explicite de Hubert : elle
-  // doit d'abord "s'illuminer" pour montrer sa sélection, et ne rejoindre le palmarès qu'ENSUITE).
-  // Alignée sur la durée de l'animation CSS elle-même (0.45s × 1 pulsation, voir
-  // .jb-tour-select-glow — réduite de 2 à 1 pulsation, demande explicite de Hubert : "toujours
-  // deux flash, je veux qu'elle n'en fasse qu'un seul") : sans ça, l'effet visuel se terminerait
-  // avant la fin de cette pause, laissant un temps mort avant que la chanson ne bouge.
-  const TOUR_SEARCH_DEMO_ILLUMINATE_MS = 450;
+  // (voir illuminateDemoRow() en CSS — demande explicite de Hubert : elle doit d'abord
+  // "s'illuminer" pour montrer sa sélection, et ne rejoindre le palmarès qu'ENSUITE). Demande
+  // explicite de Hubert : "je veux les animations d'illuminations du tutoriel soit les mêmes que
+  // dans le système d'opération" — réutilise .jb-pulse-attn, la MÊME pulsation utilisée partout
+  // ailleurs dans l'appli, y compris la page principale (badges "Boosts"/"Demandes", voir
+  // pulseAttention()), plutôt qu'une animation propre au tuto. Alignée sur sa durée réelle (0.5s,
+  // UN SEUL flash — demande explicite de Hubert : "je ne veux qu'un seul flash" — voir
+  // @keyframes jb-pulse-attn) : sans ça, l'effet visuel se terminerait avant la fin de cette
+  // pause, laissant un temps mort avant que la chanson ne bouge.
+  const TOUR_SEARCH_DEMO_ILLUMINATE_MS = 500;
   // Durée d'affichage du classement de départ (dernière position) avant que les boosts simulés
   // ne commencent à la faire grimper (voir selectDemoSong()/boostDemoSong() plus bas).
   const TOUR_SEARCH_DEMO_RANK_HOLD_MS = 1400;
@@ -2125,9 +2114,9 @@
   const TOUR_SEARCH_DEMO_BOOST_ANIM_MS = 1100;
   const TOUR_SEARCH_DEMO_BOOST_HOLD_MS = 1000;
   // Délai total entre le DÉBUT de l'illumination d'un boost et le début de l'illumination du
-  // boost suivant : illumination (voir .jb-tour-select-glow/.jb-tour-boost-flash) + le trajet
-  // FLIP + la pause finale avant de rallumer — sans aucun temps mort entre la fin de
-  // l'illumination et le début du déplacement (voir ci-dessus).
+  // boost suivant : illumination (voir .jb-pulse-attn) + le trajet FLIP + la pause finale avant
+  // de rallumer — sans aucun temps mort entre la fin de l'illumination et le début du déplacement
+  // (voir ci-dessus).
   const TOUR_SEARCH_DEMO_BOOST_ILLUM_TO_MOVE_MS = TOUR_SEARCH_DEMO_ILLUMINATE_MS;
   const TOUR_SEARCH_DEMO_BOOST_STEP_MS = TOUR_SEARCH_DEMO_BOOST_ANIM_MS + TOUR_SEARCH_DEMO_BOOST_HOLD_MS;
   const TOUR_SEARCH_DEMO_BOOST_CLICKS = 3;
@@ -2421,17 +2410,22 @@
         ? setTimeout(() => typeChar(i + 1), nextDelay)
         : setTimeout(illuminateDemoRow, TOUR_SEARCH_DEMO_HOLD_MS);
     }
-    // Illumine brièvement la ligne de "Sweet Caroline" dans le cadre (voir .jb-tour-select-glow
-    // en CSS) pour bien montrer qu'elle vient d'être choisie — et ce n'est QU'APRÈS ça qu'elle
-    // rejoint le palmarès (voir selectDemoSong()), demande explicite de Hubert.
+    // Illumine brièvement la ligne de "Sweet Caroline" dans le cadre (même couleur/rythme que la
+    // VRAIE pulsation du système, demande explicite de Hubert : "je veux les animations
+    // d'illuminations du tutoriel soit les mêmes que dans le système d'opération" — voir
+    // .jb-pulse-attn-row en CSS : identique à .jb-pulse-attn sauf l'agrandissement de 22%, retiré
+    // ici car une ligne PLEINE LARGEUR déborderait de son cadre avec ce zoom, ce que le vrai
+    // système ne fait d'ailleurs jamais sur une ligne pleine largeur) pour bien montrer qu'elle
+    // vient d'être choisie — et ce n'est QU'APRÈS ça qu'elle rejoint le palmarès (voir
+    // selectDemoSong()), demande explicite de Hubert.
     function illuminateDemoRow() {
       if (TOUR_REAL_KEYS[tourRealSubStep] !== "search") return;
       const row = findDemoRow();
-      if (row) row.classList.add("jb-tour-select-glow");
+      if (row) pulseAttention(row, "jb-pulse-attn-row");
       tourSearchDemoTimer = setTimeout(() => {
         const row2 = findDemoRow();
         if (row2) {
-          row2.classList.remove("jb-tour-select-glow");
+          row2.classList.remove("jb-pulse-attn-row");
           // Demande explicite de Hubert : une fois choisie (illumination terminée), la ligne
           // dans le cadre rouge doit montrer le chiffre "1" — même état visuel que dans le VRAI
           // catalogue pour une chanson déjà demandée (voir la branche "requested" de
@@ -2487,24 +2481,27 @@
       // chaque fois qu'un boost est utilisé, je veux que l'icone Boost s'illumine" : ce bouton est
       // celui d'où la chanson part, donc toujours présent à ce stade (déjà posé par le rendu
       // précédent — le tout premier venant de selectDemoSong()).
+      // Demande explicite de Hubert : "je veux les animations d'illuminations du tutoriel soit
+      // les mêmes que dans le système d'opération" — pulseAttention() est la MÊME fonction
+      // utilisée par la vraie boostSong() pour faire pulser #jb-boost-remaining (voir plus bas),
+      // réutilisée ici telle quelle sur le bouton ET sur le vrai badge.
       const boostBtn = document.querySelector('#jb-palmares-list [data-boost="__tour_demo__"]');
-      if (boostBtn) boostBtn.classList.add("jb-tour-boost-flash");
+      if (boostBtn) pulseAttention(boostBtn);
       // Demande explicite de Hubert : le VRAI badge "Boosts : N" du haut de page doit LUI AUSSI
       // s'illuminer à chaque boost simulé (pas seulement le bouton dans le palmarès) — "l'animation
       // d'illumination sur l'icone 'boost : 3' ne se fait pas. Elle doit se faire à chaque fois
-      // qu'un boost est utilisé". Retirée explicitement plus bas, au même instant que
-      // l'incrémentation — contrairement au bouton, ce badge n'est jamais reconstruit par
-      // renderPalmares() (seul son texte l'est, voir updateBoostBadge()), donc sa classe ne
-      // disparaît pas toute seule.
+      // qu'un boost est utilisé". Aucun retrait manuel nécessaire ici : #jb-boost-remaining a déjà
+      // son propre écouteur "animationend" qui retire "jb-pulse-attn" tout seul (voir plus bas,
+      // le même qui sert pour un VRAI boost) — pulseAttention() elle-même se charge de rejouer
+      // l'animation depuis le début à chaque appel (retire puis remet la classe).
       const boostBadgeEl = document.getElementById("jb-boost-remaining");
-      if (boostBadgeEl) boostBadgeEl.classList.add("jb-tour-boost-flash");
+      if (boostBadgeEl) pulseAttention(boostBadgeEl);
       // Demande explicite de Hubert : décompte aussi le VRAI badge "Boosts : N" du haut de page à
       // chaque boost simulé, dès l'instant où il est "utilisé" (l'illumination, pas l'incrément
       // différé ci-dessous) — jusqu'à épuisement puis décompte "Boosts : MM:SS".
       setTourBoostBadgeRemaining(Math.max(0, TOUR_SEARCH_DEMO_BOOST_CLICKS - (step + 1)));
       tourSearchDemoTimer = setTimeout(() => {
         if (TOUR_REAL_KEYS[tourRealSubStep] !== "search" || !tourDemoPalmaresEntry) return;
-        if (boostBadgeEl) boostBadgeEl.classList.remove("jb-tour-boost-flash");
         tourDemoPalmaresEntry.requests += TOUR_SEARCH_DEMO_BOOST_INCREMENT;
         renderPalmares(); // déclenche la vraie animation FLIP ET affiche le nouveau total ensemble
         // Une fois cette chanson arrivée à la 1re position (dernier boost simulé), plus AUCUNE
@@ -2525,7 +2522,7 @@
       // temps même pendant que la démo reprend depuis le début (demande explicite de Hubert).
       hideTourDemoEntry(); // restaure aussi le VRAI badge "Boosts : N" (voir plus haut)
       const row = findDemoRow();
-      if (row) row.classList.remove("jb-tour-select-glow"); // sécurité, normalement déjà enlevé
+      if (row) row.classList.remove("jb-pulse-attn-row"); // sécurité, normalement déjà enlevé
       showEmpty();
     }
     showEmpty(); // démarre avec la barre ET le cadre vides (demande explicite de Hubert)
@@ -4009,9 +4006,22 @@
     // Pas de limite de position : autant de lignes que de demandes actives, et rien du
     // tout si personne n'a encore rien demandé — pour que chacun voie exactement où se
     // situe sa demande, même très loin dans le classement.
-    const ranked = Object.entries(votes)
-      .filter(([, v]) => v.requests > 0 && !isUnavailable(v))
-      .sort((a, b) => b[1].requests - a[1].requests);
+    // Pendant la démo du tuto (tourDemoPalmaresFillers non-null, du début à la fin de la
+    // sous-étape "search" — voir prepareTourSearchDemo()/hideTourDemoPalmaresEntry()), le
+    // palmarès affiché doit être EXCLUSIVEMENT celui de la démo, jamais mélangé aux VRAIES
+    // demandes des clients — demande explicite de Hubert (capture à l'appui) : "je ne veux pas
+    // voir les chansons qui n'ont pas rapport dans le tutoriel". Mélanger les deux gonflait aussi
+    // la hauteur du palmarès au-delà de ce que le cadre du tuto avait précalculé (voir
+    // computeTourSearchDemoRect()), ce qui poussait le bouton "Accéder à mon répertoire" hors de
+    // sa place — corrigé du même coup, puisque le palmarès du tuto garde maintenant TOUJOURS
+    // exactement le même nombre de lignes (2 concurrentes + éventuellement "Sweet Caroline").
+    // hideTourDemoPalmaresEntry() remet tourDemoPalmaresFillers à null en quittant cette
+    // sous-étape, ce qui restaure alors le VRAI palmarès ici au rendu suivant.
+    const ranked = tourDemoPalmaresFillers
+      ? []
+      : Object.entries(votes)
+          .filter(([, v]) => v.requests > 0 && !isUnavailable(v))
+          .sort((a, b) => b[1].requests - a[1].requests);
 
     // Démo animée de la barre de recherche (voir prepareTourSearchDemo()/selectDemoSong()) :
     // les 1-2 "autres" vraies chansons (tourDemoPalmaresFillers) sont ajoutées au classement DÈS
@@ -4064,9 +4074,13 @@
       // Repère ici (le SEUL endroit où cette ligne est créée pour la première fois) le cas de
       // "Sweet Caroline" (la chanson démo du tuto) qui rejoint le palmarès — demande explicite de
       // Hubert (capture à l'appui) : elle ne doit pas apparaître d'un coup sec, mais devenir
-      // visible GRADUELLEMENT en 0.5s, puis (une fois cette apparition terminée) enchaîner sur
-      // l'animation d'illumination .jb-tour-select-glow. Les concurrentes (tourDemoPalmaresFillers)
-      // et les vraies chansons ne sont pas concernées, seule "Sweet Caroline" elle-même.
+      // visible GRADUELLEMENT en 0.5s, puis (une fois cette apparition terminée) enchaîner sur la
+      // MÊME couleur/rythme de pulsation que le reste du système (demande explicite de Hubert :
+      // "je veux les animations d'illuminations du tutoriel soit les mêmes que dans le système
+      // d'opération" — voir .jb-pulse-attn-row en CSS : identique à .jb-pulse-attn utilisée
+      // partout ailleurs, sauf l'agrandissement de 22% qui ferait déborder une case pleine
+      // largeur comme celle-ci). Les concurrentes (tourDemoPalmaresFillers) et les vraies
+      // chansons ne sont pas concernées, seule "Sweet Caroline" elle-même.
       const isNewTourDemoEntry = !el && key === "__tour_demo__";
       if (!el) {
         el = document.createElement("div");
@@ -4094,10 +4108,10 @@
           // d'illumination sur une ligne qui n'est déjà plus affichée.
           if (!el.isConnected) return;
           el.classList.remove("jb-slot-fade-in");
-          el.classList.add("jb-tour-select-glow");
+          pulseAttention(el, "jb-pulse-attn-row");
           setTimeout(() => {
-            el.classList.remove("jb-tour-select-glow");
-          }, 450); // même durée que la pulsation unique existante (voir TOUR_SEARCH_DEMO_ILLUMINATE_MS)
+            el.classList.remove("jb-pulse-attn-row");
+          }, 500); // durée réelle de .jb-pulse-attn-row (0.5s, UN SEUL flash, voir @keyframes jb-pulse-attn-row)
         }, 500);
       }
     });
