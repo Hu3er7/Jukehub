@@ -7,6 +7,20 @@
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
 <title>Mon Répertoire</title>
+<!-- Ouvre la connexion vers Google Fonts le plus tôt possible (DNS + TLS), dès le <head>, pour que
+     le @import du <style> plus bas dans le corps de la page (qui charge les polices Anton/Orbitron/
+     Share Tech Mono) démarre son propre téléchargement plus vite une fois découvert — ça réduit la
+     fenêtre de course où le tout premier lancement automatique du tuto peut mesurer le cadre rouge
+     avec la police de secours avant que la vraie police ait fini de charger (voir
+     prepareTourSearchDemo()/remeasureTourSearchResultsMinHeightNow() dans le script), demande
+     explicite de Hubert (capture/vidéo à l'appui : "ça le fait seulement quand j'ouvre la page pour
+     la première [fois]"). Volontairement PAS de <link rel="stylesheet"> ici en plus du @import : un
+     tel lien BLOQUE le rendu de toute la page tant qu'il n'a pas chargé (ou échoué) — sur une
+     connexion lente/capricieuse (le wifi d'un bar, par ex.), ça retarderait l'affichage de TOUTE la
+     page de plusieurs secondes en cas de problème réseau, un risque bien pire que le bogue que ça
+     visait à corriger. preconnect seul est sans risque : il ne bloque rien, juste une optimisation. -->
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 </head>
 <body style="margin:0;">
 <style>
@@ -64,6 +78,15 @@
   #jb-app.jb-tour-open .jb-top-bar {
     position: relative; z-index: 1201; background: var(--bg);
   }
+  /* Le badge "Demandes : N" (#jb-request-remaining) se fait déplacer juste avant les boutons
+     FR/EN par positionRequestBadge("topbar") pendant une VRAIE recherche texte (repli quand ni la
+     section Style ni un titre de dossier ne sont visibles) — une fois relocalisé là, il y reste
+     tel quel même après coup, y compris pendant le tuto (qui garde justement ce bandeau visible,
+     voir juste au-dessus). Demande explicite de Hubert : ce badge n'a rien à faire à côté des
+     boutons FR/EN pendant le tuto, quel que soit l'endroit où il se trouvait avant que le client
+     n'ouvre le tuto — on le cache donc explicitement ici plutôt que de compter sur sa position
+     DOM du moment. */
+  #jb-app.jb-tour-open #jb-request-remaining { display: none; }
   #jb-app .jb-top-bar-left { display: flex; align-items: center; gap: calc(10px * var(--jb-topbar-scale, 1)); min-width: 0; }
   #jb-app .jb-top-bar h1 {
     font-family: 'Anton', -apple-system, sans-serif; font-weight: 400;
@@ -533,18 +556,57 @@
   #jb-app .jb-tour-boost-glow { animation: jb-tour-boost-glow 1.4s ease-in-out infinite; }
   /* Illumine brièvement la ligne d'une chanson dans le cadre de recherche démonstratif pour
      montrer qu'elle vient d'être sélectionnée, juste avant de rejoindre le palmarès (demande
-     explicite de Hubert — voir illuminateDemoRow() dans startTourSearchDemo()). Deux pulsations
-     courtes (0.45s × 2) plutôt qu'une boucle infinie : l'effet doit se terminer de lui-même. */
-  @keyframes jb-tour-select-glow {
-    0%, 100% { box-shadow: 0 0 0 0 rgba(224, 86, 143, 0); background: var(--card); }
-    50% { box-shadow: 0 0 20px 6px rgba(224, 86, 143, 0.85); background: var(--card2); }
+     explicite de Hubert — voir illuminateDemoRow() dans startTourSearchDemo()). UNE SEULE
+     pulsation courte (0.45s × 1) plutôt qu'une boucle infinie : l'effet doit se terminer de
+     lui-même — demande explicite de Hubert : une première version à 2 pulsations (0.45s × 2)
+     faisait "deux flash", il n'en voulait qu'un seul (voir aussi TOUR_SEARCH_DEMO_ILLUMINATE_MS
+     plus bas dans le script, réduit en conséquence pour rester synchronisé avec cette durée).
+     Blanc chaud (même teinte que .jb-pulse-attn-warm/.jb-tour-boost-glow ci-dessus) plutôt que le
+     rose/rouge des badges — et plus intense (rayon/étalement/opacité tous augmentés) — demande
+     explicite de Hubert : l'ancienne couleur rouge ne convenait pas et l'effet était trop faible. */
+  /* Apparition de "Sweet Caroline" (la chanson démo) dans le palmarès du tuto : pas d'un coup
+     sec, devient visible GRADUELLEMENT en 0.5s, puis (une fois cette apparition terminée)
+     l'animation d'illumination .jb-tour-select-glow ci-dessous s'enchaîne — demande explicite de
+     Hubert (capture à l'appui). Voir renderPalmares(), seul endroit où la ligne est créée pour la
+     première fois. */
+  @keyframes jb-slot-fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
   }
-  #jb-app .jb-tour-select-glow { animation: jb-tour-select-glow 0.45s ease-in-out 2; border-radius: 12px; }
+  #jb-app .jb-slot-fade-in { animation: jb-slot-fade-in 0.5s ease-out; }
+  @keyframes jb-tour-select-glow {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(255, 248, 230, 0); background: var(--card); }
+    /* Demande explicite de Hubert, captures à l'appui : "je veux voir s'illuminer toute
+       l'intérieur de la case" — pas juste un fond légèrement différent (var(--card2), à peine
+       visible), mais un véritable remplissage blanc chaud de TOUTE la case (même teinte que le
+       contour ci-dessus), aussi bien pour la ligne sélectionnée dans le cadre rouge que pour le
+       bouton/badge Boost. */
+    50% { box-shadow: 0 0 34px 12px rgba(255, 248, 230, 1); background: rgba(255, 248, 230, 0.95); }
+  }
+  #jb-app .jb-tour-select-glow { animation: jb-tour-select-glow 0.45s ease-in-out 1; border-radius: 12px; }
+  /* Demande explicite de Hubert : pas SEULEMENT le contour (box-shadow ci-dessus) — l'INTÉRIEUR
+     (le titre de la chanson, et l'icône/texte du bouton ou badge Boost) doit lui aussi devenir
+     blanc chaud pendant le flash, même teinte que le contour. "color" pour le texte (le titre,
+     le mot "Boost") + "filter: brightness()" en plus pour que l'icône 🚀 elle-même s'éclaircisse
+     (un emoji ignore "color", qui n'agit que sur du texte). */
+  @keyframes jb-tour-illum-inner {
+    0%, 100% { color: inherit; filter: none; }
+    50% { color: rgb(255, 248, 230); filter: brightness(1.6); }
+  }
+  #jb-app .jb-tour-select-glow .jb-song-title,
+  #jb-app .jb-tour-select-glow .jb-slot-title {
+    animation: jb-tour-illum-inner 0.45s ease-in-out 1;
+  }
   /* Même pulsation que .jb-tour-select-glow ci-dessus, réutilisée sur le VRAI bouton Boost de la
-     chanson démo à chaque boost simulé (voir boostDemoSong()) — demande explicite de Hubert.
-     border-radius 999px (au lieu de 12px) pour garder la forme "pilule" du bouton, voir
-     .jb-slot-boost. */
-  #jb-app .jb-tour-boost-flash { animation: jb-tour-select-glow 0.45s ease-in-out 2; border-radius: 999px; }
+     chanson démo à chaque boost simulé (voir boostDemoSong()), ET sur le VRAI badge "Boosts : N"
+     du haut de page (idem, voir boostDemoSong()) — demande explicite de Hubert : "à chaque fois
+     qu'un boost est utilisé". border-radius 999px (au lieu de 12px) pour garder la forme "pilule"
+     du bouton/badge, voir .jb-slot-boost/.jb-boost-remaining. Combinée avec jb-tour-illum-inner
+     ci-dessus pour que l'icône 🚀 et le texte s'éclaircissent en même temps que le contour. */
+  #jb-app .jb-tour-boost-flash {
+    animation: jb-tour-select-glow 0.45s ease-in-out 1, jb-tour-illum-inner 0.45s ease-in-out 1;
+    border-radius: 999px;
+  }
   /* Bouton Boost visible mais indisponible (animation en cours, boosts épuisés) — reste affiché,
      juste assombri, plutôt que de disparaître complètement comme avant (précision de Hubert).
      Même traitement visuel que le vrai palmarès pendant son animation FLIP, voir
@@ -1328,7 +1390,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-09-28.16";
+  const APP_BUILD = "2026-09-29.28";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -1889,6 +1951,20 @@
   // bonne fois pour toutes AVANT que quoi que ce soit ne bouge à l'écran (demande explicite de
   // Hubert : "rien ne bouge"). Remis à null par stopTourSearchDemo().
   let tourSearchDemoPreview = null;
+  // Requête actuellement affichée dans le cadre de résultats de démo (voir
+  // renderTourSearchResults() plus bas) — mise à jour à chaque appel. Sert à
+  // computeTourSearchDemoRect() pour savoir si une prévisualisation-puis-restauration est
+  // nécessaire (le cadre peut légitimement être vide au tout premier calcul, avant que la frappe
+  // n'ait commencé) et à quelle valeur revenir une fois la mesure prise.
+  let tourSearchRenderedQuery = "";
+  // Hauteur (px) que prend #jb-catalog-list une fois le préfixe figé atteint (3 vraies lignes) —
+  // mesurée une seule fois par prepareTourSearchDemo() puis appliquée comme hauteur MINIMALE sur
+  // #jb-catalog-list pour toute la durée de la démo (voir renderTourSearchResults() plus bas),
+  // même avec 0, 1 ou 2 lignes affichées pendant la frappe progressive — demande explicite de
+  // Hubert (capture d'écran à l'appui) : le cadre rouge ne doit JAMAIS rétrécir, même vide, il
+  // doit garder la même taille que lorsqu'il affiche ses 3 résultats. Remise à 0 par
+  // stopTourSearchDemo().
+  let tourSearchResultsMinHeight = 0;
   // Calcule le rectangle englobant la barre de recherche, la liste de résultats (déjà figée à 3
   // lignes dès le départ, voir startTourSearchDemo()) et le palmarès — SANS jamais faire grandir
   // ou rétrécir ce rectangle au fil de la démo : si "Sweet Caroline" n'est pas encore ajoutée au
@@ -1900,38 +1976,59 @@
   function computeTourSearchDemoRect() {
     const bar = document.getElementById("jb-catalog-searchbar");
     if (!bar) return null;
-    const barRect = bar.getBoundingClientRect();
     const resultsWrap = document.getElementById("jb-catalog-results");
+    const palmaresSection = document.querySelector(".jb-palmares");
+
+    // Active LES DEUX prévisualisations (résultats ET palmarès) AVANT de mesurer quoi que ce
+    // soit, plutôt que l'une après l'autre : le palmarès est positionné juste EN DESSOUS du cadre
+    // de résultats dans le flux normal de la page, donc si on ne prévisualisait que les résultats
+    // (palmarès encore à sa taille courante, pas sa taille finale) puis, séparément, seulement le
+    // palmarès (résultats déjà revenus à leur taille courante), aucune des deux mesures ne
+    // capturerait le cas où LES DEUX sont simultanément à leur taille MAXIMALE — sous-estimant le
+    // rectangle final et le laissant reposer une seconde fois (même instantanément) dès qu'un vrai
+    // redimensionnement force un nouveau calcul plus tard dans la démo (bogue trouvé pendant la
+    // vérification : le tout premier calcul donnait un rectangle plus petit que tous les suivants).
+    const finalQuery = (resultsWrap && tourSearchDemoState)
+      ? tourSearchDemoState.demoTitle.slice(0, tourSearchDemoState.freeze.prefixLen)
+      : null;
+    const savedQuery = tourSearchRenderedQuery;
+    const needsResultsPreview = finalQuery !== null && savedQuery !== finalQuery;
+    if (needsResultsPreview) renderTourSearchResults(finalQuery);
+
+    const hadEntry = tourDemoPalmaresEntry;
+    const needsPalmaresPreview = !!palmaresSection && !hadEntry && !!tourSearchDemoPreview;
+    if (needsPalmaresPreview) {
+      tourDemoPalmaresEntry = tourSearchDemoPreview.entryPreview;
+      renderPalmares();
+    }
+
+    // Mesure tout MAINTENANT, pendant que les deux prévisualisations sont actives EN MÊME TEMPS
+    // (aucun await entre l'activation ci-dessus et la mesure ci-dessous, donc jamais visible à
+    // l'écran).
+    const barRect = bar.getBoundingClientRect();
     let top = barRect.top, left = barRect.left, right = barRect.right, bottom = barRect.bottom;
-    if (resultsWrap && !resultsWrap.hidden) {
+    if (resultsWrap) {
       const r = resultsWrap.getBoundingClientRect();
       top = Math.min(top, r.top);
       left = Math.min(left, r.left);
       right = Math.max(right, r.right);
       bottom = Math.max(bottom, r.bottom);
     }
-    const palmaresSection = document.querySelector(".jb-palmares");
     if (palmaresSection) {
-      // Les concurrentes (tourDemoPalmaresFillers) sont déjà réelles et visibles en tout temps
-      // dès prepareTourSearchDemo() — seule "Sweet Caroline" (tourDemoPalmaresEntry) peut encore
-      // manquer avant sa sélection ; on ne prévisualise donc plus qu'elle ici, temporairement et
-      // synchrone (donc jamais visible à l'écran), pour mesurer d'avance la hauteur finale à 3
-      // lignes du palmarès.
-      const hadEntry = tourDemoPalmaresEntry;
-      if (!hadEntry && tourSearchDemoPreview) {
-        tourDemoPalmaresEntry = tourSearchDemoPreview.entryPreview;
-        renderPalmares();
-      }
       const pRect = palmaresSection.getBoundingClientRect();
       top = Math.min(top, pRect.top);
       left = Math.min(left, pRect.left);
       right = Math.max(right, pRect.right);
       bottom = Math.max(bottom, pRect.bottom);
-      if (!hadEntry && tourSearchDemoPreview) {
-        tourDemoPalmaresEntry = hadEntry;
-        renderPalmares();
-      }
     }
+
+    // Restaure les deux états réels, dans l'ordre inverse de leur activation.
+    if (needsPalmaresPreview) {
+      tourDemoPalmaresEntry = hadEntry;
+      renderPalmares();
+    }
+    if (needsResultsPreview) renderTourSearchResults(savedQuery);
+
     // Ne dépasse jamais le bas de l'écran (répertoire avec beaucoup de résultats, ou palmarès
     // haut) — sinon le cadre déborderait et le bouton n'aurait plus nulle part où se placer
     // proprement en dessous.
@@ -1988,12 +2085,26 @@
   // du palmarès dès qu'on en sort (sous-étape suivante, "Passer le tutoriel", ou fin du tuto),
   // pour ne jamais laisser une lettre s'écrire ou une chanson factice traîner une fois le tuto
   // refermé.
-  const TOUR_SEARCH_DEMO_TYPE_MS = 140;
+  // Délai entre chaque lettre tapée — demande explicite de Hubert : l'ancien délai (140ms) allait
+  // beaucoup trop vite, rallongé pour bien laisser le temps de lire "Sweet Caroline" s'écrire.
+  // Ce rythme lent ne vaut plus QUE pour les lettres qui affinent encore la VRAIE recherche
+  // (jusqu'au préfixe figé, freeze.prefixLen, voir computeTourSearchFreeze()/typeChar()) —
+  // demande explicite de Hubert : "les premières lettres, [...] le S, le W et le E [...] tu peux
+  // aller plus vite pour rédiger le titre. Va plus tranquillement au début et, quand tu arrives
+  // au 2e E, va plus vite" — le "2e E" étant justement la 1re lettre APRÈS ce préfixe figé (3
+  // lettres, "Swe"), qui n'affecte plus les vrais résultats affichés. TOUR_SEARCH_DEMO_TYPE_FAST_MS
+  // prend le relais à partir de là, pour le reste, purement décoratif, du titre.
+  const TOUR_SEARCH_DEMO_TYPE_MS = 320;
+  const TOUR_SEARCH_DEMO_TYPE_FAST_MS = 130;
   const TOUR_SEARCH_DEMO_HOLD_MS = 1200;
   // Durée de l'effet d'illumination sur la ligne choisie avant qu'elle ne rejoigne le palmarès
   // (voir illuminateDemoRow()/.jb-tour-select-glow en CSS — demande explicite de Hubert : elle
   // doit d'abord "s'illuminer" pour montrer sa sélection, et ne rejoindre le palmarès qu'ENSUITE).
-  const TOUR_SEARCH_DEMO_ILLUMINATE_MS = 900;
+  // Alignée sur la durée de l'animation CSS elle-même (0.45s × 1 pulsation, voir
+  // .jb-tour-select-glow — réduite de 2 à 1 pulsation, demande explicite de Hubert : "toujours
+  // deux flash, je veux qu'elle n'en fasse qu'un seul") : sans ça, l'effet visuel se terminerait
+  // avant la fin de cette pause, laissant un temps mort avant que la chanson ne bouge.
+  const TOUR_SEARCH_DEMO_ILLUMINATE_MS = 450;
   // Durée d'affichage du classement de départ (dernière position) avant que les boosts simulés
   // ne commencent à la faire grimper (voir selectDemoSong()/boostDemoSong() plus bas).
   const TOUR_SEARCH_DEMO_RANK_HOLD_MS = 1400;
@@ -2002,22 +2113,38 @@
   // fait réellement, pas un bond arbitraire) — avec ce délai entre chaque, pour un total de
   // TOUR_SEARCH_DEMO_BOOST_CLICKS boosts avant de tenir la 1re position puis reprendre depuis "S".
   const TOUR_SEARCH_DEMO_BOOST_INCREMENT = 1;
-  const TOUR_SEARCH_DEMO_BOOST_STEP_MS = 700;
+  // Ordre des 3 animations d'un boost simulé (voir boostDemoSong() plus bas), demande explicite
+  // de Hubert (vidéo à l'appui) : (1) le bouton Boost s'illumine D'ABORD, à la position ACTUELLE
+  // de la chanson ; (2) DÈS que cette illumination s'éteint (AUCUN délai supplémentaire — demande
+  // explicite de Hubert : "je ne veux pas de délais"), le nombre de votes augmente ET la chanson
+  // se déplace vers sa nouvelle position SIMULTANÉMENT (même animation FLIP réelle de
+  // renderPalmares(), transition "transform 1s", verrou levé après TOUR_SEARCH_DEMO_BOOST_ANIM_MS) ;
+  // (3) une fois la chanson complètement immobile, une pause supplémentaire
+  // (TOUR_SEARCH_DEMO_BOOST_HOLD_MS) avant que le prochain boost ne recommence ce même cycle par
+  // une nouvelle illumination — jamais l'inverse, et jamais chevauché.
+  const TOUR_SEARCH_DEMO_BOOST_ANIM_MS = 1100;
+  const TOUR_SEARCH_DEMO_BOOST_HOLD_MS = 1000;
+  // Délai total entre le DÉBUT de l'illumination d'un boost et le début de l'illumination du
+  // boost suivant : illumination (voir .jb-tour-select-glow/.jb-tour-boost-flash) + le trajet
+  // FLIP + la pause finale avant de rallumer — sans aucun temps mort entre la fin de
+  // l'illumination et le début du déplacement (voir ci-dessus).
+  const TOUR_SEARCH_DEMO_BOOST_ILLUM_TO_MOVE_MS = TOUR_SEARCH_DEMO_ILLUMINATE_MS;
+  const TOUR_SEARCH_DEMO_BOOST_STEP_MS = TOUR_SEARCH_DEMO_BOOST_ANIM_MS + TOUR_SEARCH_DEMO_BOOST_HOLD_MS;
   const TOUR_SEARCH_DEMO_BOOST_CLICKS = 3;
   const TOUR_SEARCH_DEMO_TOP_HOLD_MS = 1800;
   const TOUR_SEARCH_DEMO_GAP_MS = 600;
-  // Faux nombres de demandes affichés sur les 1-2 "autres" vraies chansons du cadre de recherche
-  // figé (voir computeTourSearchFreeze()) — dans l'ordre d'affichage, en excluant la chanson
-  // choisie. Sert UNIQUEMENT au badge affiché dans le cadre de recherche (voir
-  // prepareTourSearchDemo()) — depuis la demande explicite de Hubert ci-dessous, le palmarès,
-  // lui, utilise 2 chansons fixes indépendantes (voir TOUR_PALMARES_DEMO_FILLERS).
-  const TOUR_SEARCH_DEMO_DECOY_VOTES = [3, 2];
   // Les 2 "concurrentes" fixes affichées dans le VRAI palmarès pendant toute la démo, en tout
   // temps (voir prepareTourSearchDemo()/renderPalmares()) — demande explicite de Hubert : ces
   // 2 chansons précises plutôt que les autres résultats de recherche réels vus dans le cadre.
+  // "Country Road" à 1 demande (plutôt que 2) — demande explicite de Hubert : "quand sweet
+  // caroline passe de 1 à 2 vote, fait la monter au deuxième rang tout de suite". Avec une
+  // égalité à 2 (l'ancienne valeur), le tri stable de renderPalmares() gardait "Country Road"
+  // au-dessus (déjà présente dans le classement avant que "Sweet Caroline" n'atteigne 2) — à 1,
+  // le premier boost simulé (1 → 2) dépasse "Country Road" strictement, donc la fait grimper tout
+  // de suite en 2e position, sans attendre un 2e boost.
   const TOUR_PALMARES_DEMO_FILLERS = [
     { title: "Billie Jean", artist: "Michael Jackson", requests: 3 },
-    { title: "Country Road", artist: "John Denver", requests: 2 },
+    { title: "Country Road", artist: "John Denver", requests: 1 },
   ];
   let tourSearchDemoTimer = null;
   // État préparé à l'avance par prepareTourSearchDemo() (voir plus bas) — réutilisé par
@@ -2032,7 +2159,12 @@
   function hideTourDemoEntry() {
     if (!tourDemoPalmaresEntry) return;
     tourDemoPalmaresEntry = null;
-    renderPalmares();
+    renderPalmares(); // restaure au passage la VRAIE valeur du badge "Boosts : N" (voir renderPalmares()/updateBoostBadge())
+    // Arrête tout décompte factice de boosts encore en cours (voir setTourBoostBadgeRemaining()/
+    // startTourBoostCountdown() plus bas) et retire son clignotement — sinon son minuteur en
+    // attente réécraserait le vrai badge qu'on vient de restaurer juste au-dessus, jusqu'à 1s
+    // plus tard (demande explicite de Hubert, voir boostDemoSong()).
+    stopTourBoostCountdown();
   }
   // Nettoyage complet (fin du tuto, changement de sous-étape) : retire la chanson démo ET les
   // concurrentes.
@@ -2047,6 +2179,12 @@
     hideTourDemoPalmaresEntry();
     tourSearchDemoPreview = null;
     tourSearchDemoState = null;
+    // Retire la hauteur minimale imposée pendant la démo (voir tourSearchResultsMinHeight/
+    // renderTourSearchResults() plus haut) — sinon elle resterait collée sur #jb-catalog-list
+    // pour de VRAIES recherches une fois le tuto refermé.
+    tourSearchResultsMinHeight = 0;
+    const list = document.getElementById("jb-catalog-list");
+    if (list) list.style.minHeight = "";
   }
   // "Sweet Caroline" est plus vendeur/reconnaissable qu'une chanson prise au hasard en tête du
   // répertoire (demande explicite de Hubert) — utilisée si elle s'y trouve vraiment (sinon la
@@ -2056,64 +2194,87 @@
     if (!catalogSongs.length) return null;
     return catalogSongs.find((s) => norm(s.title) === norm("Sweet Caroline")) || catalogSongs[0];
   }
-  // Cherche le plus court préfixe du titre pour lequel la VRAIE recherche (même logique de
-  // filtre/tri que renderCatalog() — volontairement dupliquée ici plutôt que d'altérer
-  // renderCatalog() pour ce seul besoin) ne donne plus que 3 résultats réels (ou moins) — c'est
-  // CE préfixe qui sera affiché tel quel dans la barre (voir startTourSearchDemo()), pour que le
-  // cadre de démonstration montre TOUJOURS exactement ces 3 chansons (demande explicite de
-  // Hubert, capture d'écran à l'appui), jamais plus, jamais moins, jamais un autre nombre.
+  // Même logique de filtre/tri que renderCatalog() pour une VRAIE recherche — volontairement
+  // dupliquée ici plutôt que d'altérer renderCatalog() pour ce seul besoin — mais réutilisable
+  // pour N'IMPORTE QUELLE requête (pas seulement la finale), pour que le cadre de démonstration
+  // puisse montrer les VRAIS résultats à CHAQUE lettre tapée (demande explicite de Hubert : "S",
+  // puis "Sw", puis "Swe" doivent chacun montrer ce qu'une vraie recherche donnerait à cet
+  // instant précis), pas seulement le résultat final. Voir renderTourSearchResults()/
+  // computeTourSearchFreeze() plus bas.
+  function tourSearchMatches(query) {
+    const q = norm(query);
+    if (!q) return [];
+    return catalogSongs
+      .filter((s) => norm(s.title).includes(q) || norm(s.artist).includes(q))
+      .sort((a, b) => a.title.localeCompare(b.title, "fr"));
+  }
+  // Cherche le plus court préfixe du titre pour lequel la VRAIE recherche (voir
+  // tourSearchMatches() ci-dessus) ne donne plus que 3 résultats réels (ou moins) — c'est à PARTIR
+  // de ce préfixe que l'affichage se fige (voir runTourSearchDemo()), pour que le cadre de
+  // démonstration finisse TOUJOURS par montrer exactement ces 3 chansons (demande explicite de
+  // Hubert, capture d'écran à l'appui), jamais plus, jamais moins, jamais un autre nombre — tout
+  // en montrant les VRAIS résultats, progressivement affinés, à chaque lettre AVANT d'y arriver.
   function computeTourSearchFreeze(title) {
     for (let i = 1; i <= title.length; i++) {
-      const q = norm(title.slice(0, i));
-      const matches = catalogSongs
-        .filter((s) => norm(s.title).includes(q) || norm(s.artist).includes(q))
-        .sort((a, b) => a.title.localeCompare(b.title, "fr"));
-      if (matches.length <= 3) return { prefixLen: i, matches };
+      if (tourSearchMatches(title.slice(0, i)).length <= 3) return { prefixLen: i };
     }
     // Repli improbable (répertoire immense où même le titre complet a plus de 3 correspondances,
     // p. ex. plusieurs versions du même titre) : tape le titre en entier comme avant.
-    return { prefixLen: title.length, matches: catalogSongs.filter((s) => norm(s.title) === norm(title)) };
+    return { prefixLen: title.length };
+  }
+  // Construit UNIQUEMENT la portion "résultats" du cadre de démonstration, pour une requête
+  // donnée — réutilise les VRAIES renderSongRow()/wireSongRowEvents() (mêmes lignes, mêmes vrais
+  // votes que dans le vrai catalogue — presque toujours "0", voir captures d'écran de Hubert) sur
+  // les VRAIS résultats de recherche (voir tourSearchMatches() ci-dessus), plafonnés à 3 lignes.
+  // Contrairement au vrai renderCatalog(), le cadre reste TOUJOURS visible (#jb-catalog-results
+  // jamais caché, "Retour" jamais affiché), même avec une requête vide — demande explicite de
+  // Hubert : le cadre rouge doit rester visible et VIDE plutôt que de disparaître/basculer sur la
+  // vue Top Pick/Style pendant la démo. Met à jour tourSearchRenderedQuery (lu par
+  // computeTourSearchDemoRect() ci-dessus) et retourne le tableau des chansons affichées — utilisé
+  // par runTourSearchDemo() pour capturer la ligne de la chanson démo une fois le préfixe figé
+  // atteint.
+  function renderTourSearchResults(query) {
+    const browse = document.getElementById("jb-catalog-browse");
+    const resultsWrap = document.getElementById("jb-catalog-results");
+    const backBtn = document.getElementById("jb-back-btn");
+    const list = document.getElementById("jb-catalog-list");
+    const empty = document.getElementById("jb-catalog-empty");
+    const titleWrap = document.getElementById("jb-folder-title-wrap");
+    const specialBlock = document.getElementById("jb-special-request-block");
+    if (browse) browse.hidden = true;
+    if (resultsWrap) resultsWrap.hidden = false;
+    if (backBtn) backBtn.hidden = true; // demande explicite de Hubert : pas de "Retour" pendant le tuto
+    if (titleWrap) titleWrap.hidden = true;
+    if (specialBlock) specialBlock.hidden = true;
+    if (empty) empty.hidden = true; // jamais le message "Aucun résultat" — juste un cadre vide
+    const matches = tourSearchMatches(query).slice(0, 3);
+    if (list) {
+      list.innerHTML = "";
+      matches.forEach((song) => list.appendChild(renderSongRow(song, true)));
+      wireSongRowEvents(list);
+      // Empêche le cadre de rétrécir en dessous de sa taille à 3 lignes (voir
+      // tourSearchResultsMinHeight ci-dessus) — appliqué à chaque rendu, y compris avec 0 ligne
+      // (requête vide) : demande explicite de Hubert, le cadre doit garder la même taille en tout
+      // temps, même quand rien n'est encore tapé.
+      list.style.minHeight = tourSearchResultsMinHeight ? `${tourSearchResultsMinHeight}px` : "";
+    }
+    tourSearchRenderedQuery = query;
+    return matches;
   }
   // Construit tout de suite (appelée depuis before(), donc AVANT le tout premier positionnement
-  // du cadre — voir renderTourRealStep()) tout ce dont la démo aura besoin : la liste figée à 3
-  // résultats (déjà rendue via le vrai renderCatalog()) et la prévisualisation du palmarès
-  // (tourSearchDemoPreview, lue par computeTourSearchDemoRect()). Rien n'est encore animé à ce
-  // stade — juste construit et mesurable — pour que le rectangle de démonstration soit déjà à sa
-  // taille finale dès le tout premier calcul, sans second positionnement (même instantané) une
-  // fois le délai de démarrage de l'animation écoulé (demande explicite de Hubert, vidéo à
-  // l'appui : rien ne bouge, jamais, pas même un saut sans transition).
+  // du cadre — voir renderTourRealStep()) tout ce dont la démo aura besoin : le préfixe où la
+  // recherche se fige (freeze.prefixLen, voir computeTourSearchFreeze()) et la prévisualisation
+  // du palmarès (tourSearchDemoPreview, lue par computeTourSearchDemoRect()). Rien n'est encore
+  // animé à ce stade — juste construit et mesurable — pour que le rectangle de démonstration soit
+  // déjà à sa taille finale dès le tout premier calcul, sans second positionnement (même
+  // instantané) une fois le délai de démarrage de l'animation écoulé (demande explicite de
+  // Hubert, vidéo à l'appui : rien ne bouge, jamais, pas même un saut sans transition).
   function prepareTourSearchDemo() {
     const demoSong = pickTourSearchDemoSong();
     if (!demoSong) { tourSearchDemoState = null; return; } // rien à démontrer si le répertoire est vide
     const demoTitle = demoSong.title;
     const freeze = computeTourSearchFreeze(demoTitle);
-    // Les 1-2 "autres" vraies chansons affichées à côté de la sienne dans le cadre figé —
-    // réutilisées telles quelles comme concurrentes dans le palmarès (voir selectDemoSong()) :
-    // visuellement la même petite course, à la fois dans la recherche et dans le palmarès.
-    const decoys = freeze.matches.filter((s) => s.id !== demoSong.id);
     const input = document.getElementById("jb-search-input");
-
-    // Affiche IMMÉDIATEMENT et UNE SEULE FOIS la liste figée à 3 résultats — via le vrai
-    // renderCatalog() (même rendu que pour une vraie recherche), avec la barre déjà réglée sur le
-    // préfixe figé. Elle ne sera plus jamais reconstruite pendant cette visite de l'étape.
-    input.value = demoTitle.slice(0, freeze.prefixLen);
-    renderCatalog();
-    const list = document.getElementById("jb-catalog-list");
-    // Faux nombres de demandes (voir TOUR_SEARCH_DEMO_DECOY_VOTES) sur les 1-2 "autres" vraies
-    // chansons — juste le texte du badge affiché, jamais écrit dans Firestore ni dans le vrai
-    // objet `votes` (voir renderSongRow(), qui lit v?.requests — ceci ne fait que réécrire le
-    // texte APRÈS coup sur les vraies lignes déjà rendues ci-dessus). La ligne de "Sweet
-    // Caroline" elle-même n'est pas touchée : elle garde son vrai "0" jusqu'à sa sélection.
-    decoys.forEach((s, i) => {
-      const value = TOUR_SEARCH_DEMO_DECOY_VOTES[i];
-      if (value === undefined || !list) return;
-      const row = list.querySelector(`li[data-req="${CSS.escape(String(s.id))}"]`);
-      const badge = row && row.querySelector(".jb-song-votes");
-      if (badge) badge.textContent = String(value);
-    });
-    // Ligne de "Sweet Caroline" elle-même, capturée une fois pour l'effet d'illumination (voir
-    // illuminateDemoRow()) — pas besoin de la re-chercher à chaque fois, la liste ne bouge plus.
-    const demoRow = list ? list.querySelector(`li[data-req="${CSS.escape(String(demoSong.id))}"]`) : null;
 
     // "entryPreview" : le MÊME objet que celui posé pour de vrai un peu plus loin dans
     // selectDemoSong() — préparé ici pour que computeTourSearchDemoRect() (voir plus haut)
@@ -2131,14 +2292,69 @@
     // ligne avant de les rejoindre (voir selectDemoSong()).
     tourDemoPalmaresFillers = fillersPreview;
     renderPalmares();
-    // Vide la barre tout de suite : elle n'a servi ci-dessus qu'à CONSTRUIRE la liste figée (via
-    // le vrai renderCatalog()), pas à afficher quoi que ce soit au client — la liste ne bouge
-    // plus une fois construite, donc le texte de la barre est déjà découplé (voir typeChar() dans
-    // runTourSearchDemo()). Sans ça, "Swe" resterait affiché pendant tout le délai de démarrage de
-    // l'animation, avant même que celle-ci ne vide la barre à son tour — demande explicite de
-    // Hubert : rien ne doit être écrit dès le tout début.
+    // Mesure, une seule fois et tout de suite (rendu temporaire, jamais visible à l'écran — voir
+    // le même principe que tourSearchDemoPreview plus haut), la hauteur que #jb-catalog-list
+    // prendra une fois le préfixe figé atteint (3 vraies lignes) — appliquée ensuite comme hauteur
+    // MINIMALE à chaque rendu de la démo (voir renderTourSearchResults()), même avec moins de
+    // lignes affichées, pour que le cadre rouge ne rétrécisse JAMAIS, pas même quand il est vide
+    // (demande explicite de Hubert, capture d'écran à l'appui).
+    renderTourSearchResults(demoTitle.slice(0, freeze.prefixLen));
+    const listEl = document.getElementById("jb-catalog-list");
+    tourSearchResultsMinHeight = listEl ? listEl.getBoundingClientRect().height : 0;
+    // Barre ET cadre de résultats VIDES dès le tout début (demande explicite de Hubert : "même
+    // quand il n'y a rien d'écrit [...] le cadre rouge devrait rester vide") — plus de liste
+    // figée construite d'avance : chaque lettre tapée affichera les VRAIS résultats de CETTE
+    // requête précise (voir typeChar() dans runTourSearchDemo()), jusqu'à geler une fois le
+    // préfixe figé atteint. Le cadre garde malgré tout sa taille grâce à
+    // tourSearchResultsMinHeight ci-dessus, mesurée juste avant.
     input.value = "";
-    tourSearchDemoState = { demoSong, demoTitle, freeze, input, demoRow, entryPreview, fillersPreview };
+    renderTourSearchResults("");
+    tourSearchDemoState = { demoSong, demoTitle, freeze, input, entryPreview, fillersPreview };
+    // Remesure à plusieurs reprises après coup — demande explicite de Hubert, qui a précisé que le
+    // cadre ne rétrécissait QU'AU TOUT PREMIER chargement de la page (jamais lors d'une reprise
+    // manuelle plus tard, ni sur les chargements suivants) et qu'une fois mal mesuré, ça se
+    // reproduisait ensuite À CHAQUE boucle de la démo tant qu'on ne touchait à rien. Cause : la
+    // toute première mesure ci-dessus peut avoir eu lieu avec la police de secours du navigateur
+    // (les vraies polices, Anton/Orbitron/Share Tech Mono, se chargent depuis Google Fonts via
+    // @import "display=swap" tout en haut du <style>, jamais instantané sur un premier chargement
+    // de page) — ça verrouille une hauteur trop PETITE pour tout le reste de la session, puisque
+    // resetToS()/boucle suivante ne remesurent JAMAIS, elles réutilisent tourSearchResultsMinHeight
+    // tel quel (voir resetToS() plus bas). document.fonts.ready aurait dû suffire pour corriger ça
+    // une bonne fois pour toutes, mais son moment de résolution s'est avéré peu fiable en pratique
+    // (peut se résoudre avant même que les polices ne soient réellement demandées par le
+    // navigateur, si @import n'a pas encore été traité à cet instant précis) : on ne s'y fie donc
+    // plus seul, et on remesure aussi À PLUSIEURS REPRISES dans les premières secondes (méthode
+    // brute mais fiable, sans dépendre d'un signal précis de "police prête") — remeasureTourSearch-
+    // ResultsMinHeightNow() n'agrandit jamais que vers le haut (jamais de retour en arrière), donc
+    // ces tentatives répétées ne peuvent jamais rendre les choses pires, seulement les corriger dès
+    // que la vraie police a fini par s'appliquer.
+    const preparedState = tourSearchDemoState;
+    if (document.fonts && document.fonts.ready) {
+      document.fonts.ready.then(() => remeasureTourSearchResultsMinHeightNow(preparedState)).catch(() => {});
+    }
+    [100, 300, 700, 1300, 2200, 3500, 6000].forEach((delay) => {
+      setTimeout(() => remeasureTourSearchResultsMinHeightNow(preparedState), delay);
+    });
+  }
+  // Refait la même mesure que prepareTourSearchDemo() ci-dessus (préfixe figé -> 3 vraies lignes),
+  // mais SANS jamais réduire tourSearchResultsMinHeight (seulement l'agrandir si les vraies
+  // polices donnent un résultat plus grand) — voir l'appel depuis document.fonts.ready ci-dessus.
+  // "expectedState" : n'agit que si ce cycle précis de démo est toujours celui en cours
+  // (comparaison d'identité, sauf si explicitement omis pour un appel de test/débogage direct).
+  function remeasureTourSearchResultsMinHeightNow(expectedState) {
+    if (expectedState !== undefined && tourSearchDemoState !== expectedState) return;
+    if (!tourSearchDemoState) return;
+    const { demoTitle, freeze } = tourSearchDemoState;
+    const list = document.getElementById("jb-catalog-list");
+    if (!list) return;
+    const savedQuery = tourSearchRenderedQuery;
+    renderTourSearchResults(demoTitle.slice(0, freeze.prefixLen));
+    const refreshedHeight = list.getBoundingClientRect().height;
+    if (refreshedHeight > tourSearchResultsMinHeight) tourSearchResultsMinHeight = refreshedHeight;
+    renderTourSearchResults(savedQuery);
+    // Le cadre de résultats peut avoir changé de taille : replace aussi la fenêtre du tuto et le
+    // surlignage (voir tourReposition/place() dans renderTourRealStep()) en conséquence.
+    if (tourReposition) tourReposition();
   }
   // Ne fait plus que lancer l'ANIMATION (frappe/illumination/sélection/boosts), en réutilisant
   // tel quel l'état déjà construit par prepareTourSearchDemo() (voir before() dans
@@ -2155,28 +2371,54 @@
   }
   function runTourSearchDemo() {
     if (TOUR_REAL_KEYS[tourRealSubStep] !== "search" || !tourSearchDemoState) return;
-    const { demoTitle, input, demoRow, entryPreview } = tourSearchDemoState;
+    const { demoTitle, freeze, input, entryPreview } = tourSearchDemoState;
+    // Ligne de "Sweet Caroline" dans le cadre, pour l'effet d'illumination (voir
+    // illuminateDemoRow()) — RETROUVÉE À CHAQUE FOIS par son data-req plutôt que capturée une
+    // seule fois dans une variable (ancien comportement) : entre le moment où le préfixe se fige
+    // (typeChar()) et celui où l'illumination démarre (plusieurs secondes de frappe décorative
+    // s'écoulent entre les deux, voir TOUR_SEARCH_DEMO_TYPE_MS/TOUR_SEARCH_DEMO_HOLD_MS), N'IMPORTE
+    // QUEL rendu de #jb-catalog-list survenu entre-temps (remeasureTourSearchResultsMinHeightNow(),
+    // voir prepareTourSearchDemo() — ou même le garde-fou de renderCatalog() pour une vraie mise à
+    // jour Firestore sans rapport) RECONSTRUIT la liste et rend une référence capturée à l'avance
+    // OBSOLÈTE (nœud détaché, invisible) : l'illumination s'appliquait alors à un élément fantôme,
+    // jamais visible à l'écran — bogue trouvé en vérifiant le nouveau correctif de police (voir
+    // plus haut). Chercher la ligne à chaque usage élimine ce risque une bonne fois pour toutes.
+    function findDemoRow() {
+      const list = document.getElementById("jb-catalog-list");
+      if (!list || !tourSearchDemoState) return null;
+      return list.querySelector(`li[data-req="${CSS.escape(String(tourSearchDemoState.demoSong.id))}"]`);
+    }
 
-    // Montre d'abord la barre VIDE, un court instant, avant de commencer à écrire — demande
-    // explicite de Hubert : "au départ, il n'y ait rien d'écrit". La liste figée à 3 résultats
-    // (déjà construite par prepareTourSearchDemo(), voir plus haut) reste affichée en dessous
-    // sans bouger pendant ce temps, exactement comme pendant la frappe.
+    // Montre d'abord la barre ET le cadre de résultats VIDES, un court instant, avant de
+    // commencer à écrire — demande explicite de Hubert : "au départ, il n'y ait rien d'écrit" /
+    // "le cadre rouge devrait rester vide".
     function showEmpty() {
       if (TOUR_REAL_KEYS[tourRealSubStep] !== "search") return;
       input.value = "";
+      renderTourSearchResults("");
       tourSearchDemoTimer = setTimeout(() => typeChar(1), TOUR_SEARCH_DEMO_GAP_MS);
     }
     function typeChar(i) {
       // Le client a changé de sous-étape (ou quitté le tuto) pendant le délai : on arrête là,
       // sans reprogrammer de suite — évite qu'une frappe fantôme continue en arrière-plan.
       if (TOUR_REAL_KEYS[tourRealSubStep] !== "search") return;
-      // Purement décoratif : la liste de résultats en dessous ne bouge plus (voir plus haut).
-      // Écrit le titre EN ENTIER (pas seulement le préfixe figé qui a servi à construire la
-      // liste, voir prepareTourSearchDemo()) — demande explicite de Hubert : "Sweet Caroline"
-      // doit être écrit au complet.
       input.value = demoTitle.slice(0, i);
+      // Jusqu'au préfixe figé (freeze.prefixLen, voir computeTourSearchFreeze()) : affiche les
+      // VRAIS résultats de CETTE requête précise, progressivement affinés lettre par lettre
+      // (demande explicite de Hubert, captures d'écran à l'appui : "S" → "Sw" → "Swe" doivent
+      // chacune montrer ce qu'une vraie recherche donnerait). Une fois ce préfixe atteint, plus
+      // aucun re-rendu : la liste se fige exactement comme avant (toujours les 3 mêmes chansons),
+      // pendant que la frappe continue, purement décorative, jusqu'au titre complet (demande
+      // explicite de Hubert : "Sweet Caroline" doit être écrit au complet).
+      if (i <= freeze.prefixLen) {
+        renderTourSearchResults(demoTitle.slice(0, i));
+      }
+      // Rythme lent tant qu'on est encore dans le préfixe qui affine la VRAIE recherche —
+      // accélère dès la lettre SUIVANTE une fois ce préfixe dépassé (demande explicite de Hubert,
+      // voir TOUR_SEARCH_DEMO_TYPE_FAST_MS ci-dessus).
+      const nextDelay = i < freeze.prefixLen ? TOUR_SEARCH_DEMO_TYPE_MS : TOUR_SEARCH_DEMO_TYPE_FAST_MS;
       tourSearchDemoTimer = i < demoTitle.length
-        ? setTimeout(() => typeChar(i + 1), TOUR_SEARCH_DEMO_TYPE_MS)
+        ? setTimeout(() => typeChar(i + 1), nextDelay)
         : setTimeout(illuminateDemoRow, TOUR_SEARCH_DEMO_HOLD_MS);
     }
     // Illumine brièvement la ligne de "Sweet Caroline" dans le cadre (voir .jb-tour-select-glow
@@ -2184,15 +2426,32 @@
     // rejoint le palmarès (voir selectDemoSong()), demande explicite de Hubert.
     function illuminateDemoRow() {
       if (TOUR_REAL_KEYS[tourRealSubStep] !== "search") return;
-      if (demoRow) demoRow.classList.add("jb-tour-select-glow");
+      const row = findDemoRow();
+      if (row) row.classList.add("jb-tour-select-glow");
       tourSearchDemoTimer = setTimeout(() => {
-        if (demoRow) demoRow.classList.remove("jb-tour-select-glow");
+        const row2 = findDemoRow();
+        if (row2) {
+          row2.classList.remove("jb-tour-select-glow");
+          // Demande explicite de Hubert : une fois choisie (illumination terminée), la ligne
+          // dans le cadre rouge doit montrer le chiffre "1" — même état visuel que dans le VRAI
+          // catalogue pour une chanson déjà demandée (voir la branche "requested" de
+          // renderSongRow()) — plutôt que de garder son badge "Demande" d'origine, qui ne
+          // correspond plus à la réalité une fois la chanson choisie. Rien n'est câblé ici (pas
+          // de nouveau data-boost fonctionnel) : de toute façon, tout clic est déjà capturé par
+          // le fond du tuto (.jb-tour-backdrop), voir startTourSearchDemo() plus haut.
+          const right = row2.querySelector(".jb-song-right");
+          if (right) {
+            right.innerHTML = `
+              <span class="jb-song-votes">1</span>
+              <button class="jb-slot-boost" data-boost="__tour_demo__" aria-label="${t("boost_aria")}" title="${t("boost_aria")}">🚀 ${t("boost_btn")}</button>`;
+          }
+        }
         selectDemoSong();
       }, TOUR_SEARCH_DEMO_ILLUMINATE_MS);
     }
     // Montre "Sweet Caroline" se placer dans le VRAI palmarès (même rendu/animation que pour une
     // vraie demande — voir renderPalmares()), aux côtés des 1-2 mêmes chansons déjà visibles en
-    // tout temps depuis le début de l'étape (voir tourDemoPalmaresFillers/decoys ci-dessus, posées
+    // tout temps depuis le début de l'étape (voir tourDemoPalmaresFillers ci-dessus, posées
     // par prepareTourSearchDemo()) — sans jamais rien écrire dans Firestore (voir
     // hideTourDemoEntry()). Pas besoin de repositionner le cadre ici : il a déjà été dimensionné
     // pour cette taille finale dès le départ (voir tourSearchDemoPreview/
@@ -2206,6 +2465,10 @@
       entryPreview.requests = 1;
       tourDemoPalmaresEntry = entryPreview;
       renderPalmares();
+      // Demande explicite de Hubert : le VRAI badge "Boosts : N" (celui du client, en haut de
+      // page) doit lui aussi repartir à 3 dès que les boosts simulés commencent, prêt à décompter
+      // à chaque boostDemoSong() — voir setTourBoostBadgeRemaining() plus bas.
+      setTourBoostBadgeRemaining(TOUR_SEARCH_DEMO_BOOST_CLICKS);
       tourSearchDemoTimer = setTimeout(() => boostDemoSong(0), TOUR_SEARCH_DEMO_RANK_HOLD_MS);
     }
     // Simule "step+1" clics sur le bouton Boost de la chanson démo, un par un, en incrémentant
@@ -2216,28 +2479,56 @@
     // repositionner le cadre ici non plus.
     function boostDemoSong(step) {
       if (TOUR_REAL_KEYS[tourRealSubStep] !== "search" || !tourDemoPalmaresEntry) return;
-      tourDemoPalmaresEntry.requests += TOUR_SEARCH_DEMO_BOOST_INCREMENT;
-      renderPalmares();
-      // Illumine le VRAI bouton Boost de "Sweet Caroline" (fraîchement recréé par renderPalmares()
-      // ci-dessus, voir son innerHTML) pour bien montrer que CE boost vient d'être ajouté —
-      // demande explicite de Hubert. Pas besoin de le retirer ensuite : bouton tout neuf à chaque
-      // rendu, l'animation (2 pulsations, voir .jb-tour-boost-flash en CSS) se termine d'elle-même.
+      // Nouvel ordre des 3 animations, demande explicite de Hubert (vidéo à l'appui) : (1)
+      // illumination du bouton Boost D'ABORD, à la position ACTUELLE (avant tout déplacement) ;
+      // (2) DÈS que cette illumination s'éteint (aucun délai — voir TOUR_SEARCH_DEMO_BOOST_ILLUM_TO_MOVE_MS
+      // plus haut), le déplacement (FLIP) ET l'incrémentation du nombre de votes démarrent
+      // SIMULTANÉMENT — jamais pendant que la chanson voyage, jamais avant l'illumination. "À
+      // chaque fois qu'un boost est utilisé, je veux que l'icone Boost s'illumine" : ce bouton est
+      // celui d'où la chanson part, donc toujours présent à ce stade (déjà posé par le rendu
+      // précédent — le tout premier venant de selectDemoSong()).
       const boostBtn = document.querySelector('#jb-palmares-list [data-boost="__tour_demo__"]');
       if (boostBtn) boostBtn.classList.add("jb-tour-boost-flash");
-      const next = step + 1;
-      tourSearchDemoTimer = next < TOUR_SEARCH_DEMO_BOOST_CLICKS
-        ? setTimeout(() => boostDemoSong(next), TOUR_SEARCH_DEMO_BOOST_STEP_MS)
-        : setTimeout(resetToS, TOUR_SEARCH_DEMO_TOP_HOLD_MS);
+      // Demande explicite de Hubert : le VRAI badge "Boosts : N" du haut de page doit LUI AUSSI
+      // s'illuminer à chaque boost simulé (pas seulement le bouton dans le palmarès) — "l'animation
+      // d'illumination sur l'icone 'boost : 3' ne se fait pas. Elle doit se faire à chaque fois
+      // qu'un boost est utilisé". Retirée explicitement plus bas, au même instant que
+      // l'incrémentation — contrairement au bouton, ce badge n'est jamais reconstruit par
+      // renderPalmares() (seul son texte l'est, voir updateBoostBadge()), donc sa classe ne
+      // disparaît pas toute seule.
+      const boostBadgeEl = document.getElementById("jb-boost-remaining");
+      if (boostBadgeEl) boostBadgeEl.classList.add("jb-tour-boost-flash");
+      // Demande explicite de Hubert : décompte aussi le VRAI badge "Boosts : N" du haut de page à
+      // chaque boost simulé, dès l'instant où il est "utilisé" (l'illumination, pas l'incrément
+      // différé ci-dessous) — jusqu'à épuisement puis décompte "Boosts : MM:SS".
+      setTourBoostBadgeRemaining(Math.max(0, TOUR_SEARCH_DEMO_BOOST_CLICKS - (step + 1)));
+      tourSearchDemoTimer = setTimeout(() => {
+        if (TOUR_REAL_KEYS[tourRealSubStep] !== "search" || !tourDemoPalmaresEntry) return;
+        if (boostBadgeEl) boostBadgeEl.classList.remove("jb-tour-boost-flash");
+        tourDemoPalmaresEntry.requests += TOUR_SEARCH_DEMO_BOOST_INCREMENT;
+        renderPalmares(); // déclenche la vraie animation FLIP ET affiche le nouveau total ensemble
+        // Une fois cette chanson arrivée à la 1re position (dernier boost simulé), plus AUCUNE
+        // animation ne doit plus se déclencher pour elle — demande explicite de Hubert : "quand
+        // 'Sweet Caroline' arrive à la première position, il ne doit plus y avoir d'animation".
+        // Conséquence naturelle de ce nouvel ordre : l'illumination du PROCHAIN cycle n'existe
+        // plus une fois le dernier boost atteint (branche resetToS() ci-dessous, qui n'illumine
+        // rien) — rien ne s'anime donc plus une fois la chanson immobile en 1re place.
+        const next = step + 1;
+        tourSearchDemoTimer = next < TOUR_SEARCH_DEMO_BOOST_CLICKS
+          ? setTimeout(() => boostDemoSong(next), TOUR_SEARCH_DEMO_BOOST_STEP_MS)
+          : setTimeout(resetToS, TOUR_SEARCH_DEMO_TOP_HOLD_MS);
+      }, TOUR_SEARCH_DEMO_BOOST_ILLUM_TO_MOVE_MS);
     }
     function resetToS() {
       if (TOUR_REAL_KEYS[tourRealSubStep] !== "search") return;
       // Retire seulement "Sweet Caroline" — les concurrentes restent affichées, visibles en tout
       // temps même pendant que la démo reprend depuis le début (demande explicite de Hubert).
-      hideTourDemoEntry();
-      if (demoRow) demoRow.classList.remove("jb-tour-select-glow"); // sécurité, normalement déjà enlevé
+      hideTourDemoEntry(); // restaure aussi le VRAI badge "Boosts : N" (voir plus haut)
+      const row = findDemoRow();
+      if (row) row.classList.remove("jb-tour-select-glow"); // sécurité, normalement déjà enlevé
       showEmpty();
     }
-    showEmpty(); // démarre avec la barre vide (demande explicite de Hubert), puis écrit le titre au complet
+    showEmpty(); // démarre avec la barre ET le cadre vides (demande explicite de Hubert)
   }
 
   // Bouton unique "Débuter"/"Suivant" des étapes plein écran (voir .jb-tour-fs-next dans le
@@ -2474,15 +2765,18 @@
   const TOUR_BOOST_COUNTDOWN_FREEZE_AT = 55;
 
   // Démarre le faux décompte d'1 min (même durée que BOOST_RESET_MS en vrai, voir plus bas) une
-  // fois les 3 boosts de démo épuisés, affiché dans le badge (voir renderTourBoostMore(), phase
-  // "exhausted"/"dimmed") — indépendant du décompte global de la vraie page (celui-ci ne doit
-  // tourner que pendant cette sous-étape du tuto).
+  // fois les 3 boosts de démo épuisés — affiché directement dans le VRAI badge "Boosts : N" du
+  // haut de page (#jb-boost-remaining, voir setTourBoostBadgeRemaining()/boostDemoSong() dans
+  // runTourSearchDemo() — demande explicite de Hubert : le vrai badge doit décompter pendant la
+  // démo, jusqu'à afficher "Boosts : 01:00" comme un vrai épuisement) — indépendant du décompte
+  // RÉEL du client (boostResetAt, voir updateBoostBadge()), qui n'est jamais lu ni modifié ici.
   function startTourBoostCountdown() {
     tourBoostCountdownUntil = Date.now() + 60 * 1000;
     stopTourBoostCountdown();
-    tourBoostCountdownTimer = setInterval(() => {
-      const badge = document.getElementById("jb-tour-fake-boost-badge");
+    const tick = () => {
+      const badge = document.getElementById("jb-boost-remaining");
       if (!badge) { stopTourBoostCountdown(); return; }
+      badge.classList.add("jb-tour-blink-forever");
       const totalSec = Math.max(0, Math.ceil((tourBoostCountdownUntil - Date.now()) / 1000));
       if (totalSec <= TOUR_BOOST_COUNTDOWN_FREEZE_AT) {
         badge.textContent = t("boost_remaining_countdown", formatMMSS(TOUR_BOOST_COUNTDOWN_FREEZE_AT));
@@ -2492,10 +2786,36 @@
         return;
       }
       badge.textContent = t("boost_remaining_countdown", formatMMSS(totalSec));
-    }, 1000);
+    };
+    tick(); // affiche tout de suite "01:00" — sans ça, le badge affichait un instant une valeur
+            // périmée avant le premier tic de l'intervalle (bogue déjà rencontré ailleurs, voir
+            // l'ancien renderTourBoostMore()).
+    tourBoostCountdownTimer = setInterval(tick, 1000);
   }
   function stopTourBoostCountdown() {
     if (tourBoostCountdownTimer) { clearInterval(tourBoostCountdownTimer); tourBoostCountdownTimer = null; }
+    // Retire tout habillage laissé par le décompte factice (clignotement/grisé) — sûr même quand
+    // aucun décompte n'était en cours (le vrai badge ne porte jamais ces classes autrement).
+    const badge = document.getElementById("jb-boost-remaining");
+    if (badge) badge.classList.remove("jb-tour-blink-forever", "jb-tour-boost-badge-frozen");
+  }
+  // Affiche "Boosts : n" (ou démarre le décompte "Boosts : MM:SS" une fois n à 0, voir
+  // startTourBoostCountdown()) sur le VRAI badge #jb-boost-remaining pendant la démo de boosts
+  // simulés (voir selectDemoSong()/boostDemoSong() dans runTourSearchDemo()) — demande explicite
+  // de Hubert : "quand un boost est utilisé, l'icône 'Boost : 3' devienne 'Boost : 2' [...]
+  // jusqu'à [...] '01:00'". Appelée APRÈS renderPalmares() (qui vient justement de réécrire ce
+  // même badge avec la VRAIE valeur du client via updateBoostBadge()) pour la réécraser avec la
+  // valeur factice de la démo — restaurée dès que la démo relâche la chanson (voir
+  // hideTourDemoEntry()/stopTourBoostCountdown()).
+  function setTourBoostBadgeRemaining(n) {
+    tourBoostsRemaining = n;
+    if (n > 0) {
+      stopTourBoostCountdown();
+      const badge = document.getElementById("jb-boost-remaining");
+      if (badge) badge.textContent = t("boost_remaining", n);
+    } else {
+      startTourBoostCountdown();
+    }
   }
 
   // Construit le HTML commun d'une ligne du palmarès de démo (utilisé par les étapes 3 et 4).
@@ -2867,19 +3187,26 @@
   // Protégé par un drapeau ("tourAutoStarted") pour ne jamais le lancer deux fois : une fois via
   // le délai ci-dessous, une seconde fois si le site devient "live" juste après (voir
   // renderLiveGate()).
+  // Se relance maintenant à CHAQUE ouverture du site (demande explicite de Hubert : "quand
+  // j'ouvre le site, il ne montre pas le tutoriel") — avant, jb_tour_seen_* (posé par endTour())
+  // empêchait de le revoir une fois déjà vu une fois dans la même soirée ; ce drapeau n'est plus
+  // consulté ici (tourSeenKey()/safeStorageSet() restent posés par endTour(), au cas où un futur
+  // réglage voudrait le réintroduire, mais rien ne le lit plus pour bloquer le tuto automatique).
   let tourAutoStarted = false;
   function maybeAutoStartTour() {
     if (tourAutoStarted || !isLiveNow()) return;
-    try {
-      if (safeStorageGet(tourSeenKey()) !== "1") {
-        tourAutoStarted = true;
-        startTour();
-      }
-    } catch (e) {}
+    tourAutoStarted = true;
+    startTour();
   }
-  // Le check est fait dans le setTimeout (pas tout de suite) pour être certain que
-  // "nightId" (déclaré plus bas) a déjà été initialisé au moment de le lire.
-  setTimeout(maybeAutoStartTour, 1200);
+  // Filet de sécurité seulement : les instantanés "config"/"catalog" (voir plus bas) appellent
+  // déjà renderLiveGate() dès qu'ils arrivent, ce qui gère normalement tout le démarrage du tuto.
+  // On passe par renderLiveGate() ici plutôt que d'appeler maybeAutoStartTour() directement —
+  // sinon, si ce délai s'écoulait AVANT que #jb-app-content ait pu être révélé (voir
+  // bootRevealed/doBootReveal() plus bas : la toute première révélation peut être encore en
+  // attente du catalogue), le tuto s'ouvrirait par-dessus une appli encore cachée, et sa cible
+  // (#jb-catalog-searchbar) mesurerait alors une taille nulle — plus aucun cadre à positionner.
+  // renderLiveGate() respecte toujours ce délai d'attente, lui.
+  setTimeout(renderLiveGate, 1200);
 
   if (firebaseConfig.apiKey === "REMPLACE_MOI") {
     const app = document.getElementById("jb-app");
@@ -2961,6 +3288,32 @@
   let liveFlag = false;
   let loginAtMs = 0;
   let autoLogoutDone = false; // évite de redéclencher l'auto-déconnexion à chaque vérification
+  // ---------- Écran de démarrage : voir renderLiveGate() ----------
+  // Tant que ces deux drapeaux ne sont pas TOUS LES DEUX vrais, renderLiveGate() ne révèle encore
+  // RIEN côté public (#jb-app-content ET #jb-offline-page restent cachés, comme au tout premier
+  // chargement de la page — voir leurs attributs "hidden" dans le HTML) : ni la page "Pas en
+  // spectacle", ni l'appli principale. Sans ça, le tout premier instantané Firestore de
+  // "config/settings" pouvait arriver AVANT celui de "catalog/all" (ou l'inverse), et le client
+  // voyait alors, l'espace d'un instant, un premier état (souvent "Pas en spectacle", la valeur
+  // par défaut de liveFlag) puis un second état une fois les VRAIES données arrivées — et si le
+  // tuto devait s'ouvrir, il n'apparaissait qu'ENCORE PLUS TARD, une fois catalogSongs enfin
+  // rempli, laissant l'appli "nue" visible pendant ce temps. Demande explicite de Hubert (vidéo à
+  // l'appui) : "je veux uniquement voir le tutoriel" — donc on attend d'avoir les DEUX premières
+  // réponses avant de révéler quoi que ce soit, puis on révèle direction le bon écran (tuto compris)
+  // en un seul coup, jamais un état intermédiaire.
+  let bootConfigReady = false;
+  let bootCatalogReady = false;
+  let bootRevealed = false;
+  // Filet de sécurité : si "live" est vrai mais que le catalogue, pour une raison quelconque, ne
+  // se remplit jamais (panne réseau partielle, document vide par erreur...), on ne veut pas
+  // laisser un client planté indéfiniment devant une page blanche — mieux vaut révéler l'appli
+  // (même avec un tuto/démo cassé, cas déjà géré ailleurs) après quelques secondes que rien du
+  // tout pour toujours. N'a aucun effet si la révélation a déjà eu lieu normalement entre-temps.
+  setTimeout(() => {
+    if (bootRevealed) return;
+    bootCatalogReady = true;
+    renderLiveGate();
+  }, 6000);
   const AUTO_LOGOUT_HOUR = 6; // heure locale (appareil de Hubert) de la coupure automatique
   function computeAutoLogoutCutoff(fromMs) {
     const d = new Date(fromMs);
@@ -3339,28 +3692,69 @@
   // de la déconnexion automatique de l'admin passé l'heure de coupure (voir isLiveNow()) : appelé
   // à chaque snapshot de "config/settings" ET toutes les 60s (voir plus bas) pour attraper le
   // passage de l'heure même sans nouvelle écriture Firestore.
+  // Applique VRAIMENT l'état "en spectacle ou non" au DOM (bascule appli/page hors-ligne, ouvre le
+  // tuto le cas échéant) — séparé de renderLiveGate() ci-dessous pour être appelable à la fois
+  // immédiatement (une fois déjà révélé une première fois) et après le court délai d'absorption du
+  // tout premier affichage (voir bootRevealTimer).
+  function applyLiveGateNow(live) {
+    const appContent = document.getElementById("jb-app-content");
+    const offlinePage = document.getElementById("jb-offline-page");
+    if (appContent) appContent.hidden = !live;
+    if (offlinePage) offlinePage.hidden = live;
+    // Rattrape le cas où le site devient "live" APRÈS le délai initial de maybeAutoStartTour()
+    // (ex. Hubert se connecte juste après qu'un client ait ouvert la page) — pas d'effet si le
+    // tuto a déjà démarré ou si le client l'a déjà vu (voir le drapeau/la clé dans la fonction).
+    if (live) {
+      maybeAutoStartTour();
+      // #jb-app-content démarre "hidden" (voir plus haut, pour éviter un flash de l'appli au
+      // chargement/rechargement — voir aussi le correctif du bug de rechargement en boucle). La
+      // toute première mesure de fitStickyHeader()/fitTopBar() se faisait donc pendant que l'appli
+      // était encore cachée (offsetWidth/offsetHeight = 0), et rien ne la relançait ensuite — le
+      // titre de style + badge "Demandes" ne se recalait plus correctement sous la barre de
+      // recherche une fois l'appli révélée. On remesure donc à chaque fois que l'appli redevient
+      // visible.
+      scheduleFitStickyHeader();
+      scheduleFitTopBar();
+    }
+  }
+  // Minuteur d'absorption de la TOUTE PREMIÈRE révélation (voir renderLiveGate() plus bas) — pas de
+  // délai pour les changements d'état SUIVANTS (Hubert commence/termine réellement son spectacle
+  // pendant qu'un client a déjà la page ouverte : ça doit rester instantané).
+  let bootRevealTimer = null;
+  function doBootReveal() {
+    bootRevealTimer = null;
+    const live = isLiveNow();
+    // Revérifié à l'échéance du minuteur (pas figé au moment où il a été programmé) : si le
+    // catalogue n'est toujours pas arrivé entre-temps (réseau lent), on ne révèle encore rien —
+    // renderLiveGate() reprendra cette même logique au prochain appel (ex. dès que le catalogue
+    // arrive enfin, voir l'écouteur "catalog" plus bas).
+    if (!bootConfigReady || (live && !bootCatalogReady)) return;
+    bootRevealed = true;
+    applyLiveGateNow(live);
+  }
   function renderLiveGate() {
     const admin = location.hash === "#admin";
     const live = isLiveNow();
     if (!admin) {
-      const appContent = document.getElementById("jb-app-content");
-      const offlinePage = document.getElementById("jb-offline-page");
-      if (appContent) appContent.hidden = !live;
-      if (offlinePage) offlinePage.hidden = live;
-      // Rattrape le cas où le site devient "live" APRÈS le délai initial de maybeAutoStartTour()
-      // (ex. Hubert se connecte juste après qu'un client ait ouvert la page) — pas d'effet si le
-      // tuto a déjà démarré ou si le client l'a déjà vu (voir le drapeau/la clé dans la fonction).
-      if (live) {
-        maybeAutoStartTour();
-        // #jb-app-content démarre "hidden" (voir plus haut, pour éviter un flash de l'appli au
-        // chargement/rechargement — voir aussi le correctif du bug de rechargement en boucle).
-        // La toute première mesure de fitStickyHeader()/fitTopBar() se faisait donc pendant que
-        // l'appli était encore cachée (offsetWidth/offsetHeight = 0), et rien ne la relançait
-        // ensuite — le titre de style + badge "Demandes" ne se recalait plus correctement sous
-        // la barre de recherche une fois l'appli révélée. On remesure donc à chaque fois que
-        // l'appli redevient visible.
-        scheduleFitStickyHeader();
-        scheduleFitTopBar();
+      if (!bootRevealed) {
+        // Tant que la toute première révélation n'a pas encore eu lieu, on attend d'avoir un
+        // premier instantané de "config/settings" ET, si on s'apprête à être "live", un premier
+        // instantané de "catalog/all" aussi (voir bootConfigReady/bootCatalogReady plus haut) —
+        // jusque-là, on ne touche à AUCUN attribut "hidden" ici, laissant #jb-app-content et
+        // #jb-offline-page tous les deux cachés (leur état par défaut dans le HTML). Ça évite qu'un
+        // client voie, l'un après l'autre, la page "Pas en spectacle" PUIS l'appli nue PUIS (bien
+        // plus tard) le tuto — demande explicite de Hubert (vidéo à l'appui) : "je veux uniquement
+        // voir le tutoriel". Un très court délai (voir bootRevealTimer/doBootReveal()) absorbe en
+        // plus une éventuelle deuxième écriture Firestore arrivant presque aussitôt après la
+        // première (ex. au moment même où Hubert se connecte) : on révèle alors direction le bon
+        // écran (tuto compris) en un seul coup, avec l'état le plus frais, jamais un état
+        // intermédiaire.
+        const readyToReveal = bootConfigReady && (!live || bootCatalogReady);
+        if (readyToReveal && !bootRevealTimer) {
+          bootRevealTimer = setTimeout(doBootReveal, 200);
+        }
+      } else {
+        applyLiveGateNow(live);
       }
     }
     if (isAdmin && !live && liveFlag && !autoLogoutDone) {
@@ -3465,12 +3859,42 @@
     // se connecte ou déconnecte de son panneau admin.
     liveFlag = !!data?.live;
     loginAtMs = data?.loginAt?.toMillis ? data.loginAt.toMillis() : 0;
+    bootConfigReady = true; // voir renderLiveGate()/doBootReveal()
     renderLiveGate();
   }, (err) => console.error("config onSnapshot", err));
 
   onSnapshot(doc(db, "catalog", "all"), (snap) => {
     catalogSongs = snap.data()?.songs || [];
+    // Comme pour "config/settings", ce tout premier instantané peut arriver vide (pas encore de
+    // cache local, document pas encore reçu) AVANT le vrai instantané confirmé — voir aussi le
+    // filtre "fromCache" sur l'écouteur "config" plus haut. Contrairement à "live" (où "pas encore
+    // de donnée" retombe sans risque sur "pas en spectacle"), un répertoire VIDE n'est jamais un
+    // état affichable : on ne considère donc le catalogue "prêt" pour la révélation initiale (voir
+    // renderLiveGate()/doBootReveal()) qu'une fois qu'il contient VRAIMENT des chansons — jamais
+    // remis à faux ensuite (même si le catalogue redevient vide plus tard, ce drapeau ne sert plus
+    // qu'à ce tout premier chargement).
+    if (catalogSongs.length > 0) bootCatalogReady = true;
+    renderLiveGate(); // termine la toute première révélation si elle n'attendait plus que ça
     renderAll();
+    // Rattrape le cas où le répertoire arrive APRÈS que "config/settings" (live) soit déjà connu —
+    // sur un vrai réseau, les deux instantanés Firestore n'arrivent pas forcément dans le même
+    // ordre ni au même moment. Utile seulement si le tuto n'a encore JAMAIS démarré (drapeau
+    // "tourAutoStarted" toujours à faux) — sinon ce second appel ne fait rien.
+    maybeAutoStartTour();
+    // Rattrape aussi le cas où le tuto a DÉJÀ démarré (via le minuteur de 1200ms ou via
+    // renderLiveGate()) mais AVEC un répertoire encore vide à ce moment-là : prepareTourSearchDemo()
+    // (voir before() de TOUR_REAL_STEPS.search) abandonne alors silencieusement
+    // (pickTourSearchDemoSong() ne trouve rien), laissant tourSearchDemoState à null et la démo
+    // figée vide pour toujours — le drapeau "tourAutoStarted" empêche maybeAutoStartTour() de
+    // rejouer startTour() dans ce cas. Si le tuto est toujours ouvert, toujours sur l'étape de
+    // recherche, et que la démo n'a jamais pu se construire, on rejoue juste cette étape
+    // maintenant qu'un vrai répertoire est arrivé. Demande explicite de Hubert : le tuto doit
+    // s'ouvrir fiablement à l'arrivée sur le site, avec une démo qui fonctionne vraiment.
+    const tourEl = document.getElementById("jb-tour");
+    if (tourEl && !tourEl.hidden && TOUR_MAJOR_STEPS[tourStep] === "real" &&
+        TOUR_REAL_KEYS[tourRealSubStep] === "search" && !tourSearchDemoState) {
+      renderTourRealStep();
+    }
   }, (err) => console.error("catalog onSnapshot", err));
 
   // Compteur cumulatif (toutes les soirées confondues) des demandes par artiste, pour Top Pick.
@@ -3569,7 +3993,17 @@
     const list = document.getElementById("jb-palmares-list");
     const empty = document.getElementById("jb-palmares-empty");
     const remaining = boostsRemaining();
-    updateBoostBadge(remaining);
+    // Pendant la démo animée du tuto, tourDemoPalmaresEntry est non-null du tout début de
+    // selectDemoSong() jusqu'à hideTourDemoEntry() (voir ces deux fonctions plus haut) — soit
+    // exactement la fenêtre où le badge "Boosts : N" du haut de page est piloté par la fausse
+    // séquence factice de boostDemoSong()/setTourBoostBadgeRemaining(). Ne PAS le réécraser ici
+    // avec la vraie valeur du client à chaque ré-affichage du palmarès : boostDemoSong() appelle
+    // aussi renderPalmares() (pour l'animation FLIP du boost simulé), ce qui écrasait aussitôt la
+    // fausse valeur ("2", puis "1") par la vraie, la rendant quasi invisible — demande explicite
+    // de Hubert ("L'icone boost passe de 3 à 1. Elle devrait passer de 3 à 2, de 2 à 1...").
+    // hideTourDemoEntry() restaure la vraie valeur au bon moment, une fois tourDemoPalmaresEntry
+    // remis à null, juste avant son propre appel à renderPalmares().
+    if (!tourDemoPalmaresEntry) updateBoostBadge(remaining);
     empty.textContent = t("palmares_empty");
 
     // Pas de limite de position : autant de lignes que de demandes actives, et rien du
@@ -3627,6 +4061,13 @@
     newKeys.forEach((key, i) => {
       const [id, v] = ranked[i];
       let el = palmaresElByKey.get(key);
+      // Repère ici (le SEUL endroit où cette ligne est créée pour la première fois) le cas de
+      // "Sweet Caroline" (la chanson démo du tuto) qui rejoint le palmarès — demande explicite de
+      // Hubert (capture à l'appui) : elle ne doit pas apparaître d'un coup sec, mais devenir
+      // visible GRADUELLEMENT en 0.5s, puis (une fois cette apparition terminée) enchaîner sur
+      // l'animation d'illumination .jb-tour-select-glow. Les concurrentes (tourDemoPalmaresFillers)
+      // et les vraies chansons ne sont pas concernées, seule "Sweet Caroline" elle-même.
+      const isNewTourDemoEntry = !el && key === "__tour_demo__";
       if (!el) {
         el = document.createElement("div");
         palmaresElByKey.set(key, el);
@@ -3646,6 +4087,19 @@
           <span class="jb-slot-votes">${v.requests}</span>
           <button class="jb-slot-boost" data-boost="${escapeHtml(id)}" aria-label="${t("boost_aria")}" title="${t("boost_aria")}">🚀 ${t("boost_btn")}</button>
         </span>`;
+      if (isNewTourDemoEntry) {
+        el.classList.add("jb-slot-fade-in");
+        setTimeout(() => {
+          // Le nœud a pu être retiré entre-temps (fin de la démo, changement d'étape...) — pas
+          // d'illumination sur une ligne qui n'est déjà plus affichée.
+          if (!el.isConnected) return;
+          el.classList.remove("jb-slot-fade-in");
+          el.classList.add("jb-tour-select-glow");
+          setTimeout(() => {
+            el.classList.remove("jb-tour-select-glow");
+          }, 450); // même durée que la pulsation unique existante (voir TOUR_SEARCH_DEMO_ILLUMINATE_MS)
+        }, 500);
+      }
     });
 
     // 4) LAST — replace les éléments dans le bon ordre dans le DOM.
@@ -3737,11 +4191,75 @@
     if (target && badge.parentElement !== target) target.appendChild(badge);
   }
 
+  // ---------- Hauteur minimale du cadre de résultats (VRAIE recherche/dossier, hors tuto) ----------
+  // Même demande que pour la démo du tuto (voir tourSearchResultsMinHeight plus haut : "le cadre
+  // rouge ne doit JAMAIS rétrécir"), mais ici pour une VRAIE recherche ou un VRAI dossier de
+  // style/artiste — Hubert a continué de signaler le cadre qui rétrécit (capture à l'appui) après
+  // le tout premier correctif, qui ne couvrait QUE la démo du tuto (toujours exactement 3
+  // résultats) et jamais une vraie recherche/un vrai dossier avec moins de 3 chansons, pourtant le
+  // cas le plus fréquent en pratique. Mesurée en affichant temporairement jusqu'à 3 vraies
+  // chansons du répertoire dans #jb-catalog-list, mise en cache, puis appliquée comme hauteur
+  // MINIMALE à chaque affichage de résultats réels (voir renderCatalog() plus bas) — sans jamais
+  // empêcher le cadre de grandir au-delà (défilement, voir max-height en CSS). Appelée UNIQUEMENT
+  // juste avant que renderCatalog() ne vide et reconstruise la liste avec les VRAIS résultats,
+  // donc le contenu temporaire posé ici pour la mesure est de toute façon écrasé l'instant
+  // d'après par le vrai rendu : aucune restauration n'est nécessaire (même principe que
+  // prepareTourSearchDemo()/computeTourSearchDemoRect() plus haut). Invalidée à chaque
+  // redimensionnement d'écran (la hauteur d'une ligne dépend de la largeur disponible : retour à
+  // la ligne du titre, media queries de police) et recalculée à la prochaine utilisation.
+  let catalogListMinHeight = 0;
+  function ensureCatalogListMinHeight() {
+    if (catalogListMinHeight || !catalogSongs.length) return catalogListMinHeight;
+    const list = document.getElementById("jb-catalog-list");
+    if (!list) return 0;
+    list.style.minHeight = "";
+    list.innerHTML = "";
+    catalogSongs.slice(0, 3).forEach((song) => list.appendChild(renderSongRow(song, true)));
+    catalogListMinHeight = list.getBoundingClientRect().height;
+    return catalogListMinHeight;
+  }
+  let catalogListMinHeightRaf = null;
+  function scheduleRecomputeCatalogListMinHeight() {
+    catalogListMinHeight = 0;
+    if (catalogListMinHeightRaf) cancelAnimationFrame(catalogListMinHeightRaf);
+    // Double rAF (même principe que scheduleFitTopBar()/scheduleFitStickyHeader() plus haut) :
+    // laisse la mise en page se poser après le redimensionnement avant de remesurer. Si un vrai
+    // cadre de résultats est actuellement affiché à l'écran (et que ce n'est pas la démo du tuto,
+    // pilotée séparément — voir tourSearchDemoState/renderCatalog() plus bas), on le redessine
+    // tout de suite pour corriger sa hauteur minimale sans attendre la prochaine interaction.
+    catalogListMinHeightRaf = requestAnimationFrame(() => {
+      catalogListMinHeightRaf = requestAnimationFrame(() => {
+        catalogListMinHeightRaf = null;
+        const resultsWrap = document.getElementById("jb-catalog-results");
+        if (resultsWrap && !resultsWrap.hidden && !tourSearchDemoState) renderCatalog();
+      });
+    });
+  }
+  window.addEventListener("resize", scheduleRecomputeCatalogListMinHeight);
+  window.addEventListener("orientationchange", scheduleRecomputeCatalogListMinHeight);
+
   // ---------- Rendu : Catalogue (public, navigation par dossiers d'artistes) ----------
   // Vue par défaut du catalogue (Top Pick + Style) vs. vue "résultats" (recherche, style
   // choisi, ou artiste choisi depuis Top Pick) — recherche et clic sur un onglet se comportent
   // exactement de la même façon : ils affichent une liste de chansons à la place de la navigation.
   function renderCatalog() {
+    // Pendant la démo de recherche du tuto (voir renderTourSearchResults()/tourSearchDemoState
+    // plus haut), ces MÊMES éléments (#jb-catalog-list/#jb-catalog-results/#jb-catalog-browse)
+    // sont pilotés par la démo, pas par une vraie recherche. renderCatalog() est appelée depuis
+    // renderAll(), lui-même déclenché par N'IMPORTE QUEL instantané Firestore réel sans rapport
+    // (le vote d'un autre client, une mise à jour du catalogue...) — sans ce garde-fou, un tel
+    // instantané arrivant PENDANT que le tuto tourne écrasait silencieusement l'affichage de la
+    // démo avec de VRAIS résultats de recherche (ou pire, la vue Top Pick/Style, si la barre de
+    // recherche démo était vide à cet instant précis) : le cadre changeait de taille ou de
+    // contenu tout seul, sans aucun rapport avec ce que le client regardait — bogue rapporté par
+    // Hubert (captures à l'appui) : "le cadre rouge se rétrécit encore". On laisse donc la démo
+    // seule maîtresse de ces éléments tant qu'elle tourne, en se contentant de la re-peindre avec
+    // sa propre requête actuelle (qui n'a pas changé, seule une donnée sans rapport vient
+    // d'arriver) plutôt que de laisser une vraie recherche prendre le dessus.
+    if (tourSearchDemoState) {
+      renderTourSearchResults(tourSearchRenderedQuery);
+      return;
+    }
     const search = norm(document.getElementById("jb-search-input").value);
     const browse = document.getElementById("jb-catalog-browse");
     const resultsWrap = document.getElementById("jb-catalog-results");
@@ -3793,10 +4311,16 @@
     }
 
     songs = [...songs].sort((a, b) => a.title.localeCompare(b.title, "fr"));
+    ensureCatalogListMinHeight();
     list.innerHTML = "";
     empty.hidden = songs.length > 0;
     songs.forEach((song) => list.appendChild(renderSongRow(song, showArtist)));
     wireSongRowEvents(list);
+    // Empêche le cadre de rétrécir en dessous de sa taille avec 3 chansons (voir
+    // ensureCatalogListMinHeight() plus haut) — demande explicite de Hubert (capture à l'appui),
+    // pour une VRAIE recherche/dossier avec moins de 3 résultats, pas seulement pour la démo du
+    // tuto (déjà protégée séparément, voir tourSearchResultsMinHeight).
+    list.style.minHeight = catalogListMinHeight ? `${catalogListMinHeight}px` : "";
 
     // Demande spéciale : seulement pertinent pour une recherche textuelle sans résultat (pas
     // pour un style/artiste vide, où il n'y a rien de précis à envoyer à Hubert).
@@ -4643,4 +5167,3 @@
     return String(str).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   }
 </script>
-</body></html>
