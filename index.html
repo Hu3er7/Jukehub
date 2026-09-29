@@ -192,6 +192,22 @@
   }
   #jb-app .jb-pulse-attn-row { animation: jb-pulse-attn-row 0.5s ease-in-out 1; }
 
+  /* Illumination du CHIFFRE DE VOTES lui-même quand il augmente (.jb-slot-votes/.jb-song-votes,
+     voir voteIllumClass()) — demande explicite de Hubert : "je veux pas que ça fasse un carré
+     illuminé autour. Je veux que l'intérieur du chiffre s'illumine et produise un halo lumineux
+     autour du chiffre". Contrairement à .jb-pulse-attn/.jb-pulse-attn-row ci-dessus (fond +
+     box-shadow rectangulaire, un "carré"), PAS de background ni de box-shadow ici : seule la
+     couleur du chiffre s'éclaircit, et un text-shadow (qui épouse la forme du chiffre, pas une
+     boîte) produit le halo lumineux autour de lui. Même rythme que le reste du système (un seul
+     flash de 0.5s, blanc chaud). Utilisée à la fois dans la page principale ET dans le tuto (voir
+     tourDemoVoteJustIncreased plus bas dans le JS) — demande explicite de Hubert : "ça ne le fait
+     pas dans le tutoriel [...] je veux que ça le fasse dans le tutoriel aussi". */
+  @keyframes jb-num-glow {
+    0%, 100% { text-shadow: none; }
+    50% { color: #fff8e6; text-shadow: 0 0 6px rgba(255, 248, 230, 0.95), 0 0 16px rgba(255, 248, 230, 0.75), 0 0 28px rgba(255, 248, 230, 0.5); }
+  }
+  #jb-app .jb-num-glow { animation: jb-num-glow 0.5s ease-in-out 1; }
+
   /* Palmarès public : liste pleine largeur, 10 positions de haut en bas */
   #jb-app .jb-palmares-grid { display: flex; flex-direction: column; gap: 2px; position: relative; }
   #jb-app .jb-slot {
@@ -1040,12 +1056,12 @@
 
       <div id="jb-catalog-browse" class="jb-catalog-browse">
         <div id="jb-quickpick-section" class="jb-quickpick-section" hidden>
-          <h2 id="jb-quickpick-title">⭐ Top Pick</h2>
+          <h2 id="jb-quickpick-title">Top Pick</h2>
           <div id="jb-quickpick-list" class="jb-quickpick-list"></div>
         </div>
         <div class="jb-style-section">
           <div class="jb-style-heading-row">
-            <h2 id="jb-style-title">🎵 Style</h2>
+            <h2 id="jb-style-title">Style</h2>
             <div id="jb-request-remaining" class="jb-request-remaining">Demandes : 10</div>
           </div>
           <div id="jb-style-list" class="jb-style-list"></div>
@@ -1089,7 +1105,7 @@
 
     <section class="jb-palmares">
       <div class="jb-palmares-heading">
-        <h2 id="jb-palmares-title">🏆 Palmarès de la soirée</h2>
+        <h2 id="jb-palmares-title">Palmarès</h2>
         <div id="jb-boost-remaining" class="jb-boost-remaining">🚀 Boosts restants : 3</div>
       </div>
       <div id="jb-palmares-list" class="jb-palmares-grid"></div>
@@ -1376,7 +1392,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-09-29.32";
+  const APP_BUILD = "2026-09-29.35";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -1446,7 +1462,7 @@
   const I18N = {
     fr: {
       page_title: "Mon Répertoire",
-      palmares_title: "🏆 Palmarès de la soirée",
+      palmares_title: "Palmarès",
       palmares_empty: "Aucune demande pour l'instant — sois le premier à voter !",
       boost_remaining: (n) => `🚀 Boosts : ${n}`,
       boost_remaining_countdown: (time) => `🚀 Boosts : ${time}`,
@@ -1454,9 +1470,9 @@
       boost_added: "🚀 Boost ajouté !",
       boost_aria: "Booster cette chanson",
       boost_btn: "Boost",
-      quickpick_title: "⭐ Top Pick",
-      style_title: "🎵 Chansons",
-      style_title_count: (n) => `🎵 ${n} Chansons`,
+      quickpick_title: "Top Pick",
+      style_title: "Chansons",
+      style_title_count: (n) => `${n} Chansons`,
       back_btn: "⬅ RETOUR",
       search_placeholder: "🔍 Cherche un titre ou un artiste…",
       catalog_empty: "Aucun résultat pour cette recherche.",
@@ -1523,7 +1539,7 @@
     },
     en: {
       page_title: "My Repertoire",
-      palmares_title: "🏆 Tonight's Top Requests",
+      palmares_title: "Billboard",
       palmares_empty: "No requests yet — be the first to vote!",
       boost_remaining: (n) => `🚀 Boosts : ${n}`,
       boost_remaining_countdown: (time) => `🚀 Boosts : ${time}`,
@@ -1531,9 +1547,9 @@
       boost_added: "🚀 Boost added!",
       boost_aria: "Boost this song",
       boost_btn: "Boost",
-      quickpick_title: "⭐ Top Pick",
-      style_title: "🎵 Songs",
-      style_title_count: (n) => `🎵 ${n} Songs`,
+      quickpick_title: "Top Pick",
+      style_title: "Songs",
+      style_title_count: (n) => `${n} Songs`,
       back_btn: "⬅ BACK",
       search_placeholder: "🔍 Search a title or artist…",
       catalog_empty: "No results for this search.",
@@ -1919,6 +1935,14 @@
   // qu'elle est non-nulle. Contrairement à tourDemoPalmaresFillers (voir plus bas), reste null
   // jusqu'à la sélection de "Sweet Caroline" (voir illuminateDemoRow()/selectDemoSong()).
   let tourDemoPalmaresEntry = null;
+  // Vrai juste le temps du renderPalmares() qui suit immédiatement un boost simulé (voir
+  // boostDemoSong() plus bas) qui vient d'augmenter tourDemoPalmaresEntry.requests — consommé par
+  // voteIllumClass() pour donner au chiffre de "Sweet Caroline" dans le palmarès du tuto le MÊME
+  // halo lumineux que le vrai système (demande explicite de Hubert : "ça ne le fait pas dans le
+  // tutoriel [...] je veux que ça le fasse dans le tutoriel aussi"). Remis à false juste après,
+  // dans ce même appel synchrone (pas besoin de la fenêtre de 600ms utilisée pour les vraies
+  // chansons : la démo n'a pas de second rendu concurrent déclenché par un aller-retour Firestore).
+  let tourDemoVoteJustIncreased = false;
   // Les 1-2 "autres" vraies chansons déjà présentes devant "Sweet Caroline" dans le cadre de
   // recherche figé (voir computeTourSearchFreeze()/prepareTourSearchDemo() plus bas) — les mêmes
   // exactement, avec les mêmes faux votes (3 et 2, demande explicite de Hubert), réapparaissent
@@ -2503,7 +2527,14 @@
       tourSearchDemoTimer = setTimeout(() => {
         if (TOUR_REAL_KEYS[tourRealSubStep] !== "search" || !tourDemoPalmaresEntry) return;
         tourDemoPalmaresEntry.requests += TOUR_SEARCH_DEMO_BOOST_INCREMENT;
+        // Demande explicite de Hubert : "ça ne le fait pas dans le tutoriel [...] je veux que ça
+        // le fasse dans le tutoriel aussi" — le chiffre affiché vient d'augmenter (déjà affiché
+        // avant ce boost, comme pour un vrai boost), donc même halo que le vrai système (voir
+        // tourDemoVoteJustIncreased/voteIllumClass()) — consommé tout de suite après ce seul
+        // renderPalmares() synchrone, jamais laissé actif pour un rendu ultérieur sans rapport.
+        tourDemoVoteJustIncreased = true;
         renderPalmares(); // déclenche la vraie animation FLIP ET affiche le nouveau total ensemble
+        tourDemoVoteJustIncreased = false;
         // Une fois cette chanson arrivée à la 1re position (dernier boost simulé), plus AUCUNE
         // animation ne doit plus se déclencher pour elle — demande explicite de Hubert : "quand
         // 'Sweet Caroline' arrive à la première position, il ne doit plus y avoir d'animation".
@@ -2607,6 +2638,14 @@
   }
 
   // instant : voir positionTourSpot() ci-dessus, même principe pour le bouton "Suivant".
+  // Seul appel : renderTourRealStep() (5e étape, fenêtre "juste le bouton" — voir
+  // .jb-tour-card-minimal) — plus aucune autre étape ne s'en sert, donc `rect` (le spot mis en
+  // valeur) ne sert plus qu'à positionTourSpot(), pas à placer la carte elle-même.
+  // Auparavant, la carte se plaçait AU-DESSUS du spot faute de place en dessous — ce qui pouvait
+  // la coincer tout en haut de l'écran, hors d'atteinte (constaté par Hubert en anglais, où le
+  // texte plus long de "Go to My Repertoire" agrandit la carte et déclenchait ce cas). Demande
+  // explicite de Hubert : "je veux TOUJOURS qu'il soit en bas" — la carte reste donc épinglée en
+  // bas de l'écran, peu importe la position du spot ou la langue.
   function positionTourCard(rect, centered, instant) {
     const card = document.getElementById("jb-tour-card");
     if (centered) {
@@ -2619,14 +2658,7 @@
     const margin = 12;
     const vh = window.innerHeight;
     const cardH = card.getBoundingClientRect().height;
-    const spaceBelow = vh - rect.bottom;
-    const spaceAbove = rect.top;
-    let top;
-    if (spaceBelow >= cardH + margin || spaceBelow >= spaceAbove) {
-      top = Math.min(rect.bottom + margin, vh - cardH - margin);
-    } else {
-      top = rect.top - cardH - margin;
-    }
+    const top = vh - cardH - margin;
     card.style.top = `${Math.max(margin, top)}px`;
     if (instant) {
       void card.offsetWidth;
@@ -3263,6 +3295,65 @@
   let catalogSongs = [];      // [{id, title, artist}]
   // votes: songId -> {requests, burned, cooldownUntil, playedAt, title, artist}
   let votes = {};
+  // Mémorise le nombre de votes de chaque chanson au dernier VRAI instantané Firestore reçu (pas
+  // à chaque rendu — voir onSnapshot(collection(db, "votes")) plus bas), pour savoir si ce nombre
+  // vient d'AUGMENTER — demande explicite de Hubert : "je veux que les chiffres de vote s'illumine
+  // quand le nombre de vote augmente". justIncreasedVoteIds ne contient les ids concernés que le
+  // temps du renderAll() qui suit immédiatement ce snapshot (voir plus bas) : les ré-affichages
+  // sans rapport (décompte de cooldown chaque seconde, etc.) ne doivent PAS rallumer ces chiffres.
+  let prevVoteCounts = {};
+  let justIncreasedVoteIds = new Set();
+  // Ajoute la classe d'illumination (halo, voir .jb-num-glow en CSS) au chiffre de votes s'il
+  // vient tout juste d'augmenter (voir justIncreasedVoteIds ci-dessus) — utilisé dans
+  // renderPalmares()/renderSongRow(). Ne concerne jamais les entrées factices du tuto (leurs clés
+  // "__tour_demo__"/"__tour_demo_filler_N__" ne sont jamais de VRAIS ids de chanson, donc jamais
+  // dans ce Set) — voir tourDemoVoteJustIncreased plus bas pour l'équivalent côté tuto.
+  function voteIllumClass(id) {
+    if (id === "__tour_demo__" && tourDemoVoteJustIncreased) return " jb-num-glow";
+    return justIncreasedVoteIds.has(id) ? " jb-num-glow" : "";
+  }
+  // Même principe, mais pour le BOUTON BOOST lui-même : demande explicite de Hubert : "quand
+  // j'appuie sur un boost dans la page principale, [...] n'applique pas la même animation
+  // d'illumination que dans le tutoriel. Je veux que ce soit la même animation" — dans le tuto,
+  // boostDemoSong() fait pulser le bouton Boost (.jb-pulse-attn) à chaque boost simulé ; ce même
+  // bouton, côté VRAIE page, ne pulsait jusqu'ici jamais. Réutilise justIncreasedVoteIds (même
+  // déclencheur que le chiffre ci-dessus, déjà synchronisé avec le VRAI instantané Firestore)
+  // plutôt qu'un pulseAttention() optimiste au clic, qui se ferait écraser par le renderCatalog()
+  // manuel juste après (voir wireSongRowEvents()) avant même d'avoir pu s'afficher.
+  function boostBtnIllumClass(id) {
+    return justIncreasedVoteIds.has(id) ? " jb-pulse-attn" : "";
+  }
+  // Même idée, pour la LIGNE elle-même (voir requestSong() plus bas) : demande explicite de
+  // Hubert : "quand j'appuie sur une chanson, [...] n'applique pas la même animation
+  // d'illumination que dans le tutoriel. Je veux que ce soit la même animation" — dans le tuto,
+  // illuminateDemoRow() fait pulser toute la ligne du cadre rouge (.jb-pulse-attn-row) au moment
+  // où la chanson est choisie/demandée ; côté VRAIE page, cliquer une chanson ne faisait jusqu'ici
+  // rien pulser du tout.
+  // PIÈGE (bogue réel constaté par Hubert, capture à l'appui : "l'ancienne animation [...] avec
+  // la nouvelle [...] une après l'autre" en sélectionnant une chanson) : renderCatalog() DÉTRUIT
+  // ET RECRÉE toutes les lignes à CHAQUE appel (list.innerHTML = "", voir plus bas) — pas
+  // seulement le rendu optimiste immédiat, mais aussi celui(ceux) qui suivent dès que Firestore
+  // confirme l'écriture (même à seulement quelques ms d'écart). Un simple Set/classe "encore
+  // active" (comme justIncreasedVoteIds ci-dessus) se retrouve donc réappliqué à un NOUVEL
+  // élément à chacun de ces rendus, ce qui relance l'animation depuis zéro à chaque fois — double
+  // flash, ou pire selon le nombre de rendus. Et l'inverse (une classe accordée une seule fois,
+  // impérativement, sur l'élément du tout premier rendu) ne marche pas non plus : ces rendus en
+  // rafale arrivent si vite (quelques ms) qu'ils se produisent tous avant la moindre peinture de
+  // l'écran, donc le tout premier flash n'est même jamais montré à l'œil.
+  // Solution : on retient QUAND (Date.now()) la ligne a été demandée, et à CHAQUE rendu (autant de
+  // fois que nécessaire, tant qu'on est dans les 0.5s de l'animation), on pose la classe avec un
+  // animation-delay NÉGATIF égal au temps déjà écoulé (voir rowFlashElapsedMs()/renderSongRow()).
+  // Résultat : même si la ligne est recréée plusieurs fois de suite, chaque nouvel élément reprend
+  // l'animation exactement là où elle devrait en être plutôt que de la relancer à 0% — donc UN
+  // SEUL flash visible, continu, quel que soit le nombre de rendus entre-temps.
+  let rowFlashTriggeredAt = {}; // { [songId]: timestamp Date.now() du dernier requestSong() }
+  const ROW_FLASH_MS = 500; // doit correspondre à la durée de @keyframes jb-pulse-attn-row (0.5s)
+  function rowFlashElapsedMs(id) {
+    const startedAt = rowFlashTriggeredAt[id];
+    if (startedAt == null) return null;
+    const elapsed = Date.now() - startedAt;
+    return elapsed < ROW_FLASH_MS ? elapsed : null;
+  }
   let nightId = null;
   // Sert à détecter un nouveau signal "kickedAt" écrit par l'admin à la déconnexion (voir plus
   // bas) : null au départ pour ne PAS déclencher un reload dès le tout premier snapshot reçu au
@@ -3904,7 +3995,32 @@
     lastLiveSnapshotAt = Date.now(); // confirme que l'écouteur "votes" reçoit bien des données
     votes = {};
     snap.forEach((d) => { votes[d.id] = d.data(); });
+    // Compare au nombre de votes mémorisé au DERNIER vrai instantané (pas à chaque rendu) pour
+    // savoir quels chiffres viennent d'augmenter — demande explicite de Hubert : "je veux que les
+    // chiffres de vote s'illumine quand le nombre de vote augmente". "prev > 0" exclut la toute
+    // 1re demande (0 -> 1) : la ligne change alors entièrement de forme (badge "Demande" -> bouton
+    // Boost + chiffre), ce n'est pas "un chiffre déjà affiché qui grimpe".
+    justIncreasedVoteIds = new Set();
+    Object.keys(votes).forEach((id) => {
+      const prev = prevVoteCounts[id] || 0;
+      const now = votes[id].requests || 0;
+      if (prev > 0 && now > prev) justIncreasedVoteIds.add(id);
+    });
+    prevVoteCounts = {};
+    Object.keys(votes).forEach((id) => { prevVoteCounts[id] = votes[id].requests || 0; });
+    const thisIncreaseSet = justIncreasedVoteIds; // voir le setTimeout plus bas
     renderAll();
+    // Reste actif un court instant après ce rendu (plutôt que vidé tout de suite) : un clic sur
+    // "Boost" déclenche aussi son propre renderCatalog() manuel juste après (voir
+    // wireSongRowEvents(), pour désactiver tout de suite le bouton si les 3 boosts sont épuisés)
+    // — sans cette petite fenêtre, ce 2e rendu, quasi simultané, effaçait la classe d'illumination
+    // avant même que le client ait pu la voir clignoter. Vidé après coup (comparaison de
+    // référence, pour ne jamais effacer un Set plus récent si un autre VRAI instantané de votes
+    // arrive entre-temps) pour qu'un ré-affichage VRAIMENT sans rapport (décompte de cooldown
+    // chaque seconde, etc.) ne rallume pas ces mêmes chiffres.
+    setTimeout(() => {
+      if (justIncreasedVoteIds === thisIncreaseSet) justIncreasedVoteIds = new Set();
+    }, 600);
   }, (err) => console.error("votes onSnapshot", err));
 
   onSnapshot(collection(db, "specialRequests"), (snap) => {
@@ -4047,6 +4163,15 @@
       palmaresElByKey.clear();
       palmaresOrderKeys = [];
       list.innerHTML = "";
+      // Annule tout verrou FLIP encore en attente (ex. le tuto qui se ferme — endTour() — pendant
+      // qu'un boost simulé était en train de faire monter "Sweet Caroline" d'un rang, voir
+      // boostDemoSong()) : les éléments concernés viennent d'être retirés juste au-dessus, donc
+      // rien ne les anime plus — sans ce nettoyage, palmaresAnimating restait "vrai" jusqu'à
+      // l'ancien minuteur (jusqu'à 1s plus tard), bloquant silencieusement tout VRAI boost cliqué
+      // entre-temps (voir boostSong(), qui se bloque tant que palmaresAnimating est vrai) — bogue
+      // découvert en testant "je veux que ce soit la même animation [...] dans la page principale".
+      if (palmaresAnimTimer) { clearTimeout(palmaresAnimTimer); palmaresAnimTimer = null; }
+      palmaresUnlock();
       return;
     }
 
@@ -4098,8 +4223,8 @@
           ${renderVotersLine(v.voters)}
         </span>
         <span class="jb-slot-right">
-          <span class="jb-slot-votes">${v.requests}</span>
-          <button class="jb-slot-boost" data-boost="${escapeHtml(id)}" aria-label="${t("boost_aria")}" title="${t("boost_aria")}">🚀 ${t("boost_btn")}</button>
+          <span class="jb-slot-votes${voteIllumClass(id)}">${v.requests}</span>
+          <button class="jb-slot-boost${boostBtnIllumClass(id)}" data-boost="${escapeHtml(id)}" aria-label="${t("boost_aria")}" title="${t("boost_aria")}">🚀 ${t("boost_btn")}</button>
         </span>`;
       if (isNewTourDemoEntry) {
         el.classList.add("jb-slot-fade-in");
@@ -4413,7 +4538,12 @@
     const v = votes[song.id];
     const requested = alreadyRequested(song.id);
     const li = document.createElement("li");
-    li.className = "jb-song-item";
+    // Illumination de la ligne juste après une vraie demande (voir rowFlashElapsedMs()/
+    // requestSong() plus bas — animation-delay négatif pour que la ligne reprenne le flash là où
+    // il devrait en être plutôt que de le relancer à 0%, même recréée plusieurs fois de suite).
+    const rowFlashMs = rowFlashElapsedMs(song.id);
+    li.className = "jb-song-item" + (rowFlashMs != null ? " jb-pulse-attn-row" : "");
+    if (rowFlashMs != null) li.style.animationDelay = `-${rowFlashMs}ms`;
 
     const voteCount = v?.requests || 0;
     let btnHtml;
@@ -4441,8 +4571,8 @@
       // jamais renvoyé à gauche du titre) et reste TOUJOURS juste à gauche du bouton — voir
       // .jb-song-right ci-dessous, même principe que .jb-slot-right du palmarès.
       btnHtml = `<span class="jb-song-right">
-        <span class="jb-song-votes">${voteCount}</span>
-        <button class="jb-slot-boost" data-boost="${escapeHtml(song.id)}" aria-label="${t("boost_aria")}" title="${t("boost_aria")}">🚀 ${t("boost_btn")}</button>
+        <span class="jb-song-votes${voteIllumClass(song.id)}">${voteCount}</span>
+        <button class="jb-slot-boost${boostBtnIllumClass(song.id)}" data-boost="${escapeHtml(song.id)}" aria-label="${t("boost_aria")}" title="${t("boost_aria")}">🚀 ${t("boost_btn")}</button>
       </span>`;
     } else {
       // Pas de data-req sur le bouton lui-même : c'est toute la ligne (li) qui porte le
@@ -4451,13 +4581,13 @@
       // plus le chiffre (précision de Hubert : chiffre à part, toujours à gauche du badge/bouton,
       // jamais à l'intérieur, jamais ailleurs) — voir .jb-song-right ci-dessous.
       btnHtml = `<span class="jb-song-right">
-        <span class="jb-song-votes">${voteCount}</span>
+        <span class="jb-song-votes${voteIllumClass(song.id)}">${voteCount}</span>
         <span class="jb-request-remaining jb-song-request-badge">${escapeHtml(t("song_request_word"))}</span>
       </span>`;
     }
 
     li.innerHTML = `
-      ${showLeftCount ? `<span class="jb-song-votes">${voteCount}</span>` : ""}
+      ${showLeftCount ? `<span class="jb-song-votes${voteIllumClass(song.id)}">${voteCount}</span>` : ""}
       <div class="jb-song-info">
         <div class="jb-song-title">${escapeHtml(song.title)}</div>
         ${showArtist && song.artist ? `<div class="jb-song-artist">${escapeHtml(song.artist)}</div>` : ""}
@@ -4550,13 +4680,26 @@
     }
     updateRequestBadge();
     pulseAttention(document.getElementById("jb-request-remaining"));
+    // Illumine la ligne elle-même — même animation que la sélection de la chanson démo dans le
+    // tuto, demande explicite de Hubert : "je veux que ce soit la même animation d'illumination
+    // que dans le tutoriel". Voir rowFlashElapsedMs()/renderSongRow() : la classe est reposée à
+    // CHAQUE rendu de cette ligne tant qu'on est dans les 0.5s suivant ce timestamp (avec un
+    // animation-delay négatif pour ne jamais relancer le flash à 0%, même si Firestore confirme
+    // l'écriture — et donc redéclenche un ou plusieurs renderCatalog() — entre-temps), plutôt que
+    // posée une seule fois de façon impérative : ce timestamp, lui, ne dépend d'aucun élément DOM
+    // particulier, donc il survit sans problème à autant de recréations de la ligne que
+    // nécessaire — contrairement à un Set "encore actif" (comme justIncreasedVoteIds) qui
+    // relançait l'animation depuis 0% à chaque rendu et produisait le double flash signalé par
+    // Hubert ("l'ancienne animation [...] avec la nouvelle [...] une après l'autre").
+    rowFlashTriggeredAt[song.id] = Date.now();
     if (staySameList) {
       // Plusieurs chansons dans cette liste : on y reste pour que le client puisse en
       // demander une autre tout de suite, sans repartir de l'écran principal.
       renderCatalog();
     } else {
       // Sinon (recherche texte, artiste choisi depuis Top Pick, ou dernière chanson d'un
-      // style) : plus rien à y faire dans cette liste, retour à l'écran principal.
+      // style) : plus rien à y faire dans cette liste, retour à l'écran principal — la ligne
+      // n'est plus affichée, rien à illuminer.
       catalogView = null;
       document.getElementById("jb-search-input").value = "";
       renderCatalog();
