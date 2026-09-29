@@ -1392,7 +1392,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-09-29.35";
+  const APP_BUILD = "2026-09-29.36";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -2131,11 +2131,13 @@
   // de la chanson ; (2) DÈS que cette illumination s'éteint (AUCUN délai supplémentaire — demande
   // explicite de Hubert : "je ne veux pas de délais"), le nombre de votes augmente ET la chanson
   // se déplace vers sa nouvelle position SIMULTANÉMENT (même animation FLIP réelle de
-  // renderPalmares(), transition "transform 1s", verrou levé après TOUR_SEARCH_DEMO_BOOST_ANIM_MS) ;
+  // renderPalmares(), transition "transform 0.5s" — synchronisée avec les 2 autres animations de
+  // la section palmarès, demande explicite de Hubert, voir renderPalmares() ; verrou levé après
+  // TOUR_SEARCH_DEMO_BOOST_ANIM_MS) ;
   // (3) une fois la chanson complètement immobile, une pause supplémentaire
   // (TOUR_SEARCH_DEMO_BOOST_HOLD_MS) avant que le prochain boost ne recommence ce même cycle par
   // une nouvelle illumination — jamais l'inverse, et jamais chevauché.
-  const TOUR_SEARCH_DEMO_BOOST_ANIM_MS = 1100;
+  const TOUR_SEARCH_DEMO_BOOST_ANIM_MS = 600;
   const TOUR_SEARCH_DEMO_BOOST_HOLD_MS = 1000;
   // Délai total entre le DÉBUT de l'illumination d'un boost et le début de l'illumination du
   // boost suivant : illumination (voir .jb-pulse-attn) + le trajet FLIP + la pause finale avant
@@ -4292,7 +4294,12 @@
       newKeys.forEach((key) => {
         const el = palmaresElByKey.get(key);
         if (!el) return;
-        el.style.transition = "transform 1s cubic-bezier(0.4, 0, 0.2, 1)";
+        // 0.5s — demande explicite de Hubert : "les 3 animations dans la section palmarès
+        // doivent être synchronisées" (le déplacement FLIP durait 1s alors que le chiffre/bouton
+        // ne brillent que 0.5s, voir jb-num-glow/jb-pulse-attn plus haut — la ligne continuait
+        // donc à glisser une fois le flash déjà éteint). Même durée que ces deux animations, pour
+        // que les 3 démarrent ET se terminent ensemble.
+        el.style.transition = "transform 0.5s cubic-bezier(0.4, 0, 0.2, 1)";
         el.style.transform = "";
       });
       if (palmaresAnimTimer) clearTimeout(palmaresAnimTimer);
@@ -4302,7 +4309,7 @@
           el.style.zIndex = "";
         });
         palmaresUnlock();
-      }, 1100);
+      }, 600); // 0.5s de transition + marge, comme ailleurs dans le système (voir ROW_FLASH_MS)
     });
   }
 
