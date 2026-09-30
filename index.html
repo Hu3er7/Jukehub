@@ -1369,6 +1369,22 @@
       </div>
     </div>
 
+    <!-- Page "scanne le code QR" : affichée à la place de l'appli quand Hubert EST en spectacle
+         mais que ce client précis n'a pas scanné le code QR du bar depuis moins de 24h (voir
+         hasQrAccess()/applyLiveGateNow()) — demande explicite de Hubert, pour éviter qu'un client
+         garde accès indéfiniment sans être physiquement au bar. Réutilise le même look que la
+         page "hors ligne" ci-dessus (classe .jb-offline-page/.jb-offline-card). -->
+    <div id="jb-qr-gate-page" class="jb-offline-page" hidden>
+      <div class="jb-offline-card">
+        <div class="jb-lang-bar jb-offline-lang-bar">
+          <button class="jb-lang-btn" data-lang="fr">FR</button>
+          <button class="jb-lang-btn" data-lang="en">EN</button>
+        </div>
+        <h1 id="jb-qr-gate-title"></h1>
+        <p id="jb-qr-gate-text"></p>
+      </div>
+    </div>
+
     <div id="jb-tour" class="jb-tour" hidden>
       <div id="jb-tour-backdrop" class="jb-tour-backdrop"></div>
       <div id="jb-tour-spot" class="jb-tour-spot"></div>
@@ -1539,6 +1555,35 @@
     }
   }
 
+  // ---------- Accès par code QR, valable 24h ----------
+  // Demande explicite de Hubert : passé 24h depuis le dernier scan du code QR (affiché au bar),
+  // le client ne doit plus pouvoir utiliser l'appli tant qu'il n'a pas scanné le code à nouveau —
+  // même si Hubert est "en spectacle" (voir isLiveNow()) au même moment. Ça évite qu'un client
+  // garde un accès permanent (lien envoyé par un ami, onglet resté ouvert des jours...) alors
+  // qu'il n'est pas physiquement au bar. Le code QR doit pointer vers l'URL du site AVEC
+  // "?qr=1" en plus (ex. https://repertoire.carrd.co/?qr=1) — dès qu'un client arrive avec ce
+  // paramètre, on note l'instant présent dans localStorage puis on nettoie l'URL (pour qu'elle
+  // reste propre et que "?qr=1" ne traîne pas si le client la partage/la recharge ensuite).
+  const QR_ACCESS_MS = 24 * 60 * 60 * 1000;
+  (function captureQrAccess() {
+    try {
+      const params = new URLSearchParams(location.search);
+      if (!params.has("qr")) return;
+      safeStorageSet("jb_qr_access_at", String(Date.now()));
+      params.delete("qr");
+      const query = params.toString();
+      const clean = location.pathname + (query ? `?${query}` : "") + location.hash;
+      history.replaceState(null, "", clean);
+    } catch (e) {
+      // Navigation privée/URL bloquée, etc. : tant pis, hasQrAccess() ci-dessous retombera sur
+      // "pas d'accès" et affichera la page de scan — pas d'exception qui casserait le reste.
+    }
+  })();
+  function hasQrAccess() {
+    const at = parseInt(safeStorageGet("jb_qr_access_at") || "0", 10);
+    return at > 0 && (Date.now() - at) < QR_ACCESS_MS;
+  }
+
   // Même principe que safeStorageGet/Set ci-dessus, mais avec sessionStorage plutôt que
   // localStorage : ce qui y est écrit disparaît automatiquement quand le client ferme
   // complètement son onglet/sa page (contrairement à localStorage, qui survit indéfiniment).
@@ -1625,7 +1670,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-09-30.52";
+  const APP_BUILD = "2026-09-30.53";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -1772,6 +1817,8 @@
       tour2_text: "Recherche les chansons par genre.",
       offline_title: "Je ne suis pas en spectacle pour le moment",
       offline_text: "Reviens faire une demande pendant l'une de mes prochaines soirées — en attendant, voici mon calendrier :",
+      qr_gate_title: "Ton accès a expiré",
+      qr_gate_text: "Scanne le code QR au bar pour continuer à faire des demandes.",
     },
     en: {
       page_title: "My Repertoire",
@@ -1840,6 +1887,8 @@
       tour2_text: "Search for songs by genre.",
       offline_title: "I'm not performing right now",
       offline_text: "Come back and make a request during one of my next shows — in the meantime, here's my calendar:",
+      qr_gate_title: "Your access has expired",
+      qr_gate_text: "Scan the QR code at the bar to keep making requests.",
     },
   };
   function genreLabel(key) {
@@ -1885,6 +1934,8 @@
     document.getElementById("jb-tour-help-btn").setAttribute("aria-label", t("tour_help_title"));
     document.getElementById("jb-offline-title").textContent = t("offline_title");
     document.getElementById("jb-offline-text").textContent = t("offline_text");
+    document.getElementById("jb-qr-gate-title").textContent = t("qr_gate_title");
+    document.getElementById("jb-qr-gate-text").textContent = t("qr_gate_text");
     renderOfflineCalendar();
     if (!document.getElementById("jb-tour").hidden) renderTourStep();
     scheduleFitTopBar();
@@ -4208,12 +4259,19 @@
   function applyLiveGateNow(live) {
     const appContent = document.getElementById("jb-app-content");
     const offlinePage = document.getElementById("jb-offline-page");
-    if (appContent) appContent.hidden = !live;
+    const qrGatePage = document.getElementById("jb-qr-gate-page");
+    // "granted" = Hubert est en spectacle ET ce client a scanné le code QR il y a moins de 24h
+    // (voir hasQrAccess()) — les deux conditions doivent être vraies pour voir l'appli. Priorité
+    // à la page "Pas en spectacle" si Hubert n'est pas en ligne (peu importe le QR : ça n'aiderait
+    // pas de rescanner si le spectacle n'a pas commencé) ; sinon, si le QR a expiré, page de scan.
+    const granted = live && hasQrAccess();
+    if (appContent) appContent.hidden = !granted;
     if (offlinePage) offlinePage.hidden = live;
+    if (qrGatePage) qrGatePage.hidden = !live || hasQrAccess();
     // Rattrape le cas où le site devient "live" APRÈS le délai initial de maybeAutoStartTour()
     // (ex. Hubert se connecte juste après qu'un client ait ouvert la page) — pas d'effet si le
     // tuto a déjà démarré ou si le client l'a déjà vu (voir le drapeau/la clé dans la fonction).
-    if (live) {
+    if (granted) {
       maybeAutoStartTour();
       // #jb-app-content démarre "hidden" (voir plus haut, pour éviter un flash de l'appli au
       // chargement/rechargement — voir aussi le correctif du bug de rechargement en boucle). La
