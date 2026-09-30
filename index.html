@@ -63,7 +63,11 @@
     font-family: inherit; color: inherit; margin: 0; padding: 0; border: 0;
     background: none; text-decoration: none; list-style: none; font-size: 1rem;
   }
-  #jb-app .jb-view { width: 100%; margin: 0 auto; padding: 20px 24px 60px; }
+  /* position:relative + z-index:1 : un élément positionné (même z-index:0) peint TOUJOURS
+     par-dessus un élément non positionné, quel que soit l'ordre dans le HTML — sans ce
+     positionnement explicite, #jb-city-bg (position:fixed, voir plus haut) se retrouverait
+     À TORT devant tout le contenu de la page (texte, boutons...) plutôt que derrière. */
+  #jb-app .jb-view { width: 100%; margin: 0 auto; padding: 20px 24px 60px; position: relative; z-index: 1; }
 
   /* Le bandeau du haut tient TOUJOURS sur une seule ligne : plutôt que de tronquer le titre ou
      de rogner le logo, fitTopBar() (voir JS) mesure l'espace disponible et réduit ensemble,
@@ -103,9 +107,15 @@
      page principale reste comme ça") — police pixel façon jeu 8-bits, comme le bouton
      "Se joindre" ci-dessous (même famille, voir .jb-tour-nav-btn.jb-tour-next). */
   #jb-app .jb-tour-welcome-banner {
-    display: none; text-align: center; padding: 18px 12px 22px; position: relative; z-index: 1201;
+    display: none; text-align: center; padding: 2px 12px 14px; position: relative; z-index: 1201;
   }
   #jb-app.jb-tour-open .jb-tour-welcome-banner { display: block; }
+  /* Remonte aussi la barre de recherche / sélection de chanson (.jb-catalog contient les deux)
+     et, par ricochet, le palmarès qui la suit juste en dessous — demande explicite de Hubert
+     ("j'ai remonté la barre de recherche, la sélection de chanson et le palmarès"). Seulement
+     pendant le tuto : hors tuto le titre "Mon Répertoire" (h1, plus haut/plus court) reste
+     affiché normalement et n'a pas besoin de cette marge réduite. */
+  #jb-app.jb-tour-open .jb-catalog { margin-top: 4px; }
   #jb-app .jb-tour-welcome-sub {
     font-family: 'Press Start 2P', 'Orbitron', sans-serif; font-size: 0.72rem; letter-spacing: 1px;
     color: var(--accent); text-shadow: 0 0 6px rgba(24, 241, 255, 0.65); margin-bottom: 10px;
@@ -962,18 +972,18 @@
     min-height: 100vh;
     min-height: 100dvh;
   }
-  /* Pendant le tuto : remplace la grille de points par la même ville de nuit que
-     .jb-tour-backdrop (même image, même "cover"/centrage/attachement fixe — demande explicite de
-     Hubert : la barre de recherche/la sélection/le palmarès doivent devenir transparentes et
-     laisser voir CE fond, pas une grille de points). Même teinte foncée que .jb-tour-backdrop
-     ci-dessus (demande explicite de Hubert : "assombrisse beaucoup le background de ville") —
-     appliquée ici aussi plutôt que laissée claire, pour qu'aucune des 2 zones ne tranche l'une
-     sur l'autre au niveau du "trou" qui les sépare (voir positionTourSpot() en JS). */
+  /* Remplace la grille de points par la ville de nuit — demande explicite de Hubert : la barre de
+     recherche/la sélection/le palmarès doivent devenir transparentes et laisser voir ce fond, pas
+     une grille de points. L'image elle-même n'est PLUS posée ici : #jb-public (et sa couleur de
+     fond propre, var(--bg), posée par la règle #jb-public de base) devient entièrement
+     transparent pour laisser voir le calque dédié #jb-city-bg (voir tout en haut du <style>),
+     position:fixed + toujours exactement à la taille de l'écran — corrige le cadre qui
+     s'affichait tout noir sur l'iPhone de Hubert (Safari) avec l'ancienne méthode ("background-
+     attachment: fixed" sur cette boîte-ci, puis l'image "cover" posée directement sur sa propre
+     boîte : deux essais, "c'est pas ça" les deux fois). */
   #jb-app #jb-public {
-    background-image: linear-gradient(rgba(5, 8, 8, 0.78), rgba(5, 8, 8, 0.78)), var(--jb-tour-bg-image);
-    background-size: cover;
-    background-position: center;
-    background-attachment: fixed;
+    background-image: none;
+    background-color: transparent;
   }
   /* Les 3 sections visées explicitement par Hubert ("la barre de recherche, la section sélection
      et le palmarès") perdent leur fond opaque (var(--bg)) pendant le tuto pour laisser voir le
@@ -998,19 +1008,14 @@
     text-shadow: 0 0 6px var(--accent2), 0 0 20px rgba(244, 255, 43, 0.45);
   }
 
-  /* Ligne "circuit" sous le bandeau du haut + petit accent rouge en coin,
-     clin d'œil aux bordures/panneaux de la maquette. Décoratif uniquement
-     (pointer-events non nécessaire : ce sont des pseudo-éléments, jamais
-     au-dessus des vrais boutons dans l'ordre de peinture du bandeau). */
-  #jb-public .jb-top-bar { position: relative; padding-bottom: 16px; }
-  #jb-public .jb-top-bar::after {
-    content: "";
-    position: absolute; left: -24px; right: -24px; bottom: 0; height: 10px;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='10'%3E%3Cpath d='M0 5 H12 L16 1 H24 L28 9 H40' stroke='%2318f1ff' stroke-width='1.5' fill='none'/%3E%3Crect x='14' y='3.5' width='3' height='3' fill='%2318f1ff'/%3E%3C/svg%3E");
-    background-repeat: repeat-x;
-    background-size: 40px 10px;
-    filter: drop-shadow(0 0 4px rgba(24, 241, 255, 0.65));
-  }
+  /* Petit accent rouge en coin, clin d'œil aux bordures/panneaux de la maquette.
+     Décoratif uniquement (pointer-events non nécessaire : c'est un pseudo-élément,
+     jamais au-dessus des vrais boutons dans l'ordre de peinture du bandeau).
+     Ancienne "ligne circuit" cyan sous le bandeau (::after) RETIRÉE — demande
+     explicite de Hubert ("j'ai enlevé la ligne bleu en haut") — et le padding-bottom
+     qui lui faisait de la place avec elle, pour remonter tout ce qui suit
+     (titre du tuto, barre de recherche, palmarès...). */
+  #jb-public .jb-top-bar { position: relative; padding-bottom: 0; }
   #jb-public .jb-top-bar::before {
     content: "";
     position: absolute; top: -14px; right: -24px; width: 30px; height: 30px;
@@ -1224,9 +1229,33 @@
   #jb-public .jb-top-bar h1 {
     text-shadow: 0 0 3px var(--accent2), 0 0 9px rgba(244, 255, 43, 0.35);
   }
+
+  /* Fond de ville : DEUXIÈME essai pour corriger le rendu "cadre tout noir" vu par Hubert sur
+     iPhone (Safari) alors que tout s'affichait bien dans mes tests (Chrome). Premier essai
+     (retirer "background-attachment: fixed" de #jb-app #jb-public, voir plus bas) insuffisant —
+     "c'est pas ça" (Hubert). Nouvelle approche : au lieu de poser l'image en "cover" sur la boîte
+     de #jb-public elle-même (une boîte en flux normal, dont la hauteur dépend du contenu), on la
+     pose sur un calque DÉDIÉ, position:fixed + inset:0 — donc TOUJOURS exactement à la taille de
+     l'écran, jamais plus grand ni plus petit — exactement le même procédé que .jb-tour-backdrop
+     (voir plus haut), qui lui s'affichait déjà correctement sur l'iPhone de Hubert (capture à
+     l'appui : un bout de ville visible derrière le bouton "Se joindre", lui-même sur ce calque).
+     Posé en tout premier enfant de #jb-app (donc sous tout le reste, voir z-index: 0 ci-dessous),
+     #jb-public et tout son contenu devenant transparents pour laisser voir CE calque au travers,
+     plutôt que de porter chacun leur propre copie de l'image. */
+  #jb-app .jb-city-bg {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background-image: linear-gradient(rgba(5, 8, 8, 0.78), rgba(5, 8, 8, 0.78)), var(--jb-tour-bg-image);
+    background-size: cover;
+    background-position: center;
+  }
 </style>
 
 <div id="jb-app">
+
+  <div id="jb-city-bg" class="jb-city-bg" aria-hidden="true"></div>
 
   <div id="jb-public" class="jb-view">
    <div id="jb-app-content" hidden>
@@ -1596,7 +1625,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-09-30.50";
+  const APP_BUILD = "2026-09-30.52";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
