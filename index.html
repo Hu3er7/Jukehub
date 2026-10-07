@@ -1251,11 +1251,26 @@
     background-size: cover;
     background-position: center;
   }
+  /* Avant le tout premier instantané Firestore (config/settings, voir bootConfigReady plus bas
+     dans le script), aucune page HTML n'a encore de couleur de fond définie — le navigateur
+     affiche donc un tout premier aperçu BLANC pendant la fraction de seconde où il parse le HTML
+     avant même d'avoir appliqué ce <style>. Une fois ce <style> appliqué mais AVANT que
+     #jb-city-bg soit révélé (voir doBootReveal() plus bas), html/body resteraient quand même
+     blancs sans cette règle. On les pose donc d'emblée à la même teinte sombre que l'overlay de
+     #jb-city-bg, pour qu'il n'y ait plus aucun flash blanc, même le tout premier instant. */
+  html, body { background: #050808; }
 </style>
 
 <div id="jb-app">
 
-  <div id="jb-city-bg" class="jb-city-bg" aria-hidden="true"></div>
+  <!-- Caché par défaut (comme #jb-app-content/#jb-offline-page) et révélé seulement au moment de
+       la toute première bascule (voir doBootReveal()) ou immédiatement sur la route admin (voir
+       checkRoute()) — sans ce "hidden", ce calque (fond de ville + étoiles, voir la règle
+       .jb-city-bg ci-dessus) s'affichait SEUL, sans aucune carte par-dessus, pendant la courte
+       fenêtre où le client attend le premier instantané Firestore : un flash d'écran "vide" avant
+       la bonne page (appli ou "Pas en spectacle") — demande explicite de Hubert (vidéo à l'appui :
+       "il apparait encore mais disparrait très rapidement[...] ne plus le voir du tout"). -->
+  <div id="jb-city-bg" class="jb-city-bg" aria-hidden="true" hidden></div>
 
   <div id="jb-public" class="jb-view">
    <div id="jb-app-content" hidden>
@@ -1560,19 +1575,32 @@
   // le client ne doit plus pouvoir utiliser l'appli tant qu'il n'a pas scanné le code à nouveau —
   // même si Hubert est "en spectacle" (voir isLiveNow()) au même moment. Ça évite qu'un client
   // garde un accès permanent (lien envoyé par un ami, onglet resté ouvert des jours...) alors
-  // qu'il n'est pas physiquement au bar. Le code QR doit pointer vers l'URL du site AVEC
-  // "?qr=1" en plus (ex. https://repertoire.carrd.co/?qr=1) — dès qu'un client arrive avec ce
-  // paramètre, on note l'instant présent dans localStorage puis on nettoie l'URL (pour qu'elle
-  // reste propre et que "?qr=1" ne traîne pas si le client la partage/la recharge ensuite).
+  // qu'il n'est pas physiquement au bar.
+  //
+  // IMPORTANT — pourquoi on accepte "#qr=1" (fragment) EN PLUS de "?qr=1" (paramètre) :
+  // cette appli tourne dans un cadre (iframe) posé par le site Carrd de Hubert, qui ne
+  // transmet à ce cadre QUE la partie "#..." de sa propre adresse, jamais la partie "?..."
+  // (voir le petit script Carrd : "jbFrame.src = '.../Jukehub/' + location.hash" — c'est
+  // aussi pour ça que la route admin utilise déjà "#admin" et pas "?admin"). Un lien/code QR
+  // en "?qr=1" pointant vers l'adresse Carrd ne nous parvient donc JAMAIS ici : la barre
+  // d'adresse du client garde bien le "?qr=1" affiché (c'est l'adresse de la page Carrd, pas
+  // celle de ce cadre), mais nous ne le voyons jamais — bogue vécu en direct par Hubert,
+  // coincé en déplacement sans accès. Le vrai lien/code QR à utiliser est donc
+  // https://myrepertoire.carrd.co/#qr=1 (fragment). On garde la variante "?qr=1" en plus,
+  // pour le cas où quelqu'un ouvre un jour l'adresse GitHub Pages directement (sans passer par
+  // Carrd) — elle ne coûte rien et pourrait redevenir utile si l'hébergement change.
   const QR_ACCESS_MS = 24 * 60 * 60 * 1000;
   (function captureQrAccess() {
     try {
       const params = new URLSearchParams(location.search);
-      if (!params.has("qr")) return;
+      const viaQueryParam = params.has("qr");
+      const viaHashFragment = location.hash === "#qr=1";
+      if (!viaQueryParam && !viaHashFragment) return;
       safeStorageSet("jb_qr_access_at", String(Date.now()));
       params.delete("qr");
       const query = params.toString();
-      const clean = location.pathname + (query ? `?${query}` : "") + location.hash;
+      const cleanHash = viaHashFragment ? "" : location.hash;
+      const clean = location.pathname + (query ? `?${query}` : "") + cleanHash;
       history.replaceState(null, "", clean);
     } catch (e) {
       // Navigation privée/URL bloquée, etc. : tant pis, hasQrAccess() ci-dessous retombera sur
@@ -1670,7 +1698,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-09-30.53";
+  const APP_BUILD = "2026-10-07.57";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -4242,6 +4270,11 @@
     const admin = location.hash === "#admin";
     document.getElementById("jb-public").hidden = admin;
     document.getElementById("jb-admin").hidden = !admin;
+    // La route admin n'attend aucun instantané Firestore pour s'afficher (le formulaire de
+    // connexion est visible d'emblée, voir #jb-login) — on peut donc révéler le fond de ville
+    // tout de suite ici, sans attendre bootRevealed/doBootReveal() (qui ne s'occupe que du côté
+    // public, voir renderLiveGate() plus bas).
+    if (admin) document.getElementById("jb-city-bg").hidden = false;
     renderLiveGate();
   }
   window.addEventListener("hashchange", checkRoute);
@@ -4261,13 +4294,27 @@
     const offlinePage = document.getElementById("jb-offline-page");
     const qrGatePage = document.getElementById("jb-qr-gate-page");
     // "granted" = Hubert est en spectacle ET ce client a scanné le code QR il y a moins de 24h
-    // (voir hasQrAccess()) — les deux conditions doivent être vraies pour voir l'appli. Priorité
-    // à la page "Pas en spectacle" si Hubert n'est pas en ligne (peu importe le QR : ça n'aiderait
-    // pas de rescanner si le spectacle n'a pas commencé) ; sinon, si le QR a expiré, page de scan.
+    // (voir hasQrAccess()) — les deux conditions doivent être vraies pour voir l'appli.
+    // Hubert a changé d'avis (build .55) : plutôt qu'un écran "scanne le code QR" séparé pour un
+    // QR expiré, c'est maintenant la MÊME page "Pas en spectacle" (avec le calendrier des
+    // prochaines dates) qui s'affiche dans les DEUX cas — QR expiré/jamais scanné OU spectacle pas
+    // commencé — demande explicite : "seulement les gens qui ont scanné le code qr dans les
+    // dernières 24h peuvent accéder à mon site [même si je suis connecté]". #jb-qr-gate-page reste
+    // dans le DOM (cachée en permanence) plutôt que supprimée, au cas où ce choix change à nouveau.
     const granted = live && hasQrAccess();
     if (appContent) appContent.hidden = !granted;
-    if (offlinePage) offlinePage.hidden = live;
-    if (qrGatePage) qrGatePage.hidden = !live || hasQrAccess();
+    if (offlinePage) offlinePage.hidden = granted;
+    if (qrGatePage) qrGatePage.hidden = true;
+    // Si l'accès est retiré (QR expiré pendant que le tuto était ouvert, ou Hubert se déconnecte
+    // en plein tuto d'un client) pendant que #jb-tour est encore affiché, il restait coincé
+    // au-dessus de tout (z-index 1200) — le client voyait un écran quasi vide (fond de ville +
+    // bouton "Se joindre" sans fenêtre, voir endTour()) au lieu de la page "Pas en spectacle" en
+    // dessous, qui elle était bien correctement révélée mais invisible, cachée par le tuto. On
+    // referme donc le tuto (comme un clic sur son bouton de fin) dès que l'accès n'est plus
+    // accordé — demande explicite de Hubert, capture à l'appui.
+    if (!granted && !document.getElementById("jb-tour").hidden) {
+      endTour();
+    }
     // Rattrape le cas où le site devient "live" APRÈS le délai initial de maybeAutoStartTour()
     // (ex. Hubert se connecte juste après qu'un client ait ouvert la page) — pas d'effet si le
     // tuto a déjà démarré ou si le client l'a déjà vu (voir le drapeau/la clé dans la fonction).
@@ -4297,6 +4344,11 @@
     // arrive enfin, voir l'écouteur "catalog" plus bas).
     if (!bootConfigReady || (live && !bootCatalogReady)) return;
     bootRevealed = true;
+    // Révèle le fond de ville (#jb-city-bg, caché par défaut — voir plus haut dans le <style>)
+    // exactement au même moment que le contenu lui-même ci-dessous, jamais avant : sinon le
+    // client voit ce calque tout seul, sans aucune carte par-dessus, pendant toute l'attente du
+    // premier instantané Firestore.
+    document.getElementById("jb-city-bg").hidden = false;
     applyLiveGateNow(live);
   }
   function renderLiveGate() {
