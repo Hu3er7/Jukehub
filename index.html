@@ -522,6 +522,13 @@
     background: var(--card2); color: var(--text); padding: 12px 18px; border-radius: 12px;
     border: 1px solid var(--border); font-size: 0.9rem; z-index: 999; max-width: 90vw; text-align: center;
   }
+  /* Avis de mise à jour disponible pour l'admin (voir setupAutoUpdateCheck()) : contrairement à
+     .jb-toast, ne disparaît PAS tout seul — reste affiché jusqu'à ce que Hubert appuie dessus,
+     quand il le décide (entre deux chansons, à la fin de la soirée...), plutôt qu'un rechargement
+     forcé en plein spectacle. */
+  #jb-app .jb-update-banner {
+    cursor: pointer; border-color: var(--success); font-weight: 600;
+  }
   #jb-app .jb-warn-banner {
     background: #3a1a24; border: 1px solid var(--danger); color: #ffd9d2;
     border-radius: 12px; padding: 14px; margin: 16px; font-size: 0.88rem;
@@ -1698,10 +1705,11 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-07.57";
+  const APP_BUILD = "2026-10-07.58";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
+    let updateBannerShown = false;
     async function checkForUpdate() {
       if (checking) return;
       checking = true;
@@ -1713,19 +1721,26 @@
         const html = await res.text();
         const match = html.match(/APP_BUILD\s*=\s*"([^"]+)"/);
         if (match && match[1] && match[1] !== APP_BUILD) {
-          // On ne bloque PAS tout rechargement pendant toute une session admin (elle peut durer
-          // des heures pendant un spectacle) : ça laisserait tourner du code périmé trop
-          // longtemps. On ne diffère le refresh que dans le cas précis qui causait la perte de
-          // données — du texte pas encore soumis dans "Ajouter des chansons au répertoire", ou
-          // des styles déjà cochés pour cet ajout. Dès que cette zone est vide (ajout fait ou
-          // pas commencé), la mise à jour s'applique normalement, comme pour n'importe quel
-          // visiteur.
-          const bulkInput = document.getElementById("jb-bulk-input");
-          const composingBulkAdd = isAdmin && (
-            (bulkInput && bulkInput.value.trim().length > 0) ||
-            (typeof bulkAddGenres !== "undefined" && bulkAddGenres.size > 0)
-          );
-          if (composingBulkAdd) return;
+          // Pour l'admin (Hubert, en plein spectacle), on NE recharge PLUS automatiquement ici —
+          // revu après coup suite à son retour direct : il se faisait éjecter de son panneau admin
+          // "de façon très aléatoire", sans aucun message, en pleine soirée. Cause trouvée : cette
+          // vérification tourne aussi à CHAQUE retour sur l'onglet (voir "visibilitychange" plus
+          // bas) — très fréquent sur sa tablette (verrouillage d'écran, changement d'appli...) — et
+          // un rechargement forcé et silencieux pendant qu'il était admin le renvoyait parfois sur
+          // l'écran de connexion le temps que Firebase restaure sa session, sans AUCUN avertissement
+          // (contrairement à la coupure auto de 6h, qui elle affiche un message — voir
+          // performLogout()) : vécu comme une déconnexion aléatoire et frustrante. On se contente
+          // donc maintenant d'un avis qu'il peut appliquer QUAND IL VEUT (voir showUpdateBanner()
+          // plus bas), jamais imposé en plein milieu de son utilisation. Le public (clients), lui,
+          // continue de se mettre à jour automatiquement comme avant — rien d'important à perdre
+          // pour un visiteur qui ne fait que consulter/demander des chansons.
+          if (isAdmin) {
+            if (!updateBannerShown) {
+              updateBannerShown = true;
+              showUpdateBanner();
+            }
+            return;
+          }
           window.location.reload();
         }
       } catch (e) {
@@ -4089,6 +4104,17 @@
     t.textContent = msg;
     document.getElementById("jb-app").appendChild(t);
     setTimeout(() => t.remove(), 2600);
+  }
+  // Avis persistant de mise à jour disponible (admin) — voir setupAutoUpdateCheck() plus haut.
+  // Contrairement à showToast(), ne disparaît PAS tout seul : reste affiché tant que Hubert
+  // n'a pas touché dessus, pour qu'il choisisse lui-même le moment (jamais en plein show).
+  function showUpdateBanner() {
+    if (document.querySelector("#jb-app .jb-update-banner")) return;
+    const t = document.createElement("div");
+    t.className = "jb-toast jb-update-banner";
+    t.textContent = "🔄 Mise à jour disponible — touche ici pour l'appliquer";
+    t.addEventListener("click", () => window.location.reload());
+    document.getElementById("jb-app").appendChild(t);
   }
   function storageKey() {
     return "jb_requested_" + (nightId || "default");
