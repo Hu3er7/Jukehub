@@ -1610,7 +1610,33 @@
       const viaQueryParam = params.has("qr");
       const viaHashFragment = location.hash === "#qr=1";
       if (!viaQueryParam && !viaHashFragment) return;
-      safeStorageSet("jb_qr_access_at", String(Date.now()));
+      // Garde-fou (bogue signalé par Hubert : un client retrouve l'accès en appuyant sur
+      // "Actualiser" dans Safari, SANS avoir rescanné le code, après que Hubert se soit
+      // reconnecté) : la page Carrd qui pose ce cadre garde "#qr=1" dans SA PROPRE adresse (celle
+      // de Safari) pour toujours une fois que le client l'a ouverte une première fois — Carrd
+      // renvoie ce même fragment à ce cadre à CHAQUE fois qu'il se recharge (voir le commentaire
+      // plus haut sur "jbFrame.src = ... + location.hash"), pas seulement lors d'un vrai scan. Un
+      // simple "Actualiser" du client (ou Safari qui recharge la page tout seul, ex. manque de
+      // mémoire) renvoyait donc ici un "#qr=1" tout aussi valide qu'un vrai nouveau scan, et
+      // réécrivait "jb_qr_access_at" à l'instant présent — ce qui, après une reconnexion de
+      // Hubert, redonnait l'accès sans que le client ait physiquement rescanné quoi que ce soit.
+      // On ne capture donc plus qu'UNE SEULE FOIS par onglet (sessionStorage, qui survit à un
+      // rechargement de la MÊME page mais disparaît si le client ferme Safari ou ouvre un nouveau
+      // lien QR dans un nouvel onglet) : un rechargement ultérieur de ce même onglet n'écrase plus
+      // la date du tout premier scan, et reste donc correctement soumis à la fois à la fenêtre de
+      // 24h et à la règle "scanné après la dernière connexion de Hubert" (voir hasQrAccess()).
+      let alreadyCapturedThisTab = false;
+      try {
+        alreadyCapturedThisTab = window.sessionStorage.getItem("jb_qr_captured_tab") === "1";
+      } catch (e2) {
+        // Navigation privée/sessionStorage bloqué : on ne peut pas se souvenir d'un onglet à
+        // l'autre rechargement, donc on retombe sur l'ancien comportement (recapture à chaque
+        // fois) plutôt que de bloquer complètement l'accès.
+      }
+      if (!alreadyCapturedThisTab) {
+        safeStorageSet("jb_qr_access_at", String(Date.now()));
+        try { window.sessionStorage.setItem("jb_qr_captured_tab", "1"); } catch (e3) {}
+      }
       params.delete("qr");
       const query = params.toString();
       const cleanHash = viaHashFragment ? "" : location.hash;
@@ -1717,7 +1743,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-11.59";
+  const APP_BUILD = "2026-10-11.60";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -4460,6 +4486,30 @@
   window.addEventListener("pageshow", forceReconnect);
   window.addEventListener("focus", forceReconnect);
   window.addEventListener("online", forceReconnect);
+  // Bogue signalé par Hubert : un client reste "en ligne" un moment après qu'il se soit déconnecté
+  // de son panneau admin — jusqu'à ce que le client touche quelque part sur l'écran, moment où la
+  // page bascule enfin sur "Pas en spectacle". Cause probable : Safari iOS peut mettre en veille le
+  // traitement du flux temps réel d'un onglet resté inactif un moment (aucun geste), même si la
+  // page reste parfaitement visible à l'écran (donc même sans verrouillage — voir le bloc
+  // "visibilitychange" ci-dessus, qui lui ne couvre que le cas où l'onglet change de statut, pas
+  // une simple inactivité). Le tout premier geste du client relance ce traitement — on en profite
+  // ici pour forcer immédiatement un nouveau rendu (renderLiveGate(), qui ne coûte rien : il relit
+  // juste le dernier état déjà connu) ET une reconnexion, plutôt que d'attendre une éventuelle
+  // prochaine mise à jour Firestore qui pourrait elle-même rester coincée derrière la même mise en
+  // veille. "touchstart"/"pointerdown" seulement (pas "scroll", trop fréquent) pour éviter de
+  // multiplier les cycles déconnexion/reconnexion réseau à chaque petit geste.
+  let lastInteractionReconnectAt = 0;
+  const INTERACTION_RECONNECT_COOLDOWN_MS = 4000;
+  function reconnectOnInteraction() {
+    renderLiveGate();
+    const now = Date.now();
+    if (now - lastInteractionReconnectAt < INTERACTION_RECONNECT_COOLDOWN_MS) return;
+    lastInteractionReconnectAt = now;
+    forceReconnect();
+  }
+  ["touchstart", "pointerdown"].forEach((evt) => {
+    document.addEventListener(evt, reconnectOnInteraction, { passive: true });
+  });
 
   // ---------- Chien de garde de connexion ----------
   // Certaines coupures réseau (mauvais signal dans un bar bondé, Wi-Fi instable) n'émettent
@@ -4467,9 +4517,12 @@
   // n'est plus vraiment connectée à Firestore. On surveille l'état réel de la connexion via
   // le listener "config" (metadata.fromCache) et on force une reconnexion si trop de temps
   // s'est écoulé sans confirmation "live", pour éviter que le client ait à rafraîchir lui-même.
+  // Intervalle resserré (était 20s/25s) — toujours suite au même bogue : plus l'écart est grand,
+  // plus un client inactif (sans toucher l'écran) peut rester visiblement "en ligne" longtemps
+  // après que Hubert se soit déconnecté.
   let lastLiveSnapshotAt = Date.now();
-  const CONNECTION_WATCHDOG_MS = 20000; // vérifie toutes les 20s
-  const CONNECTION_STALE_MS = 25000; // force une reconnexion si rien de "live" depuis 25s
+  const CONNECTION_WATCHDOG_MS = 8000; // vérifie toutes les 8s
+  const CONNECTION_STALE_MS = 12000; // force une reconnexion si rien de "live" depuis 12s
   setInterval(() => {
     if (document.visibilityState === "visible" && Date.now() - lastLiveSnapshotAt > CONNECTION_STALE_MS) {
       forceReconnect();
