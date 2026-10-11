@@ -1577,12 +1577,19 @@
     }
   }
 
-  // ---------- Accès par code QR, valable 24h ----------
+  // ---------- Accès par code QR, valable 24h ET seulement depuis la connexion admin actuelle ----------
   // Demande explicite de Hubert : passé 24h depuis le dernier scan du code QR (affiché au bar),
   // le client ne doit plus pouvoir utiliser l'appli tant qu'il n'a pas scanné le code à nouveau —
   // même si Hubert est "en spectacle" (voir isLiveNow()) au même moment. Ça évite qu'un client
   // garde un accès permanent (lien envoyé par un ami, onglet resté ouvert des jours...) alors
   // qu'il n'est pas physiquement au bar.
+  //
+  // Deuxième condition ajoutée ensuite (voir hasQrAccess()) : le scan doit aussi être survenu
+  // APRÈS la connexion admin actuelle ("loginAtMs", voir plus bas) — sinon un client resté connecté
+  // d'un premier spectacle plus tôt la même journée (son scan a encore moins de 24h) garderait
+  // l'accès pour un second spectacle, ailleurs, alors qu'il n'y est plus du tout. Chaque fois que
+  // Hubert se déconnecte puis se reconnecte, tout le monde doit donc rescanner le code QR — un
+  // ancien scan, même encore valide dans sa fenêtre de 24h, ne compte plus après une reconnexion.
   //
   // IMPORTANT — pourquoi on accepte "#qr=1" (fragment) EN PLUS de "?qr=1" (paramètre) :
   // cette appli tourne dans un cadre (iframe) posé par le site Carrd de Hubert, qui ne
@@ -1616,7 +1623,12 @@
   })();
   function hasQrAccess() {
     const at = parseInt(safeStorageGet("jb_qr_access_at") || "0", 10);
-    return at > 0 && (Date.now() - at) < QR_ACCESS_MS;
+    if (!(at > 0 && (Date.now() - at) < QR_ACCESS_MS)) return false;
+    // "loginAtMs" (déclaré plus bas dans le fichier, lu ici par fermeture — sa valeur à jour est
+    // toujours celle du dernier instantané "config/settings" reçu, voir l'abonnement temps réel)
+    // vaut 0 si aucune connexion admin n'a encore été enregistrée : dans ce cas on ne bloque rien
+    // (comportement hérité, ne devrait plus vraiment arriver en pratique).
+    return !loginAtMs || at > loginAtMs;
   }
 
   // Même principe que safeStorageGet/Set ci-dessus, mais avec sessionStorage plutôt que
@@ -1705,7 +1717,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-07.58";
+  const APP_BUILD = "2026-10-11.59";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -3765,13 +3777,21 @@
 
   // ---------- "En spectacle" ou non : voir isLiveNow()/renderLiveGate() ----------
   // "live" = Hubert est connecté à son panneau admin (écrit à true à la connexion, à false à la
-  // déconnexion — manuelle ou automatique). "loginAtMs" = l'instant de CETTE connexion, sert à
-  // calculer l'heure de déconnexion automatique (6h du matin suivant). Tant que "live" n'est pas
-  // vrai (ou passé 6h), le public voit la page "Pas en spectacle" plutôt que l'appli — ça évite
-  // qu'un client tombe sur une appli qui tente de se connecter en boucle un soir sans spectacle.
+  // déconnexion — toujours manuelle maintenant, voir performLogout() : l'ancienne coupure
+  // automatique à 6h du matin a été retirée sur demande de Hubert). Tant que "live" n'est pas
+  // vrai, le public voit la page "Pas en spectacle" plutôt que l'appli — ça évite qu'un client
+  // tombe sur une appli qui tente de se connecter en boucle un soir sans spectacle.
+  // "loginAtMs" = l'instant de LA CONNEXION ADMIN ACTUELLE. Sert maintenant à invalider les scans
+  // de code QR antérieurs à cette connexion (voir hasQrAccess()) : demande explicite de Hubert,
+  // suite à un cas vécu où des clients d'un premier spectacle (plus tôt la même journée) étaient
+  // encore considérés "connectés" (leur scan QR avait moins de 24h) alors qu'ils n'étaient plus du
+  // tout sur place pour le second spectacle. Résultat voulu : à chaque fois que Hubert se
+  // déconnecte puis se reconnecte (même changement de lieu/spectacle dans la même journée), TOUT
+  // LE MONDE retombe sur la page "Pas en spectacle" (via "live: false", instantané) et doit
+  // scanner le code QR À NOUVEAU après cette reconnexion pour retrouver l'accès — un ancien scan,
+  // même encore valide dans sa fenêtre de 24h, ne compte plus.
   let liveFlag = false;
   let loginAtMs = 0;
-  let autoLogoutDone = false; // évite de redéclencher l'auto-déconnexion à chaque vérification
   // ---------- Écran de démarrage : voir renderLiveGate() ----------
   // Tant que ces deux drapeaux ne sont pas TOUS LES DEUX vrais, renderLiveGate() ne révèle encore
   // RIEN côté public (#jb-app-content ET #jb-offline-page restent cachés, comme au tout premier
@@ -3798,17 +3818,15 @@
     bootCatalogReady = true;
     renderLiveGate();
   }, 6000);
-  const AUTO_LOGOUT_HOUR = 6; // heure locale (appareil de Hubert) de la coupure automatique
-  function computeAutoLogoutCutoff(fromMs) {
-    const d = new Date(fromMs);
-    const cutoff = new Date(d.getFullYear(), d.getMonth(), d.getDate(), AUTO_LOGOUT_HOUR, 0, 0, 0);
-    if (cutoff.getTime() <= fromMs) cutoff.setDate(cutoff.getDate() + 1);
-    return cutoff.getTime();
-  }
+  // Simple reflet de "live" (voir plus haut) — gardée comme fonction (plutôt que d'utiliser
+  // directement "liveFlag" partout) parce que tout le reste du code l'appelle déjà par son nom,
+  // et pour pouvoir y rebrancher facilement une future règle sans tout rechercher/remplacer.
+  // Contenait auparavant aussi la coupure automatique à 6h du matin, retirée sur demande de
+  // Hubert (voir plus haut) : un "live: false" écrit manuellement par performLogout() suffit
+  // maintenant, qu'il soit déclenché à la fin d'un premier spectacle ou d'un second la même
+  // journée.
   function isLiveNow() {
-    if (!liveFlag) return false;
-    if (!loginAtMs) return true; // valeur héritée d'avant cette fonctionnalité : ne bloque rien
-    return Date.now() < computeAutoLogoutCutoff(loginAtMs);
+    return liveFlag;
   }
   // requestedRounds : songId -> le "jeton de tour" (playedAtMillis) au moment de la demande.
   // Comparé au jeton ACTUEL de la chanson : si la chanson a été rejouée depuis (nouveau jeton),
@@ -4307,10 +4325,10 @@
   checkRoute();
 
   // Bascule entre l'appli normale et la page "Pas en spectacle" côté public (jamais sur la route
-  // admin — Hubert doit toujours pouvoir atteindre son panneau de connexion). Aussi responsable
-  // de la déconnexion automatique de l'admin passé l'heure de coupure (voir isLiveNow()) : appelé
-  // à chaque snapshot de "config/settings" ET toutes les 60s (voir plus bas) pour attraper le
-  // passage de l'heure même sans nouvelle écriture Firestore.
+  // admin — Hubert doit toujours pouvoir atteindre son panneau de connexion) : appelé à chaque
+  // snapshot de "config/settings" ET toutes les 60s (voir plus bas), ce dernier cas servant
+  // surtout de filet de sécurité (ex. retour de veille) plutôt qu'à rattraper une heure de
+  // coupure, qui n'existe plus.
   // Applique VRAIMENT l'état "en spectacle ou non" au DOM (bascule appli/page hors-ligne, ouvre le
   // tuto le cas échéant) — séparé de renderLiveGate() ci-dessous pour être appelable à la fois
   // immédiatement (une fois déjà révélé une première fois) et après le court délai d'absorption du
@@ -4320,12 +4338,15 @@
     const offlinePage = document.getElementById("jb-offline-page");
     const qrGatePage = document.getElementById("jb-qr-gate-page");
     // "granted" = Hubert est en spectacle ET ce client a scanné le code QR il y a moins de 24h
-    // (voir hasQrAccess()) — les deux conditions doivent être vraies pour voir l'appli.
+    // ET APRÈS la connexion admin actuelle (voir hasQrAccess()) — toutes ces conditions doivent
+    // être vraies pour voir l'appli.
     // Hubert a changé d'avis (build .55) : plutôt qu'un écran "scanne le code QR" séparé pour un
     // QR expiré, c'est maintenant la MÊME page "Pas en spectacle" (avec le calendrier des
-    // prochaines dates) qui s'affiche dans les DEUX cas — QR expiré/jamais scanné OU spectacle pas
-    // commencé — demande explicite : "seulement les gens qui ont scanné le code qr dans les
-    // dernières 24h peuvent accéder à mon site [même si je suis connecté]". #jb-qr-gate-page reste
+    // prochaines dates) qui s'affiche dans les DEUX cas — QR expiré/jamais scanné/pas encore
+    // rescanné depuis la dernière connexion OU spectacle pas commencé — demande explicite :
+    // "seulement les gens qui ont scanné le code qr dans les dernières 24h peuvent accéder à mon
+    // site [même si je suis connecté]", puis "quand je me reconnecte, seulement les personnes qui
+    // vont scanner le code qr APRÈS ma reconnexion auront accès au site". #jb-qr-gate-page reste
     // dans le DOM (cachée en permanence) plutôt que supprimée, au cas où ce choix change à nouveau.
     const granted = live && hasQrAccess();
     if (appContent) appContent.hidden = !granted;
@@ -4401,10 +4422,6 @@
       } else {
         applyLiveGateNow(live);
       }
-    }
-    if (isAdmin && !live && liveFlag && !autoLogoutDone) {
-      autoLogoutDone = true;
-      performLogout(true);
     }
   }
   setInterval(renderLiveGate, 60000);
@@ -5393,22 +5410,19 @@
     document.getElementById("jb-login").hidden = isAdmin;
     document.getElementById("jb-dashboard").hidden = !isAdmin;
     if (isAdmin) {
-      autoLogoutDone = false;
       renderAdminPalmares();
       renderAdminSpecial();
       renderAdminCatalog();
       renderBulkGenrePicker();
-      // Rattrape le cas où Hubert rouvre son panneau alors qu'il était déjà authentifié depuis
-      // une session Firebase persistée (portable jamais vraiment fermé) MAIS que l'heure de
-      // coupure automatique de la soirée précédente est déjà passée — plutôt que de le laisser
-      // sur un tableau de bord "fantôme", on referme proprement tout de suite (voir isLiveNow()).
       renderLiveGate();
     }
   });
 
   // Écrit "live: true" + l'heure de CETTE connexion (loginAt) UNIQUEMENT sur une connexion
-  // explicite (jamais sur une reprise de session au chargement de la page, sinon rafraîchir
-  // l'onglet repousserait indéfiniment l'heure de déconnexion automatique — voir isLiveNow()).
+  // explicite (jamais sur une reprise de session au chargement de la page). "loginAt" sert
+  // maintenant à invalider les scans de code QR antérieurs à cette connexion — voir hasQrAccess()
+  // — donc chaque VRAIE reconnexion (bouton "Se connecter", pas juste un rechargement de page)
+  // doit bien écrire une nouvelle valeur pour forcer tout le monde à rescanner.
   document.getElementById("jb-login").addEventListener("submit", async (e) => {
     // preventDefault() est essentiel : sans lui, le fait d'avoir mis ces champs dans un vrai
     // <form> (nécessaire pour que Safari/iOS propose d'enregistrer et de remplir automatiquement
@@ -5421,7 +5435,6 @@
     errEl.hidden = true;
     try {
       await signInWithEmailAndPassword(auth, email, pass);
-      autoLogoutDone = false;
       await setDoc(doc(db, "config", "settings"), { live: true, loginAt: serverTimestamp() }, { merge: true });
       // Recharge la page tout de suite après une connexion réussie. Ça peut sembler inutile
       // (onAuthStateChanged bascule déjà l'affichage vers le tableau de bord sans ça), mais
@@ -5438,11 +5451,15 @@
     }
   });
 
-  // Déconnexion (manuelle via ce bouton, OU automatique à 6h du matin — voir renderLiveGate()) :
-  // écrit d'abord "live: false" + le signal "kickedAt" (pendant qu'on est encore authentifié —
-  // "config" exige request.auth != null en écriture) pour que tous les appareils ouverts (clients
-  // ET tout autre onglet admin) basculent sur la page "Pas en spectacle"/rechargent tout seuls,
-  // PUIS déconnecte réellement.
+  // Déconnexion (toujours manuelle, via ce bouton — l'ancienne coupure automatique à 6h du matin a
+  // été retirée sur demande de Hubert) : écrit d'abord "live: false" + le signal "kickedAt"
+  // (pendant qu'on est encore authentifié — "config" exige request.auth != null en écriture) pour
+  // que tous les appareils ouverts (clients ET tout autre onglet admin) basculent sur la page
+  // "Pas en spectacle"/rechargent tout seuls, PUIS déconnecte réellement. C'est aussi ce qui donne
+  // le "kick" demandé par Hubert : en se déconnectant à la fin d'un spectacle, tout le monde
+  // retombe immédiatement sur la page "Pas en spectacle", et devra rescanner le code QR une fois
+  // qu'il se reconnectera (voir "loginAt" ci-dessous et hasQrAccess()) — utile par exemple quand
+  // il fait deux spectacles, dans deux endroits différents, la même journée.
   // Écrit "live: false"/"kickedAt" avec plusieurs tentatives : un échec silencieux ici (réseau
   // instable, course avec forceReconnect ci-dessus, etc.) laissait auparavant Hubert repartir sur
   // l'écran de connexion (signOut() local, toujours immédiat) alors que la page publique restait
@@ -5466,29 +5483,25 @@
     return false;
   }
   let loggingOut = false;
-  async function performLogout(auto) {
+  async function performLogout() {
     if (loggingOut) return;
     loggingOut = true;
     criticalWriteInFlight = true;
     const btn = document.getElementById("jb-logout-btn");
-    if (btn && !auto) btn.disabled = true;
-    if (auto) showToast("🌙 Déconnecté automatiquement (6h) — bonne nuit !");
+    if (btn) btn.disabled = true;
     const ok = await writeLogoutSignal();
     criticalWriteInFlight = false;
-    if (btn && !auto) btn.disabled = false;
+    if (btn) btn.disabled = false;
     loggingOut = false;
     if (!ok) {
       showToast("⚠️ Problème de connexion — réessaie la déconnexion dans un instant.");
-      // Pour la coupure auto (personne devant l'écran à 6h) : on laisse renderLiveGate()
-      // retenter toute seule à la prochaine vérification (60s) plutôt que d'abandonner.
-      if (auto) autoLogoutDone = false;
       return; // on NE déconnecte PAS localement : le bouton reste dispo pour réessayer, plutôt
               // que de laisser croire à Hubert que c'est réglé alors que le site est resté "en
               // spectacle" pour tout le monde.
     }
     signOut(auth);
   }
-  document.getElementById("jb-logout-btn").addEventListener("click", () => performLogout(false));
+  document.getElementById("jb-logout-btn").addEventListener("click", () => performLogout());
 
   // ---------- Rendu : Palmarès admin (avec bouton "jouée") ----------
   function renderAdminPalmares() {
