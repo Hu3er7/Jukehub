@@ -287,31 +287,26 @@
   }
   #jb-app .jb-folder-title-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 
-  /* Top Pick (artistes les plus demandés) */
-  #jb-app .jb-quickpick-section { margin-bottom: 18px; }
-  #jb-app .jb-quickpick-list {
-    display: flex; gap: 8px; overflow-x: auto; padding-bottom: 2px; -webkit-overflow-scrolling: touch;
-  }
-  #jb-app .jb-quickpick-item {
-    flex-shrink: 0; background: var(--card); border: 1px solid var(--accent); color: var(--accent2);
-    font-weight: 700; font-size: 0.85rem; padding: 11px 16px; border-radius: 999px; white-space: nowrap; cursor: pointer;
-  }
-  #jb-app .jb-quickpick-item:active { transform: scale(0.97); }
-  #jb-app .jb-quickpick-item-empty {
-    min-width: 60px; border: 1px dashed var(--border); background: transparent; cursor: default;
-  }
-
-  /* Style (catégories de musique) */
-  #jb-app .jb-style-section { margin-bottom: 12px; }
+  /* Titre de section persistant ("N Chansons"/"N Artistes"/"N Genres") — voir
+     #jb-section-title-row en HTML. Reprend telle quelle l'ancienne rangée de titre "Style". */
   #jb-app .jb-style-heading-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 14px; }
   #jb-app .jb-style-heading-row h2 { margin-bottom: 0; font-size: 1.6rem; }
-  #jb-app .jb-style-list { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; }
-  #jb-app .jb-style-item {
-    background: var(--card); border: 1px solid var(--border); color: var(--text);
-    font-weight: 700; font-size: 0.7rem; padding: 6px 4px; border-radius: 9px; text-align: center; cursor: pointer;
-    line-height: 1.15;
+  /* #jb-section-title-row est maintenant montré/caché dynamiquement (voir renderCatalog()) — sans
+     cette règle, l'attribut "hidden" resterait sans effet : une règle d'auteur (display: flex
+     ci-dessus) l'emporte toujours sur la règle par défaut du navigateur [hidden]{display:none},
+     quelle que soit la spécificité. Même principe déjà utilisé pour .jb-offline-page[hidden]. */
+  #jb-app .jb-style-heading-row[hidden] { display: none; }
+
+  /* Écran d'accueil du catalogue : 3 boutons "Chercher par..." empilés, à l'intérieur du même
+     cadre "bandes néon rouges" que les résultats (voir .jb-catalog-frame) — remplace l'ancien
+     Top Pick + grille de pastilles de genre (demande explicite de Hubert). */
+  #jb-app .jb-mode-list { display: flex; flex-direction: column; gap: 10px; padding: 16px 20px; }
+  #jb-app .jb-mode-btn {
+    background: var(--card); border: 1px solid var(--success); color: var(--accent2);
+    font-weight: 800; font-size: 0.92rem; letter-spacing: 0.5px; text-transform: uppercase;
+    padding: 15px 16px; border-radius: 12px; cursor: pointer; text-align: center;
   }
-  #jb-app .jb-style-item:active { background: var(--card2); border-color: var(--accent); }
+  #jb-app .jb-mode-btn:active { background: var(--card2); border-color: var(--accent); }
   #jb-app .jb-folder-title {
     font-family: 'Anton', -apple-system, sans-serif; font-weight: 400; font-size: 1.5rem;
     letter-spacing: 0.3px; line-height: 1.15; color: var(--text); text-align: left;
@@ -691,7 +686,7 @@
   #jb-public .jb-btn-request,
   #jb-public .jb-request-remaining,
   #jb-public .jb-boost-remaining,
-  #jb-public .jb-quickpick-item,
+  #jb-public .jb-mode-btn,
   #jb-public .jb-back-btn,
   #jb-public .jb-name-prompt-skip-btn {
     font-family: 'Share Tech Mono', monospace;
@@ -808,13 +803,12 @@
 
   /* Cartes/lignes : lueur cyan très fine au lieu du violet plein d'origine. */
   #jb-public .jb-song-item,
-  #jb-public .jb-quickpick-item,
-  #jb-public .jb-style-item,
+  #jb-public .jb-mode-btn,
   #jb-public .jb-admin-catalog-item {
     box-shadow: 0 0 0 1px rgba(24, 241, 255, 0.05) inset;
   }
   #jb-public .jb-song-item-clickable:active,
-  #jb-public .jb-style-item:active { border-color: var(--accent); }
+  #jb-public .jb-mode-btn:active { border-color: var(--accent); }
 
   /* Ligne du catalogue "déjà demandée" : même design que sa ligne du palmarès plus bas
      (.jb-slot-rank/.jb-song-votes/.jb-slot-boost déjà partagés — voir renderSongRow()) — seul le
@@ -906,20 +900,40 @@
     <section class="jb-catalog">
       <div id="jb-catalog-searchbar" class="jb-catalog-searchbar">
         <button id="jb-back-btn" class="jb-back-btn" hidden>⬅ RETOUR</button>
-        <input id="jb-search-input" type="text" placeholder="🔍 Cherche un titre ou un artiste…" autocomplete="off" />
+        <input id="jb-search-input" type="text" placeholder="🔍 Cherche par mots clés" autocomplete="off" />
+      </div>
+
+      <!-- Titre de section persistant : "N Chansons" / "N Artistes" / "N Genres" selon le mode
+           choisi plus bas (voir renderCatalog()) — sorti de #jb-catalog-browse/#jb-catalog-results
+           (qui eux se cachent/s'affichent en alternance) pour rester visible à la fois sur l'écran
+           d'accueil ET sur les 3 listes de premier niveau (chansons complètes/artistes/genres),
+           et disparaître seulement une fois qu'on a choisi UN artiste ou UN genre précis (où le
+           bandeau de dossier #jb-folder-title-wrap prend le relais) — demande explicite de Hubert :
+           le titre "669 chansons" doit prendre la place de l'ancien "Top Pick", et se transformer
+           en "XX Artistes"/"XX Genres" une fois dans ces listes. -->
+      <div id="jb-section-title-row" class="jb-style-heading-row">
+        <h2 id="jb-style-title">Chansons</h2>
       </div>
 
       <div id="jb-catalog-browse" class="jb-catalog-browse">
-        <div id="jb-quickpick-section" class="jb-quickpick-section" hidden>
-          <h2 id="jb-quickpick-title">Top Pick</h2>
-          <div id="jb-quickpick-list" class="jb-quickpick-list"></div>
-        </div>
-        <div class="jb-style-section">
-          <div class="jb-style-heading-row">
-            <h2 id="jb-style-title">Style</h2>
-            <div id="jb-request-remaining" class="jb-request-remaining">Demandes : 10</div>
+        <!-- Écran d'accueil du catalogue : plus de Top Pick ni de pastilles de genre ici (demande
+             explicite de Hubert) — seulement ces 3 boutons, qui ouvrent chacun une liste différente
+             dans #jb-catalog-results juste en dessous (toujours à l'intérieur des mêmes bandes
+             néon rouges — voir .jb-catalog-frame, réutilisé tel quel ici). -->
+        <div class="jb-catalog-frame">
+          <div class="jb-catalog-frame-caps jb-catalog-frame-caps-top" aria-hidden="true">
+            <span class="jb-catalog-frame-cap jb-catalog-frame-cap-lg"></span>
+            <span class="jb-catalog-frame-cap"></span>
+            <span class="jb-catalog-frame-cap"></span>
+            <span class="jb-catalog-frame-cap"></span>
           </div>
-          <div id="jb-style-list" class="jb-style-list"></div>
+          <div id="jb-mode-list" class="jb-mode-list"></div>
+          <div class="jb-catalog-frame-caps jb-catalog-frame-caps-bottom" aria-hidden="true">
+            <span class="jb-catalog-frame-cap jb-catalog-frame-cap-lg"></span>
+            <span class="jb-catalog-frame-cap"></span>
+            <span class="jb-catalog-frame-cap"></span>
+            <span class="jb-catalog-frame-cap"></span>
+          </div>
         </div>
       </div>
 
@@ -1312,7 +1326,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-13.65";
+  const APP_BUILD = "2026-10-13.66";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -1398,11 +1412,15 @@
       boost_added: "🚀 Boost ajouté !",
       boost_aria: "Booster cette chanson",
       boost_btn: "Boost",
-      quickpick_title: "Top Pick",
       style_title: "Chansons",
       style_title_count: (n) => `${n} Chansons`,
+      artist_title_count: (n) => `${n} Artistes`,
+      genre_title_count: (n) => `${n} Genres`,
+      mode_songs_btn: "Chercher par chansons",
+      mode_artist_btn: "Chercher par artiste",
+      mode_genre_btn: "Chercher par genre",
       back_btn: "⬅ RETOUR",
-      search_placeholder: "🔍 Cherche un titre ou un artiste…",
+      search_placeholder: "🔍 Cherche par mots clés",
       catalog_empty: "Aucun résultat pour cette recherche.",
       genre_song_count_unit: "chansons",
       special_request_text: "Tu ne trouves pas ta chanson ? Écris-la quand même : elle me parviendra. Qui sait ? Peut-être que je peux essayer de la faire !",
@@ -1426,9 +1444,6 @@
       // du titre. Voir la précision de Hubert.
       song_request_word: "Demande",
       request_added_toast: "🎶 Chanson demandée !",
-      requests_remaining: (n) => `Demandes : ${n}`,
-      requests_remaining_countdown: (time) => `Demandes : ${time}`,
-      requests_limit_reached: "Tu as atteint ta limite de 10 chansons. Patiente 2 minutes (ou attends qu'une de tes chansons soit jouée) pour en récupérer !",
       error_toast: "Oups, réessaie dans un instant.",
       genres: {
         franco: "Franco", country: "Country", rock: "Rock", punk: "Punk", "classic-rock": "Classique Rock",
@@ -1451,11 +1466,15 @@
       boost_added: "🚀 Boost added!",
       boost_aria: "Boost this song",
       boost_btn: "Boost",
-      quickpick_title: "Top Pick",
       style_title: "Songs",
       style_title_count: (n) => `${n} Songs`,
+      artist_title_count: (n) => `${n} Artists`,
+      genre_title_count: (n) => `${n} Genres`,
+      mode_songs_btn: "Search by songs",
+      mode_artist_btn: "Search by artist",
+      mode_genre_btn: "Search by genre",
       back_btn: "⬅ BACK",
-      search_placeholder: "🔍 Search a title or artist…",
+      search_placeholder: "🔍 Search by keywords",
       catalog_empty: "No results for this search.",
       genre_song_count_unit: "songs",
       special_request_text: "Can't find your song? Type it in anyway — it'll reach me. Who knows? Maybe I can try to learn it!",
@@ -1475,9 +1494,6 @@
       request_btn: "▶ Play",
       song_request_word: "Request",
       request_added_toast: "🎶 Song requested!",
-      requests_remaining: (n) => `Requests: ${n}`,
-      requests_remaining_countdown: (time) => `Requests: ${time}`,
-      requests_limit_reached: "You've reached your limit of 10 songs. Wait 2 minutes (or until one of your songs gets played) to get more!",
       error_toast: "Oops, try again in a moment.",
       genres: {
         franco: "French/Queb", country: "Country", rock: "Rock", punk: "Punk", "classic-rock": "Classic Rock",
@@ -1521,7 +1537,9 @@
     if (npConfirm) npConfirm.textContent = t("name_prompt_confirm");
     document.getElementById("jb-artist-name").textContent = t("page_title");
     document.getElementById("jb-palmares-title").textContent = t("palmares_title");
-    document.getElementById("jb-quickpick-title").textContent = t("quickpick_title");
+    // Texte de repli (voir renderCatalog(), qui pose le vrai texte dynamique "N Chansons"/
+    // "N Artistes"/"N Genres" juste après tout rendu) — évite juste un flash de texte vide avant
+    // le tout premier appel.
     document.getElementById("jb-style-title").textContent = t("style_title");
     document.getElementById("jb-back-btn").textContent = t("back_btn");
     document.getElementById("jb-search-input").placeholder = t("search_placeholder");
@@ -1698,10 +1716,10 @@
 
   // ---------- En-tête collant du catalogue : titre du dossier juste sous la barre de recherche ----------
   // La barre de recherche (#jb-catalog-searchbar) est déjà "sticky" en haut. Le titre du
-  // dossier/style ouvert (+ son badge "Demandes", voir positionRequestBadge()) doit rester
-  // visible avec elle pendant qu'on fait défiler la liste des chansons — donc lui aussi
-  // "sticky", juste en dessous. On mesure la hauteur réelle de la barre de recherche plutôt que
-  // de la fixer en dur, car elle peut varier (retour à la ligne sur un très petit écran).
+  // dossier (artiste ou genre choisi) doit rester visible avec elle pendant qu'on fait défiler la
+  // liste des chansons — donc lui aussi "sticky", juste en dessous. On mesure la hauteur réelle de
+  // la barre de recherche plutôt que de la fixer en dur, car elle peut varier (retour à la ligne
+  // sur un très petit écran).
   function fitStickyHeader() {
     const bar = document.getElementById("jb-catalog-searchbar");
     if (!bar) return;
@@ -1917,12 +1935,12 @@
   // la demande précédente ne compte plus et le client peut redemander — sans logique de
   // détection de changement fragile, juste une comparaison à chaque rendu.
   let requestedRounds = {};
-  const MAX_REQUESTS = 10; // nombre maximum de demandes actives par client, par soirée
-  const REQUEST_RESET_MS = 2 * 60 * 1000; // filet de sécurité : redonne des demandes après ce délai une fois la banque de 10 épuisée
-  const REQUEST_RENEW_AMOUNT = 3; // nombre de demandes redonnées à chaque cycle de 2 min
-  // requestResetAt : horodatage (ms) auquel le client récupérera des demandes, une fois qu'il a
-  // atteint sa limite de 10. 0 tant qu'il lui reste au moins une demande disponible.
-  let requestResetAt = 0;
+  // Demande explicite de Hubert : plus de limite au nombre de demandes actives par client — la
+  // banque de 10/limite/compte à rebours (MAX_REQUESTS, REQUEST_RESET_MS, requestResetAt,
+  // activeRequestsCount(), requestsRemaining(), maybeRenewRequests(), updateRequestBadge(), le
+  // badge "Demandes : N") a été entièrement retirée. requestedRounds (ci-dessus) reste : il sert
+  // uniquement à savoir si CETTE chanson précise a déjà été demandée ce tour-ci (alreadyRequested())
+  // — rien à voir avec un plafond global.
   const MAX_BOOSTS = 3; // nombre maximum de boosts par client, par soirée
   // Récupération : 1 boost redonné chaque minute (jusqu'au max ci-dessus), plutôt que les 3 d'un
   // coup après 2 min (changé à la demande de Hubert).
@@ -2040,75 +2058,17 @@
   function alreadyRequested(id) {
     return requestedRounds[id] !== undefined && requestedRounds[id] === roundToken(votes[id]);
   }
-  // Compte les demandes actuellement actives pour ce client, en libérant au passage celles
-  // dont la chanson a été jouée depuis (son jeton de tour a changé) — la limite de 10 se libère
-  // donc automatiquement dès que l'admin marque une de ses chansons comme jouée, exactement
-  // comme pour les boosts.
-  function activeRequestsCount() {
-    let total = 0;
-    let changed = false;
-    Object.keys(requestedRounds).forEach((id) => {
-      if (requestedRounds[id] === roundToken(votes[id])) {
-        total += 1;
-      } else {
-        delete requestedRounds[id];
-        changed = true;
-      }
-    });
-    if (changed) saveRequestedToStorage();
-    return total;
-  }
-  // Filet de sécurité : après 2 minutes à court de demandes, en redonne une seule (pas une
-  // remise à zéro complète) — puis relance aussitôt un nouveau cooldown de 2 min si le client
-  // est encore à 10/10, jusqu'à ce qu'il en retrouve via ce mécanisme ou qu'une de ses chansons
-  // demandées soit jouée.
-  function maybeRenewRequests() {
-    if (!requestResetAt || Date.now() < requestResetAt) return;
-    const ids = Object.keys(requestedRounds).slice(0, REQUEST_RENEW_AMOUNT);
-    if (ids.length) {
-      ids.forEach((id) => delete requestedRounds[id]);
-      saveRequestedToStorage();
-    }
-    requestResetAt = activeRequestsCount() >= MAX_REQUESTS ? Date.now() + REQUEST_RESET_MS : 0;
-    saveRequestResetToStorage();
-  }
-  function requestsRemaining() {
-    maybeRenewRequests();
-    const remaining = Math.max(0, MAX_REQUESTS - activeRequestsCount());
-    // Si une demande s'est libérée parce que sa chanson a joué avant la fin des 2 min,
-    // le décompte n'a plus lieu d'être : on l'annule.
-    if (remaining > 0 && requestResetAt) {
-      requestResetAt = 0;
-      saveRequestResetToStorage();
-    }
-    return remaining;
-  }
-  // Met à jour le badge "Demandes : N" (ou le décompte "Demandes : MM:SS" une fois la banque de
-  // 10 épuisée) à côté de la barre de recherche.
-  function updateRequestBadge() {
-    const el = document.getElementById("jb-request-remaining");
-    if (!el) return;
-    const r = requestsRemaining();
-    if (r <= 0 && requestResetAt > Date.now()) {
-      const totalSec = Math.max(0, Math.ceil((requestResetAt - Date.now()) / 1000));
-      const mm = String(Math.floor(totalSec / 60)).padStart(2, "0");
-      const ss = String(totalSec % 60).padStart(2, "0");
-      el.textContent = t("requests_remaining_countdown", `${mm}:${ss}`);
-    } else {
-      el.textContent = t("requests_remaining", r);
-    }
-  }
   // Rappel visuel : fait gonfler-dégonfler et s'illuminer-s'éteindre un élément un court
   // instant, pour attirer l'attention du client dessus (badge juste après qu'il ait changé —
-  // boost utilisé, chanson demandée). On enlève puis remet la classe pour pouvoir rejouer
-  // l'animation même si elle vient tout juste de se terminer.
+  // boost utilisé). On enlève puis remet la classe pour pouvoir rejouer l'animation même si elle
+  // vient tout juste de se terminer.
   function pulseAttention(el, className = "jb-pulse-attn") {
     if (!el) return;
     el.classList.remove(className);
     void el.offsetWidth; // force le navigateur à "oublier" l'animation précédente
     el.classList.add(className);
   }
-  ["jb-boost-remaining", "jb-request-remaining"].forEach((id) => {
+  ["jb-boost-remaining"].forEach((id) => {
     const el = document.getElementById(id);
     if (el) el.addEventListener("animationend", () => el.classList.remove("jb-pulse-attn"));
   });
@@ -2224,23 +2184,6 @@
   function saveRequestedToStorage() {
     try {
       safeStorageSet(storageKey(), JSON.stringify(requestedRounds));
-    } catch (e) {}
-  }
-  function requestResetKey() {
-    return "jb_request_reset_" + (nightId || "default");
-  }
-  function loadRequestResetFromStorage() {
-    try {
-      const raw = safeStorageGet(requestResetKey());
-      requestResetAt = raw ? Number(raw) || 0 : 0;
-    } catch (e) {
-      requestResetAt = 0;
-    }
-  }
-  function saveRequestResetToStorage() {
-    try {
-      if (requestResetAt) safeStorageSet(requestResetKey(), String(requestResetAt));
-      else safeStorageRemove(requestResetKey());
     } catch (e) {}
   }
 
@@ -2581,7 +2524,6 @@
     if (newNightId !== nightId) {
       nightId = newNightId;
       loadRequestedFromStorage();
-      loadRequestResetFromStorage();
       loadBoostsFromStorage();
       loadBoostResetFromStorage();
       renderAll();
@@ -2683,19 +2625,10 @@
   function renderAll() {
     renderPalmares();
     renderCatalog();
-    updateRequestBadge();
-    updateStyleCount();
     renderAdminPalmares();
     renderAdminSpecial();
     renderAdminCatalog();
     renderCooldownList();
-  }
-
-  // Nombre total de chansons dans le répertoire, écrit à gauche du mot "Chansons" avec la même
-  // taille de texte (voir style_title_count) — se met à jour à chaque changement du répertoire.
-  function updateStyleCount() {
-    const el = document.getElementById("jb-style-title");
-    if (el) el.textContent = t("style_title_count", catalogSongs.length);
   }
 
   // ---------- Compte à rebours en direct (sans re-rendu complet à chaque seconde) ----------
@@ -2715,13 +2648,6 @@
         anyExpired = true; // déclenche un rendu complet pour réactiver les boutons boost
       } else {
         updateBoostBadge();
-      }
-    }
-    if (requestResetAt) {
-      if (now >= requestResetAt) {
-        anyExpired = true; // déclenche un rendu complet pour réactiver les demandes
-      } else {
-        updateRequestBadge();
       }
     }
     if (anyExpired) renderAll();
@@ -2891,30 +2817,6 @@
     });
   }
 
-  // Le badge "Demandes : N" vit par défaut au bout de la rangée du titre "🎵 Style" (déjà au bon
-  // endroit quand le client ouvre un style), se déplace à côté du titre du dossier (artiste ou
-  // style ouvert) une fois dedans, et retombe à côté du titre de la page comme filet de secours
-  // pendant une recherche texte (là où ni la section Style ni un titre de dossier ne sont visibles)
-  // — ça garde la barre de recherche libre pour prendre toute la largeur.
-  function positionRequestBadge(location) {
-    const badge = document.getElementById("jb-request-remaining");
-    if (!badge) return;
-    if (location === "topbar") {
-      // Cas de secours (recherche texte en cours) : ni la section Style ni un titre de dossier
-      // ne sont visibles, alors on insère le badge juste avant les boutons FR/EN.
-      const langBar = document.querySelector(".jb-top-bar .jb-lang-bar");
-      if (langBar && badge.nextElementSibling !== langBar) {
-        langBar.parentElement.insertBefore(badge, langBar);
-        scheduleFitTopBar();
-      }
-      return;
-    }
-    const target = location === "folder"
-      ? document.querySelector(".jb-folder-title-row")
-      : document.querySelector(".jb-style-heading-row");
-    if (target && badge.parentElement !== target) target.appendChild(badge);
-  }
-
   // ---------- Hauteur minimale du cadre de résultats (VRAIE recherche/dossier) ----------
   // Demande explicite de Hubert : "le cadre rouge ne doit JAMAIS rétrécir", pour une VRAIE
   // recherche ou un VRAI dossier de style/artiste avec moins de 3 chansons. Mesurée en affichant
@@ -2957,10 +2859,18 @@
   window.addEventListener("resize", scheduleRecomputeCatalogListMinHeight);
   window.addEventListener("orientationchange", scheduleRecomputeCatalogListMinHeight);
 
-  // ---------- Rendu : Catalogue (public, navigation par dossiers d'artistes) ----------
-  // Vue par défaut du catalogue (Top Pick + Style) vs. vue "résultats" (recherche, style
-  // choisi, ou artiste choisi depuis Top Pick) — recherche et clic sur un onglet se comportent
-  // exactement de la même façon : ils affichent une liste de chansons à la place de la navigation.
+  // ---------- Rendu : Catalogue (public) ----------
+  // Hiérarchie de navigation (demande explicite de Hubert, remplace l'ancien Top Pick + grille de
+  // genre) :
+  //   null (accueil : 3 boutons "Chercher par...")
+  //     -> {type:"all-songs"}            la liste complète (669 chansons, triées par titre)
+  //     -> {type:"artist-list"}          tous les artistes (avec leur nombre de chansons)
+  //         -> {type:"artist", name}     les chansons d'UN artiste
+  //     -> {type:"genre-list"}           tous les genres
+  //         -> {type:"genre-songs", key} les chansons d'UN genre
+  // "search" (texte tapé dans la barre) prend toujours le dessus sur catalogView pour l'AFFICHAGE,
+  // sans jamais le modifier lui-même : une fois la recherche effacée, on retrouve exactement la
+  // vue où on était (voir le bouton RETOUR plus bas).
   function renderCatalog() {
     const search = norm(document.getElementById("jb-search-input").value);
     const browse = document.getElementById("jb-catalog-browse");
@@ -2969,127 +2879,170 @@
     const list = document.getElementById("jb-catalog-list");
     const empty = document.getElementById("jb-catalog-empty");
     const titleWrap = document.getElementById("jb-folder-title-wrap");
+    const sectionTitleRow = document.getElementById("jb-section-title-row");
+    const sectionTitleEl = document.getElementById("jb-style-title");
+    const specialBlock = document.getElementById("jb-special-request-block");
     empty.textContent = t("catalog_empty");
+    specialBlock.hidden = true;
 
     const showResults = !!search || !!catalogView;
     browse.hidden = showResults;
     resultsWrap.hidden = !showResults;
     backBtn.hidden = !showResults;
-    document.getElementById("jb-special-request-block").hidden = true;
 
     if (!showResults) {
-      positionRequestBadge("style");
-      renderQuickPick();
-      renderStyleTabs();
+      sectionTitleRow.hidden = false;
+      sectionTitleEl.textContent = t("style_title_count", catalogSongs.length);
+      renderModeButtons();
       return;
     }
 
-    let songs;
-    let showArtist = true;
-    if (search) {
-      titleWrap.hidden = true;
-      positionRequestBadge("topbar");
-      songs = catalogSongs.filter((s) => norm(s.title).includes(search) || norm(s.artist).includes(search));
-    } else if (catalogView.type === "artist") {
-      // Artiste choisi depuis Top Pick : son nom s'affiche déjà dans le bandeau, pas besoin
-      // de le répéter sur chaque ligne.
-      showArtist = false;
-      titleWrap.hidden = false;
-      positionRequestBadge("folder");
-      document.querySelector(".jb-folder-title").textContent = catalogView.name;
-      const wanted = norm(catalogView.name);
-      songs = catalogSongs.filter((s) => norm(s.artist) === wanted);
-    } else {
-      // catalogView.type === "genre-songs" : style choisi depuis la section "🎵 Style" — toutes
-      // les chansons de ce style, tous artistes confondus (le nom de l'artiste s'affiche sous
-      // chaque titre, comme en recherche texte), directement — sans passer par une liste
-      // d'artistes intermédiaire.
-      showArtist = true;
-      titleWrap.hidden = false;
-      positionRequestBadge("folder");
-      const totalCount = catalogSongs.filter((s) => songHasGenre(s, catalogView.key)).length;
-      document.querySelector(".jb-folder-title").textContent = `${genreLabel(catalogView.key)} (${totalCount} ${t("genre_song_count_unit")})`;
-      songs = catalogSongs.filter((s) => songHasGenre(s, catalogView.key));
-    }
+    // Les 3 listes de "premier niveau" gardent le titre de section visible (il change de texte
+    // selon la liste) ; une fois UN artiste ou UN genre choisi, c'est le bandeau de dossier
+    // (titleWrap, juste en dessous) qui prend le relais, comme avant.
+    const LIST_LEVEL = { "all-songs": 1, "artist-list": 1, "genre-list": 1 };
+    const atListLevel = !search && catalogView && LIST_LEVEL[catalogView.type];
+    sectionTitleRow.hidden = !atListLevel;
+    titleWrap.hidden = !!atListLevel || !!search;
 
-    songs = [...songs].sort((a, b) => a.title.localeCompare(b.title, "fr"));
     ensureCatalogListMinHeight();
     list.innerHTML = "";
-    empty.hidden = songs.length > 0;
-    songs.forEach((song) => list.appendChild(renderSongRow(song, showArtist)));
-    wireSongRowEvents(list);
-    // Empêche le cadre de rétrécir en dessous de sa taille avec 3 chansons (voir
-    // ensureCatalogListMinHeight() plus haut) — demande explicite de Hubert (capture à l'appui),
-    // pour une VRAIE recherche/dossier avec moins de 3 résultats.
-    list.style.minHeight = catalogListMinHeight ? `${catalogListMinHeight}px` : "";
 
-    // Demande spéciale : seulement pertinent pour une recherche textuelle sans résultat (pas
-    // pour un style/artiste vide, où il n'y a rien de précis à envoyer à Hubert).
-    const specialBlock = document.getElementById("jb-special-request-block");
-    const showSpecial = !!search && songs.length === 0;
-    specialBlock.hidden = !showSpecial;
-    if (showSpecial) {
-      document.getElementById("jb-special-request-text").textContent = t("special_request_text");
-      document.getElementById("jb-special-request-btn").textContent = t("special_request_btn");
-      const nameInput = document.getElementById("jb-special-request-name");
-      nameInput.placeholder = t("special_request_name_placeholder");
-      // Pré-rempli avec le prénom déjà donné une fois (voir submitSpecialRequest()), sans jamais
-      // écraser ce que le client est en train de taper si ce rendu se redéclenche pendant qu'il
-      // écrit (ex. mise à jour du répertoire en direct pendant qu'il remplit le champ).
-      if (!nameInput.value) {
-        const savedName = safeSessionStorageGet("jb_client_name");
-        if (savedName) nameInput.value = savedName;
+    if (!search && catalogView.type === "artist-list") {
+      const artists = buildArtistList();
+      sectionTitleEl.textContent = t("artist_title_count", artists.length);
+      empty.hidden = artists.length > 0;
+      artists.forEach((a) => list.appendChild(renderNameRow(a.name, String(a.count), () => {
+        catalogView = { type: "artist", name: a.name };
+        renderCatalog();
+      })));
+    } else if (!search && catalogView.type === "genre-list") {
+      const genres = buildGenreList();
+      sectionTitleEl.textContent = t("genre_title_count", genres.length);
+      empty.hidden = genres.length > 0;
+      genres.forEach((g) => list.appendChild(renderNameRow(g.label, "›", () => {
+        catalogView = { type: "genre-songs", key: g.key };
+        renderCatalog();
+      })));
+    } else {
+      // Vues "chansons" : recherche texte, liste complète, UN artiste, ou UN genre.
+      let songs;
+      let showArtist = true;
+      if (search) {
+        songs = catalogSongs.filter((s) => norm(s.title).includes(search) || norm(s.artist).includes(search));
+      } else if (catalogView.type === "all-songs") {
+        sectionTitleEl.textContent = t("style_title_count", catalogSongs.length);
+        songs = catalogSongs;
+      } else if (catalogView.type === "artist") {
+        // Son nom s'affiche déjà dans le bandeau de dossier, pas besoin de le répéter sur chaque
+        // ligne.
+        showArtist = false;
+        document.querySelector(".jb-folder-title").textContent = catalogView.name;
+        const wanted = norm(catalogView.name);
+        songs = catalogSongs.filter((s) => norm(s.artist) === wanted);
+      } else {
+        // catalogView.type === "genre-songs"
+        const totalCount = catalogSongs.filter((s) => songHasGenre(s, catalogView.key)).length;
+        document.querySelector(".jb-folder-title").textContent = `${genreLabel(catalogView.key)} (${totalCount} ${t("genre_song_count_unit")})`;
+        songs = catalogSongs.filter((s) => songHasGenre(s, catalogView.key));
+      }
+
+      songs = [...songs].sort((a, b) => a.title.localeCompare(b.title, "fr"));
+      empty.hidden = songs.length > 0;
+      songs.forEach((song) => list.appendChild(renderSongRow(song, showArtist)));
+      wireSongRowEvents(list);
+
+      // Demande spéciale : seulement pertinent pour une recherche textuelle sans résultat (pas
+      // pour une liste/un dossier vide, où il n'y a rien de précis à envoyer à Hubert).
+      const showSpecial = !!search && songs.length === 0;
+      specialBlock.hidden = !showSpecial;
+      if (showSpecial) {
+        document.getElementById("jb-special-request-text").textContent = t("special_request_text");
+        document.getElementById("jb-special-request-btn").textContent = t("special_request_btn");
+        const nameInput = document.getElementById("jb-special-request-name");
+        nameInput.placeholder = t("special_request_name_placeholder");
+        // Pré-rempli avec le prénom déjà donné une fois (voir submitSpecialRequest()), sans jamais
+        // écraser ce que le client est en train de taper si ce rendu se redéclenche pendant qu'il
+        // écrit (ex. mise à jour du répertoire en direct pendant qu'il remplit le champ).
+        if (!nameInput.value) {
+          const savedName = safeSessionStorageGet("jb_client_name");
+          if (savedName) nameInput.value = savedName;
+        }
       }
     }
+
+    // Empêche le cadre de rétrécir en dessous de sa taille avec 3 chansons (voir
+    // ensureCatalogListMinHeight() plus haut) — demande explicite de Hubert (capture à l'appui),
+    // pour une VRAIE recherche/dossier/liste avec moins de 3 résultats.
+    list.style.minHeight = catalogListMinHeight ? `${catalogListMinHeight}px` : "";
   }
 
-  // ---------- Top Pick : les 5 artistes les plus demandés (toutes soirées confondues) ----------
-  // La section reste toujours visible avec 5 emplacements, même vacants, pour que le client
-  // sache d'emblée que cette fonctionnalité existe et se remplira avec le temps.
-  function renderQuickPick() {
-    const section = document.getElementById("jb-quickpick-section");
-    const list = document.getElementById("jb-quickpick-list");
-    const top = Object.values(artistDemand)
-      .filter((e) => e && e.name && e.count > 0)
-      .sort((a, b) => b.count - a.count)
-      .slice(0, 5);
-
-    section.hidden = false;
-    const slots = [];
-    for (let i = 0; i < 5; i++) {
-      const e = top[i];
-      slots.push(e
-        ? `<button class="jb-quickpick-item" data-quickartist="${escapeHtml(e.name)}">${escapeHtml(e.name)}</button>`
-        : `<div class="jb-quickpick-item jb-quickpick-item-empty" aria-hidden="true"></div>`);
-    }
-    list.innerHTML = slots.join("");
-    list.querySelectorAll("[data-quickartist]").forEach((btn) => {
+  // ---------- Écran d'accueil : les 3 boutons "Chercher par..." ----------
+  function renderModeButtons() {
+    const list = document.getElementById("jb-mode-list");
+    list.innerHTML = `
+      <button class="jb-mode-btn" data-mode="all-songs">${escapeHtml(t("mode_songs_btn"))}</button>
+      <button class="jb-mode-btn" data-mode="artist-list">${escapeHtml(t("mode_artist_btn"))}</button>
+      <button class="jb-mode-btn" data-mode="genre-list">${escapeHtml(t("mode_genre_btn"))}</button>
+    `;
+    list.querySelectorAll("[data-mode]").forEach((btn) => {
       btn.addEventListener("click", () => {
-        catalogView = { type: "artist", name: btn.dataset.quickartist };
+        catalogView = { type: btn.dataset.mode };
         renderCatalog();
       });
     });
   }
 
-  // ---------- Style : onglets de catégories musicales, assignées depuis l'admin ----------
-  function renderStyleTabs() {
-    const list = document.getElementById("jb-style-list");
-    list.innerHTML = GENRE_KEYS.map((key) => `
-      <button class="jb-style-item" data-genre="${key}">${escapeHtml(genreLabel(key))}</button>
-    `).join("");
-    list.querySelectorAll("[data-genre]").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        // Tombe directement dans la liste des chansons de ce style (tous artistes confondus),
-        // sans passer par une liste d'artistes intermédiaire.
-        catalogView = { type: "genre-songs", key: btn.dataset.genre };
-        renderCatalog();
-      });
+  // ---------- Liste des artistes (avec leur nombre de chansons) ----------
+  function buildArtistList() {
+    const map = new Map();
+    catalogSongs.forEach((s) => {
+      if (!s.artist) return;
+      const key = norm(s.artist);
+      if (!map.has(key)) map.set(key, { name: s.artist, count: 0 });
+      map.get(key).count += 1;
     });
+    return [...map.values()].sort((a, b) => a.name.localeCompare(b.name, "fr"));
   }
 
+  // ---------- Liste des genres (ordre curaté par Hubert, voir GENRE_KEYS) ----------
+  function buildGenreList() {
+    return GENRE_KEYS.map((key) => ({ key, label: genreLabel(key) }));
+  }
+
+  // Ligne cliquable réutilisée pour les listes d'artistes/genres — même visuel que les lignes de
+  // chansons (.jb-song-item, voir renderSongRow()) pour rester cohérent avec le reste du
+  // catalogue, mais sans bouton de demande : juste un nom et, à droite, soit un chiffre (nombre
+  // de chansons de l'artiste), soit un chevron (genres, pas de compte demandé par Hubert).
+  function renderNameRow(label, rightText, onClick) {
+    const li = document.createElement("li");
+    li.className = "jb-song-item jb-song-item-clickable";
+    li.innerHTML = `
+      <div class="jb-song-info">
+        <div class="jb-song-title">${escapeHtml(label)}</div>
+      </div>
+      <span class="jb-song-right"><span class="jb-song-votes">${escapeHtml(rightText)}</span></span>`;
+    li.addEventListener("click", onClick);
+    return li;
+  }
+
+  // RETOUR : redescend d'UN niveau à la fois (artiste -> liste d'artistes, genre -> liste de
+  // genres), plutôt que de toujours ramener directement à l'accueil comme avant — nécessaire
+  // maintenant que ces listes ont deux niveaux de profondeur. Une recherche texte en cours est
+  // juste effacée, sans toucher à catalogView : on retombe alors exactement sur la vue où on
+  // était avant de taper.
   document.getElementById("jb-back-btn").addEventListener("click", () => {
-    catalogView = null;
+    const hadSearch = !!document.getElementById("jb-search-input").value;
     document.getElementById("jb-search-input").value = "";
+    if (!hadSearch) {
+      if (catalogView && catalogView.type === "artist") {
+        catalogView = { type: "artist-list" };
+      } else if (catalogView && catalogView.type === "genre-songs") {
+        catalogView = { type: "genre-list" };
+      } else {
+        catalogView = null;
+      }
+    }
     renderCatalog();
     document.querySelector(".jb-catalog").scrollIntoView({ behavior: "smooth", block: "nearest" });
   });
@@ -3178,11 +3131,8 @@
         const id = row.dataset.req;
         const song = catalogSongs.find((s) => s.id === id);
         if (!song) return;
-        if (requestsRemaining() <= 0) {
-          showToast(t("requests_limit_reached"));
-          pulseAttention(document.getElementById("jb-request-remaining"));
-          return;
-        }
+        // Plus de limite au nombre de demandes (demande explicite de Hubert) : on demande
+        // toujours directement, sans aucune vérification de plafond.
         requestSong(song);
       });
     });
@@ -3202,15 +3152,18 @@
   });
 
   // Nombre de chansons actuellement affichées dans la liste où le client s'apprête à choisir
-  // (recherche, liste d'un artiste depuis Top Pick, ou liste artiste+style) — sert à décider,
-  // une fois la demande confirmée, si on le ramène à l'écran principal ou si on le laisse
-  // choisir une autre chanson dans la même liste.
+  // (recherche, liste complète, artiste, ou genre) — sert à décider, une fois la demande
+  // confirmée, si on le ramène à l'écran principal ou si on le laisse choisir une autre chanson
+  // dans la même liste.
   function currentResultsCount() {
     const search = norm(document.getElementById("jb-search-input").value);
     if (search) {
       return catalogSongs.filter((s) => norm(s.title).includes(search) || norm(s.artist).includes(search)).length;
     }
     if (!catalogView) return 0;
+    if (catalogView.type === "all-songs") {
+      return catalogSongs.length;
+    }
     if (catalogView.type === "artist") {
       const wanted = norm(catalogView.name);
       return catalogSongs.filter((s) => norm(s.artist) === wanted).length;
@@ -3253,13 +3206,6 @@
     requestedRounds[song.id] = tokenAtRequest;
     saveRequestedToStorage();
     showToast(t("request_added_toast"));
-    const remainingNow = requestsRemaining();
-    if (remainingNow <= 0 && !requestResetAt) {
-      requestResetAt = Date.now() + REQUEST_RESET_MS;
-      saveRequestResetToStorage();
-    }
-    updateRequestBadge();
-    pulseAttention(document.getElementById("jb-request-remaining"));
     // Illumine la ligne elle-même — même animation que la sélection de la chanson démo dans le
     // tuto, demande explicite de Hubert : "je veux que ce soit la même animation d'illumination
     // que dans le tutoriel". Voir rowFlashElapsedMs()/renderSongRow() : la classe est reposée à
