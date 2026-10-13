@@ -1326,7 +1326,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-13.69";
+  const APP_BUILD = "2026-10-13.70";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -1739,82 +1739,51 @@
   }
   scheduleFitStickyHeader();
 
-  // ---------- Cadre de résultats : jamais caché par le clavier virtuel ----------
-  // Demande explicite de Hubert (captures à l'appui) : quand le clavier apparaît pour une
-  // recherche, il réduit l'espace RÉELLEMENT visible à l'écran, mais le cadre de résultats
-  // gardait sa hauteur fixe (48vh en CSS, voir .jb-catalog-list) — les unités vh ne tiennent PAS
-  // compte du clavier virtuel (surtout sur iOS Safari, où il ne redimensionne jamais la fenêtre
-  // "layout", seulement la fenêtre "visuelle") — si bien que le bas de la liste se retrouvait
-  // caché derrière le clavier plutôt que de rester entièrement visible et défilable ENTRE les
-  // deux bandes néon rouges. On mesure donc l'espace vraiment visible AU-DESSUS du clavier
-  // (window.visualViewport, qui se redimensionne lui quand le clavier apparaît/disparaît,
-  // contrairement à window.innerHeight) et on l'applique comme hauteur maximale explicite,
-  // par-dessus le 48vh CSS (qui reste le comportement par défaut sans clavier/sur ordinateur).
-  //
-  // 2e cause trouvée après coup (capture à l'appui, "ce n'est pas ce que je veux [...] la barre
-  // rouge du bas est placée au-dessus de 'myrepertoire.carrd.co — Private'") : le site tourne
-  // intégré dans une iframe D'UN AUTRE site (myrepertoire.carrd.co, voir inCrossOriginFrame
-  // plus bas) — tant qu'un champ de CETTE iframe a le focus, Safari pose alors par-dessus le
-  // clavier une petite bannière "nomDuSite — Private" (mesure de confidentialité propre aux
-  // iframes multi-origines). Cette bannière, c'est le NAVIGATEUR qui la dessine par-dessus la
-  // page, pas un élément à nous : elle n'est donc PAS déduite de window.visualViewport.height
-  // (qui ne connaît que le clavier lui-même), et le cadre continuait de s'étendre jusque
-  // derrière elle malgré le 1er correctif. On réserve donc, en plus, une marge fixe correspondant
-  // à sa hauteur habituelle — UNIQUEMENT quand un champ de recherche a le focus ET que la page
-  // est bien dans une iframe multi-origines (jamais sur grand écran, jamais en visite directe,
-  // jamais sur Android, où cette bannière n'existe pas) — pour ne gaspiller aucun espace
-  // ailleurs. Reprend sa forme normale (marge normale) dès que le clavier se referme.
-  const inCrossOriginFrame = (() => {
-    try { return window.self !== window.top; } catch (e) { return true; } // accès bloqué = bien multi-origines
+  // ---------- Cadre de résultats : jamais caché par le clavier virtuel (sur mobile) ----------
+  // Demande explicite de Hubert (captures à l'appui, flèches montrant l'emplacement EXACT voulu
+  // pour la bande rouge du bas, juste avant la 4e chanson) : quand le clavier apparaît pour une
+  // recherche, le cadre de résultats doit s'arrêter bien avant lui (et, dans l'iframe de
+  // myrepertoire.carrd.co, avant la petite bannière "site — Private" que Safari pose par-dessus),
+  // au lieu de continuer en dessous.
+  // 1re tentative ABANDONNÉE (capture à l'appui : "je sais pas ce que t'as fait mais c'est pas ce
+  // que je veux" — AUCUN changement visible malgré le correctif) : mesurer dynamiquement l'espace
+  // visible avec window.visualViewport. Cause trouvée après coup : à l'intérieur d'une iframe
+  // MULTI-ORIGINES (le cas ici), c'est la fenêtre visuelle de la page PARENTE (myrepertoire.carrd.co)
+  // qui rétrécit quand le clavier apparaît — celle de CETTE iframe ne bouge pas, ses dimensions
+  // restent celles fixées par le <iframe> du parent — et cette page parente est sur une autre
+  // origine, donc totalement inaccessible d'ici. Aucun signal fiable n'existe donc, depuis
+  // l'intérieur de l'iframe, pour mesurer l'espace réellement restant au-dessus du clavier.
+  // Solution retenue : une hauteur FIXE et prévisible pendant que le champ de recherche a le
+  // focus — la même mesure "3 chansons" déjà utilisée ailleurs pour que le cadre ne rétrécisse
+  // jamais en dessous (voir ensureCatalogListMinHeight()/catalogListMinHeight plus bas), pile
+  // l'endroit pointé par Hubert sur sa capture — plutôt que d'essayer de deviner un espace qu'on
+  // ne peut pas mesurer. Seulement sur appareil tactile (clavier virtuel plein écran) ; jamais sur
+  // ordinateur, où taper au clavier physique ne cache rien à l'écran.
+  const isTouchDevice = (() => {
+    try { return matchMedia("(pointer: coarse)").matches || "ontouchstart" in window; }
+    catch (e) { return false; }
   })();
-  const SAFARI_IFRAME_BANNER_H = 54; // hauteur habituelle de cette bannière Safari ("site — Private")
-  function fitCatalogListHeight() {
+  // N'utilise QUE la valeur déjà mise en cache par le rendu normal (jamais ensureCatalogListMinHeight()
+  // elle-même) : cette dernière remplace brièvement le contenu réel de la liste par 3 chansons de
+  // mesure, en partant du principe qu'un vrai rendu la réécrit l'instant d'après (voir ses
+  // commentaires) — vrai dans renderCatalog(), pas forcément depuis un simple évènement focus/blur.
+  function applySearchFocusHeight(focused) {
     const list = document.getElementById("jb-catalog-list");
     const resultsWrap = document.getElementById("jb-catalog-results");
     if (!list || !resultsWrap || resultsWrap.hidden) return;
-    const vv = window.visualViewport;
-    const viewportBottom = vv ? vv.height + vv.offsetTop : window.innerHeight;
-    const rect = list.getBoundingClientRect();
-    const searchInput = document.getElementById("jb-search-input");
-    const keyboardLikelyOpen = document.activeElement === searchInput;
-    const BOTTOM_MARGIN = 10 + (keyboardLikelyOpen && inCrossOriginFrame ? SAFARI_IFRAME_BANNER_H : 0);
-    const available = Math.floor(viewportBottom - rect.top - BOTTOM_MARGIN);
-    if (available <= 0) return; // mise en page pas encore stable (juste après un changement de vue) : on réessaiera
-    const MIN_HEIGHT = 90; // quelques lignes visibles au minimum, même si l'espace calculé est très restreint
-    list.style.maxHeight = `${Math.max(MIN_HEIGHT, available)}px`;
-    // Le clavier peut réduire l'espace disponible EN DESSOUS de la hauteur minimale normale (3
-    // chansons, voir ensureCatalogListMinHeight()/catalogListMinHeight plus haut) : on la
-    // plafonne alors temporairement à l'espace réellement visible, sinon min-height l'emporterait
-    // quand même sur max-height (priorité du CSS) et repousserait le cadre sous le clavier malgré
-    // tout. Remis à sa vraie valeur dès le prochain renderCatalog() (ex. nouvelle lettre tapée).
-    if (catalogListMinHeight && catalogListMinHeight > available) {
-      list.style.minHeight = `${Math.max(MIN_HEIGHT, available)}px`;
+    if (focused && isTouchDevice && catalogListMinHeight) {
+      list.style.maxHeight = `${catalogListMinHeight}px`;
+      list.style.minHeight = `${catalogListMinHeight}px`;
+      return;
     }
+    // Pas de focus (clavier refermé), pas tactile, ou hauteur pas encore mesurable : retour au
+    // comportement normal — demande explicite de Hubert, "quand le clavier se referme, la zone de
+    // sélection reprend sa forme normale".
+    list.style.maxHeight = "";
+    list.style.minHeight = catalogListMinHeight ? `${catalogListMinHeight}px` : "";
   }
-  let catalogListHeightRaf = null;
-  function scheduleFitCatalogListHeight() {
-    if (catalogListHeightRaf) cancelAnimationFrame(catalogListHeightRaf);
-    catalogListHeightRaf = requestAnimationFrame(() => {
-      catalogListHeightRaf = requestAnimationFrame(fitCatalogListHeight);
-    });
-  }
-  if (window.visualViewport) {
-    // "resize" couvre la plupart des cas (clavier qui apparaît/disparaît) ; "scroll" en plus pour
-    // Safari iOS, qui décale parfois la fenêtre visuelle (offsetTop) sans déclencher "resize" seul.
-    window.visualViewport.addEventListener("resize", scheduleFitCatalogListHeight);
-    window.visualViewport.addEventListener("scroll", scheduleFitCatalogListHeight);
-  }
-  window.addEventListener("resize", scheduleFitCatalogListHeight);
-  window.addEventListener("orientationchange", scheduleFitCatalogListHeight);
-  // L'apparition/disparition du clavier est animée (surtout iOS) : quelques essais échelonnés
-  // plutôt qu'un seul, pour rattraper la taille finale une fois l'animation terminée, quel que
-  // soit l'appareil — même principe que scheduleFitTopBar()/scheduleFitStickyHeader() plus haut.
-  document.getElementById("jb-search-input").addEventListener("focus", () => {
-    [0, 150, 350, 600].forEach((ms) => setTimeout(scheduleFitCatalogListHeight, ms));
-  });
-  document.getElementById("jb-search-input").addEventListener("blur", () => {
-    [0, 150, 350].forEach((ms) => setTimeout(scheduleFitCatalogListHeight, ms));
-  });
+  document.getElementById("jb-search-input").addEventListener("focus", () => applySearchFocusHeight(true));
+  document.getElementById("jb-search-input").addEventListener("blur", () => applySearchFocusHeight(false));
 
   applyStaticTranslations();
   document.querySelectorAll(".jb-lang-btn[data-lang]").forEach((btn) => {
@@ -3074,7 +3043,12 @@
     list.dataset.renderKey = viewKey;
     list.scrollTop = prevScrollTop;
 
-    scheduleFitCatalogListHeight();
+    // Réapplique la hauteur fixe "clavier ouvert" si le champ de recherche a le focus (ex. 1re
+    // lettre tapée alors que catalogListMinHeight vient tout juste d'être mesurée, ou tout autre
+    // ré-affichage du catalogue — ex. instantané "votes" — pendant que le client est en train de
+    // taper) : renderCatalog() vient de remettre min-height à sa valeur normale juste au-dessus,
+    // il faut la recontraindre si le clavier est toujours ouvert.
+    applySearchFocusHeight(document.activeElement === document.getElementById("jb-search-input"));
   }
 
   // ---------- Écran d'accueil : les 3 boutons "Chercher par..." ----------
