@@ -1326,7 +1326,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-13.70";
+  const APP_BUILD = "2026-10-13.71";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -2025,6 +2025,20 @@
   let palmaresOrderKeys = [];
   let palmaresAnimating = false;
   let palmaresAnimTimer = null;
+  // Clés (id de chanson) dont le VRAI titre, dans le palmarès, doit rester invisible (visibility,
+  // garde sa place dans la mise en page) pendant qu'un clone anime son vol depuis le catalogue —
+  // voir flyTitleToPalmares() plus bas. Un Set consulté à CHAQUE rendu plutôt qu'une mutation de
+  // style posée une seule fois "à la main" sur l'élément : renderPalmares() peut être redéclenché
+  // N'IMPORTE QUAND pendant le vol (ex. UN AUTRE client qui demande une chanson ailleurs
+  // redéclenche un instantané "votes" global, fréquent en plein spectacle), qui recrée alors
+  // ENTIÈREMENT cette ligne (voir el.innerHTML plus bas) — un style posé directement sur l'ancien
+  // élément se retrouve alors orphelin (élément plus dans le DOM), sans jamais avoir réellement
+  // caché/décaché le NOUVEL élément recréé : c'est ce qui laissait parfois le titre durablement
+  // vide, signalé par Hubert (capture à l'appui) — "quand j'entre une nouvelle chanson dans le
+  // palmarès, celle-ci contient des problèmes d'affichage [...] on ne voit pas le titre". En
+  // consultant ce Set à chaque rendu, l'état "caché pendant le vol" survit correctement à autant
+  // de re-rendus que nécessaire, quelle que soit la ligne DOM réellement affichée à ce moment-là.
+  const flyingTitleKeys = new Set();
   function isInCooldown(v) {
     return !!(v && v.cooldownUntil && v.cooldownUntil > Date.now());
   }
@@ -2172,7 +2186,11 @@
       const toStyle = getComputedStyle(targetTitleEl);
       // Le vrai titre de destination reste cliquable et invisible (visibility, pas display :
       // garde sa place dans la mise en page du palmarès) le temps du vol, pour que seul le clone
-      // semble "arriver" à cet endroit plutôt que de voir les deux superposés.
+      // semble "arriver" à cet endroit plutôt que de voir les deux superposés. Posé ICI tout de
+      // suite pour un effet immédiat (avant le prochain rendu), ET enregistré dans
+      // flyingTitleKeys (voir plus haut) pour que renderPalmares() le reconduise lui-même si la
+      // ligne est recréée pendant le vol (ex. un autre client qui demande une chanson ailleurs).
+      flyingTitleKeys.add(key);
       targetTitleEl.style.visibility = "hidden";
       requestAnimationFrame(() => {
         clone.style.transition =
@@ -2183,7 +2201,12 @@
         clone.style.transform = `translate(${endRect.left - startRect.left}px, ${endRect.top - startRect.top}px)`;
       });
       setTimeout(() => {
-        targetTitleEl.style.visibility = "";
+        // Retire la clé PUIS redessine (plutôt que de rebasculer "à la main" la visibilité du
+        // targetTitleEl capturé plus haut) : si la ligne a été recréée entre-temps, c'est l'élément
+        // RÉELLEMENT affiché maintenant qui doit redevenir visible, pas forcément celui-ci, qui
+        // peut déjà être orphelin — voir le commentaire sur flyingTitleKeys plus haut.
+        flyingTitleKeys.delete(key);
+        renderPalmares();
         clone.remove();
       }, 520); // durée du vol (0.5s) + petite marge, même logique que palmaresAnimTimer plus haut
     }
@@ -2783,7 +2806,7 @@
       el.innerHTML = `
         <span class="jb-slot-rank">${i + 1}</span>
         <span class="jb-slot-info">
-          <span class="jb-slot-title">${escapeHtml(v.title)}</span>
+          <span class="jb-slot-title"${flyingTitleKeys.has(id) ? ' style="visibility:hidden"' : ""}>${escapeHtml(v.title)}</span>
           ${v.artist ? `<span class="jb-slot-artist">${escapeHtml(v.artist)}</span>` : ""}
           ${renderVotersLine(v.voters)}
         </span>
