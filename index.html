@@ -368,10 +368,6 @@
      formulaire de connexion restait donc affiché, empilé au-dessus du panneau admin. */
   #jb-app .jb-login[hidden] { display: none; }
   #jb-app .jb-login h2 { text-align: center; margin-bottom: 6px; }
-  /* Voir #jb-login-restoring en HTML : même gabarit que .jb-login ci-dessus pour ne pas faire
-     sauter la mise en page pendant le court instant où ce message remplace le formulaire. */
-  #jb-app .jb-login-restoring { max-width: 360px; margin: 60px auto; text-align: center; color: var(--text-dim); font-size: 0.95rem; }
-  #jb-app .jb-login-restoring[hidden] { display: none; }
   #jb-app .jb-back-link { color: var(--text-dim); font-size: 0.85rem; margin-top: 8px; }
   #jb-app .jb-error { color: var(--danger); font-size: 0.85rem; }
 
@@ -1048,14 +1044,6 @@
       <a href="#" class="jb-back-link">← Retour au site public</a>
     </form>
 
-    <!-- Affiché à la place du formulaire de connexion UNIQUEMENT pendant le court rechargement de
-         page qui suit une connexion réussie (voir le "location.reload()" du formulaire plus haut,
-         et le drapeau "jb_awaiting_login_restore" juste avant onAuthStateChanged() en JS) — évite
-         que le formulaire de connexion se réaffiche brièvement avant de rebasculer sur le tableau
-         de bord, ce qui donnait l'impression au client que le panneau "entre, ressort, puis entre
-         à nouveau" (bogue signalé par Hubert, vidéo à l'appui). -->
-    <p id="jb-login-restoring" class="jb-login-restoring" hidden>Connexion…</p>
-
     <div id="jb-dashboard" class="jb-dashboard" hidden>
       <div class="jb-admin-topbar">
         <h2>🎛️ Panneau admin</h2>
@@ -1324,7 +1312,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-13.64";
+  const APP_BUILD = "2026-10-13.65";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -3393,36 +3381,8 @@
   // ============================================================
   //  MODE SPECTACLE (ADMIN)
   // ============================================================
-  // Bogue signalé par Hubert (vidéo à l'appui) : juste après s'être connecté, son panneau admin
-  // semblait "entrer, ressortir, puis entrer à nouveau". Cause : le formulaire de connexion
-  // (#jb-login, visible PAR DÉFAUT en HTML) force un rechargement complet de la page juste après
-  // une connexion réussie — uniquement pour que Safari/iOS propose d'enregistrer le mot de passe,
-  // voir le commentaire sur "location.reload()" plus bas — et ce rechargement réaffichait donc
-  // brièvement le formulaire de connexion (son état par défaut) le temps que Firebase restaure la
-  // session existante et qu'onAuthStateChanged() ci-dessous confirme qu'on est bien connecté.
-  // On évite ça : juste avant ce rechargement précis, on pose un drapeau (sessionStorage, donc
-  // propre à cet onglet et qui disparaît tout seul) ; s'il est présent au tout prochain chargement
-  // de la page, on cache le formulaire de connexion dès le départ (avant même le premier affichage
-  // — voir plus bas, ce bloc s'exécute avant que #jb-admin ne soit révélé par checkRoute()) et on
-  // montre un simple message "Connexion…" à la place, le temps qu'onAuthStateChanged() tranche.
-  let awaitingLoginRestore = false;
-  try {
-    awaitingLoginRestore = window.sessionStorage.getItem("jb_awaiting_login_restore") === "1";
-  } catch (e) {
-    // Navigation privée/sessionStorage bloqué : tant pis, on retombe sur l'ancien comportement
-    // (le formulaire peut clignoter brièvement) plutôt que de bloquer quoi que ce soit.
-  }
-  if (awaitingLoginRestore) {
-    document.getElementById("jb-login").hidden = true;
-    document.getElementById("jb-login-restoring").hidden = false;
-  }
   onAuthStateChanged(auth, (user) => {
     isAdmin = !!user;
-    // Quoi qu'il arrive (succès ou non), ce drapeau ne doit plus jamais s'appliquer après cette
-    // toute première confirmation — sinon une déconnexion/reconnexion future, ou même juste un
-    // nouvel onglet, pourrait se retrouver coincé sur "Connexion…" indéfiniment.
-    try { window.sessionStorage.removeItem("jb_awaiting_login_restore"); } catch (e) {}
-    document.getElementById("jb-login-restoring").hidden = true;
     document.getElementById("jb-login").hidden = isAdmin;
     document.getElementById("jb-dashboard").hidden = !isAdmin;
     if (isAdmin) {
@@ -3452,18 +3412,12 @@
     try {
       await signInWithEmailAndPassword(auth, email, pass);
       await setDoc(doc(db, "config", "settings"), { live: true, loginAt: serverTimestamp() }, { merge: true });
-      // Recharge la page tout de suite après une connexion réussie. Ça peut sembler inutile
-      // (onAuthStateChanged bascule déjà l'affichage vers le tableau de bord sans ça), mais
-      // Safari/iOS n'offre à peu près jamais d'enregistrer un mot de passe si la page ne navigue
-      // JAMAIS après l'envoi du formulaire — c'est une limite connue de Safari avec les applis
-      // "une seule page" comme celle-ci. La session Firebase reste connectée après le rechargement
-      // (elle est sauvegardée automatiquement), donc l'utilisateur atterrit directement sur le
-      // tableau de bord, comme si de rien n'était — sauf que, cette fois, Safari propose bel et
-      // bien d'enregistrer le mot de passe.
-      // Voir "awaitingLoginRestore" plus haut : évite que ce rechargement fasse clignoter le
-      // formulaire de connexion avant de rebasculer sur le tableau de bord.
-      try { window.sessionStorage.setItem("jb_awaiting_login_restore", "1"); } catch (e2) {}
-      location.reload();
+      // Pas de location.reload() ici (il y en a déjà eu un, retiré à la demande de Hubert : même si
+      // la raison d'être de ce rechargement était légitime — inciter Safari/iOS à proposer
+      // d'enregistrer le mot de passe — le flash d'écran noir que ça causait pendant le rechargement
+      // était jugé plus gênant que l'utilité d'enregistrer le mot de passe. onAuthStateChanged()
+      // ci-dessus bascule déjà l'affichage vers le tableau de bord tout seul, sans aucun
+      // rechargement, dès que signInWithEmailAndPassword() ci-dessus résout.
     } catch (e) {
       errEl.textContent = "Courriel ou mot de passe incorrect.";
       errEl.hidden = false;
