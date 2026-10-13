@@ -1326,7 +1326,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-13.67";
+  const APP_BUILD = "2026-10-13.68";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -1738,6 +1738,63 @@
     document.fonts.ready.then(scheduleFitStickyHeader).catch(() => {});
   }
   scheduleFitStickyHeader();
+
+  // ---------- Cadre de résultats : jamais caché par le clavier virtuel ----------
+  // Demande explicite de Hubert (captures à l'appui) : quand le clavier apparaît pour une
+  // recherche, il réduit l'espace RÉELLEMENT visible à l'écran, mais le cadre de résultats
+  // gardait sa hauteur fixe (48vh en CSS, voir .jb-catalog-list) — les unités vh ne tiennent PAS
+  // compte du clavier virtuel (surtout sur iOS Safari, où il ne redimensionne jamais la fenêtre
+  // "layout", seulement la fenêtre "visuelle") — si bien que le bas de la liste se retrouvait
+  // caché derrière le clavier plutôt que de rester entièrement visible et défilable ENTRE les
+  // deux bandes néon rouges. On mesure donc l'espace vraiment visible AU-DESSUS du clavier
+  // (window.visualViewport, qui se redimensionne lui quand le clavier apparaît/disparaît,
+  // contrairement à window.innerHeight) et on l'applique comme hauteur maximale explicite,
+  // par-dessus le 48vh CSS (qui reste le comportement par défaut sans clavier/sur ordinateur).
+  function fitCatalogListHeight() {
+    const list = document.getElementById("jb-catalog-list");
+    const resultsWrap = document.getElementById("jb-catalog-results");
+    if (!list || !resultsWrap || resultsWrap.hidden) return;
+    const vv = window.visualViewport;
+    const viewportBottom = vv ? vv.height + vv.offsetTop : window.innerHeight;
+    const rect = list.getBoundingClientRect();
+    const BOTTOM_MARGIN = 10; // petite marge pour ne pas coller la bordure basse au clavier/bord d'écran
+    const available = Math.floor(viewportBottom - rect.top - BOTTOM_MARGIN);
+    if (available <= 0) return; // mise en page pas encore stable (juste après un changement de vue) : on réessaiera
+    const MIN_HEIGHT = 90; // quelques lignes visibles au minimum, même si l'espace calculé est très restreint
+    list.style.maxHeight = `${Math.max(MIN_HEIGHT, available)}px`;
+    // Le clavier peut réduire l'espace disponible EN DESSOUS de la hauteur minimale normale (3
+    // chansons, voir ensureCatalogListMinHeight()/catalogListMinHeight plus haut) : on la
+    // plafonne alors temporairement à l'espace réellement visible, sinon min-height l'emporterait
+    // quand même sur max-height (priorité du CSS) et repousserait le cadre sous le clavier malgré
+    // tout. Remis à sa vraie valeur dès le prochain renderCatalog() (ex. nouvelle lettre tapée).
+    if (catalogListMinHeight && catalogListMinHeight > available) {
+      list.style.minHeight = `${Math.max(MIN_HEIGHT, available)}px`;
+    }
+  }
+  let catalogListHeightRaf = null;
+  function scheduleFitCatalogListHeight() {
+    if (catalogListHeightRaf) cancelAnimationFrame(catalogListHeightRaf);
+    catalogListHeightRaf = requestAnimationFrame(() => {
+      catalogListHeightRaf = requestAnimationFrame(fitCatalogListHeight);
+    });
+  }
+  if (window.visualViewport) {
+    // "resize" couvre la plupart des cas (clavier qui apparaît/disparaît) ; "scroll" en plus pour
+    // Safari iOS, qui décale parfois la fenêtre visuelle (offsetTop) sans déclencher "resize" seul.
+    window.visualViewport.addEventListener("resize", scheduleFitCatalogListHeight);
+    window.visualViewport.addEventListener("scroll", scheduleFitCatalogListHeight);
+  }
+  window.addEventListener("resize", scheduleFitCatalogListHeight);
+  window.addEventListener("orientationchange", scheduleFitCatalogListHeight);
+  // L'apparition/disparition du clavier est animée (surtout iOS) : quelques essais échelonnés
+  // plutôt qu'un seul, pour rattraper la taille finale une fois l'animation terminée, quel que
+  // soit l'appareil — même principe que scheduleFitTopBar()/scheduleFitStickyHeader() plus haut.
+  document.getElementById("jb-search-input").addEventListener("focus", () => {
+    [0, 150, 350, 600].forEach((ms) => setTimeout(scheduleFitCatalogListHeight, ms));
+  });
+  document.getElementById("jb-search-input").addEventListener("blur", () => {
+    [0, 150, 350].forEach((ms) => setTimeout(scheduleFitCatalogListHeight, ms));
+  });
 
   applyStaticTranslations();
   document.querySelectorAll(".jb-lang-btn[data-lang]").forEach((btn) => {
@@ -2996,6 +3053,8 @@
     // défilement qu'avant), sauf qu'il n'est plus jamais remis à zéro tout seul.
     list.dataset.renderKey = viewKey;
     list.scrollTop = prevScrollTop;
+
+    scheduleFitCatalogListHeight();
   }
 
   // ---------- Écran d'accueil : les 3 boutons "Chercher par..." ----------
