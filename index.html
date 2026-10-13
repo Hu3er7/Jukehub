@@ -135,13 +135,16 @@
   #jb-app .jb-palmares-heading h2 {
     margin-bottom: 0; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   }
+  /* Texte brut, en gras, sans pilule/cadre — demande explicite de Hubert (maquette Photoshop à
+     l'appui, comparant les 2 rendus) : il préfère ce style au badge-pilule précédent
+     (.jb-request-remaining). */
   #jb-app .jb-vote-remaining {
-    flex-shrink: 0; font-size: 0.82rem; font-weight: 700; color: var(--accent2); background: var(--card);
-    border: 1px solid var(--border); border-radius: 999px; padding: 5px 12px; white-space: nowrap;
+    flex-shrink: 0; font-weight: 800; font-size: 1rem; letter-spacing: 0.3px;
+    text-transform: uppercase; color: var(--accent2); white-space: nowrap;
   }
   @media (max-width: 420px) {
     #jb-app .jb-palmares-heading h2 { font-size: 1rem; }
-    #jb-app .jb-vote-remaining { font-size: 0.72rem; padding: 4px 9px; }
+    #jb-app .jb-vote-remaining { font-size: 0.8rem; }
   }
 
   /* Rappel visuel (badges "Votes" / "Demandes" DANS LA PAGE PRINCIPALE — pas seulement le tuto,
@@ -986,7 +989,7 @@
     <section class="jb-palmares">
       <div class="jb-palmares-heading">
         <h2 id="jb-palmares-title">Palmarès</h2>
-        <div id="jb-vote-remaining" class="jb-vote-remaining">🗳️ Votes restants : 6</div>
+        <div id="jb-vote-remaining" class="jb-vote-remaining">6 VOTES RESTANTS</div>
       </div>
       <div id="jb-palmares-list" class="jb-palmares-grid"></div>
       <p id="jb-palmares-empty" class="jb-empty" hidden>Aucune demande pour l'instant — sois le premier à voter !</p>
@@ -1337,7 +1340,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-13.72";
+  const APP_BUILD = "2026-10-13.73";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -1417,7 +1420,7 @@
       page_title: "Mon Répertoire",
       palmares_title: "Palmarès",
       palmares_empty: "Aucune demande pour l'instant — sois le premier à voter !",
-      vote_remaining: (n) => `🗳️ Votes : ${n}`,
+      vote_remaining: (n) => `${n} VOTE${n === 1 ? "" : "S"} RESTANT${n === 1 ? "" : "S"}`,
       vote_used_up: "Tu as utilisé tes 6 votes. Attends qu'une chanson sur laquelle tu as voté soit jouée pour en récupérer !",
       vote_added_up: "👍 Vote ajouté !",
       vote_added_down: "👎 Vote retiré !",
@@ -1472,7 +1475,7 @@
       page_title: "My Repertoire",
       palmares_title: "Billboard",
       palmares_empty: "No requests yet — be the first to vote!",
-      vote_remaining: (n) => `🗳️ Votes : ${n}`,
+      vote_remaining: (n) => `${n} VOTE${n === 1 ? "" : "S"} REMAINING`,
       vote_used_up: "You've used all 6 of your votes. Wait until a song you voted on gets played to get more!",
       vote_added_up: "👍 Vote added!",
       vote_added_down: "👎 Vote removed!",
