@@ -137,14 +137,19 @@
   }
   /* Texte brut, en gras, sans pilule/cadre — demande explicite de Hubert (maquette Photoshop à
      l'appui, comparant les 2 rendus) : il préfère ce style au badge-pilule précédent
-     (.jb-request-remaining). */
+     (.jb-request-remaining). Chiffre et mot en 2 couleurs distinctes (demande explicite de
+     Hubert, capture à l'appui) : le CHIFFRE reste dans le même jaune/accent que le reste des
+     compteurs (var(--accent2)), le MOT ("VOTES RESTANTS") passe en rose (var(--text), déjà la
+     couleur rose par défaut du texte côté public — voir le bloc #jb-public plus bas). */
   #jb-app .jb-vote-remaining {
-    flex-shrink: 0; font-weight: 800; font-size: 1rem; letter-spacing: 0.3px;
-    text-transform: uppercase; color: var(--accent2); white-space: nowrap;
+    flex-shrink: 0; font-weight: 800; font-size: 1.3rem; letter-spacing: 0.3px;
+    text-transform: uppercase; white-space: nowrap;
   }
+  #jb-app .jb-vote-remaining-num { color: var(--accent2); }
+  #jb-app .jb-vote-remaining-label { color: var(--text); }
   @media (max-width: 420px) {
     #jb-app .jb-palmares-heading h2 { font-size: 1rem; }
-    #jb-app .jb-vote-remaining { font-size: 0.8rem; }
+    #jb-app .jb-vote-remaining { font-size: 1.05rem; }
   }
 
   /* Rappel visuel (badges "Votes" / "Demandes" DANS LA PAGE PRINCIPALE — pas seulement le tuto,
@@ -989,7 +994,7 @@
     <section class="jb-palmares">
       <div class="jb-palmares-heading">
         <h2 id="jb-palmares-title">Palmarès</h2>
-        <div id="jb-vote-remaining" class="jb-vote-remaining">6 VOTES RESTANTS</div>
+        <div id="jb-vote-remaining" class="jb-vote-remaining"><span class="jb-vote-remaining-num">6</span> <span class="jb-vote-remaining-label">VOTES RESTANTS</span></div>
       </div>
       <div id="jb-palmares-list" class="jb-palmares-grid"></div>
       <p id="jb-palmares-empty" class="jb-empty" hidden>Aucune demande pour l'instant — sois le premier à voter !</p>
@@ -1340,7 +1345,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-13.73";
+  const APP_BUILD = "2026-10-13.74";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -1420,7 +1425,9 @@
       page_title: "Mon Répertoire",
       palmares_title: "Palmarès",
       palmares_empty: "Aucune demande pour l'instant — sois le premier à voter !",
-      vote_remaining: (n) => `${n} VOTE${n === 1 ? "" : "S"} RESTANT${n === 1 ? "" : "S"}`,
+      // Séparé en 2 (plutôt qu'un seul gabarit de phrase) pour permettre 2 couleurs distinctes
+      // sur le chiffre et le mot — voir updateVoteBadge()/.jb-vote-remaining-num/-label.
+      vote_remaining_label: (n) => `VOTE${n === 1 ? "" : "S"} RESTANT${n === 1 ? "" : "S"}`,
       vote_used_up: "Tu as utilisé tes 6 votes. Attends qu'une chanson sur laquelle tu as voté soit jouée pour en récupérer !",
       vote_added_up: "👍 Vote ajouté !",
       vote_added_down: "👎 Vote retiré !",
@@ -1475,7 +1482,7 @@
       page_title: "My Repertoire",
       palmares_title: "Billboard",
       palmares_empty: "No requests yet — be the first to vote!",
-      vote_remaining: (n) => `${n} VOTE${n === 1 ? "" : "S"} REMAINING`,
+      vote_remaining_label: (n) => `VOTE${n === 1 ? "" : "S"} REMAINING`,
       vote_used_up: "You've used all 6 of your votes. Wait until a song you voted on gets played to get more!",
       vote_added_up: "👍 Vote added!",
       vote_added_down: "👎 Vote removed!",
@@ -2329,7 +2336,9 @@
     const remainingEl = document.getElementById("jb-vote-remaining");
     if (!remainingEl) return;
     const r = remaining ?? votesRemaining();
-    remainingEl.textContent = t("vote_remaining", r);
+    // 2 <span> séparés (chiffre/mot) pour que le CSS puisse leur donner chacun sa propre couleur
+    // (demande explicite de Hubert, capture à l'appui) — voir .jb-vote-remaining-num/-label.
+    remainingEl.innerHTML = `<span class="jb-vote-remaining-num">${r}</span> <span class="jb-vote-remaining-label">${t("vote_remaining_label", r)}</span>`;
   }
   // Remplace boostSong() : delta = +1 (flèche du haut) ou -1 (flèche du bas). N'importe quelle
   // combinaison/distribution de clics haut/bas, sur n'importe quelle(s) chanson(s), est permise —
