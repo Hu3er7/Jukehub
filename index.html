@@ -135,17 +135,17 @@
   #jb-app .jb-palmares-heading h2 {
     margin-bottom: 0; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   }
-  #jb-app .jb-boost-remaining {
+  #jb-app .jb-vote-remaining {
     flex-shrink: 0; font-size: 0.82rem; font-weight: 700; color: var(--accent2); background: var(--card);
     border: 1px solid var(--border); border-radius: 999px; padding: 5px 12px; white-space: nowrap;
   }
   @media (max-width: 420px) {
     #jb-app .jb-palmares-heading h2 { font-size: 1rem; }
-    #jb-app .jb-boost-remaining { font-size: 0.72rem; padding: 4px 9px; }
+    #jb-app .jb-vote-remaining { font-size: 0.72rem; padding: 4px 9px; }
   }
 
-  /* Rappel visuel (badges "Boosts" / "Demandes" DANS LA PAGE PRINCIPALE — pas seulement le tuto,
-     voir pulseAttention() plus bas dans le JS, appelée depuis les VRAIES boostSong()/requestSong())
+  /* Rappel visuel (badges "Votes" / "Demandes" DANS LA PAGE PRINCIPALE — pas seulement le tuto,
+     voir pulseAttention() plus bas dans le JS, appelée depuis les VRAIES castVote()/requestSong())
      : gonfle-dégonfle + s'illumine-s'éteint UNE SEULE FOIS en blanc chaud, pour attirer l'œil du
      client sur son compteur juste après qu'il ait changé — demande explicite de Hubert : "je ne
      veux qu'un seul flash" (pas 2 pulsations) et "je veux que ça reste blanc chaud" (pas la couleur
@@ -193,7 +193,7 @@
   /* Pendant le glissement, la chanson qui bouge passe visuellement par-dessus les autres */
   #jb-app .jb-slot.jb-slot-moving { z-index: 5; box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45); }
   /* Verrouillage pendant l'animation de réordonnancement, pour éviter un mauvais clic */
-  #jb-app .jb-palmares-grid.jb-animating .jb-slot-boost { pointer-events: none; opacity: 0.55; }
+  #jb-app .jb-palmares-grid.jb-animating .jb-slot-vote-group { pointer-events: none; opacity: 0.55; }
   #jb-app .jb-slot-rank {
     font-weight: 800; font-size: 1.15rem; color: var(--text-dim); width: 26px;
     flex-shrink: 0; text-align: center;
@@ -228,12 +228,22 @@
     display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
   }
   #jb-app .jb-slot-placeholder { color: var(--text-dim); }
-  #jb-app .jb-slot-boost {
-    flex-shrink: 0; margin-left: auto; background: var(--card2); border: 1px solid var(--accent);
-    color: var(--accent2); font-weight: 700; font-size: 0.8rem; line-height: 1; white-space: nowrap;
-    padding: 7px 12px; border-radius: 999px; cursor: pointer;
+  /* Groupe haut/bas (flèche rouge, compteur, flèche sarcelle) qui remplace le bouton Boost unique
+     — voir la maquette Photoshop fournie par Hubert : système de vote bidirectionnel. */
+  #jb-app .jb-slot-vote-group {
+    flex-shrink: 0; margin-left: auto; display: flex; align-items: center; gap: 5px;
   }
-  #jb-app .jb-slot-boost:active { transform: scale(0.96); }
+  #jb-app .jb-slot-vote-btn {
+    flex-shrink: 0; width: 26px; height: 26px; border-radius: 999px; border: none; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; padding: 0;
+    font-size: 0.85rem; line-height: 1; color: #fff; font-weight: 800;
+  }
+  #jb-app .jb-slot-vote-btn:active { transform: scale(0.92); }
+  #jb-app .jb-slot-vote-up { background: #e0314d; }
+  #jb-app .jb-slot-vote-down { background: #13b0a5; }
+  /* Le chiffre entre les deux flèches réutilise .jb-slot-votes/.jb-song-votes (même style déjà
+     agrandi/illuminé que Hubert a demandé — voir plus haut) plutôt qu'une classe séparée : pas de
+     second chiffre redondant à côté. */
   @media (max-width: 420px) {
     #jb-app .jb-slot { gap: 6px; padding: 8px 1px; }
     #jb-app .jb-slot-rank { width: 20px; font-size: 1rem; }
@@ -241,7 +251,8 @@
     #jb-app .jb-slot-title { font-size: 0.82rem; }
     #jb-app .jb-slot-artist { font-size: 0.7rem; }
     #jb-app .jb-slot-voters { font-size: 0.66rem; }
-    #jb-app .jb-slot-boost { font-size: 0.72rem; padding: 6px 9px; }
+    #jb-app .jb-slot-vote-group { gap: 4px; }
+    #jb-app .jb-slot-vote-btn { width: 22px; height: 22px; font-size: 0.74rem; }
   }
 
   /* Catalogue */
@@ -453,11 +464,11 @@
      compact pour tenir dans une ligne de chanson. */
   #jb-app .jb-song-request-badge { font-size: 0.74rem; padding: 5px 10px; }
   /* Regroupe le compteur de demandes (nombre brut, sans le mot "Demande" — voir
-     .jb-song-request-badge ci-dessus pour la version avec mot) et le bouton Boost à droite
-     d'une ligne de palmarès (voir renderPalmares()) — remplace l'ancienne colonne de votes
+     .jb-song-request-badge ci-dessus pour la version avec mot) et le groupe de vote haut/bas à
+     droite d'une ligne de palmarès (voir renderPalmares()) — remplace l'ancienne colonne de votes
      séparée à gauche. */
   #jb-app .jb-slot-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; margin-left: auto; }
-  #jb-app .jb-slot-right .jb-slot-boost { margin-left: 0; }
+  #jb-app .jb-slot-right .jb-slot-vote-group { margin-left: 0; }
   /* Même principe que .jb-slot-right ci-dessus, mais pour une ligne du vrai répertoire de
      chansons (renderSongRow()) : le chiffre de demandes reste TOUJOURS un élément à part,
      collé à gauche du badge "Demande" (ou du bouton Boost une fois la chanson demandée) —
@@ -682,10 +693,10 @@
     box-shadow: 0 0 14px rgba(24, 241, 255, 0.35);
   }
 
-  #jb-public .jb-slot-boost,
+  #jb-public .jb-slot-vote-btn,
   #jb-public .jb-btn-request,
   #jb-public .jb-request-remaining,
-  #jb-public .jb-boost-remaining,
+  #jb-public .jb-vote-remaining,
   #jb-public .jb-mode-btn,
   #jb-public .jb-back-btn,
   #jb-public .jb-name-prompt-skip-btn {
@@ -811,7 +822,7 @@
   #jb-public .jb-mode-btn:active { border-color: var(--accent); }
 
   /* Ligne du catalogue "déjà demandée" : même design que sa ligne du palmarès plus bas
-     (.jb-slot-rank/.jb-song-votes/.jb-slot-boost déjà partagés — voir renderSongRow()) — seul le
+     (.jb-slot-rank/.jb-song-votes/.jb-slot-vote-group déjà partagés — voir renderSongRow()) — seul le
      titre est assombri ici (l'artiste l'était déjà par défaut), pour montrer que la chanson est
      "partie" rejoindre le palmarès : elle, garde sa couleur normale là-bas. Demande explicite de
      Hubert, captures/vidéo à l'appui : "copier le design du palmarès [...] la chanson est
@@ -975,7 +986,7 @@
     <section class="jb-palmares">
       <div class="jb-palmares-heading">
         <h2 id="jb-palmares-title">Palmarès</h2>
-        <div id="jb-boost-remaining" class="jb-boost-remaining">🚀 Boosts restants : 3</div>
+        <div id="jb-vote-remaining" class="jb-vote-remaining">🗳️ Votes restants : 6</div>
       </div>
       <div id="jb-palmares-list" class="jb-palmares-grid"></div>
       <p id="jb-palmares-empty" class="jb-empty" hidden>Aucune demande pour l'instant — sois le premier à voter !</p>
@@ -1326,7 +1337,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-13.71";
+  const APP_BUILD = "2026-10-13.72";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -1406,12 +1417,13 @@
       page_title: "Mon Répertoire",
       palmares_title: "Palmarès",
       palmares_empty: "Aucune demande pour l'instant — sois le premier à voter !",
-      boost_remaining: (n) => `🚀 Boosts : ${n}`,
-      boost_remaining_countdown: (time) => `🚀 Boosts : ${time}`,
-      boost_used_up: "Tu as utilisé tes 3 boosts. Patiente 2 minutes (ou attends qu'une de tes chansons boostées joue) pour en récupérer !",
-      boost_added: "🚀 Boost ajouté !",
-      boost_aria: "Booster cette chanson",
-      boost_btn: "Boost",
+      vote_remaining: (n) => `🗳️ Votes : ${n}`,
+      vote_used_up: "Tu as utilisé tes 6 votes. Attends qu'une chanson sur laquelle tu as voté soit jouée pour en récupérer !",
+      vote_added_up: "👍 Vote ajouté !",
+      vote_added_down: "👎 Vote retiré !",
+      vote_up_aria: "Voter pour cette chanson",
+      vote_down_aria: "Voter contre cette chanson",
+      vote_floor_reached: "Cette chanson est déjà au minimum.",
       style_title: "Chansons",
       style_title_count: (n) => `${n} Chansons`,
       artist_title_count: (n) => `${n} Artistes`,
@@ -1460,12 +1472,13 @@
       page_title: "My Repertoire",
       palmares_title: "Billboard",
       palmares_empty: "No requests yet — be the first to vote!",
-      boost_remaining: (n) => `🚀 Boosts : ${n}`,
-      boost_remaining_countdown: (time) => `🚀 Boosts : ${time}`,
-      boost_used_up: "You've used all 3 of your boosts. Wait 2 minutes (or until one of your boosted songs gets played) to get more!",
-      boost_added: "🚀 Boost added!",
-      boost_aria: "Boost this song",
-      boost_btn: "Boost",
+      vote_remaining: (n) => `🗳️ Votes : ${n}`,
+      vote_used_up: "You've used all 6 of your votes. Wait until a song you voted on gets played to get more!",
+      vote_added_up: "👍 Vote added!",
+      vote_added_down: "👎 Vote removed!",
+      vote_up_aria: "Vote up this song",
+      vote_down_aria: "Vote down this song",
+      vote_floor_reached: "This song is already at the minimum.",
       style_title: "Songs",
       style_title_count: (n) => `${n} Songs`,
       artist_title_count: (n) => `${n} Artists`,
@@ -1862,22 +1875,31 @@
   // sans rapport (décompte de cooldown chaque seconde, etc.) ne doivent PAS rallumer ces chiffres.
   let prevVoteCounts = {};
   let justIncreasedVoteIds = new Set();
+  // Même principe que justIncreasedVoteIds, mais pour les chiffres qui viennent de BAISSER (clic
+  // sur la flèche du bas) — système de vote bidirectionnel demandé par Hubert : seule la flèche
+  // sarcelle (vers le bas) doit s'illuminer dans ce cas, jamais la flèche rouge (vers le haut).
+  let justDecreasedVoteIds = new Set();
   // Ajoute la classe d'illumination (halo, voir .jb-num-glow en CSS) au chiffre de votes s'il
-  // vient tout juste d'augmenter (voir justIncreasedVoteIds ci-dessus) — utilisé dans
-  // renderPalmares()/renderSongRow().
+  // vient tout juste de changer (augmenté OU baissé — voir justIncreasedVoteIds/
+  // justDecreasedVoteIds ci-dessus) — utilisé dans renderPalmares()/renderSongRow().
   function voteIllumClass(id) {
-    return justIncreasedVoteIds.has(id) ? " jb-num-glow" : "";
+    return (justIncreasedVoteIds.has(id) || justDecreasedVoteIds.has(id)) ? " jb-num-glow" : "";
   }
-  // Même principe, mais pour le BOUTON BOOST lui-même : demande explicite de Hubert : "quand
-  // j'appuie sur un boost dans la page principale, [...] n'applique pas la même animation
-  // d'illumination que dans le tutoriel. Je veux que ce soit la même animation" — dans le tuto,
-  // boostDemoSong() fait pulser le bouton Boost (.jb-pulse-attn) à chaque boost simulé ; ce même
-  // bouton, côté VRAIE page, ne pulsait jusqu'ici jamais. Réutilise justIncreasedVoteIds (même
-  // déclencheur que le chiffre ci-dessus, déjà synchronisé avec le VRAI instantané Firestore)
-  // plutôt qu'un pulseAttention() optimiste au clic, qui se ferait écraser par le renderCatalog()
-  // manuel juste après (voir wireSongRowEvents()) avant même d'avoir pu s'afficher.
-  function boostBtnIllumClass(id) {
+  // Même principe, mais pour le BOUTON FLÈCHE VERS LE HAUT lui-même : demande explicite de
+  // Hubert : "quand j'appuie sur un boost dans la page principale, [...] n'applique pas la même
+  // animation d'illumination que dans le tutoriel. Je veux que ce soit la même animation" — dans
+  // le tuto, boostDemoSong() fait pulser le bouton Boost (.jb-pulse-attn) à chaque boost simulé ;
+  // ce même bouton, côté VRAIE page, ne pulsait jusqu'ici jamais. Réutilise justIncreasedVoteIds
+  // (même déclencheur que le chiffre ci-dessus, déjà synchronisé avec le VRAI instantané
+  // Firestore) plutôt qu'un pulseAttention() optimiste au clic, qui se ferait écraser par le
+  // renderCatalog() manuel juste après (voir wireSongRowEvents()) avant même d'avoir pu s'afficher.
+  function voteUpBtnIllumClass(id) {
     return justIncreasedVoteIds.has(id) ? " jb-pulse-attn" : "";
+  }
+  // Même idée, pour le BOUTON FLÈCHE VERS LE BAS — s'illumine uniquement quand le chiffre vient de
+  // baisser (jamais en même temps que la flèche du haut).
+  function voteDownBtnIllumClass(id) {
+    return justDecreasedVoteIds.has(id) ? " jb-pulse-attn" : "";
   }
   // Même idée, pour la LIGNE elle-même (voir requestSong() plus bas) : demande explicite de
   // Hubert : "quand j'appuie sur une chanson, [...] n'applique pas la même animation
@@ -1987,17 +2009,17 @@
   // badge "Demandes : N") a été entièrement retirée. requestedRounds (ci-dessus) reste : il sert
   // uniquement à savoir si CETTE chanson précise a déjà été demandée ce tour-ci (alreadyRequested())
   // — rien à voir avec un plafond global.
-  const MAX_BOOSTS = 3; // nombre maximum de boosts par client, par soirée
-  // Récupération : 1 boost redonné chaque minute (jusqu'au max ci-dessus), plutôt que les 3 d'un
-  // coup après 2 min (changé à la demande de Hubert).
-  const BOOST_RESET_MS = 60 * 1000;
-  const BOOST_RENEW_AMOUNT = 1;
-  // boostUsage : songId -> { count, token } — boosts actuellement "verrouillés" sur cette chanson
-  // (token = roundToken au moment du boost ; libéré automatiquement dès que la chanson est jouée).
-  let boostUsage = {};
-  // boostResetAt : horodatage (ms) auquel le client récupérera 1 boost, une fois que les 3 sont
-  // épuisés. 0 tant qu'il lui reste au moins un boost disponible.
-  let boostResetAt = 0;
+  // Système de vote bidirectionnel (remplace l'ancien système de "boost" à sens unique) : réserve
+  // partagée de 6 votes par client, par soirée — chaque clic sur une flèche (haut OU bas), dans
+  // n'importe quelle combinaison/distribution entre les chansons, coûte 1 vote de cette réserve.
+  // Demande explicite de Hubert : AUCUNE récupération automatique par minute (contrairement à
+  // l'ancien système de boost) — un client ne récupère un vote QUE lorsque la chanson précise sur
+  // laquelle il a voté (haut ou bas) est marquée "jouée" par l'admin (même mécanique de
+  // verrouillage/libération que l'ancien système de boost, juste sans le compte à rebours).
+  const MAX_VOTES = 6; // nombre maximum de votes (haut + bas confondus) par client, par soirée
+  // voteUsage : songId -> { count, token } — votes actuellement "verrouillés" sur cette chanson
+  // (token = roundToken au moment du vote ; libéré automatiquement dès que la chanson est jouée).
+  let voteUsage = {};
   // catalogView : navigation active dans le catalogue public.
   // null = vue par défaut (Top Pick + Style) ; sinon {type:"genre-songs", key} (toutes les
   // chansons d'un style, tous artistes confondus), ou {type:"artist", name} (artiste choisi
@@ -2128,7 +2150,7 @@
     void el.offsetWidth; // force le navigateur à "oublier" l'animation précédente
     el.classList.add(className);
   }
-  ["jb-boost-remaining"].forEach((id) => {
+  ["jb-vote-remaining"].forEach((id) => {
     const el = document.getElementById(id);
     if (el) el.addEventListener("animationend", () => el.classList.remove("jb-pulse-attn"));
   });
@@ -2256,138 +2278,96 @@
     } catch (e) {}
   }
 
-  // ---------- Boosts (palmarès) ----------
-  function boostStorageKey() {
-    return "jb_boosts_" + (nightId || "default");
+  // ---------- Votes (palmarès) ----------
+  function voteStorageKey() {
+    return "jb_votes_" + (nightId || "default");
   }
-  function loadBoostsFromStorage() {
+  function loadVotesFromStorage() {
     try {
-      const raw = safeStorageGet(boostStorageKey());
-      boostUsage = raw ? JSON.parse(raw) : {};
+      const raw = safeStorageGet(voteStorageKey());
+      voteUsage = raw ? JSON.parse(raw) : {};
     } catch (e) {
-      boostUsage = {};
+      voteUsage = {};
     }
   }
-  function saveBoostsToStorage() {
+  function saveVotesToStorage() {
     try {
-      safeStorageSet(boostStorageKey(), JSON.stringify(boostUsage));
+      safeStorageSet(voteStorageKey(), JSON.stringify(voteUsage));
     } catch (e) {}
   }
-  function boostResetKey() {
-    return "jb_boost_reset_" + (nightId || "default");
-  }
-  function loadBoostResetFromStorage() {
-    try {
-      const raw = safeStorageGet(boostResetKey());
-      boostResetAt = raw ? Number(raw) || 0 : 0;
-    } catch (e) {
-      boostResetAt = 0;
-    }
-  }
-  function saveBoostResetToStorage() {
-    try {
-      if (boostResetAt) safeStorageSet(boostResetKey(), String(boostResetAt));
-      else safeStorageRemove(boostResetKey());
-    } catch (e) {}
-  }
-  // Compte les boosts actuellement "verrouillés", en libérant au passage ceux dont la
-  // chanson a été jouée depuis le boost (son jeton de tour a changé) — dès que l'admin
-  // marque la chanson boostée comme jouée, ce boost redevient disponible immédiatement.
-  function activeBoostsCount() {
+  // Compte les votes actuellement "verrouillés", en libérant au passage ceux dont la
+  // chanson a été jouée depuis le vote (son jeton de tour a changé) — dès que l'admin
+  // marque la chanson comme jouée, ce(s) vote(s) redeviennent disponibles immédiatement.
+  // Demande explicite de Hubert : AUCUNE récupération automatique par le temps — seule la lecture
+  // de la chanson (voir markPlayed()) libère des votes, donc pas de "maybeRenewVotes()" ici.
+  function activeVotesCount() {
     let total = 0;
     let changed = false;
-    Object.keys(boostUsage).forEach((id) => {
-      const entry = boostUsage[id];
+    Object.keys(voteUsage).forEach((id) => {
+      const entry = voteUsage[id];
       if (entry.token === roundToken(votes[id])) {
         total += entry.count;
       } else {
-        delete boostUsage[id];
+        delete voteUsage[id];
         changed = true;
       }
     });
-    if (changed) saveBoostsToStorage();
+    if (changed) saveVotesToStorage();
     return total;
   }
-  // Récupération graduelle : redonne BOOST_RENEW_AMOUNT (1) boost chaque minute — pas une remise
-  // à zéro complète d'un coup. Tant qu'il reste au moins un boost "verrouillé" (utilisé), on
-  // relance aussitôt un nouveau cooldown d'1 min (plutôt que seulement si encore à 0/3), pour que
-  // la récupération continue de ticker jusqu'à ce que les 3 soient de nouveau disponibles.
-  function maybeRenewBoosts() {
-    if (!boostResetAt || Date.now() < boostResetAt) return;
-    let toRelease = BOOST_RENEW_AMOUNT;
-    let changed = false;
-    for (const id of Object.keys(boostUsage)) {
-      if (toRelease <= 0) break;
-      const entry = boostUsage[id];
-      if (entry.count > toRelease) {
-        entry.count -= toRelease;
-        toRelease = 0;
-      } else {
-        toRelease -= entry.count;
-        delete boostUsage[id];
-      }
-      changed = true;
-    }
-    if (changed) saveBoostsToStorage();
-    boostResetAt = activeBoostsCount() > 0 ? Date.now() + BOOST_RESET_MS : 0;
-    saveBoostResetToStorage();
+  function votesRemaining() {
+    return Math.max(0, MAX_VOTES - activeVotesCount());
   }
-  function boostsRemaining() {
-    maybeRenewBoosts();
-    const remaining = Math.max(0, MAX_BOOSTS - activeBoostsCount());
-    // Si un boost s'est libéré parce que sa chanson a joué avant la fin des 15 min,
-    // le décompte n'a plus lieu d'être : on l'annule.
-    if (remaining > 0 && boostResetAt) {
-      boostResetAt = 0;
-      saveBoostResetToStorage();
-    }
-    return remaining;
-  }
-  // Met à jour uniquement le badge "Boosts : N" (ou le décompte "Boosts : MM:SS" une fois les
-  // 3 boosts épuisés), sans toucher au reste du palmarès, pour qu'il reflète tout de suite
-  // l'état local du client, même avant que Firestore ne redéclenche un rendu complet.
-  function updateBoostBadge(remaining) {
-    const remainingEl = document.getElementById("jb-boost-remaining");
+  // Met à jour uniquement le badge "Votes : N", sans toucher au reste du palmarès, pour qu'il
+  // reflète tout de suite l'état local du client, même avant que Firestore ne redéclenche un
+  // rendu complet. Contrairement à l'ancien updateBoostBadge(), aucun décompte MM:SS : il n'y a
+  // plus de régénération automatique par le temps.
+  function updateVoteBadge(remaining) {
+    const remainingEl = document.getElementById("jb-vote-remaining");
     if (!remainingEl) return;
-    const r = remaining ?? boostsRemaining();
-    if (r <= 0 && boostResetAt > Date.now()) {
-      const totalSec = Math.max(0, Math.ceil((boostResetAt - Date.now()) / 1000));
-      const mm = String(Math.floor(totalSec / 60)).padStart(2, "0");
-      const ss = String(totalSec % 60).padStart(2, "0");
-      remainingEl.textContent = t("boost_remaining_countdown", `${mm}:${ss}`);
-    } else {
-      remainingEl.textContent = t("boost_remaining", r);
-    }
+    const r = remaining ?? votesRemaining();
+    remainingEl.textContent = t("vote_remaining", r);
   }
-  async function boostSong(id) {
+  // Remplace boostSong() : delta = +1 (flèche du haut) ou -1 (flèche du bas). N'importe quelle
+  // combinaison/distribution de clics haut/bas, sur n'importe quelle(s) chanson(s), est permise —
+  // demande explicite de Hubert : "il peut mettre ses 6 votes sur la même chanson [...] voter 2
+  // fois à la hausse et 4 fois à la baisse sur une même chanson". Plancher à 1 : un clic vers le
+  // bas alors que la chanson est déjà à 1 est un NO-OP complet (aucune décrémentation, aucun coût
+  // en votes) — "Elle reste à un et le client ne perd pas de vote parce qu'elle es déja à un".
+  async function castVote(id, delta) {
     if (palmaresAnimating) return;
     const v = votes[id];
     if (!v || isUnavailable(v)) return;
-    if (boostsRemaining() <= 0) {
-      showToast(t("boost_used_up"));
-      pulseAttention(document.getElementById("jb-boost-remaining"));
+    if (delta < 0 && (v.requests || 0) <= 1) {
+      showToast(t("vote_floor_reached"));
+      return;
+    }
+    if (votesRemaining() <= 0) {
+      showToast(t("vote_used_up"));
+      pulseAttention(document.getElementById("jb-vote-remaining"));
       return;
     }
     await ensureClientName();
     const token = roundToken(v);
     // Même logique optimiste que pour requestSong() : on met à jour l'état local avant même que
     // l'écriture soit confirmée par le serveur, pour éviter un faux message d'erreur sur un wifi
-    // lent/instable alors que le boost a déjà été pris en compte côté cache local.
-    const existing = boostUsage[id];
-    boostUsage[id] = { count: (existing && existing.token === token ? existing.count : 0) + 1, token };
-    saveBoostsToStorage();
-    const remainingNow = boostsRemaining();
-    if (remainingNow <= 0 && !boostResetAt) {
-      boostResetAt = Date.now() + BOOST_RESET_MS;
-      saveBoostResetToStorage();
-    }
-    updateBoostBadge(remainingNow);
-    pulseAttention(document.getElementById("jb-boost-remaining"));
-    showToast(t("boost_added"));
+    // lent/instable alors que le vote a déjà été pris en compte côté cache local.
+    const existing = voteUsage[id];
+    voteUsage[id] = { count: (existing && existing.token === token ? existing.count : 0) + 1, token };
+    saveVotesToStorage();
+    const remainingNow = votesRemaining();
+    updateVoteBadge(remainingNow);
+    pulseAttention(document.getElementById("jb-vote-remaining"));
+    showToast(delta > 0 ? t("vote_added_up") : t("vote_added_down"));
     try {
-      const payload = { requests: increment(1) };
-      const clientName = getClientName();
-      if (clientName) payload[`voters.${sanitizeVoterKey(clientName)}`] = increment(1);
+      const payload = { requests: increment(delta) };
+      // Le prénom des votants (voir renderVotersLine()) ne doit refléter QUE les votes à la
+      // hausse — jamais les votes à la baisse (sinon "voter contre" afficherait quand même le nom
+      // du client comme s'il avait soutenu la chanson).
+      if (delta > 0) {
+        const clientName = getClientName();
+        if (clientName) payload[`voters.${sanitizeVoterKey(clientName)}`] = increment(1);
+      }
       await updateDoc(doc(db, "votes", id), payload);
     } catch (e) {
       // Écriture non confirmée par le serveur (le plus souvent juste un wifi lent — Firestore la
@@ -2593,8 +2573,7 @@
     if (newNightId !== nightId) {
       nightId = newNightId;
       loadRequestedFromStorage();
-      loadBoostsFromStorage();
-      loadBoostResetFromStorage();
+      loadVotesFromStorage();
       renderAll();
     }
     // "Kick" global : quand Hubert se déconnecte de l'admin, un nouveau signal "kickedAt" est
@@ -2712,13 +2691,6 @@
       if (numEl) numEl.textContent = formatMMSS(remaining);
       if (remaining <= 0) anyExpired = true;
     });
-    if (boostResetAt) {
-      if (now >= boostResetAt) {
-        anyExpired = true; // déclenche un rendu complet pour réactiver les boutons boost
-      } else {
-        updateBoostBadge();
-      }
-    }
     if (anyExpired) renderAll();
   }, 1000);
 
@@ -2751,8 +2723,8 @@
   function renderPalmares() {
     const list = document.getElementById("jb-palmares-list");
     const empty = document.getElementById("jb-palmares-empty");
-    const remaining = boostsRemaining();
-    updateBoostBadge(remaining);
+    const remaining = votesRemaining();
+    updateVoteBadge(remaining);
     empty.textContent = t("palmares_empty");
 
     // Pas de limite de position : autant de lignes que de demandes actives, et rien du
@@ -2811,8 +2783,11 @@
           ${renderVotersLine(v.voters)}
         </span>
         <span class="jb-slot-right">
-          <span class="jb-slot-votes${voteIllumClass(id)}">${v.requests}</span>
-          <button class="jb-slot-boost${boostBtnIllumClass(id)}" data-boost="${escapeHtml(id)}" aria-label="${t("boost_aria")}" title="${t("boost_aria")}">🚀 ${t("boost_btn")}</button>
+          <span class="jb-slot-vote-group">
+            <button class="jb-slot-vote-btn jb-slot-vote-up${voteUpBtnIllumClass(id)}" data-vote-up="${escapeHtml(id)}" aria-label="${t("vote_up_aria")}" title="${t("vote_up_aria")}">▲</button>
+            <span class="jb-slot-votes${voteIllumClass(id)}">${v.requests}</span>
+            <button class="jb-slot-vote-btn jb-slot-vote-down${voteDownBtnIllumClass(id)}" data-vote-down="${escapeHtml(id)}" aria-label="${t("vote_down_aria")}" title="${t("vote_down_aria")}">▼</button>
+          </span>
         </span>`;
     });
 
@@ -2821,13 +2796,16 @@
       list.appendChild(palmaresElByKey.get(key));
     });
 
-    list.querySelectorAll("[data-boost]").forEach((btn) => {
-      btn.addEventListener("click", () => boostSong(btn.dataset.boost));
+    list.querySelectorAll("[data-vote-up]").forEach((btn) => {
+      btn.addEventListener("click", () => castVote(btn.dataset.voteUp, 1));
+    });
+    list.querySelectorAll("[data-vote-down]").forEach((btn) => {
+      btn.addEventListener("click", () => castVote(btn.dataset.voteDown, -1));
     });
 
     // 5) INVERT + PLAY — si l'ordre a changé, fait glisser chaque élément déplacé
     // depuis son ancienne position vers la nouvelle, et verrouille les boutons
-    // "boost" le temps de l'animation pour éviter les clics sur la mauvaise chanson.
+    // de vote le temps de l'animation pour éviter les clics sur la mauvaise chanson.
     const orderChanged = JSON.stringify(newKeys) !== JSON.stringify(palmaresOrderKeys);
     palmaresOrderKeys = newKeys;
     if (!orderChanged || firstRects.size === 0) return;
@@ -3182,15 +3160,20 @@
         </div>
       </div>`;
     } else if (requested) {
-      // Jamais désactivé, même à 0 boost restant : cliquer déclenche quand même boostSong(),
-      // qui affiche le toast et fait clignoter le badge "Boosts" pour rappeler au client qu'il
+      // Jamais désactivé, même à 0 vote restant : cliquer déclenche quand même castVote(),
+      // qui affiche le toast et fait clignoter le badge "Votes" pour rappeler au client qu'il
       // doit patienter — un bouton disabled empêcherait ce rappel visuel de se déclencher.
       // Précision de Hubert : le chiffre reste un élément À PART (jamais fusionné dans le badge,
-      // jamais renvoyé à gauche du titre) et reste TOUJOURS juste à gauche du bouton — voir
-      // .jb-song-right ci-dessous, même principe que .jb-slot-right du palmarès.
+      // jamais renvoyé à gauche du titre) et reste TOUJOURS juste entre les deux flèches — voir
+      // .jb-song-right ci-dessous, même principe que .jb-slot-right du palmarès. Les flèches
+      // haut/bas sont aussi offertes ici, dans le catalogue, pas seulement au palmarès —
+      // généralisation directe du même mécanisme approuvé par Hubert pour le palmarès.
       btnHtml = `<span class="jb-song-right">
-        <span class="jb-song-votes${voteIllumClass(song.id)}">${voteCount}</span>
-        <button class="jb-slot-boost${boostBtnIllumClass(song.id)}" data-boost="${escapeHtml(song.id)}" aria-label="${t("boost_aria")}" title="${t("boost_aria")}">🚀 ${t("boost_btn")}</button>
+        <span class="jb-slot-vote-group">
+          <button class="jb-slot-vote-btn jb-slot-vote-up${voteUpBtnIllumClass(song.id)}" data-vote-up="${escapeHtml(song.id)}" aria-label="${t("vote_up_aria")}" title="${t("vote_up_aria")}">▲</button>
+          <span class="jb-song-votes${voteIllumClass(song.id)}">${voteCount}</span>
+          <button class="jb-slot-vote-btn jb-slot-vote-down${voteDownBtnIllumClass(song.id)}" data-vote-down="${escapeHtml(song.id)}" aria-label="${t("vote_down_aria")}" title="${t("vote_down_aria")}">▼</button>
+        </span>
       </span>`;
     } else {
       // Pas de data-req sur le bouton lui-même : c'est toute la ligne (li) qui porte le
@@ -3233,12 +3216,19 @@
         requestSong(song);
       });
     });
-    // Bouton boost affiché à la place de "Demandée" : permet de booster une chanson même
-    // si elle ne figure plus dans les toutes premières positions du palmarès. On rafraîchit
-    // le catalogue après coup pour que le bouton se désactive dès que les 3 boosts sont épuisés.
-    list.querySelectorAll("[data-boost]").forEach((btn) => {
+    // Flèches haut/bas affichées à la place de "Demandée" : permettent de voter pour/contre une
+    // chanson même si elle ne figure plus dans les toutes premières positions du palmarès. On
+    // rafraîchit le catalogue après coup pour que les boutons reflètent tout de suite le nouveau
+    // solde de votes (ex. désactivation visuelle une fois les 6 votes épuisés).
+    list.querySelectorAll("[data-vote-up]").forEach((btn) => {
       btn.addEventListener("click", async () => {
-        await boostSong(btn.dataset.boost);
+        await castVote(btn.dataset.voteUp, 1);
+        renderCatalog();
+      });
+    });
+    list.querySelectorAll("[data-vote-down]").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        await castVote(btn.dataset.voteDown, -1);
         renderCatalog();
       });
     });
