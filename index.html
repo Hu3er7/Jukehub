@@ -1326,7 +1326,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-13.66";
+  const APP_BUILD = "2026-10-13.67";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -2905,6 +2905,21 @@
     sectionTitleRow.hidden = !atListLevel;
     titleWrap.hidden = !!atListLevel || !!search;
 
+    // Préserve la position de défilement d'une liste déjà affichée face aux ré-affichages SANS
+    // RAPPORT avec la vue elle-même : n'importe quel client qui demande/booste une chanson
+    // N'IMPORTE OÙ dans le catalogue déclenche un instantané "votes", qui redessine TOUT le
+    // catalogue public via renderAll() (voir plus haut) — y compris la liste déjà ouverte d'un
+    // artiste/genre/recherche, qui se vide puis se reconstruit entièrement, ramenant le
+    // défilement en haut à CHAQUE fois. En plein spectacle (plusieurs clients à la fois), ça
+    // peut arriver toutes les quelques secondes, rendant le défilement manuel impossible — bogue
+    // signalé par Hubert : "quand j'accède aux chansons d'un artiste, je ne suis pas en mesure de
+    // défiler pour voir ses chansons". On ne restaure que si la vue EST VRAIMENT LA MÊME qu'au
+    // rendu précédent (clé = recherche, ou type+identifiant de la vue catalogue) ; sinon (vrai
+    // changement de vue : autre artiste/genre, recherche modifiée, retour en arrière) on repart
+    // du haut, comme attendu.
+    const viewKey = search ? `search:${search}` : `${catalogView.type}:${catalogView.name || catalogView.key || ""}`;
+    const prevScrollTop = list.dataset.renderKey === viewKey ? list.scrollTop : 0;
+
     ensureCatalogListMinHeight();
     list.innerHTML = "";
 
@@ -2975,6 +2990,12 @@
     // ensureCatalogListMinHeight() plus haut) — demande explicite de Hubert (capture à l'appui),
     // pour une VRAIE recherche/dossier/liste avec moins de 3 résultats.
     list.style.minHeight = catalogListMinHeight ? `${catalogListMinHeight}px` : "";
+
+    // Restaure (ou initialise) la position de défilement — voir le calcul de viewKey/prevScrollTop
+    // plus haut : ne fait RIEN de visible la plupart du temps (ré-affiche simplement le même
+    // défilement qu'avant), sauf qu'il n'est plus jamais remis à zéro tout seul.
+    list.dataset.renderKey = viewKey;
+    list.scrollTop = prevScrollTop;
   }
 
   // ---------- Écran d'accueil : les 3 boutons "Chercher par..." ----------
