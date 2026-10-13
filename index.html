@@ -1326,7 +1326,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-13.68";
+  const APP_BUILD = "2026-10-13.69";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -1750,6 +1750,24 @@
   // (window.visualViewport, qui se redimensionne lui quand le clavier apparaît/disparaît,
   // contrairement à window.innerHeight) et on l'applique comme hauteur maximale explicite,
   // par-dessus le 48vh CSS (qui reste le comportement par défaut sans clavier/sur ordinateur).
+  //
+  // 2e cause trouvée après coup (capture à l'appui, "ce n'est pas ce que je veux [...] la barre
+  // rouge du bas est placée au-dessus de 'myrepertoire.carrd.co — Private'") : le site tourne
+  // intégré dans une iframe D'UN AUTRE site (myrepertoire.carrd.co, voir inCrossOriginFrame
+  // plus bas) — tant qu'un champ de CETTE iframe a le focus, Safari pose alors par-dessus le
+  // clavier une petite bannière "nomDuSite — Private" (mesure de confidentialité propre aux
+  // iframes multi-origines). Cette bannière, c'est le NAVIGATEUR qui la dessine par-dessus la
+  // page, pas un élément à nous : elle n'est donc PAS déduite de window.visualViewport.height
+  // (qui ne connaît que le clavier lui-même), et le cadre continuait de s'étendre jusque
+  // derrière elle malgré le 1er correctif. On réserve donc, en plus, une marge fixe correspondant
+  // à sa hauteur habituelle — UNIQUEMENT quand un champ de recherche a le focus ET que la page
+  // est bien dans une iframe multi-origines (jamais sur grand écran, jamais en visite directe,
+  // jamais sur Android, où cette bannière n'existe pas) — pour ne gaspiller aucun espace
+  // ailleurs. Reprend sa forme normale (marge normale) dès que le clavier se referme.
+  const inCrossOriginFrame = (() => {
+    try { return window.self !== window.top; } catch (e) { return true; } // accès bloqué = bien multi-origines
+  })();
+  const SAFARI_IFRAME_BANNER_H = 54; // hauteur habituelle de cette bannière Safari ("site — Private")
   function fitCatalogListHeight() {
     const list = document.getElementById("jb-catalog-list");
     const resultsWrap = document.getElementById("jb-catalog-results");
@@ -1757,7 +1775,9 @@
     const vv = window.visualViewport;
     const viewportBottom = vv ? vv.height + vv.offsetTop : window.innerHeight;
     const rect = list.getBoundingClientRect();
-    const BOTTOM_MARGIN = 10; // petite marge pour ne pas coller la bordure basse au clavier/bord d'écran
+    const searchInput = document.getElementById("jb-search-input");
+    const keyboardLikelyOpen = document.activeElement === searchInput;
+    const BOTTOM_MARGIN = 10 + (keyboardLikelyOpen && inCrossOriginFrame ? SAFARI_IFRAME_BANNER_H : 0);
     const available = Math.floor(viewportBottom - rect.top - BOTTOM_MARGIN);
     if (available <= 0) return; // mise en page pas encore stable (juste après un changement de vue) : on réessaiera
     const MIN_HEIGHT = 90; // quelques lignes visibles au minimum, même si l'espace calculé est très restreint
