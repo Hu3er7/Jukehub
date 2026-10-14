@@ -1455,7 +1455,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-14.82";
+  const APP_BUILD = "2026-10-14.83";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -2563,19 +2563,23 @@
   // Remplace boostSong() : delta = +1 (flèche du haut) ou -1 (flèche du bas). N'importe quelle
   // combinaison/distribution de clics haut/bas, sur n'importe quelle(s) chanson(s), est permise —
   // demande explicite de Hubert : "il peut mettre ses 6 votes sur la même chanson [...] voter 2
-  // fois à la hausse et 4 fois à la baisse sur une même chanson". Plancher à 1 : un clic vers le
-  // bas alors que la chanson est déjà à 1 est un NO-OP complet (aucune décrémentation, aucun coût
-  // en votes) — "Elle reste à un et le client ne perd pas de vote parce qu'elle es déja à un".
+  // fois à la hausse et 4 fois à la baisse sur une même chanson". (Note : il y avait autrefois un
+  // plancher à 1 empêchant de descendre plus bas — voir plus loin dans cette fonction, ce plancher
+  // a depuis été retiré à la demande explicite de Hubert.)
   //
   // 2e idée de Hubert, ajoutée après coup : "le client pourrait récupérer ses votes en appuyant
   // sur le bouton moins d'une chanson sur laquelle il les a déjà mis" (ex. 2 votes sur "Sweet
   // Caroline", puis il change d'avis et les reprend). voteUsage[id] = { up, down, token } :
-  // "up" = sa contribution NETTE encore active à la hausse sur cette chanson (ce qu'il peut
-  // reprendre gratuitement), "down" = les votes à la baisse "réels" déjà dépensés (contre le
-  // choix de quelqu'un d'autre, au-delà de sa propre contribution — ceux-là coûtent normalement).
-  // Une flèche du bas REPREND donc (gratuitement, remboursée) tant qu'il reste de la contribution
-  // "up" à défaire ; une fois celle-ci à 0, une flèche du bas supplémentaire redevient un vrai
-  // vote à la baisse qui coûte 1.
+  // "up" = sa contribution NETTE encore active à la hausse sur cette chanson (reprenable
+  // gratuitement par une flèche du bas), "down" = sa contribution NETTE encore active à la
+  // baisse (reprenable gratuitement par une flèche du haut — 3e idée de Hubert, bug signalé :
+  // "si je décide de reprendre mon vote, qu'il soit à la hausse ou à la baisse, le vote retourne
+  // dans ma banque de vote" — symétrique à la reprise d'un vote à la hausse ci-dessus, qui
+  // fonctionnait déjà ; AVANT ce correctif, cliquer sur la flèche du haut après avoir voté à la
+  // baisse ne remboursait rien et facturait carrément un NOUVEAU vote). Chaque clic commence donc
+  // par essayer d'annuler une contribution existante DE SIGNE OPPOSÉ (gratuit) ; ce n'est qu'une
+  // fois celle-ci à 0 qu'un clic devient un vrai nouveau vote de son propre signe (qui coûte 1).
+  // "up" et "down" ne sont donc jamais tous les deux > 0 en même temps pour une même chanson.
   async function castVote(id, delta) {
     if (palmaresAnimating) return;
     const v = votes[id];
@@ -2589,7 +2593,9 @@
     const token = roundToken(v);
     const existing = voteUsage[id];
     const entry = (existing && existing.token === token) ? existing : { up: 0, down: 0, token };
-    const isRefund = delta < 0 && entry.up > 0;
+    const isRefundUp = delta < 0 && entry.up > 0; // reprise d'un vote à la hausse déjà mis
+    const isRefundDown = delta > 0 && entry.down > 0; // reprise d'un vote à la baisse déjà mis
+    const isRefund = isRefundUp || isRefundDown;
     if (!isRefund && votesRemaining() <= 0) {
       showToast(t("vote_used_up"));
       pulseAttention(document.getElementById("jb-vote-remaining"));
@@ -2602,15 +2608,20 @@
     const clientName = getClientName();
     let toastMsg;
     const payload = { requests: increment(delta) };
-    if (delta > 0) {
+    if (isRefundDown) {
+      entry.down -= 1; // reprend 1 de SA propre contribution à la baisse -> remboursé, ne coûte rien
+      toastMsg = t("vote_refunded");
+      // Les votes à la baisse n'ont jamais touché "voters" (voir la branche "else" plus bas) :
+      // leur reprise n'y touche donc pas non plus.
+    } else if (delta > 0) {
       entry.up += 1;
       toastMsg = t("vote_added_up");
       // Le prénom des votants (voir renderVotersLine()) ne doit refléter QUE les votes à la
       // hausse — jamais les votes à la baisse (sinon "voter contre" afficherait quand même le nom
       // du client comme s'il avait soutenu la chanson).
       if (clientName) payload[`voters.${sanitizeVoterKey(clientName)}`] = increment(1);
-    } else if (isRefund) {
-      entry.up -= 1; // reprend 1 de SA propre contribution -> remboursé, ne coûte rien
+    } else if (isRefundUp) {
+      entry.up -= 1; // reprend 1 de SA propre contribution à la hausse -> remboursé, ne coûte rien
       toastMsg = t("vote_refunded");
       if (clientName) payload[`voters.${sanitizeVoterKey(clientName)}`] = increment(-1);
     } else {
