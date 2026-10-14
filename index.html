@@ -1455,7 +1455,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-14.81";
+  const APP_BUILD = "2026-10-14.82";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -1545,7 +1545,6 @@
       vote_refunded: "↩️ Vote récupéré !",
       vote_up_aria: "Ajouter un vote à cette chanson",
       vote_down_aria: "Retirer un vote de cette chanson",
-      vote_floor_reached: "Cette chanson est déjà au minimum.",
       // Nouvelle section "Mes votes" (demande explicite de Hubert) — voir renderMyVotes(). Chaque
       // chanson votée prend une ligne complète (style palmarès) avec le solde net de votes affiché
       // à la fin de la ligne (ex. "+2 VOTES" / "-1 VOTE"). Aussi utilisée par le titre de section
@@ -1607,7 +1606,6 @@
       vote_refunded: "↩️ Vote refunded!",
       vote_up_aria: "Add a vote to this song",
       vote_down_aria: "Remove a vote from this song",
-      vote_floor_reached: "This song is already at the minimum.",
       my_votes_empty: "You haven't voted on anything yet tonight.",
       votes_unit: (n) => `VOTE${n === 1 ? "" : "S"}`,
       style_title: "Songs",
@@ -2291,9 +2289,13 @@
   // liste qui reste petite (nombre de chansons avec au moins une demande active).
   function getSongRank(id) {
     const v = votes[id];
-    if (!v || !(v.requests > 0) || isUnavailable(v)) return null;
+    // Plus de condition "requests > 0" (demande explicite de Hubert : les votes à la baisse
+    // peuvent maintenant descendre à 0 et en négatif, voir castVote()) — une chanson reste
+    // classée tant qu'elle a un document "votes/{id}" (donc a été demandée au moins une fois ce
+    // soir) et n'est ni brûlée ni en refroidissement, peu importe le signe de son chiffre.
+    if (!v || isUnavailable(v)) return null;
     const ranked = Object.entries(votes)
-      .filter(([, vv]) => vv.requests > 0 && !isUnavailable(vv))
+      .filter(([, vv]) => !isUnavailable(vv))
       .sort(compareVoteEntries);
     const idx = ranked.findIndex(([rid]) => rid === id);
     return idx === -1 ? null : idx + 1;
@@ -2578,11 +2580,12 @@
     if (palmaresAnimating) return;
     const v = votes[id];
     if (!v || isUnavailable(v)) return;
-    const currentCount = v.requests || 0;
-    if (delta < 0 && currentCount <= 1) {
-      showToast(t("vote_floor_reached"));
-      return;
-    }
+    // Plus de plancher à 1 (demande explicite de Hubert) : "je veux que si je vote à la baisse,
+    // ça puisse descendre à zéro et -1, -2, -3, -4, etc." — un vote à la baisse coûte donc
+    // toujours 1 (une fois la contribution personnelle "up" épuisée, voir isRefund plus bas),
+    // peu importe où en est "requests", même déjà à 0 ou négatif. Seule limite restante : la
+    // réserve de 6 votes du client (votesRemaining(), juste en dessous) — jamais le chiffre de
+    // la chanson elle-même.
     const token = roundToken(v);
     const existing = voteUsage[id];
     const entry = (existing && existing.token === token) ? existing : { up: 0, down: 0, token };
@@ -2987,9 +2990,11 @@
 
     // Pas de limite de position : autant de lignes que de demandes actives, et rien du
     // tout si personne n'a encore rien demandé — pour que chacun voie exactement où se
-    // situe sa demande, même très loin dans le classement.
+    // situe sa demande, même très loin dans le classement. Plus de condition "requests > 0"
+    // (demande explicite de Hubert) : une chanson descendue à 0 ou en négatif reste visible ici,
+    // avec son chiffre réel — voir castVote()/getSongRank().
     const ranked = Object.entries(votes)
-      .filter(([, v]) => v.requests > 0 && !isUnavailable(v))
+      .filter(([, v]) => !isUnavailable(v))
       .sort(compareVoteEntries);
 
     empty.hidden = ranked.length > 0;
@@ -3773,9 +3778,10 @@
     const list = document.getElementById("jb-admin-palmares");
     const empty = document.getElementById("jb-admin-palmares-empty");
     // Pas de limite non plus côté admin : toute la file d'attente reste gérable, même
-    // pour une chanson demandée bien après les premières positions.
+    // pour une chanson demandée bien après les premières positions. Plus de condition
+    // "requests > 0" (demande explicite de Hubert, voir castVote()/renderPalmares()).
     const ranked = Object.entries(votes)
-      .filter(([, v]) => v.requests > 0 && !isUnavailable(v))
+      .filter(([, v]) => !isUnavailable(v))
       .sort(compareVoteEntries);
 
     list.innerHTML = "";
