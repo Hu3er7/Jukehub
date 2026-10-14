@@ -1455,7 +1455,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-14.84";
+  const APP_BUILD = "2026-10-14.85";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -3556,16 +3556,40 @@
 
     // On met à jour l'état local (marqué comme demandé, badge, toast, navigation) tout de suite,
     // de façon optimiste, AVANT même que l'écriture Firestore soit confirmée par le serveur.
-    // Pourquoi : le SDK Firestore applique ce type d'écriture à son cache local immédiatement,
-    // donc le palmarès affiche déjà le nouveau compte avant la fin de l'aller-retour réseau —
-    // sur un wifi lent ou instable (fréquent dans un bar plein), attendre cette confirmation
-    // avant de mettre à jour l'état local causait un faux message d'erreur ("Oups, réessaie
-    // dans un instant") alors que la demande avait déjà été prise en compte, ce qui empêchait
-    // ensuite le client de la redemander (le bouton restait "Jouer" au lieu de "Demandée") et le
-    // laissait ré-essayer indéfiniment. Firestore synchronise de toute façon la vraie écriture en
-    // arrière-plan dès que la connexion le permet.
+    // Pourquoi : sur un wifi lent ou instable (fréquent dans un bar plein), attendre cette
+    // confirmation avant de mettre à jour l'état local causait un faux message d'erreur ("Oups,
+    // réessaie dans un instant") alors que la demande avait déjà été prise en compte, ce qui
+    // empêchait ensuite le client de la redemander (le bouton restait "Jouer" au lieu de
+    // "Demandée") et le laissait ré-essayer indéfiniment. Firestore synchronise de toute façon la
+    // vraie écriture en arrière-plan dès que la connexion le permet.
     requestedRounds[song.id] = tokenAtRequest;
     saveRequestedToStorage();
+    // Bug signalé par Hubert (captures à l'appui) : une chanson tout juste demandée pouvait
+    // rester invisible du palmarès ("Aucune demande pour l'instant") alors que le document
+    // Firestore avait pourtant bel et bien été créé côté serveur — confirmé en vérifiant
+    // directement la base : l'écriture avait réussi, mais l'écouteur onSnapshot(collection(db,
+    // "votes")) (voir plus haut) met parfois plusieurs secondes à relivrer un nouvel instantané
+    // (wifi de bar, ou — cas observé chez Hubert — protections de confidentialité avancées de
+    // Safari qui ralentissent la reconnexion du canal temps réel de Firestore). Avant le passage
+    // de "requests:1" à "requests:0" (voir plus haut), ce délai passait inaperçu : le chiffre
+    // affiché restait "0" par défaut (voteCount = v?.requests || 0, voir renderSongRow()) le
+    // temps d'attendre — une valeur visiblement provisoire puisque différente de la vraie valeur
+    // (1) à venir. Maintenant que 0 EST la vraie valeur finale, ce même délai devenait impossible
+    // à distinguer d'un vrai échec. Solution : poser nous-mêmes une entrée optimiste dans
+    // "votes" (comme castVote() le fait déjà pour voteUsage) plutôt que d'attendre la
+    // confirmation réseau — le vrai onSnapshot, dès qu'il arrive, écrase de toute façon cette
+    // entrée locale avec les données serveur (voir onSnapshot(collection(db, "votes")) : il vide
+    // et repeuple "votes" en entier à chaque instantané).
+    if (!votes[song.id]) {
+      votes[song.id] = {
+        requests: 0,
+        burned: false,
+        title: song.title,
+        artist: song.artist || "",
+        createdAt: { seconds: Math.floor(Date.now() / 1000) },
+      };
+      renderPalmares();
+    }
     showToast(t("request_added_toast"));
     // Illumine la ligne elle-même — même animation que la sélection de la chanson démo dans le
     // tuto, demande explicite de Hubert : "je veux que ce soit la même animation d'illumination
