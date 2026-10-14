@@ -180,25 +180,23 @@
   #jb-app .jb-pulse-attn { animation: jb-pulse-attn 0.5s ease-in-out 1; }
 
   /* Nouvelle section "Mes votes" (demande explicite de Hubert) : entre le catalogue et le
-     palmarès, liste les chansons sur lesquelles CE client a personnellement voté à la hausse
-     et/ou à la baisse ce soir — voir renderMyVotes(). Chips colorées comme les flèches
-     .jb-slot-vote-up/-down (même rouge/sarcelle) pour que le lien visuel soit immédiat. */
-  #jb-app .jb-my-votes-row {
-    display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 8px;
+     palmarès, liste les chansons sur lesquelles CE client a personnellement un solde net de votes
+     actif ce soir — voir renderMyVotes(). 2e demande de Hubert : chaque chanson prend maintenant
+     une ligne complète, réutilisant .jb-slot/.jb-palmares-grid tel quel (même style que le
+     palmarès plus bas), avec seulement ce solde net affiché à la fin de la ligne (ex. "+2 VOTES"/
+     "-1 VOTE") plutôt que des chips séparées hausse/baisse. Couleur jaune (var(--accent2), même
+     teinte que .jb-slot-votes) pour un solde positif — demande explicite de Hubert (capture à
+     l'appui) ; rouge (même teinte que la flèche .jb-slot-vote-up) pour un solde négatif, afin que
+     le client distingue vite les deux cas. */
+  #jb-app .jb-my-vote-delta {
+    flex-shrink: 0; margin-left: auto; font-weight: 800; font-size: 1rem;
+    letter-spacing: 0.3px; text-transform: uppercase; white-space: nowrap;
   }
-  #jb-app .jb-my-votes-row:first-of-type { margin-top: 0; }
-  #jb-app .jb-my-votes-row-label {
-    flex-shrink: 0; font-weight: 700; font-size: 0.72rem; letter-spacing: 0.4px;
-    text-transform: uppercase; color: var(--text-dim);
+  #jb-app .jb-my-vote-delta-up { color: var(--accent2); }
+  #jb-app .jb-my-vote-delta-down { color: #e0314d; }
+  @media (max-width: 420px) {
+    #jb-app .jb-my-vote-delta { font-size: 0.85rem; }
   }
-  #jb-app .jb-my-votes-chips { display: flex; flex-wrap: wrap; gap: 6px; min-width: 0; }
-  #jb-app .jb-my-vote-chip {
-    display: inline-flex; align-items: center; gap: 4px; font-weight: 700; font-size: 0.78rem;
-    padding: 4px 10px; border-radius: 999px; background: var(--card2); white-space: nowrap;
-    max-width: 200px; overflow: hidden; text-overflow: ellipsis;
-  }
-  #jb-app .jb-my-vote-chip-up { border: 1px solid #e0314d; color: #e0314d; }
-  #jb-app .jb-my-vote-chip-down { border: 1px solid #13b0a5; color: #13b0a5; }
 
   /* Variante de .jb-pulse-attn pour les éléments PLEINE LARGEUR (ligne du cadre rouge, case du
      palmarès) : même couleur/lueur/rythme (blanc chaud, un seul flash de 0.5s) que la pulsation
@@ -741,7 +739,7 @@
   #jb-public .jb-btn-request,
   #jb-public .jb-request-remaining,
   #jb-public .jb-vote-remaining,
-  #jb-public .jb-my-vote-chip,
+  #jb-public .jb-my-vote-delta,
   #jb-public .jb-mode-btn,
   #jb-public .jb-back-btn,
   #jb-public .jb-name-prompt-skip-btn {
@@ -1041,14 +1039,11 @@
         <div id="jb-vote-remaining" class="jb-vote-remaining"><span class="jb-vote-remaining-num">6</span> <span class="jb-vote-remaining-label">VOTES RESTANTS</span></div>
       </div>
       <p id="jb-my-votes-empty" class="jb-empty">Tu n'as pas encore voté ce soir.</p>
-      <div id="jb-my-votes-up-row" class="jb-my-votes-row" hidden>
-        <span id="jb-my-votes-up-label" class="jb-my-votes-row-label">À la hausse</span>
-        <div id="jb-my-votes-up" class="jb-my-votes-chips"></div>
-      </div>
-      <div id="jb-my-votes-down-row" class="jb-my-votes-row" hidden>
-        <span id="jb-my-votes-down-label" class="jb-my-votes-row-label">À la baisse</span>
-        <div id="jb-my-votes-down" class="jb-my-votes-chips"></div>
-      </div>
+      <!-- 2e demande de Hubert : chaque chanson votée prend maintenant une ligne complète (même
+           style que les lignes du palmarès plus bas, .jb-slot/.jb-palmares-grid réutilisés tels
+           quels), avec le nombre net de votes mis dessus affiché à la fin de la ligne — voir
+           renderMyVotes(). Remplace l'ancien rendu en "chips" séparées hausse/baisse. -->
+      <div id="jb-my-votes-list" class="jb-palmares-grid"></div>
     </section>
 
     <section class="jb-palmares">
@@ -1404,7 +1399,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-14.77";
+  const APP_BUILD = "2026-10-14.78";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -1498,11 +1493,13 @@
       vote_up_aria: "Ajouter un vote à cette chanson",
       vote_down_aria: "Retirer un vote de cette chanson",
       vote_floor_reached: "Cette chanson est déjà au minimum.",
-      // Nouvelle section "Mes votes" (demande explicite de Hubert) — voir renderMyVotes().
+      // Nouvelle section "Mes votes" (demande explicite de Hubert) — voir renderMyVotes(). Chaque
+      // chanson votée prend une ligne complète (style palmarès) avec le solde net de votes affiché
+      // à la fin de la ligne (ex. "+2 VOTES" / "-1 VOTE") — "votes_unit" gère le singulier/pluriel
+      // de ce mot, comme vote_remaining_label ci-dessus.
       my_votes_title: "Mes votes",
       my_votes_empty: "Tu n'as pas encore voté ce soir.",
-      my_votes_up_label: "À la hausse",
-      my_votes_down_label: "À la baisse",
+      votes_unit: (n) => `VOTE${n === 1 ? "" : "S"}`,
       style_title: "Chansons",
       style_title_count: (n) => `${n} Chansons`,
       artist_title_count: (n) => `${n} Artistes`,
@@ -1561,8 +1558,7 @@
       vote_floor_reached: "This song is already at the minimum.",
       my_votes_title: "My Votes",
       my_votes_empty: "You haven't voted on anything yet tonight.",
-      my_votes_up_label: "Upvoted",
-      my_votes_down_label: "Downvoted",
+      votes_unit: (n) => `VOTE${n === 1 ? "" : "S"}`,
       style_title: "Songs",
       style_title_count: (n) => `${n} Songs`,
       artist_title_count: (n) => `${n} Artists`,
@@ -1636,8 +1632,6 @@
     document.getElementById("jb-palmares-title").textContent = t("palmares_title");
     document.getElementById("jb-my-votes-title").textContent = t("my_votes_title");
     document.getElementById("jb-my-votes-empty").textContent = t("my_votes_empty");
-    document.getElementById("jb-my-votes-up-label").textContent = t("my_votes_up_label");
-    document.getElementById("jb-my-votes-down-label").textContent = t("my_votes_down_label");
     // Texte de repli (voir renderCatalog(), qui pose le vrai texte dynamique "N Chansons"/
     // "N Artistes"/"N Genres" juste après tout rendu) — évite juste un flash de texte vide avant
     // le tout premier appel.
@@ -2419,34 +2413,46 @@
     remainingEl.innerHTML = `<span class="jb-vote-remaining-num">${r}</span> <span class="jb-vote-remaining-label">${t("vote_remaining_label", r)}</span>`;
   }
   // Nouvelle section "Mes votes" (demande explicite de Hubert) : liste, pour CE client, les
-  // chansons où il lui reste une contribution active à la hausse (entry.up, voir castVote()
-  // ci-dessous) et/ou des votes à la baisse "réels" qu'il a dépensés (entry.down) — pour qu'il
-  // puisse visualiser et garder "track" de ses votes, et repérer d'un coup d'œil lesquels il
-  // pourrait reprendre (flèche du bas sur une entrée "à la hausse" = remboursé, voir castVote()).
+  // chansons où il a un solde NET de votes encore actif ce soir (entry.up - entry.down, voir
+  // castVote() ci-dessous) — pour qu'il puisse visualiser et garder "track" de ses votes. 2e
+  // demande de Hubert (capture à l'appui) : chaque chanson prend maintenant une ligne complète,
+  // dans le même style que le palmarès (.jb-slot/.jb-palmares-grid réutilisés tels quels), avec
+  // seulement le solde net affiché à la fin de la ligne (ex. "+2 VOTES"/"-1 VOTE") plutôt que des
+  // chips séparées hausse/baisse. Une chanson dont le solde net est exactement 0 (p. ex. un vote à
+  // la hausse puis un vrai vote à la baisse sur la même chanson) n'a plus rien à "montrer" ici et
+  // disparaît de la liste. Classée dans le même ordre que le palmarès (compareVoteEntries) pour
+  // que le client reconnaisse facilement les positions.
   function renderMyVotes() {
     const emptyEl = document.getElementById("jb-my-votes-empty");
-    const upRow = document.getElementById("jb-my-votes-up-row");
-    const downRow = document.getElementById("jb-my-votes-down-row");
-    const upWrap = document.getElementById("jb-my-votes-up");
-    const downWrap = document.getElementById("jb-my-votes-down");
-    if (!emptyEl || !upRow || !downRow || !upWrap || !downWrap) return;
-    const upItems = [];
-    const downItems = [];
-    Object.keys(voteUsage).forEach((id) => {
-      const entry = voteUsage[id];
-      const v = votes[id];
-      if (!entry || !v || entry.token !== roundToken(v)) return;
-      if (entry.up > 0) upItems.push({ title: v.title, n: entry.up });
-      if (entry.down > 0) downItems.push({ title: v.title, n: entry.down });
-    });
-    emptyEl.hidden = upItems.length > 0 || downItems.length > 0;
-    upRow.hidden = upItems.length === 0;
-    downRow.hidden = downItems.length === 0;
-    upWrap.innerHTML = upItems
-      .map((it) => `<span class="jb-my-vote-chip jb-my-vote-chip-up">▲ ${escapeHtml(it.title)}${it.n > 1 ? ` ×${it.n}` : ""}</span>`)
-      .join("");
-    downWrap.innerHTML = downItems
-      .map((it) => `<span class="jb-my-vote-chip jb-my-vote-chip-down">▼ ${escapeHtml(it.title)}${it.n > 1 ? ` ×${it.n}` : ""}</span>`)
+    const listEl = document.getElementById("jb-my-votes-list");
+    if (!emptyEl || !listEl) return;
+    const entries = Object.keys(voteUsage)
+      .map((id) => {
+        const entry = voteUsage[id];
+        const v = votes[id];
+        if (!entry || !v || entry.token !== roundToken(v)) return null;
+        const delta = (entry.up || 0) - (entry.down || 0);
+        if (delta === 0) return null;
+        return [id, v, delta];
+      })
+      .filter(Boolean)
+      .sort((a, b) => compareVoteEntries([a[0], a[1]], [b[0], b[1]]));
+    emptyEl.hidden = entries.length > 0;
+    listEl.innerHTML = entries
+      .map(([, v, delta], i) => {
+        const n = Math.abs(delta);
+        const deltaClass = delta > 0 ? "jb-my-vote-delta-up" : "jb-my-vote-delta-down";
+        const sign = delta > 0 ? "+" : "-";
+        return `
+        <div class="jb-slot">
+          <span class="jb-slot-rank">${i + 1}</span>
+          <span class="jb-slot-info">
+            <span class="jb-slot-title">${escapeHtml(v.title)}</span>
+            ${v.artist ? `<span class="jb-slot-artist">${escapeHtml(v.artist)}</span>` : ""}
+          </span>
+          <span class="jb-my-vote-delta ${deltaClass}">${sign}${n} ${t("votes_unit", n)}</span>
+        </div>`;
+      })
       .join("");
   }
   // Remplace boostSong() : delta = +1 (flèche du haut) ou -1 (flèche du bas). N'importe quelle
