@@ -131,14 +131,22 @@
   /* .jb-my-votes-heading réutilise exactement la même mise en page que .jb-palmares-heading
      (titre à gauche, badge de votes à droite, sur la même ligne) — demande explicite de Hubert,
      capture à l'appui : le badge "N VOTES RESTANTS" déménage du palmarès vers "Mes votes". */
+  /* flex-wrap: wrap (plutôt que nowrap) + un min-width réservé sur le h2 juste en dessous : sur
+     un écran de téléphone étroit, si le titre ET le badge de votes (gros + gras, voir plus bas)
+     ne tiennent plus ensemble sur une seule ligne, le badge redescend sur sa propre ligne plutôt
+     que d'écraser le titre à 0px et le faire disparaître complètement — bogue réel constaté par
+     Hubert (capture à l'appui : "// 3 VOTES RESTANTS" sans aucune trace de "MES VOTES"). */
   #jb-app .jb-palmares-heading,
   #jb-app .jb-my-votes-heading {
     flex-shrink: 0; display: flex; align-items: center; justify-content: space-between;
-    flex-wrap: nowrap; gap: 8px; background: var(--bg); padding: 8px 6px 8px 0; margin-bottom: 2px;
+    flex-wrap: wrap; row-gap: 2px; gap: 8px; background: var(--bg); padding: 8px 6px 8px 0; margin-bottom: 2px;
   }
   #jb-app .jb-palmares-heading h2,
   #jb-app .jb-my-votes-heading h2 {
-    margin-bottom: 0; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    /* min-width: max-content (plutôt qu'un nombre de px deviné) : le titre garde TOUJOURS sa
+       pleine largeur naturelle — c'est le badge qui redescend sur sa propre ligne s'il ne reste
+       plus assez de place, jamais le titre qui se fait tronquer/écraser. */
+    margin-bottom: 0; flex: 1; min-width: max-content; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   }
   /* Texte brut, en gras, sans pilule/cadre — demande explicite de Hubert (maquette Photoshop à
      l'appui, comparant les 2 rendus) : il préfère ce style au badge-pilule précédent
@@ -1396,7 +1404,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-14.76";
+  const APP_BUILD = "2026-10-14.77";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
