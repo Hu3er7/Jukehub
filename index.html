@@ -1455,7 +1455,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-14.83";
+  const APP_BUILD = "2026-10-14.84";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -3595,48 +3595,33 @@
     }
 
     try {
-      // Transaction (lecture + une SEULE écriture), plutôt que setDoc+updateDoc séparés comme
-      // avant : les règles Firestore (voir firestore.rules, /votes/{songId}) exigent qu'une
-      // écriture anonyme sur un document déjà existant ne touche QUE les champs "requests" (en
-      // l'augmentant de EXACTEMENT 1) et "voters", rien d'autre — sinon le serveur REJETTE
-      // l'écriture (permission-denied). L'ancienne version faisait deux écritures qui violaient
-      // toutes les deux cette règle dès que la chanson avait déjà un document ce soir (donc pour
-      // tout le monde sauf le tout premier client à la demander) : le setDoc() réécrivait aussi
-      // title/artist/createdAt (interdit en update), et l'updateDoc() séparé pour le prénom ne
-      // touchait jamais "requests" (donc jamais égal à ancienne_valeur + 1, interdit aussi). Les
-      // deux étaient donc rejetées par le serveur — mais le SDK Firestore applique d'abord le
-      // changement de façon optimiste dans le cache local (le prénom apparaît un instant dans le
-      // palmarès), puis l'annule automatiquement dès que le refus du serveur arrive (le prénom
-      // disparaît juste après) : exactement le "apparaît très brièvement puis disparaît" observé.
-      // Une seule écriture qui respecte les règles du premier coup règle le problème.
-      const clientName = getClientName();
+      // Demande explicite de Hubert : "il faudrait que la chanson commence à zéro vote quand
+      // elle arrive dans le palmarès pour la première fois. Et c'est en appuyant sur ajouter ou
+      // enlever des votes que le chiffre augmente ou diminue." — DEMANDER une chanson (la
+      // choisir dans le répertoire) ne touche donc plus JAMAIS "requests" ni "voters", ni pour la
+      // toute première demande de la soirée (création à 0, pas à 1, et aucun votant pré-crédité),
+      // ni pour une demande suivante par un AUTRE client sur une chanson déjà au palmarès (pur
+      // no-op côté Firestore : la chanson y est déjà, rien à écrire). Seuls les clics sur les
+      // flèches haut/bas de castVote() font maintenant bouger ce chiffre. On garde malgré tout
+      // une transaction (lecture + écriture) plutôt qu'un simple setDoc : elle lit d'abord pour
+      // savoir si quelqu'un d'autre a déjà créé le document ce soir (course possible entre deux
+      // clients qui demandent la même chanson en même temps) et ne fait l'écriture de création
+      // QUE si le document n'existe pas encore, sans jamais réécrire title/artist/createdAt
+      // d'un document déjà existant (ce que les règles Firestore interdisent de toute façon).
       await runTransaction(db, async (tx) => {
         const snap = await tx.get(ref);
         if (!snap.exists()) {
-          // Première demande de la soirée pour cette chanson : création complète.
-          const payload = {
-            requests: 1,
+          // Première demande de la soirée pour cette chanson : création à 0 vote.
+          tx.set(ref, {
+            requests: 0,
             burned: false,
             title: song.title,
             artist: song.artist || "",
             createdAt: serverTimestamp(),
-          };
-          if (clientName) payload.voters = { [sanitizeVoterKey(clientName)]: 1 };
-          tx.set(ref, payload);
-        } else {
-          // Déjà demandée ce soir : on ne touche QUE requests (+1) et voters, jamais
-          // title/artist/createdAt (qui n'ont pas changé et que les règles interdisent de
-          // réécrire ici).
-          const data = snap.data();
-          const payload = { requests: (data.requests || 0) + 1 };
-          if (clientName) {
-            const key = sanitizeVoterKey(clientName);
-            const voters = { ...(data.voters || {}) };
-            voters[key] = (voters[key] || 0) + 1;
-            payload.voters = voters;
-          }
-          tx.update(ref, payload);
+          });
         }
+        // Sinon (déjà au palmarès ce soir, demandée par ce client ou par un autre avant lui) :
+        // rien à faire ici, voir le commentaire ci-dessus.
       });
       // Compteur cumulatif par artiste (Top Pick) — jamais réinitialisé par "Nouvelle soirée",
       // pour refléter les tendances sur plusieurs soirées plutôt qu'une seule.
