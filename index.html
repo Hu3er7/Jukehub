@@ -174,21 +174,42 @@
 
   /* Nouvelle section "Mes votes" (demande explicite de Hubert) : entre le catalogue et le
      palmarès, liste les chansons sur lesquelles CE client a personnellement un solde net de votes
-     actif ce soir — voir renderMyVotes(). 2e demande de Hubert : chaque chanson prend maintenant
-     une ligne complète, réutilisant .jb-slot/.jb-palmares-grid tel quel (même style que le
-     palmarès plus bas), avec seulement ce solde net affiché à la fin de la ligne (ex. "+2 VOTES"/
-     "-1 VOTE") plutôt que des chips séparées hausse/baisse. Couleur jaune (var(--accent2), même
+     actif ce soir — voir renderMyVotes(). 3e demande de Hubert, maquette Photoshop fournie
+     ("C'est moi qui l'a fait dans photoshop") : ligne compacte unique par chanson (.jb-my-vote-line
+     ci-dessous), PAS le format carte .jb-slot/.jb-palmares-grid encore utilisé par le palmarès
+     plus bas (volontairement laissé intact : Hubert a confirmé que seule la section "Mes votes"
+     doit changer d'apparence). Le solde net ("+2"/"-1") se trouve maintenant au DÉBUT de la ligne
+     (plus de "margin-left: auto", qui le poussait à droite dans l'ancien format), suivi du titre ;
+     l'artiste est repoussé au bout de la ligne, à droite. Couleur jaune (var(--accent2), même
      teinte que .jb-slot-votes) pour un solde positif — demande explicite de Hubert (capture à
      l'appui) ; rouge (même teinte que la flèche .jb-slot-vote-up) pour un solde négatif, afin que
      le client distingue vite les deux cas. */
   #jb-app .jb-my-vote-delta {
-    flex-shrink: 0; margin-left: auto; font-weight: 800; font-size: 1rem;
+    flex-shrink: 0; font-weight: 800; font-size: 1rem;
     letter-spacing: 0.3px; text-transform: uppercase; white-space: nowrap;
   }
   #jb-app .jb-my-vote-delta-up { color: var(--accent2); }
   #jb-app .jb-my-vote-delta-down { color: #e0314d; }
+  /* Ligne compacte "Mes votes" : solde net + tiret + titre à gauche (regroupés dans
+     .jb-my-vote-line-left, qui se contracte en premier grâce à min-width: 0), artiste collé au
+     bout de la ligne, à droite. Pas de carte/bordure épaisse ni de numéro de rang (contrairement à
+     .jb-slot, réservé au palmarès) — juste un trait fin de séparation entre les lignes. */
+  #jb-app .jb-my-votes-list { display: flex; flex-direction: column; gap: 0; }
+  #jb-app .jb-my-vote-line {
+    display: flex; align-items: baseline; gap: 8px; padding: 7px 2px;
+    border-bottom: 1px solid var(--border); min-width: 0;
+  }
+  #jb-app .jb-my-vote-line:last-child { border-bottom: none; }
+  #jb-app .jb-my-vote-line-left {
+    flex: 1; min-width: 0; display: flex; align-items: baseline; gap: 6px; overflow: hidden;
+  }
+  #jb-app .jb-my-vote-line .jb-my-vote-dash { flex-shrink: 0; color: var(--text-dim); font-weight: 700; }
+  #jb-app .jb-my-vote-line .jb-slot-title { flex: 1; min-width: 0; }
+  #jb-app .jb-my-vote-line .jb-slot-artist { flex-shrink: 0; max-width: 42%; }
   @media (max-width: 420px) {
     #jb-app .jb-my-vote-delta { font-size: 0.85rem; }
+    #jb-app .jb-my-vote-line { gap: 6px; padding: 6px 1px; }
+    #jb-app .jb-my-vote-line-left { gap: 4px; }
   }
 
   /* Variante de .jb-pulse-attn pour les éléments PLEINE LARGEUR (ligne du cadre rouge, case du
@@ -1455,7 +1476,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-14.85";
+  const APP_BUILD = "2026-10-14.86";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -2543,19 +2564,23 @@
       .filter(Boolean)
       .sort((a, b) => compareVoteEntries([a[0], a[1]], [b[0], b[1]]));
     emptyEl.hidden = entries.length > 0;
+    // Format compact (maquette Photoshop de Hubert, 3e itération de cette section) : une seule
+    // ligne par chanson — solde net puis tiret puis titre à gauche, artiste à droite — au lieu du
+    // format "carte" .jb-slot (numéro de rang + titre/artiste empilés + badge à droite) encore
+    // utilisé par le palmarès. Pas de numéro de rang ici (jamais demandé pour "Mes votes").
     listEl.innerHTML = entries
-      .map(([, v, delta], i) => {
+      .map(([, v, delta]) => {
         const n = Math.abs(delta);
         const deltaClass = delta > 0 ? "jb-my-vote-delta-up" : "jb-my-vote-delta-down";
         const sign = delta > 0 ? "+" : "-";
         return `
-        <div class="jb-slot">
-          <span class="jb-slot-rank">${i + 1}</span>
-          <span class="jb-slot-info">
+        <div class="jb-my-vote-line">
+          <span class="jb-my-vote-line-left">
+            <span class="jb-my-vote-delta ${deltaClass}">${sign}${n}</span>
+            <span class="jb-my-vote-dash">-</span>
             <span class="jb-slot-title">${escapeHtml(v.title)}</span>
-            ${v.artist ? `<span class="jb-slot-artist">${escapeHtml(v.artist)}</span>` : ""}
           </span>
-          <span class="jb-my-vote-delta ${deltaClass}">${sign}${n} ${t("votes_unit", n)}</span>
+          ${v.artist ? `<span class="jb-slot-artist">${escapeHtml(v.artist)}</span>` : ""}
         </div>`;
       })
       .join("");
