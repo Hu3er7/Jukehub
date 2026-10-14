@@ -698,7 +698,18 @@
   }
   #jb-public h2::before { content: "// "; color: var(--accent2); }
   #jb-public .jb-style-heading-row h2 { font-size: 1.15rem; }
-  #jb-public .jb-folder-title { font-family: 'Share Tech Mono', monospace; text-transform: none; }
+  /* 4e demande de Hubert (captures à l'appui) : les titres de dossier (nom d'artiste choisi, ou
+     "Genre (N chansons)") doivent avoir EXACTEMENT le même look que tous les autres titres de
+     section ("// 669 CHANSONS", "// Palmarès"...) — barres obliques jaunes + écriture cyan fluo,
+     majuscules, gras — plutôt que leur ancien style distinct (rose, casse normale, sans "//").
+     Même recette que #jb-public h2/h2::before juste au-dessus, reposée ici séparément car
+     .jb-folder-title est un <div> (pas un <h2> — sa taille de police, plus grande, reste gérée par
+     #jb-app .jb-folder-title plus haut, volontairement différente de celle des autres titres). */
+  #jb-public .jb-folder-title {
+    font-family: 'Share Tech Mono', monospace; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 1.5px; color: var(--accent);
+  }
+  #jb-public .jb-folder-title::before { content: "// "; color: var(--accent2); }
 
   /* Textes secondaires (artiste, prénoms, messages vides) en police mono,
      pour l'esprit "lecture d'écran HUD" plutôt que la police système. */
@@ -1444,7 +1455,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-14.80";
+  const APP_BUILD = "2026-10-14.81";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
