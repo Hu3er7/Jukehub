@@ -128,42 +128,35 @@
   #jb-app .jb-rank-title { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   #jb-app .jb-rank-artist { color: var(--text-dim); font-size: 0.85rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   #jb-app .jb-rank-count { font-weight: 700; color: var(--accent2); font-size: 0.9rem; flex-shrink: 0; white-space: nowrap; }
-  /* .jb-my-votes-heading réutilise exactement la même mise en page que .jb-palmares-heading
-     (titre à gauche, badge de votes à droite, sur la même ligne) — demande explicite de Hubert,
-     capture à l'appui : le badge "N VOTES RESTANTS" déménage du palmarès vers "Mes votes". */
-  /* flex-wrap: wrap (plutôt que nowrap) + un min-width réservé sur le h2 juste en dessous : sur
-     un écran de téléphone étroit, si le titre ET le badge de votes (gros + gras, voir plus bas)
-     ne tiennent plus ensemble sur une seule ligne, le badge redescend sur sa propre ligne plutôt
-     que d'écraser le titre à 0px et le faire disparaître complètement — bogue réel constaté par
-     Hubert (capture à l'appui : "// 3 VOTES RESTANTS" sans aucune trace de "MES VOTES"). */
+  /* .jb-my-votes-heading réutilise la même mise en page que .jb-palmares-heading. 3e demande de
+     Hubert (capture à l'appui) : plus de titre "Mes votes" ET un badge "N VOTES RESTANTS" côte à
+     côte — juste UN SEUL h2, qui EST le compteur ("// N VOTES", comme "// Palmarès" juste en
+     dessous) — voir .jb-vote-remaining plus bas, maintenant posée directement sur le h2 lui-même
+     plutôt que sur un élément séparé. L'ancien bogue "titre écrasé à 0px par le badge" (capture à
+     l'appui : "// 3 VOTES RESTANTS" sans aucune trace de "MES VOTES") disparaît du même coup : il
+     n'y a plus deux éléments qui se disputent la largeur de la ligne. */
   #jb-app .jb-palmares-heading,
   #jb-app .jb-my-votes-heading {
     flex-shrink: 0; display: flex; align-items: center; justify-content: space-between;
     flex-wrap: wrap; row-gap: 2px; gap: 8px; background: var(--bg); padding: 8px 6px 8px 0; margin-bottom: 2px;
   }
-  #jb-app .jb-palmares-heading h2,
-  #jb-app .jb-my-votes-heading h2 {
-    /* min-width: max-content (plutôt qu'un nombre de px deviné) : le titre garde TOUJOURS sa
-       pleine largeur naturelle — c'est le badge qui redescend sur sa propre ligne s'il ne reste
-       plus assez de place, jamais le titre qui se fait tronquer/écraser. */
+  #jb-app .jb-palmares-heading h2 {
     margin-bottom: 0; flex: 1; min-width: max-content; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   }
   /* Texte brut, en gras, sans pilule/cadre — demande explicite de Hubert (maquette Photoshop à
      l'appui, comparant les 2 rendus) : il préfère ce style au badge-pilule précédent
-     (.jb-request-remaining). Chiffre et mot en 2 couleurs distinctes (demande explicite de
-     Hubert, capture à l'appui) : le CHIFFRE reste dans le même jaune/accent que le reste des
-     compteurs (var(--accent2)), le MOT ("VOTES RESTANTS") passe en rose (var(--text), déjà la
-     couleur rose par défaut du texte côté public — voir le bloc #jb-public plus bas). Encore
-     agrandi + les 2 explicitement en gras (demande explicite de Hubert, 2e passe). */
+     (.jb-request-remaining). Posée directement sur le h2 "// N VOTES" (3e demande de Hubert,
+     capture à l'appui — voir plus haut) : le CHIFFRE reste dans le même jaune/accent que le reste
+     des compteurs (.jb-vote-remaining-num, var(--accent2)), le mot "VOTES" hérite simplement du
+     style normal des titres de section (#jb-public h2 : cyan, gras, majuscules — voir plus bas),
+     pas besoin d'une classe à part. Mis à jour en direct à chaque vote — voir updateVoteBadge().
+  */
   #jb-app .jb-vote-remaining {
-    flex-shrink: 0; font-size: 1.65rem; letter-spacing: 0.3px; text-transform: uppercase;
-    white-space: nowrap;
+    margin-bottom: 0; font-size: 1.65rem; letter-spacing: 0.3px; white-space: nowrap;
   }
   #jb-app .jb-vote-remaining-num { color: var(--accent2); font-weight: 900; }
-  #jb-app .jb-vote-remaining-label { color: var(--text); font-weight: 900; }
   @media (max-width: 420px) {
-    #jb-app .jb-palmares-heading h2,
-    #jb-app .jb-my-votes-heading h2 { font-size: 1rem; }
+    #jb-app .jb-palmares-heading h2 { font-size: 1rem; }
     #jb-app .jb-vote-remaining { font-size: 1.3rem; }
   }
 
@@ -1079,12 +1072,16 @@
          lui-même voté à la hausse ou à la baisse (voir renderMyVotes()/castVote() plus bas). Vide
          (texte #jb-my-votes-empty) tant qu'il n'a voté sur aucune chanson ce soir. -->
     <section class="jb-my-votes">
-      <!-- Badge "N VOTES RESTANTS" déménagé ici (sur la même ligne que le titre "Mes votes"),
-           demande explicite de Hubert, capture à l'appui — voir .jb-my-votes-heading en CSS,
-           qui réutilise la mise en page de .jb-palmares-heading (titre à gauche, badge à droite). -->
+      <!-- 3e demande de Hubert (capture à l'appui) : plus de titre "Mes votes" séparé à côté d'un
+           badge "N VOTES RESTANTS" — juste UN SEUL titre qui EST le compteur, format "// N VOTES"
+           (comme "// Palmarès" juste en dessous), le chiffre en jaune/gras (.jb-vote-remaining-num,
+           inchangé) et "VOTES" dans la même couleur/police que les autres titres de section (hérité
+           de #jb-public h2, pas de classe à part). Mis à jour en direct à chaque vote (voir
+           updateVoteBadge(), appelée après CHAQUE castVote() et à chaque instantané Firestore du
+           palmarès) — "le décompte se fasse au fur et à mesure que les votes s'ajoute ou
+           s'enlève". -->
       <div class="jb-my-votes-heading">
-        <h2 id="jb-my-votes-title">Mes votes</h2>
-        <div id="jb-vote-remaining" class="jb-vote-remaining"><span class="jb-vote-remaining-num">6</span> <span class="jb-vote-remaining-label">VOTES RESTANTS</span></div>
+        <h2 id="jb-vote-remaining" class="jb-vote-remaining"><span class="jb-vote-remaining-num">6</span> VOTES</h2>
       </div>
       <p id="jb-my-votes-empty" class="jb-empty">Tu n'as pas encore voté ce soir.</p>
       <!-- 2e demande de Hubert : chaque chanson votée prend maintenant une ligne complète (même
@@ -1447,7 +1444,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-14.79";
+  const APP_BUILD = "2026-10-14.80";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -1527,9 +1524,6 @@
       page_title: "Mon Répertoire",
       palmares_title: "Palmarès",
       palmares_empty: "Aucune demande pour l'instant — sois le premier à voter !",
-      // Séparé en 2 (plutôt qu'un seul gabarit de phrase) pour permettre 2 couleurs distinctes
-      // sur le chiffre et le mot — voir updateVoteBadge()/.jb-vote-remaining-num/-label.
-      vote_remaining_label: (n) => `VOTE${n === 1 ? "" : "S"} RESTANT${n === 1 ? "" : "S"}`,
       vote_used_up: "Tu as utilisé tes 6 votes. Attends qu'une chanson sur laquelle tu as voté soit jouée pour en récupérer !",
       vote_added_up: "👍 Vote ajouté !",
       vote_added_down: "👎 Vote retiré !",
@@ -1543,9 +1537,9 @@
       vote_floor_reached: "Cette chanson est déjà au minimum.",
       // Nouvelle section "Mes votes" (demande explicite de Hubert) — voir renderMyVotes(). Chaque
       // chanson votée prend une ligne complète (style palmarès) avec le solde net de votes affiché
-      // à la fin de la ligne (ex. "+2 VOTES" / "-1 VOTE") — "votes_unit" gère le singulier/pluriel
-      // de ce mot, comme vote_remaining_label ci-dessus.
-      my_votes_title: "Mes votes",
+      // à la fin de la ligne (ex. "+2 VOTES" / "-1 VOTE"). Aussi utilisée par le titre de section
+      // lui-même, "// N VOTES" — voir updateVoteBadge() — "votes_unit" gère le singulier/pluriel
+      // de ce mot dans les deux cas.
       my_votes_empty: "Tu n'as pas encore voté ce soir.",
       votes_unit: (n) => `VOTE${n === 1 ? "" : "S"}`,
       style_title: "Chansons",
@@ -1596,7 +1590,6 @@
       page_title: "My Repertoire",
       palmares_title: "Billboard",
       palmares_empty: "No requests yet — be the first to vote!",
-      vote_remaining_label: (n) => `VOTE${n === 1 ? "" : "S"} REMAINING`,
       vote_used_up: "You've used all 6 of your votes. Wait until a song you voted on gets played to get more!",
       vote_added_up: "👍 Vote added!",
       vote_added_down: "👎 Vote removed!",
@@ -1604,7 +1597,6 @@
       vote_up_aria: "Add a vote to this song",
       vote_down_aria: "Remove a vote from this song",
       vote_floor_reached: "This song is already at the minimum.",
-      my_votes_title: "My Votes",
       my_votes_empty: "You haven't voted on anything yet tonight.",
       votes_unit: (n) => `VOTE${n === 1 ? "" : "S"}`,
       style_title: "Songs",
@@ -1678,7 +1670,6 @@
     if (npConfirm) npConfirm.textContent = t("name_prompt_confirm");
     document.getElementById("jb-artist-name").textContent = t("page_title");
     document.getElementById("jb-palmares-title").textContent = t("palmares_title");
-    document.getElementById("jb-my-votes-title").textContent = t("my_votes_title");
     document.getElementById("jb-my-votes-empty").textContent = t("my_votes_empty");
     // Texte de repli (voir renderCatalog(), qui pose le vrai texte dynamique "N Chansons"/
     // "N Artistes"/"N Genres" juste après tout rendu) — évite juste un flash de texte vide avant
@@ -2504,9 +2495,14 @@
     const remainingEl = document.getElementById("jb-vote-remaining");
     if (!remainingEl) return;
     const r = remaining ?? votesRemaining();
-    // 2 <span> séparés (chiffre/mot) pour que le CSS puisse leur donner chacun sa propre couleur
-    // (demande explicite de Hubert, capture à l'appui) — voir .jb-vote-remaining-num/-label.
-    remainingEl.innerHTML = `<span class="jb-vote-remaining-num">${r}</span> <span class="jb-vote-remaining-label">${t("vote_remaining_label", r)}</span>`;
+    // Ce h2 EST le titre de section maintenant (3e demande de Hubert, capture à l'appui — voir
+    // le HTML/CSS plus haut) : plus de "RESTANT(S)" — juste "// N VOTE(S)". Le chiffre garde son
+    // <span> dédié (.jb-vote-remaining-num) pour sa couleur/graisse propres ; le mot "VOTE(S)"
+    // reste du texte brut, qui hérite simplement du style normal des titres de section (côté
+    // public : cyan, gras, majuscules — voir #jb-public h2). Appelée après CHAQUE vote (castVote())
+    // ET à chaque instantané Firestore du palmarès (renderPalmares()) : le décompte se met donc à
+    // jour en direct, au fur et à mesure que des votes s'ajoutent ou se retirent.
+    remainingEl.innerHTML = `<span class="jb-vote-remaining-num">${r}</span> ${t("votes_unit", r)}`;
   }
   // Nouvelle section "Mes votes" (demande explicite de Hubert) : liste, pour CE client, les
   // chansons où il a un solde NET de votes encore actif ce soir (entry.up - entry.down, voir
