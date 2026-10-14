@@ -924,6 +924,33 @@
      blancs sans cette règle. On les pose donc d'emblée à la même teinte sombre que l'overlay de
      #jb-city-bg, pour qu'il n'y ait plus aucun flash blanc, même le tout premier instant. */
   html, body { background: #050808; }
+
+  /* Voir la note HTML de #jb-boot-loading plus bas : couvre tout l'écran en position fixe pour
+     rester centré peu importe la hauteur du reste du contenu (encore caché à ce stade). */
+  #jb-app .jb-boot-loading {
+    position: fixed; inset: 0; z-index: 60; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 14px; padding: 24px; text-align: center;
+  }
+  /* Sans cette règle, le "display: flex" ci-dessus (plus spécifique que la feuille de style par
+     défaut du navigateur pour [hidden]) gagnerait même une fois l'attribut "hidden" posé (voir
+     hideBootLoading()) — l'élément resterait donc visuellement invisible (masqué par le contenu
+     qui apparaît par-dessus) mais toujours EN POSITION FIXE PLEIN ÉCRAN, interceptant tous les
+     clics/taps sur le reste de l'appli en dessous. Bug trouvé via les tests Playwright existants
+     (clics sur le palmarès/catalogue bloqués juste après la révélation). */
+  #jb-app .jb-boot-loading[hidden] { display: none; }
+  #jb-app .jb-boot-spinner {
+    width: 38px; height: 38px; border-radius: 50%;
+    border: 3px solid var(--border); border-top-color: var(--accent2);
+    animation: jb-boot-spin 0.9s linear infinite;
+  }
+  @keyframes jb-boot-spin { to { transform: rotate(360deg); } }
+  #jb-app .jb-boot-loading-text { font-size: 0.95rem; opacity: 0.85; line-height: 1.6; margin: 0; color: var(--text); }
+  #jb-app .jb-boot-loading-slow { margin-top: 2px; max-width: 320px; }
+  #jb-app .jb-boot-loading-slow p { font-size: 0.8rem; opacity: 0.75; line-height: 1.5; margin: 0 0 10px; color: var(--text); }
+  #jb-app .jb-boot-retry-btn {
+    background: var(--accent2); color: #2b0a1a; border: none; border-radius: 10px;
+    padding: 10px 18px; font-weight: 800; cursor: pointer; font-size: 0.85rem;
+  }
 </style>
 
 <div id="jb-app">
@@ -936,6 +963,27 @@
        la bonne page (appli ou "Pas en spectacle") — demande explicite de Hubert (vidéo à l'appui :
        "il apparait encore mais disparrait très rapidement[...] ne plus le voir du tout"). -->
   <div id="jb-city-bg" class="jb-city-bg" aria-hidden="true" hidden></div>
+
+  <!-- Indicateur de chargement (demande implicite de Hubert, capture à l'appui) : le SEUL élément
+       visible dès le tout premier instant (ni "hidden" ni caché par défaut, contrairement à tout
+       le reste de #jb-app) pendant que l'appli attend le chargement des modules Firebase (voir
+       importWithRetry()) ET son tout premier instantané Firestore (config/settings, voir
+       bootConfigReady/doBootReveal()). Avant, rien n'était affiché pendant cette attente — juste le
+       fond uni --bg de #jb-app (voir CSS) — donc sur un Wi-Fi/4G de bar instable, l'écran pouvait
+       rester visuellement "figé" plusieurs secondes, parfois bien plus, sans aucun signe que
+       quelque chose se passait. Bilingue d'emblée (FR/EN), car affiché avant même que lang/
+       applyStaticTranslations() ne soient en jeu. Masqué dès la révélation (voir
+       hideBootLoading()/doBootReveal()/checkRoute()) ; si l'attente dépasse 10s, un message +
+       bouton "Réessayer" apparaissent en plus du spinner (voir le minuteur de secours plus bas dans
+       le script). -->
+  <div id="jb-boot-loading" class="jb-boot-loading">
+    <div class="jb-boot-spinner" aria-hidden="true"></div>
+    <p class="jb-boot-loading-text">Chargement…<br>Loading…</p>
+    <div id="jb-boot-loading-slow" class="jb-boot-loading-slow" hidden>
+      <p>Ça prend plus de temps que prévu. Vérifie ta connexion.<br>This is taking longer than expected. Check your connection.</p>
+      <button id="jb-boot-retry-btn" class="jb-boot-retry-btn" type="button">🔄 Réessayer / Retry</button>
+    </div>
+  </div>
 
   <div id="jb-public" class="jb-view">
    <div id="jb-app-content" hidden>
@@ -1399,7 +1447,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-14.78";
+  const APP_BUILD = "2026-10-14.79";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -1880,6 +1928,39 @@
   document.getElementById("jb-search-input").addEventListener("focus", () => applySearchFocusHeight(true));
   document.getElementById("jb-search-input").addEventListener("blur", () => applySearchFocusHeight(false));
 
+  // Masque l'indicateur de chargement #jb-boot-loading (voir le HTML/CSS plus haut) — appelée dès
+  // que l'appli (route admin, "Pas en spectacle"/tuto, appli normale) ou un message d'erreur de
+  // chargement a pris sa place (voir checkRoute()/doBootReveal() et les 2 blocs d'erreur Firebase
+  // juste plus bas). Sans effet si déjà masqué.
+  //
+  // "bootLoadingHidden" (plutôt que de se fier à "bootRevealed", déclaré PLUS BAS dans ce même
+  // script, après le chargement des modules Firebase) : un bug trouvé en testant le filet de
+  // sécurité juste en dessous — si c'est justement LE CHARGEMENT DE FIREBASE LUI-MÊME qui traîne
+  // (le scénario exact signalé par Hubert), le script reste suspendu sur le "await
+  // importWithRetry(...)" plus bas, et "let bootRevealed" (une ligne de code TEXTUELLEMENT après
+  // cet await) n'a alors pas encore été exécutée — y accéder lève une ReferenceError ("zone
+  // temporelle morte" des "let"), qui plantait silencieusement le minuteur sans jamais afficher le
+  // message. Ce drapeau local, lui, est déclaré ICI, avant l'attente de Firebase, donc toujours
+  // valide peu importe OÙ le chargement traîne.
+  let bootLoadingHidden = false;
+  function hideBootLoading() {
+    bootLoadingHidden = true;
+    const el = document.getElementById("jb-boot-loading");
+    if (el) el.hidden = true;
+  }
+  // Filet de sécurité pour l'indicateur de chargement LUI-MÊME : si l'appli n'a TOUJOURS pas été
+  // révélée après 10s (modules Firebase et/ou tout premier instantané Firestore anormalement
+  // lents — Wi-Fi/4G de bar instable, demande implicite de Hubert, capture à l'appui), on ajoute un
+  // message + un bouton "Réessayer" (recharge simplement la page) sous le spinner, plutôt que de
+  // laisser le client deviner si quelque chose se passe encore ou si l'écran est bel et bien figé.
+  // Purement additif (ne touche pas au spinner) et sans effet si la révélation a déjà eu lieu.
+  document.getElementById("jb-boot-retry-btn").addEventListener("click", () => location.reload());
+  setTimeout(() => {
+    if (bootLoadingHidden) return;
+    const slow = document.getElementById("jb-boot-loading-slow");
+    if (slow) slow.hidden = false;
+  }, 10000);
+
   applyStaticTranslations();
   document.querySelectorAll(".jb-lang-btn[data-lang]").forEach((btn) => {
     btn.addEventListener("click", () => {
@@ -1897,16 +1978,30 @@
     banner.className = "jb-warn-banner";
     banner.innerHTML = "⚠️ Configuration Firebase manquante. Remplace les valeurs de <code>firebaseConfig</code> en haut du code par celles de ton projet Firebase.";
     app.prepend(banner);
+    hideBootLoading();
     throw new Error("firebaseConfig non configuré");
   }
 
   // Les librairies Firebase sont chargées depuis gstatic.com. Sur un Wi-Fi de bar instable,
   // ce chargement peut échouer au premier essai (page blanche sinon) — on réessaie
   // automatiquement quelques fois avant d'abandonner et de prévenir le client.
-  async function importWithRetry(url, attempts = 3) {
+  //
+  // Délai maximum (7s) par essai, ajouté en plus de la logique de réessai déjà en place — demande
+  // implicite de Hubert (capture à l'appui) : "ça peut rester longtemps figé". Sans ça, un essai
+  // qui reste simplement EN ATTENTE (jamais une vraie erreur réseau, juste une connexion qui ne
+  // répond pas) sur un Wi-Fi/4G de bar instable pouvait bloquer import() indéfiniment — le délai du
+  // navigateur lui-même pour ABANDONNER une requête bloquée est long et imprévisible, bien plus
+  // que les quelques secondes qu'on vise ici. Avec ce filet, chaque essai est borné : au pire, les
+  // 3 essais + délais de réessai prennent un temps total prévisible avant d'afficher le message
+  // "Impossible de se connecter" (avec bouton Réessayer, voir plus bas) plutôt que de laisser
+  // l'écran de chargement (#jb-boot-loading) tourner pour rien, sans jamais arriver nulle part.
+  async function importWithRetry(url, attempts = 3, timeoutMs = 7000) {
     for (let i = 1; i <= attempts; i++) {
       try {
-        return await import(url);
+        return await Promise.race([
+          import(url),
+          new Promise((_, reject) => setTimeout(() => reject(new Error(`Délai dépassé (${timeoutMs}ms)`)), timeoutMs)),
+        ]);
       } catch (e) {
         console.error(`Échec du chargement de ${url} (essai ${i}/${attempts})`, e);
         if (i === attempts) throw e;
@@ -1937,6 +2032,7 @@
     banner.innerHTML = '⚠️ Impossible de se connecter au serveur (connexion instable). <button id="jb-retry-load" style="margin-left:8px; background:var(--accent); color:#2b0a1a; border:none; border-radius:8px; padding:8px 14px; font-weight:700; cursor:pointer;">Réessayer</button>';
     app.prepend(banner);
     document.getElementById("jb-retry-load").addEventListener("click", () => location.reload());
+    hideBootLoading();
     throw e;
   }
 
@@ -2536,7 +2632,10 @@
     // connexion est visible d'emblée, voir #jb-login) — on peut donc révéler le fond de ville
     // tout de suite ici, sans attendre bootRevealed/doBootReveal() (qui ne s'occupe que du côté
     // public, voir renderLiveGate() plus bas).
-    if (admin) document.getElementById("jb-city-bg").hidden = false;
+    if (admin) {
+      document.getElementById("jb-city-bg").hidden = false;
+      hideBootLoading();
+    }
     renderLiveGate();
   }
   window.addEventListener("hashchange", checkRoute);
@@ -2600,6 +2699,7 @@
     // client voit ce calque tout seul, sans aucune carte par-dessus, pendant toute l'attente du
     // premier instantané Firestore.
     document.getElementById("jb-city-bg").hidden = false;
+    hideBootLoading();
     applyLiveGateNow(live);
   }
   function renderLiveGate() {
