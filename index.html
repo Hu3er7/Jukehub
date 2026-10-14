@@ -128,11 +128,16 @@
   #jb-app .jb-rank-title { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   #jb-app .jb-rank-artist { color: var(--text-dim); font-size: 0.85rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   #jb-app .jb-rank-count { font-weight: 700; color: var(--accent2); font-size: 0.9rem; flex-shrink: 0; white-space: nowrap; }
-  #jb-app .jb-palmares-heading {
+  /* .jb-my-votes-heading réutilise exactement la même mise en page que .jb-palmares-heading
+     (titre à gauche, badge de votes à droite, sur la même ligne) — demande explicite de Hubert,
+     capture à l'appui : le badge "N VOTES RESTANTS" déménage du palmarès vers "Mes votes". */
+  #jb-app .jb-palmares-heading,
+  #jb-app .jb-my-votes-heading {
     flex-shrink: 0; display: flex; align-items: center; justify-content: space-between;
     flex-wrap: nowrap; gap: 8px; background: var(--bg); padding: 8px 6px 8px 0; margin-bottom: 2px;
   }
-  #jb-app .jb-palmares-heading h2 {
+  #jb-app .jb-palmares-heading h2,
+  #jb-app .jb-my-votes-heading h2 {
     margin-bottom: 0; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   }
   /* Texte brut, en gras, sans pilule/cadre — demande explicite de Hubert (maquette Photoshop à
@@ -149,7 +154,8 @@
   #jb-app .jb-vote-remaining-num { color: var(--accent2); font-weight: 900; }
   #jb-app .jb-vote-remaining-label { color: var(--text); font-weight: 900; }
   @media (max-width: 420px) {
-    #jb-app .jb-palmares-heading h2 { font-size: 1rem; }
+    #jb-app .jb-palmares-heading h2,
+    #jb-app .jb-my-votes-heading h2 { font-size: 1rem; }
     #jb-app .jb-vote-remaining { font-size: 1.3rem; }
   }
 
@@ -1019,7 +1025,13 @@
          lui-même voté à la hausse ou à la baisse (voir renderMyVotes()/castVote() plus bas). Vide
          (texte #jb-my-votes-empty) tant qu'il n'a voté sur aucune chanson ce soir. -->
     <section class="jb-my-votes">
-      <h2 id="jb-my-votes-title">Mes votes</h2>
+      <!-- Badge "N VOTES RESTANTS" déménagé ici (sur la même ligne que le titre "Mes votes"),
+           demande explicite de Hubert, capture à l'appui — voir .jb-my-votes-heading en CSS,
+           qui réutilise la mise en page de .jb-palmares-heading (titre à gauche, badge à droite). -->
+      <div class="jb-my-votes-heading">
+        <h2 id="jb-my-votes-title">Mes votes</h2>
+        <div id="jb-vote-remaining" class="jb-vote-remaining"><span class="jb-vote-remaining-num">6</span> <span class="jb-vote-remaining-label">VOTES RESTANTS</span></div>
+      </div>
       <p id="jb-my-votes-empty" class="jb-empty">Tu n'as pas encore voté ce soir.</p>
       <div id="jb-my-votes-up-row" class="jb-my-votes-row" hidden>
         <span id="jb-my-votes-up-label" class="jb-my-votes-row-label">À la hausse</span>
@@ -1034,7 +1046,6 @@
     <section class="jb-palmares">
       <div class="jb-palmares-heading">
         <h2 id="jb-palmares-title">Palmarès</h2>
-        <div id="jb-vote-remaining" class="jb-vote-remaining"><span class="jb-vote-remaining-num">6</span> <span class="jb-vote-remaining-label">VOTES RESTANTS</span></div>
       </div>
       <div id="jb-palmares-list" class="jb-palmares-grid"></div>
       <p id="jb-palmares-empty" class="jb-empty" hidden>Aucune demande pour l'instant — sois le premier à voter !</p>
@@ -1385,7 +1396,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-14.75";
+  const APP_BUILD = "2026-10-14.76";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
