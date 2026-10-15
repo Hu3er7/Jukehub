@@ -1242,24 +1242,6 @@
         <p class="jb-hint">Efface le palmarès et les chansons "déjà jouées". Le répertoire complet reste intact.</p>
       </section>
 
-      <!-- TEMPORAIRE — diagnostic du lien OnSong pour "Léo Gagné" (voir onsongSlug() plus bas dans le
-           JS). À retirer une fois le bon format trouvé. Hubert : touche chaque lien un par un (ferme
-           OnSong entre chaque essai si besoin) et dis-moi lesquels ouvrent VRAIMENT "Léo Gagné". -->
-      <section class="jb-admin-section" style="background:#2a1f3d;border:2px dashed #a78bfa;border-radius:10px;padding:12px;">
-        <h3 style="margin-top:0;">🧪 Test diagnostic — lien OnSong "Léo Gagné"</h3>
-        <p class="jb-hint">Touche chaque lien un par un (dans l'ordre) et note le ou les numéros qui ouvrent vraiment "Léo Gagné" dans OnSong. Envoie-moi la liste des numéros qui fonctionnent.</p>
-        <ol style="padding-left:20px;line-height:2.2;">
-          <li><a href="onsong://open/songs?song=leo-gagne">1. leo-gagne</a> <span class="jb-hint">(minuscules, sans accent, tiret)</span></li>
-          <li><a href="onsong://open/songs?song=Leo-Gagne">2. Leo-Gagne</a> <span class="jb-hint">(majuscules, sans accent, tiret)</span></li>
-          <li><a href="onsong://open/songs?song=l%C3%A9o-gagn%C3%A9">3. léo-gagné</a> <span class="jb-hint">(minuscules, AVEC accents, tiret)</span></li>
-          <li><a href="onsong://open/songs?song=L%C3%A9o-Gagn%C3%A9">4. Léo-Gagné</a> <span class="jb-hint">(majuscules, AVEC accents, tiret)</span></li>
-          <li><a href="onsong://open/songs?song=Leo+Gagne">5. Leo Gagne</a> <span class="jb-hint">(majuscules, sans accent, espace)</span></li>
-          <li><a href="onsong://open/songs?song=L%C3%A9o+Gagn%C3%A9">6. Léo Gagné</a> <span class="jb-hint">(majuscules, AVEC accents, espace)</span></li>
-          <li><a href="onsong://open/songs?song=leo%20gagne">7. leo gagne</a> <span class="jb-hint">(minuscules, sans accent, %20)</span></li>
-          <li><a href="onsong://open/songs?song=L%C3%89O%20GAGN%C3%89">8. LÉO GAGNÉ</a> <span class="jb-hint">(TOUT MAJUSCULES, comme dans le fichier, %20)</span></li>
-        </ol>
-      </section>
-
       <section class="jb-admin-section jb-admin-columns">
         <div class="jb-admin-column">
           <h3>🏆 Palmarès en direct</h3>
@@ -1517,7 +1499,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-15.94";
+  const APP_BUILD = "2026-10-15.95";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -2519,29 +2501,38 @@
   function slugId() {
     return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
   }
-  // Transforme un texte en "slug" (ex. "Hymne à l'amour" -> "hymne-a-l-amour") pour le lien
-  // onsong://open/songs?song=... (voir renderAdminPalmares() plus bas) — demande explicite de
-  // Hubert : "accéder à la partition de mes chansons, en appuyant sur les chansons, dans le
-  // palmarès de mon compte admin [...] linker mon app OnSong à mon système". La doc officielle
-  // d'OnSong (onsongapp.com/developers/open-song) ne montre qu'UN SEUL exemple de cette
-  // conversion ("Be Still" -> "be-still") et ne précise pas la règle exacte pour les accents,
-  // apostrophes ou parenthèses — cette fonction est donc une MEILLEURE ESTIMATION (minuscules,
-  // accents retirés via norm() comme pour la recherche, tout ce qui n'est pas une lettre/un
-  // chiffre remplacé par un tiret, tirets en trop retirés aux extrémités).
+  // Construit le texte de recherche pour le lien onsong://open/songs?song=... (voir
+  // renderAdminPalmares() plus bas) — demande explicite de Hubert : "accéder à la partition de
+  // mes chansons, en appuyant sur les chansons, dans le palmarès de mon compte admin [...] linker
+  // mon app OnSong à mon système". La doc officielle d'OnSong (onsongapp.com/developers/open-song)
+  // ne montre qu'UN SEUL exemple de cette conversion ("Be Still" -> "be-still") et ne précise pas
+  // la règle exacte pour les accents, la casse ou les espaces.
   //
-  // IMPORTANT — revenu à v.title seul (voir renderAdminPalmares() ci-dessous), après un
-  // aller-retour testé en vrai par Hubert avec vidéos à l'appui :
+  // Historique testé en vrai par Hubert (vidéos + captures à l'appui) :
   //  1. D'abord v.title seul : ne trouvait rien, car Hubert mettait alors l'artiste sur la 1re
   //     ligne de ses partitions OnSong (OnSong ne cherche que dans ce 1er champ).
-  //  2. Puis v.artist seul, puis "artiste + titre" combinés pour tenter de désambiguïser quand un
-  //     artiste a plusieurs chansons : toujours imparfait, car OnSong ignore le texte au-delà de
-  //     ce 1er champ — avec plusieurs partitions d'un même artiste, impossible à cibler avec
-  //     certitude par une simple recherche texte, peu importe ce qu'on construit côté slug.
-  //  3. Hubert a tranché (choix explicite) : plutôt que de contourner ça côté système, il remet
-  //     lui-même le TITRE de la chanson en 1re ligne de toutes ses partitions OnSong (convention
-  //     normale). Le système revient donc à chercher par v.title, comme à l'origine.
+  //  2. Puis v.artist seul, puis "artiste + titre" combinés pour désambiguïser quand un artiste a
+  //     plusieurs chansons : toujours imparfait, car OnSong ignore le texte au-delà de ce 1er
+  //     champ — impossible à cibler avec certitude par une simple recherche texte.
+  //  3. Hubert a tranché : plutôt que de contourner ça côté système, il remet lui-même le TITRE de
+  //     la chanson en 1re ligne de toutes ses partitions OnSong (convention normale). Retour à une
+  //     recherche sur v.title seul.
+  //  4. Avec v.title seul transformé en slug minuscule-sans-accent (ex. "leo-gagne"), la plupart
+  //     des chansons s'ouvraient bien (OnSong semble assez tolérant), MAIS pas "Léo Gagné" — lien
+  //     cassé malgré un fichier OnSong correctement formaté (titre en 1re ligne, confirmé par
+  //     capture), alors que la recherche manuelle DANS OnSong trouvait la chanson sans problème.
+  //     Diagnostic par élimination avec 8 liens de test (majuscules/minuscules, avec/sans accents,
+  //     tiret/espace) : SEULE la correspondance EXACTE au texte tel qu'il apparaît dans la
+  //     partition — "LÉO GAGNÉ" en MAJUSCULES, accents conservés, espace encodé en %20 — a
+  //     fonctionné. Le slug minuscule-sans-accent-avec-tirets ne matchait pas pour cette chanson
+  //     précise, même si ça fonctionnait "par chance" pour les autres.
+  //  -> Conclusion : on utilise maintenant le titre TEL QUEL, mis en MAJUSCULES (Hubert tape
+  //     toujours ses titres en majuscules en 1re ligne de ses partitions OnSong — voir Kryptonite,
+  //     When Im Gone, Minuit Chrétien, Léo Gagné), sans retirer les accents ni remplacer les
+  //     espaces par des tirets. encodeURIComponent() (à l'appel, dans renderAdminPalmares())
+  //     s'occupe de l'encodage (espace -> %20, accent -> %C3%89, etc.).
   function onsongSlug(text) {
-    return norm(text).replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+    return (text || "").toUpperCase();
   }
   function showToast(msg) {
     const t = document.createElement("div");
@@ -3985,13 +3976,11 @@
       // plutôt sur le rang/le chiffre juste à côté, EN DEHORS du lien. Seul le bouton
       // "✅ Jouée" reste un élément séparé, en dehors de ce lien (jamais imbriqué dans un <a> :
       // invalide en HTML, et doit de toute façon rester cliquable indépendamment). Voir
-      // onsongSlug() plus haut — ce lien reste une meilleure estimation (la règle exacte de
-      // conversion titre -> "song" n'est pas publique), à tester en vrai par Hubert.
-      //
-      // Revenu à l'ordre visuel d'origine (titre en 1re ligne, artiste en 2e) et à la recherche
-      // sur v.title seul — Hubert a choisi de remettre lui-même le titre en 1re ligne de toutes
-      // ses partitions OnSong plutôt que de garder le système adapté à l'ancienne convention
-      // (artiste en 1er). Voir l'historique détaillé au-dessus d'onsongSlug().
+      // onsongSlug() plus haut — ordre visuel d'origine (titre en 1re ligne, artiste en 2e) et
+      // recherche sur v.title seul, transformé en MAJUSCULES (confirmé en vrai par Hubert avec 8
+      // liens de test sur "Léo Gagné" : seule la correspondance exacte au texte de la partition,
+      // majuscules + accents conservés, a fonctionné). Voir l'historique détaillé au-dessus
+      // d'onsongSlug().
       li.innerHTML = `
         <a class="jb-slot-onsong-wrap jb-onsong-link" href="onsong://open/songs?song=${encodeURIComponent(onsongSlug(v.title))}" title="Ouvrir la partition dans OnSong">
           <span class="jb-slot-rank">${i + 1}</span>
