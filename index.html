@@ -263,11 +263,17 @@
     flex-shrink: 0; text-align: center;
   }
   #jb-app .jb-slot-info { flex: 1; min-width: 0; display: flex; flex-direction: column; overflow: hidden; }
-  /* .jb-slot-info est un <a href="onsong://..."> UNIQUEMENT dans le palmarès admin (voir
-     renderAdminPalmares()/onsongSlug()) — jamais côté client, où il reste un <span> normal. Ce
-     sélecteur ne vise donc que ce cas-là (balise <a>), sans toucher au palmarès public. */
-  #jb-app a.jb-slot-info { text-decoration: none; color: inherit; cursor: pointer; }
-  #jb-app a.jb-slot-info:active { opacity: 0.6; }
+  /* Lien "ouvrir dans OnSong", UNIQUEMENT dans le palmarès admin (voir renderAdminPalmares()/
+     onsongSlug()) — jamais côté client. Englobe rang + chiffre de votes + titre/artiste (pas
+     seulement le titre/artiste) pour une zone tactile large : une 1re version, plus étroite,
+     ratait trop souvent le doigt de Hubert (vidéo à l'appui) une fois le panneau admin partagé à
+     l'écran avec OnSong sur son iPad. Remplace le display:flex normal de .jb-slot pour ces 3
+     éléments : ils gardent leur gap habituel (10px, comme .jb-slot) à l'intérieur du lien. */
+  #jb-app .jb-slot-onsong-wrap {
+    display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0;
+    text-decoration: none; color: inherit; cursor: pointer;
+  }
+  #jb-app .jb-slot-onsong-wrap:active { opacity: 0.6; }
   #jb-app .jb-slot-title {
     font-weight: 700; font-size: 0.95rem; overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
   }
@@ -1493,7 +1499,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-15.89";
+  const APP_BUILD = "2026-10-15.90";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -3940,18 +3946,27 @@
     ranked.forEach(([id, v], i) => {
       const li = document.createElement("li");
       li.className = "jb-slot";
-      // Titre/artiste maintenant dans un <a href="onsong://..."> plutôt qu'un <span> : demande
-      // explicite de Hubert, "accéder à la partition de mes chansons, en appuyant sur les
-      // chansons, dans le palmarès de mon compte admin [...] linker mon app ONSONG à mon
-      // système". Voir onsongSlug() plus haut — ce lien reste une meilleure estimation (la règle
-      // exacte de conversion titre -> "song" n'est pas publique), à tester en vrai par Hubert.
+      // Rang + chiffre de votes + titre/artiste maintenant TOUS les trois à l'intérieur d'un seul
+      // <a href="onsong://..."> (plutôt que seulement le titre/artiste) : demande explicite de
+      // Hubert, "accéder à la partition de mes chansons, en appuyant sur les chansons, dans le
+      // palmarès de mon compte admin [...] linker mon app ONSONG à mon système" — élargi après
+      // qu'une vidéo de Hubert ait montré que taper sur la ligne ne faisait rien : sa zone
+      // tactile (le seul titre/artiste, une colonne étroite une fois le panneau admin partagé à
+      // l'écran avec OnSong sur son iPad) était trop facile à manquer, le doigt atterrissant
+      // plutôt sur le rang/le chiffre juste à côté, EN DEHORS du lien. Seul le bouton
+      // "✅ Jouée" reste un élément séparé, en dehors de ce lien (jamais imbriqué dans un <a> :
+      // invalide en HTML, et doit de toute façon rester cliquable indépendamment). Voir
+      // onsongSlug() plus haut — ce lien reste une meilleure estimation (la règle exacte de
+      // conversion titre -> "song" n'est pas publique), à tester en vrai par Hubert.
       li.innerHTML = `
-        <span class="jb-slot-rank">${i + 1}</span>
-        <span class="jb-slot-votes">${v.requests}</span>
-        <a class="jb-slot-info jb-onsong-link" href="onsong://open/songs?song=${encodeURIComponent(onsongSlug(v.title))}" title="Ouvrir la partition dans OnSong">
-          <span class="jb-slot-title">📄 ${escapeHtml(v.title)}</span>
-          ${v.artist ? `<span class="jb-slot-artist">${escapeHtml(v.artist)}</span>` : ""}
-          ${renderVotersLine(v.voters)}
+        <a class="jb-slot-onsong-wrap jb-onsong-link" href="onsong://open/songs?song=${encodeURIComponent(onsongSlug(v.title))}" title="Ouvrir la partition dans OnSong">
+          <span class="jb-slot-rank">${i + 1}</span>
+          <span class="jb-slot-votes">${v.requests}</span>
+          <span class="jb-slot-info">
+            <span class="jb-slot-title">📄 ${escapeHtml(v.title)}</span>
+            ${v.artist ? `<span class="jb-slot-artist">${escapeHtml(v.artist)}</span>` : ""}
+            ${renderVotersLine(v.voters)}
+          </span>
         </a>
         <button class="jb-mark-played-btn${isMarkPlayedArmed(id) ? " jb-mark-played-armed" : ""}" data-played="${id}">${isMarkPlayedArmed(id) ? "❓ Confirmer ?" : "✅ Jouée"}</button>`;
       list.appendChild(li);
