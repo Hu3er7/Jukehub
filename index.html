@@ -2534,6 +2534,694 @@
   function onsongSlug(text) {
     return (text || "").toUpperCase();
   }
+  //  5. Même avec le titre exact, ça ne marchait qu'une fois sur deux : la plupart des partitions
+  //     OnSong avaient encore l'ARTISTE en 1re ligne, et le moindre écart de texte cassait le lien
+  //     (ex. "What's Up" ici vs "WHAT’S UP" avec apostrophe courbe dans OnSong).
+  //  -> Solution finale : la doc OnSong permet aussi d'ouvrir une chanson par son IDENTIFIANT
+  //     unique (onsong://open/songs/?song=<UUID>). Les UUID ci-dessous viennent de la sauvegarde
+  //     OnSong de Hubert (OnSong.backup du 15 oct. 2026, table Song de OnSong.sqlite3), associés à
+  //     chaque chanson du catalogue (id Jukehub -> UUID OnSong) par titre/artiste, fautes de
+  //     frappe tolérées. Plus besoin que le titre soit en 1re ligne de la partition. Une chanson
+  //     absente de cette table (ajoutée au catalogue après, ou introuvable dans OnSong) retombe sur
+  //     la recherche par titre ci-dessus. ATTENTION : si une partition est supprimée puis
+  //     réimportée dans OnSong, son UUID change — il faut alors refaire la table depuis une
+  //     nouvelle sauvegarde.
+  const ONSONG_IDS = {
+    "mtw7o494fi5dt": "10371A85-D453-45D4-BF77-CF9B1845D46E", // Léo Gagné - 2 Frères
+    "mtw7p0fdbi6mf": "E16FB10B-5154-48B2-9A83-AB089A8C0CA3", // Here Without You - 3 Doors Down
+    "mtw82ngk0hbc8": "B695BD26-F355-4485-949E-9BAE2B5B8BBE", // Kryptonite - 3 Doors Down
+    "mtw8cymmow7h2": "0CFC3416-6053-4533-8F2C-0D4692D9C5B0", // Hotel California - Eagles
+    "mu1ray2bjpouz": "17EDB0E2-3C3C-494A-8165-6E0CB8D45485", // What's Up - 4 Non Blondes
+    "mu1rbinhgx9if": "B0B3E4C0-1F01-4607-9700-9575846A787F", // Take On Me - A HA
+    "mu1rbtzbgqi1u": "30499360-BFB7-47F3-B4CD-31C7B3D4B358", // Dancing Queen - ABBA
+    "mu1rcn2zupt6x": "D70ADDE8-3A45-4556-B306-7A21F9505C91", // Someone Like You - Adele
+    "mu1rczl2f5nuw": "0213DA3B-2298-4C97-A7C1-202FBFD6868A", // Rolling In The Deep - Adele
+    "mu1rep7lv3zrb": "D78F7404-8B83-4C83-B3EB-E4DB0B6A0542", // I Don't Want To Miss A Thing - Aerosmith
+    "mu1rfigws3vyw": "28504CB4-318B-40FE-9799-95F55FDC95D1", // Chattahoochee - Alan Jackson
+    "mu1rfrzxzxrmp": "BFCB4E76-8AA7-4D5A-A435-D53BCE69F464", // Good Time - Alan Jackson
+    "mu1rga23obql4": "4883AEB9-6E96-41A3-84DE-2A32C83E04D3", // Ironic - Alanis Morissette
+    "mu1rhi4jhxjup": "F8AFF26C-1CDD-4FB0-A5E3-1BB36070713D", // Horse With No Name - America (Horse With No Name)
+    "mu1ri317o7rbn": "B1872309-3DDA-463A-927A-D8E8F66CACB0", // Im Outta Love - Anastasia
+    "mu1rilc0muk30": "F8AD4A51-FE72-4347-960A-7263EFE89D96", // Si Exceptionnel - Andrée Watters
+    "mu1rivbxl099v": "84F992C5-7D6D-449F-A659-E76A4DC843F8", // Barbie Girl - Aqua
+    "mu1rj7ywr6xhc": "50A728E2-FAD4-4F70-B7BA-9146F08A4E46", // Wake Me Up - Avicii
+    "mu1rjl2qhb9ag": "14C72F81-AFC4-4577-8473-A1A07D991AB0", // Complicated - Avril Lavigne
+    "mu1rjuz1mssr7": "CAB48EF7-2EFD-4F68-9048-A8F5BECAD1A4", // Sensualité - Axelle Red
+    "mu1rkja21m768": "6CA8F1A9-F6E9-42F0-A0F7-002995B16F8B", // As Long As You Love Me - Backstreet Boys
+    "mu1rkr2ronfaw": "3716FDC4-E7F6-42A2-8852-8F7FF209E04B", // Larger Than Life - Backstreet Boys
+    "mu1rl36v5bare": "78990DF8-FB90-486B-AF99-E1BB38AFFE6C", // I want It That Way - Backstreet Boys
+    "mu1rlboc0gghw": "C598E9EC-F23A-4F69-B12A-4C883B55E547", // Everybody - Backstreet Boys
+    "mu1rltxmk0hm5": "3B966900-799E-41B5-93A9-0254734077F4", // Échappé Belle - Beau Dommage
+    "mu1rm19qf9g9z": "D33B39DE-B7CF-4ABD-971D-498198445AE8", // 23 Décembre - Beau Dommage
+    "mu1rmg08cvctz": "5DD12193-734B-4D6F-8F41-5D5F83F1DBD0", // Le Retour Du Flaneur - Beau Dommage
+    "mu1rmsx0udwdk": "40B1D1CC-1750-47FD-9711-A3720F817DE3", // Le Blues D'la Métropole - Beau Dommage
+    "mu1rn0w1cq7ae": "536F7E56-60C2-4408-82A8-2BDD9B6741C3", // Le Pic Bois - Beau Dommage
+    "mu1rnw7uw1fue": "24B25B70-CD3E-4719-AC50-0391703FA015", // Stayin Alive - Bee Gees
+    "mu1rqb5fn2t8s": "76C1504B-41E5-4BE4-A77C-CDD4517AD198", // Catch My Disease - Ben Lee
+    "mu1rui9nhna21": "C6197847-247A-44B4-9AAD-742A737EB0D9", // 2176 - Bernard Adamus
+    "mu1ruv7zykpl7": "07E7AE49-3542-466E-BF4B-018B6C548E7C", // Crazy In Love - Beyonce
+    "mu1s4af32370w": "E3A47369-268C-4628-B6E2-0B628677CD94", // Ain't No Sunshine - Bill Withers
+    "mu1s4k5cz6axx": "DF5E4EA7-25E6-426A-8DAD-E6BD6FEECDBB", // Just The Two Of Us - Bill Withers
+    "mu1s5bcew4fq2": "784FE1E6-F95F-4148-A34D-840DC4380716", // Happier Than Ever - Billy Eilish
+    "mu1s5j5ienvsj": "0F4C2E1B-5EFA-429C-B198-750CD5E1B25A", // Wildflower - Billy Eilish
+    "mu1s5o70wiy11": "2332C5E7-23A3-46E1-B3F9-B2E34D3F36E4", // Tv - Billy Eilish
+    "mu1s61rpje491": "EB83D5A8-5E6F-48B8-BE03-2516144CE842", // Piano Man - Billy Joel
+    "mu1s6go6z2h4v": "556F63CD-0982-4A3C-9628-FC06C208B518", // Achy Breaky Dance - Billy Ray Cyrus
+    "mu1s6vsfu4tlf": "15DDB413-F50A-48BF-A6D0-B469A1CEA879", // Lonely Boy - The Black Keys
+    "mu1s7gsmsf5g8": "9B18D2EE-895F-4C1D-96E9-9D10EF74A8DB", // Gold On The Ceiling - The Black Keys
+    "mu1s86nn0mpbi": "40D88BD9-BCED-4AE7-9CC4-C0F05DDBAA49", // J'te Gâte All Dressed - Bleu Jeans Bleu
+    "mu1s8jrjn69yt": "1783AE89-C5C1-4E59-83E1-8E69F84CA27F", // Coton Ouaté - Bleu Jeans Bleu
+    "mu1sf5a6iz4vt": "CEAEE9E3-BB6C-4E89-8F27-37BA1E0A3DCC", // All The Small Things - Blink 182
+    "mu1sfek9crnem": "616470E8-6E21-4BCD-A2D9-D2EC4A8E2110", // Dammit - Blink 182
+    "mu1sfsmrk4ak4": "74899607-59B8-44D3-B375-54FD3C47E290", // Always - Blink 182
+    "mu1sg0gqsjylk": "F6E992A5-DC72-4694-88FA-889F02A983E9", // I Miss You - Blink 182
+    "mu1sgki94k2py": "805025B8-D28B-4306-9273-8256A797C5B1", // Toune De Bière - Bob Bissonnette
+    "mu1sgu0zkp4qp": "026D57F2-82E1-4A17-BEAE-BA68E77BF42B", // Chris Chelios - Bob Bissonnette
+    "mu1sh3lgcmosm": "B7833D98-72E5-44ED-877E-3259A008377F", // Les Guimauves - Bob Bissonnette
+    "mu1shi6ty2idg": "E1533312-80A2-4BF5-8375-9659083F967D", // Mettre Du Tape Sur Ma Palette - Bob Bissonnette
+    "mu1shwr318xju": "57E3FD49-0E92-4C62-9244-0046AA34CB5B", // J'te Trouve Écœurante - Bob Bissonnette
+    "mu1sic3guuyv7": "1B2F64FB-DFBC-4FCA-B8E4-A7028B9F9411", // J'accroche Mes Patins - Bob Bissonnette
+    "mu1sipgrpccsg": "3CE6BBF4-2A1B-4987-BA2A-EEF4309510BF", // La Balade Des Malades - Bob Bissonnette
+    "mu1somnjkm1el": "9756D068-649B-46AC-AAC3-D8AA45EAD002", // First Date - Blink 182
+    "mu1stlm5x47in": "EB135700-F5BE-42F6-9136-90C897B89705", // Knockin On Heavens Door - Bob Dylan
+    "mu1stx6mjj958": "CCB2504A-4D6A-4B02-982C-B502B87463DA", // Blowing In The Wind - Bob Dylan
+    "mu1suku4wofs1": "883C0215-0D33-4656-A404-97246F84135E", // The Times They Are A-Changing - Bob Dylan
+    "mu1suzarr1w6k": "395F5A30-902B-4E6E-AD85-DC839C5251BD", // The Man In Me - Bob Dylan
+    "mu1zm5syw9pql": "31B3A915-224E-4D66-8CC7-F041D042CE6A", // Redemption Song - Bob Marley
+    "mu1zm5syer7vp": "9E0FDE07-9E58-43EF-90B2-AC99BB4652D1", // I Shot The Sherif - Bob Marley
+    "mu1znp9jek7s5": "E70A1D80-9F59-45DB-BC70-0CE1C402DF17", // Get Up Stand Up - Bob Marley
+    "mu1znp9j4q9wv": "A62685DA-637B-4BF6-B80A-596AD764D3E3", // No Woman No Cry - Bob Marley
+    "mu4fetzlslmio": "E2672670-9D7D-4B61-8EAC-C48C24FC284F", // Turn The Page - Bob Seger
+    "mu4fetzlumdpr": "B64D184D-BA9E-4FF6-BA7B-AC33D7952088", // Old Time Rock N Roll - Bob Seger
+    "mu4fkb3y5hqwk": "9BB14A94-62E8-4157-8C20-5647C4740072", // Dream Lover - Bobby Darin
+    "mu4flkhxaptxr": "DD10A1DE-4A75-430E-AE34-19835A047512", // You Give Love A Bad Name - Bon Jovi
+    "mu4flkhxbzquz": "053D3963-120D-4BAC-B85B-789322E5EFE7", // Livin On A Prayer - Bon Jovi
+    "mu4flkhxzk7a0": "FFD5E5B0-F391-426D-A51F-1E0054A7342B", // It's My Life - Bon Jovi
+    "mu4fmpihlk7jo": "7054D4D0-544E-4FCF-9659-72D471BBA185", // Baby One More Time - Britney Spears
+    "mu4fmpih534sr": "E5FA4234-E0FC-4789-A718-74659BD68F58", // Toxic - Britney Spears
+    "mu4q4chjdyz9q": "87C7823C-4A6C-48B5-9881-B9821C64F1F1", // Boot Scooting Boogie - Brooks & Dunn
+    "mu531wkohxczr": "F98B3527-0209-4D4F-B3EA-BD325B270597", // Wonderwall - Oasis
+    "mu5vm4q8wp22s": "A2A16DAD-F92D-4154-AB86-E0641D7250DE", // Hey Baby - Bruce Channel
+    "mu5vn1azvaf1p": "F0AFD572-B755-40B7-BB3D-C03AF7E63929", // Dancing In The Dark - Bruce Springsteen
+    "mu5vox23z68k3": "7FD9772F-F0C0-4027-AEF6-E9FC7AABA9E0", // Grenade - Bruno Mars
+    "mu5vox23irtlb": "46C83D80-AE3F-452F-A644-8B506734E69D", // Just The Way You Are - Bruno Mars
+    "mu5vox23n8a0k": "BFE8AA29-A11D-4F00-B64A-D371632198FB", // Marry You - Bruno Mars
+    "mu5vox23ew7rr": "4D5E2DED-924A-48AB-B391-E75BD266E960", // When I Was Your Man - Bruno Mars
+    "mu5vox23pfipn": "F06253BC-4915-4199-B7F8-04F87C98D556", // Uptown Funk - Bruno Mars
+    "mu5vqzsmurdof": "EAE2B719-F8A1-4EAE-8BA6-C1AB54D67C26", // Heaven - Bryan Adams
+    "mu5vqzsmteq3u": "B6DA53BB-0E04-4D33-B533-0DD11A74E045", // Summer Of 69 - Bryan Adams
+    "mu5vqzsm6yzb0": "737026F9-5B89-45F6-8A68-FFA1D24674F7", // Everything I Do - Bryan Adams
+    "mu5vqzsmjef80": "C0CE2253-0448-4B36-A97E-1FE2B037D6AF", // Somebody - Bryan Adams
+    "mu5vqzsmkbh26": "27B904C6-DF15-41DB-8542-CAD927A6C7AD", // Run To You - Bryan Adams
+    "mu5vqzsmbyfgc": "F3E90FA4-E302-4BCB-B4E6-8011235ED821", // Cut Like A Knife - Bryan Adams
+    "mu5vscaouwcc2": "AD3ACFBF-3943-4EBF-A32B-602852C51458", // Ready To Let Go - Cage The Elephant
+    "mu5w6p53lcgxc": "546EDB79-2B64-4589-BCEE-F1D19762516F", // Dancing On My Own - Calum Scott
+    "mu5w8nq47iy0b": "913A5B0C-F9ED-4392-9CD4-3E0E9A940699", // Wild World - Cat Stevens
+    "mu5w8scuahl4f": "71238A22-1FAA-47A2-9F73-FB3A571A67F7", // Father And Son - Cat Stevens
+    "mu5w8scur373k": "2A64BB1D-C885-4097-A418-8E585F305596", // Where Do The Children Play - Cat Stevens
+    "mu5wbct8j7kb9": "2D9C350E-BEC4-41D8-B834-5A5D4B0873A6", // Fume Fume - Cayouche
+    "mu5wbct8mq8ei": "C84437F7-46B8-4AC5-BE71-0CB9128BBBC0", // La Chaine De Mon Tracter - Cayouche
+    "mu5wclzig1y4h": "101A758B-6CD2-443B-A253-8D78121B80C6", // Have You Ever Seen The Rain - CCR
+    "mu5wclzizul4t": "417F1C53-4337-4777-A567-A7054A80E59F", // Bad Moon Rising - CCR
+    "mu5wea13m65rv": "C50FA6CA-15EE-4C6A-9396-C60FC35F66F2", // Stand By Me - Ben E King (Stand By Me)
+    "mu5whrs2f0jmh": "E1388321-3CF2-48A3-AFA0-6CE6D6C7776F", // Fortunate Son - CCR
+    "mu5wk8rzo3ent": "8D4D57E1-C017-44DD-BBBE-CA0BD8FF1111", // Pour Que Tu M'aime Encore - Céline Dion
+    "mu5wk8rzco77e": "EA4BF614-2168-4EDE-8A57-CFEA8FA0BFE4", // J'irai Où Tu Iras - Céline Dion
+    "mu5wk8rz40maj": "89166D25-01C7-4AA0-8D33-FF93A2BAED25", // Destin - Céline Dion
+    "mu5wk8rz0cfco": "D1131F28-C32D-4D62-8C54-17F2EE74AF19", // Sous Le Vent (Feat Garou) - Céline Dion
+    "mu5wla1jk1yty": "D2F5AB61-AA4B-4D39-B2E9-E87290CAEA23", // Pink Pony Club - Chappell Roan
+    "mu5wm7pe47ej4": "1510A955-1DA7-4915-B947-1F027185DDA2", // Emmenez Moi - Charles Aznavour
+    "mu5x6vrz9wz4p": "2E1EBDFA-16EC-4C66-A8DC-94A50A131C92", // Broken Halos - Chris Stapleton
+    "mu5x6vrzpb1gp": "FCC63985-AD7F-4A4A-BAFE-42CB3E0F7960", // Fire Away - Chris Stapleton
+    "mu5x6vrz0n0ao": "393A8D43-D2B8-44B9-A221-C32064F9F5EE", // Starting Over - Chris Stapleton
+    "mu5x6vrz7pya5": "AE6FC087-610C-4CD5-BC11-9FEB45E8F4CB", // Tennessee Whiskey - Chris Stapleton
+    "mu5x7ec44i8vz": "809FA1B1-74E5-4A83-80C4-495F6AE4021A", // Aline - Christophe (Aline)
+    "mu5x8qxeuil98": "4597BBAF-E2FC-44A2-AC6B-D9F17458F792", // Johnny B Goode - Chuck Berry
+    "mu5x8qxe49mjw": "3B5A95F5-771A-4FF9-BA11-A13416C70ADE", // You Can Never Tell - Chuck Berry
+    "mu5xaahyb5eeu": "EA974510-5BA9-43D6-9E40-E683E86AB8AE", // Girl Just Want To Have Fun - Cindy Lauper
+    "mu5xcr7boerbv": "1A65A334-1036-4E72-B047-15D11E2A0A8A", // The Death Of Me - City And Colour
+    "mu5xcr7bqdtfh": "9562D004-FBCE-4AF8-99AF-56AE953FA101", // Sleeping Sickness - City And Colour
+    "mu5xcr7bmhwzt": "0ADD3222-F2B5-4406-BB69-9E9D8DBA4585", // Body In A Box - City And Colour
+    "mu5xd96bw74ug": "0D93B4CE-C7D7-453B-915A-60FABD374910", // Si Dieux Existe - Claude Dubois
+    "mu5xe764ofozq": "D8E17E6C-3086-4DDB-B88D-65B9E6B821C7", // The Scientist - Coldplay
+    "mu5xe764qjshq": "CCF3B7F2-26F1-4459-AE83-71C47DC0146A", // Yellow - Coldplay
+    "mu5xg8jdxhspy": "D84AE1AE-0459-4E86-B94D-D3143731BD1A", // La Rue Principale - Les Colocs
+    "mu5xg8jdw3w3q": "756B296B-927B-41C6-A5C5-C74D7DF58FC0", // Tassé Vous De D'la - Les Colocs
+    "mu5xg8jdz8fkc": "41120CEC-7E85-4453-9215-005FF77300F9", // Juste Une P'tite Nuite - Les Colocs
+    "mu5xhcvxc71g1": "9DDE7A82-2313-4925-B795-CF551020B51D", // Femme Libérée - Cookie Dingler (Femme Libérée)
+    "mu5xlm10h7231": "AE7A937C-FE12-48DB-A5E4-055EF463BA09", // Tant Qu'il Y Aura De L'amour - Cowboys Fringants
+    "mu5xlm10janjz": "B37A039B-D176-409C-B687-E632B17AF1CB", // La Reine - Cowboys Fringants
+    "mu5xlm10f1a14": "8B68CE38-6F61-46F7-AE5C-0E192FE14433", // Toune D'automne - Cowboys Fringants
+    "mu5xlm106zdnx": "D5162E1F-EB4E-4A2F-B003-C9FB32D9A7AC", // Les Étoiles Filantes - Cowboys Fringants
+    "mu5xlm1098tmw": "DCAD0C0A-09EC-49BF-BF1D-A8FA9344C694", // La Manifestation - Cowboys Fringants
+    "mu5xlm10lztq7": "974EFF24-F781-4521-82DE-21B8EAD39DE4", // Marine Marchande - Cowboys Fringants
+    "mu5xlm10c0ct9": "6284FE57-99AD-45BD-8FBD-FBF06E75EAF1", // L'Amérique Pleure - Cowboys Fringants
+    "mu5xlm10crmwb": "9DCA7409-E3B6-49E1-9DC8-4B1B136E7B3D", // Sur Mon Épaule - Cowboys Fringants
+    "mu5xlm10x9t9d": "3FCE5C77-2961-4151-B29D-3B19377C0DEE", // En Berne - Cowboys Fringants
+    "mu5xlm10b0l8l": "64D71D74-99E2-45E7-A1EB-B3A0A8989AFD", // Le Shack À Hector - Cowboys Fringants
+    "mu5xlm10thgda": "808D0157-0705-4845-9B20-3FA7F92A6DDE", // La Dévisse - Cowboys Fringants
+    "mu5xmb32wgcej": "7DA26A18-8AF2-4940-B809-60F306F7ADCA", // Zombie - Cranberries
+    "mu5xmrb2g5ht9": "55214D2D-1DEB-4B8B-A2DA-C5530609C979", // Linger - Cranberries
+    "mu5xobbdrh7cp": "8A909F48-D972-4CFB-9818-32CBBDBB01F2", // My Sacrifice - Creed
+    "mu5xobbdyrk1z": "5EC20209-246B-4BF3-971F-0154B3735D6E", // One Last Breath - Creed
+    "mu5xobbdfw3mk": "8AEFE6EC-8F2A-45F7-A92C-86E4588AC8F3", // Higher - Creed
+    "mu5xobbdpq1gw": "EFFF4ED0-494F-46AE-84D8-7A96F7620BB7", // With Arms Wide Open - Creed
+    "mu5xpbchz1h7x": "FBF75E95-A9A5-45EE-8AE5-722C38C74533", // Rêver Mieux - Daniel Bélanger
+    "mu5xpbch0uzro": "85303AD3-8EAE-4F15-B3FF-5A124CC4B347", // Fous N'importe Où - Daniel Bélanger
+    "mu5xpbch25lqu": "09D9DFC7-6D5C-4F2F-9B1F-125539C97FFF", // La Folie En Quatre - Daniel Bélanger
+    "mu5xpuc3n4naj": "76D74A27-0E5C-4613-B7F0-2FD45CF5B104", // Bad Day - Daniel Powter
+    "mu5xqawtk0pq6": "7C68743D-6F6B-4B0C-A93F-47B49CFE843B", // Space Oddity - David Bowie
+    "mu5xqpgv41cjz": "F2D1BC56-DEAF-49AA-B110-426975AE972F", // Souvenir D'enfance - David Jalbert
+    "mu5xrhi15b73v": "79166630-A14C-4950-BB8F-ACE2D989BC2D", // Poor Some Sugar On Me - Def Leppard
+    "mu5xs9434rkzz": "4CCE4A4F-641F-43D3-913A-EBAC6FDA18EC", // Enjoy The Silence - Depeche Mode
+    "mu5xs943f1yyx": "70557AC7-4942-4180-BA3B-B4CB7ED8A087", // Personnal Jesus - Depeche Mode
+    "mu5xstrvlz0n7": "2229285C-451E-499A-9C2B-FF4957EDE2AC", // Sultans Of Swings - Dire Straits
+    "mu5y16vfd2xd2": "907D7144-A535-4734-A269-5163EA83B029", // Ive Had The Time Of My Life - Dirty Dancing
+    "mu5yc86ipujln": "BE4DB734-9A55-4E5F-9F5D-9394AF6FE12C", // Voyage Voyage - Desireless (Voyage Voyage)
+    "mu5ycwxfygqcg": "13BD1EEE-11DE-46C7-A596-FFD3CAD2E941", // End Of Begening - Djo
+    "mu5ydkbzhvcpr": "D6527CE2-6583-496E-A57C-23BEB60D75E5", // Drift Away - Dobie Gray (Drift Away)
+    "mu5ydyes49dy1": "E71EE95F-1216-4304-B36A-AC41A36975AB", // Jolene - Dolly Parton
+    "mu5yefqke6lkt": "BF88CB6C-193D-4D24-9898-84D7D9714826", // Danza Kuduro - Don Omar
+    "mu5yfnfn3h62a": "1500C4C1-176D-4E61-827C-B4D31C96C15C", // Johnny I Hardly Knew Ya - Dropkick Murphy's
+    "mu5yhhcah9tkf": "3B51B778-5E30-4FFF-BD15-8831663FEC2D", // Rose Tattoo - Dropkick Murphy's
+    "mu5yhhcaxfyvu": "36DF74C0-ECE9-4500-865D-23BD89205E29", // I'm Shipping Up To Boston - Dropkick Murphy's
+    "mu5yhumyfaob0": "4C3839EE-528B-43A8-9A3C-72F2F1CEB7E3", // Ocean Drive - Duke Dumont
+    "mu5yk7hl2o31x": "0A9D55CB-1108-4135-8E27-7882502F5810", // Save Tonight - Eagles Eye Cherry (Save Tonight)
+    "mu5yl6qr08hyh": "539ABF7E-47D5-42DD-9089-3788FCA84EC8", // Take It Easy - Eagles
+    "mu5yurdz3k6ef": "CF2D98AB-EEC2-4C40-A12B-F9277BBF8F99", // Perfect - Ed Sheeran
+    "mu5yurdz01tzu": "00DFCE8A-43DF-495A-B9E4-E692F1C640BB", // Shape Of You - Ed Sheeran
+    "mu5yurdzl7pgh": "9BF0A751-C64A-4186-A556-D1F45659D27C", // The A-Team - Ed Sheeran
+    "mu5yurdzgchwz": "C1914FA5-E4EF-4CBA-85EA-EDD92415F411", // No Diggity - Ed Sheeran
+    "mu5yvbjnks7dy": "3FFE2CB7-5DD1-4763-B470-7AE947D629BD", // Choosing Texas - Ella Langley
+    "mu5z1ej5wnc4k": "CAA7171C-6C90-4879-AB12-C767A69E427B", // Your Song - Elton John
+    "mu5z1ej5boc1k": "DEA0D9B9-54B1-4203-B8DE-0BE104FA4A15", // Rocket Man - Elton John
+    "mu5z1ej548xdp": "6124B30F-C33C-437D-9901-538E17F6F7E9", // Crocodile Rock - Elton John
+    "mu5z6tby47bsw": "A18CC85D-7D31-428B-8039-1A85FE22D4CE", // Proud Mary - Elvis Presley
+    "mu5z6tbyq49jr": "D2E47521-4F8E-49F9-9993-9A93E49B3AFB", // Can't Help Falling In Love - Elvis Presley
+    "mu5z6tby5uc67": "D5A67F9A-2553-45E6-B242-B5AC7C8D7A05", // Suspicious Mind - Elvis Presley
+    "mu5z6tby5pztt": "97607B74-924C-4CF0-8247-9544D8864BCE", // Hound Dog - Elvis Presley
+    "mu5z6tbyqok2e": "2C0D68DB-6FC7-4942-BDAC-613AB3704507", // Don't Be Cruel - Elvis Presley
+    "mu5z6tbyf85r4": "9473145D-5183-49A2-B4DC-9545BC633C9C", // Jailhouse Rock - Elvis Presley
+    "mu5z6tbyd782m": "29AAEA45-CAC9-495D-AE67-1469F3F176E1", // Blue Suede Shoes - Elvis Presley
+    "mu5z6tbyc2zi6": "63DB08D1-F2B1-4F90-B418-72E641DF1AB0", // Viva Las Vegas - Elvis Presley
+    "mu5z6tbyws4oe": "AC9C51D1-62CD-4FC8-9F0E-D5A02F4B22CD", // Burning Love - Elvis Presley
+    "mu5z6tby5lhz6": "32247B67-9D06-46BD-99C9-FBB01D4B6A98", // In The Ghetto - Elvis Presley
+    "mu5z6tbyh5upc": "DE3EF7E7-12EA-4AA0-9AE5-E4BADA0347F7", // My Way - Elvis Presley
+    "mu5z7bsqtqq63": "FBD427DC-44CF-4EF4-827B-439698DD749D", // All Shook Up - Elvis Presley
+    "mu5z7oj1uhvx6": "FE7CCA9E-B11B-4EA6-830D-1FCDB678FEF1", // Ça Va - Émile Bilodeau
+    "mu5z8iwx92lp1": "AC2B2618-0DB2-49CD-A056-956473172DDA", // Bailamos - Enrique Iglesias
+    "mu5z8iwxuoryo": "B5DB0A0F-CBAE-4864-9BD3-9B4C7AFE2AEA", // Hero - Enrique Iglesias
+    "mu5zbhgzbwvpz": "D909A814-AD61-4570-BE86-6B6CC87CB5F7", // La Bartendresse - Éric Lapointe
+    "mu5zbhgz9nvzd": "1F847608-70B8-446C-82B5-9EE64D6ED8C3", // N'importe Quoi - Éric Lapointe
+    "mu5zbhgzi3ulr": "E1174C63-C6E2-4792-9B0F-E5EF17837A9C", // Deux Fois La Même Histoire - Éric Lapointe
+    "mu5zbhgzxm3es": "7455E7AA-5884-423D-9485-2E0131407C38", // Motel 117 - Éric Lapointe
+    "mu5zbhgzsv7ib": "A3D92134-D3EB-486B-B388-F2C872C3226A", // À l'abri Du Monde Entier - Éric Lapointe
+    "mu5zbhgz8br8g": "33DAC125-4525-473F-B5D3-8FE079BABC59", // On Commence À Se Quitter - Éric Lapointe
+    "mu5zbhgzifq15": "166BA485-2AC5-4B4B-8563-F51CC9213EC5", // Terre Promise - Éric Lapointe
+    "mu5zbhgztrjst": "FAEA60BC-0C40-456B-B140-177B72C0A869", // Les Boys - Éric Lapointe
+    "mu5zkjx00djki": "C5A884F0-81D6-4188-A344-BAA8A872D02E", // In Heaven There Is No Beer - Ernest Neubach (In Heaven There Is No Beer)
+    "mu5zkzuv36klk": "24EB47F0-7F85-4AEE-95AA-23D1386C78A8", // Bonhomme 7 - Exterio
+    "mu5zlqiicjp4n": "D1F36C9B-F174-42BD-9F4A-07A5C8528651", // Blind - Face To Face
+    "mu5zm3bew3uzc": "7D8627F9-E877-4B3E-B111-E81F664AEA59", // Disconneted - Face To Face
+    "mu5zmobn5p3id": "2BE8EDF2-B590-4730-B06F-E9EB0F6249C9", // The Way - Fastaball (The Way)
+    "mu5zspbi4d7uj": "158CD3C7-D19F-451A-A3C6-BBEA1996D87A", // Feliz Navidad - José Feliciano (Feliz Navidad)
+    "mu5zuuev8wd6o": "4C8A4AE6-7857-49FA-803C-2A5E5D662C4D", // Dreams - Fleetwood Mac
+    "mu5zxx4ig3nhv": "F049F7F1-6807-4C32-9945-01394BA6A9DD", // If I Ever Leave This World Alive - Flogging Molly
+    "mu5zxx4ienres": "3F19FDAE-2AA0-4CF6-A766-FD7CCC33B81C", // Kiss My Irish Ass - Flogging Molly
+    "mu5zxx4ixpnae": "FA7842B3-9426-49F6-A6D3-836789CDA1D4", // Drunken Lullabies - Flogging Molly
+    "mu5zzuqn322tr": "4EDDF916-B1D1-4AC1-AFDB-C31B9A0A0378", // Best Of You - Foo Fighters
+    "mu5zzuqnmtk2n": "F88C3B4D-389B-4413-843B-32FDE705B903", // Times Like These - Foo Fighters
+    "mu5zzuqnbcsj8": "51B2AF46-4CCA-4061-B3E8-25BB72B753D3", // Everlong - Foo Fighters
+    "mu5zzuqniv7qo": "22C738FE-CE57-4F35-AB3C-33DB304FA818", // My Hero - Foo Fighters
+    "mu5zzuqniltpg": "AFDF200F-66DD-4928-B377-B92CFD4EDC20", // Wheels - Foo Fighters
+    "mu600bomkk8o0": "0F395C46-90F2-4ECE-8DAE-F9496884B275", // Pumped Up Kicks - Foster The People
+    "mu600vg0hivzw": "0A36105E-B15F-46FF-B4A5-230CD702689C", // Fountains Of Wayne - Stacy's Mom
+    "mu601jg47vcb6": "79CD2654-84F7-4BFE-9ABC-C25987F8F06F", // Ella Elle La - France Gall (Ella Elle La)
+    "mu60211uxonqk": "483A7DD9-2952-4F87-A727-5A2FC2A5CA8E", // Ya Les Mots - Francine Raymond
+    "mu60evntjtif5": "635C0A5F-FC2A-426E-B7C8-2D6C32E1B3CC", // Rosie - Francis Cabrel
+    "mu60evnts3fl0": "A7EC51EC-45DC-45DA-81F8-F14EB04D5C3E", // Je L'aime À Mourir - Francis Cabrel
+    "mu60evntftiut": "7553A537-6FED-4996-AD3D-E52F93453BE6", // Petite Marie - Francis Cabrel
+    "mu60evntj0lba": "3E619409-5894-4162-8AB1-D9226B4663C6", // Encore Et Encore - Francis Cabrel
+    "mu60evntbeb4f": "834C04E8-3747-43D0-ACAA-05C94F9BBA11", // Je T'aimais Je T'aime Je T'aimerai - Francis Cabrel
+    "mu60gnw16y732": "BCFD50AA-DC55-40FE-9BA1-412D1BEE68AE", // Tous Les Garçons Et Les Filles - Françoise Hardy
+    "mu60hh5ws9nzy": "1A26B41E-297E-4522-8319-5A4EBD9C7322", // Santa Claus Is Coming To Town - Frank Sinatra
+    "mu60isumhgv8w": "D4826261-CCBE-40D4-A49F-79856422808B", // Pleure Bébé Pleure - Gab Bouchard
+    "mu60j40f8zigf": "5B82C026-68F1-4F39-9CF3-2F84FBDFFAA0", // Encore Encore - Gab Bouchard
+    "mu60jxseggguk": "AACF8FBF-D2D3-4795-B922-83EA79D791C2", // LA Vie Ctune Peine D'Amour - Gab Bouchard
+    "mu60kesvxxv82": "7DA74462-D411-4CAA-A976-8F6839A7E719", // Et Cetera - Gabrielle Destroismaisons
+    "mu60kwl9r40l8": "D1131F28-C32D-4D62-8C54-17F2EE74AF19", // Sous Le Vent (Feat CÉline Dion) - Garou
+    "mu60lba6frknw": "3BCF5CDD-7ECF-4686-B913-FC6DE9F187F6", // Friends In Low Places - Garth Brooks
+    "mu60lv1orcv20": "D180FBC6-8AEB-434D-AD2C-59AA5A8F31E3", // Le Vieux Dans Le Bas Du Fleuve - Gaston Mandeville
+    "mu60mnylk1oed": "86E01569-A4ED-44F0-BF77-0C8971A95C41", // I Don't Want To Be - Gavin DeGraw (I Don't Wanna Be)
+    "mu60r1jj0ckog": "9DE21DC4-2BBC-405F-8214-401426DE3B90", // Careless Whisper - George Michael
+    "mu60r1jjm15xd": "A388F800-30EE-43D1-B7C4-27E5705F5D9B", // Faith - George Michael
+    "mu60rs3qukfih": "F16C88DF-1F0A-452B-9B36-1FC157448342", // Get A Haircut - George Thorogood
+    "mu60t8wixqmay": "987C94C8-32B3-4A0E-ACB7-3686B9E0F936", // Toujours Vivant - Gerry Boulet
+    "mu60t8wim1od5": "E772A050-074D-4561-AADE-6A37CAAE8DB3", // Un Beau Grand Bateau - Gerry Boulet
+    "mu60tlimycor2": "3CCB6D31-3B78-480E-AF0C-FECCFE6F59EA", // LA Vie En Rose - Gilles Valiquette
+    "mu60u2w5qsfh1": "D2509B20-6CB8-4F84-B052-EE823CD84EA0", // Gens Du Pays - Gilles Vigneault
+    "mu60urvjdmwqy": "9BA2B7AA-E321-4BC4-BB53-917561041490", // I Will Survive - Gloria Gayner (I Will Survive)
+    "mu60w06q7j8zg": "79135BD2-0FAD-46AE-A266-79D5B3B451C6", // Crazy - Gnarls Barkley
+    "mu60wdpv4hitp": "7CD1B91A-51BC-46B6-907D-E3822725A73F", // SuperMan - Goldfinger
+    "mu60wmi6nkk84": "805C1084-DB71-488F-AFEC-0FE73B5CBFCF", // Iris - Goo Goo Dolls
+    "mu60xo6jmxjw7": "6D5DEEE7-3504-4BF9-A16A-D0D88EA74ED7", // Slide - Goo Goo Dolls
+    "mu60yd0az3k0c": "75C204CE-8D2A-41C2-B6B9-10844C02F527", // Good Ridance (Time Of Your Life) - Green Day
+    "mu611p0749hxv": "CF0FB7FA-6AE3-415D-91B9-9077F34E71DE", // Boulevard Of Broken Dreams - Green Day
+    "mu611p07ivrd0": "43D27813-D98A-477D-805F-B64C354EAC66", // Wake Me Up When September Ends - Green Day
+    "mu611p07w0tsd": "B49AEB46-20C5-45AD-A514-79CDA38334EB", // When I Come Around - Green Day
+    "mu611p079vcab": "78666BE8-34CA-440D-94AA-780EFB8171CD", // Waiting - Green Day
+    "mu611p07nseq9": "80BC6ED1-AB47-428C-8FD9-17E5EF84A7FD", // Basket Case - Green Day
+    "mu6125qiv0a19": "982FB4BA-85E7-4D54-B49E-6794926F02FD", // Think Of You - Gregory Charles
+    "mu612xy7ikl4y": "C8EEC5AE-2DE0-465D-8996-889F2D26FF46", // Welcome To The Jungle - Guns N Roses
+    "mu6139gk9q5i2": "7601B6F4-D476-426B-9365-E67818AE6505", // Sweet Child O Mine - Guns N Roses
+    "mu613qbnc7vyg": "0A1A4EE5-AF6D-4B6F-AEDE-48A9440D96F4", // Hollaback Girl - Gwen Stephany
+    "mu6142m72990i": "310FDDEF-D012-42DC-8AE7-D1D325AB7D1B", // Hey Good Lookin - Hnak Williams
+    "mu615jy5lqz3p": "0B8DCD75-233A-4B8B-87D1-5EAA01FD99E7", // Lost Highway - Hank Williams
+    "mu615zwlugc63": "D5D01043-888F-418B-B80E-B1E960DA40D0", // Family Tradution - Hank Williams Jr
+    "mu6172xbh2sq0": "3DE8AA19-EC08-4B5F-B937-6CCF69019972", // Un Musiciens Parmi Tant D'autre - Harmonium
+    "mu6172xbl4uu4": "84DBC674-6F50-4AE7-8D35-809ABDCD9CAC", // Pour Un Instant - Harmonium
+    "mu617gqpgpz5p": "6F478D39-F1FE-4F0E-85FE-19CA384F7242", // The Reason - Hoobastank
+    "mu617u8vs02ao": "64E082ED-AB98-4B3E-AB76-145724CD0522", // Take Me To Church - Hozier
+    "mu6187hcd4izc": "D682BE48-2903-4A9D-9668-00C6D96E80E2", // Fille De Personne - Hubert Lenoir
+    "mu61aaixpny6f": "F3B4AABE-1F83-4645-A4AE-65BBC21D23CC", // Interstate Love Song - Stone Temple Pilots
+    "mu61apyoeiukt": "63C53672-3A82-4900-980D-298DC7BC43DC", // Fear Of The Dark - Iron Maiden
+    "mu61clhue644b": "5280619A-0664-4FA0-BA80-B75F80B7C130", // Sitting Waiting Wishing - Jack Johnson
+    "mu61clhuh4t7f": "AB4CB698-AFD1-4B1D-BCB9-1E6BC8D46415", // Banana Pancakes - Jack Johnson
+    "mu61clhuqbhe1": "3DA85AC8-2EF6-46EA-ADE6-C8290168D69D", // Go On - Jack Johnson
+    "mu61clhu7xgc3": "A618859B-28DA-4EAF-9BA9-2F28085A3DE1", // Were Going To Be Friends - Jack Johnson
+    "mu61clhun5nca": "FF4C395F-49C1-4AE0-9375-DCED1D64B8B6", // Taylor - Jack Johnson
+    "mu61d13jocln1": "886CCDDC-D4E1-42F8-B70D-6CAC910A7869", // Fire And Rain - James Taylor
+    "mu61dnhbj1d3n": "E5421E0D-ADD4-4F53-AE53-C9181B33837E", // Me And Bobby McGee - Janis Joplin
+    "mu61e6yrm5l15": "A3A2D056-78DA-4AD6-A81F-8B852978E2B2", // I'm Yours - Jason Mraz
+    "mu61eolmy7env": "1288C6E0-052F-4341-9800-5658DE0F79F3", // Copilote - Jay Scott
+    "mu61eolmfvlwr": "A2D69A33-E5E9-4E24-860F-65477CD70F11", // Broken - Jay Scott
+    "mu61hqxa1zmzy": "FCE7C3D2-2B92-4AEE-8D71-28CEC69B3DE7", // Rock N Roll Et Pauvreté - Jean Leloup
+    "mu61hqxad8r76": "FF3312E9-41B5-48A2-94DA-44BE3B65AF06", // Balade À Toronto - Jean Leloup
+    "mu61hqxadi3d1": "D1E7A20B-777D-4CDA-81EE-E7963E9376A4", // LA Vallé Des Réputations - Jean Leloup
+    "mu61hqxahx8rb": "E892465A-1C3D-4D83-998F-65753F210687", // Le Dome - Jean Leloup
+    "mu61hqxalnbzp": "BFF0D5CF-2FD4-4B3F-82F1-00447E0E099F", // Paradis City - Jean Leloup
+    "mu61hqxacs8zn": "0A905BE4-F8EE-417E-9682-65B972D2309E", // Isabelle - Jean Leloup
+    "mu61hqxa6ftua": "FA74DCCC-D049-4708-95F4-415D0FB90A12", // Sang D'Encre - Jean Leloup
+    "mu61hqxabs634": "F9F027AE-B222-4BB3-96EE-6E2326531D07", // I Lost My Baby - Jean Leloup
+    "mu61hqxaskzqn": "292BBE95-6F25-4F85-AB9F-FA08FB496316", // Edgar - Jean Leloup
+    "mu61hqxaydciy": "3A6ADB13-D54C-49E6-BB66-0688C35CE8FA", // Je Joue De La Guitare - Jean Leloup
+    "mu61hqxaapj3n": "F08BAD9A-9467-4C48-9CDE-527AF83A7AF3", // L'Amour Est Sans Pitié - Jean Leloup
+    "mu61hqxas5oja": "A8FE0DF0-96DA-47A8-9D71-0D6FEAEB227F", // 1990 - Jean Leloup
+    "mu61ic27j2lpq": "7EE8380B-598C-4B5B-80B0-08D02D4E688C", // The Middle - Jimmy Eat World
+    "mu61kre93j38y": "96FC5D12-DB14-4ED3-805E-48B2FA70E597", // Jingle Bell Rock - Bobby Helms (Jingle Bell rock)
+    "mu61lctxxcoqt": "323E0CCF-3405-42D8-8588-A012C476C5BD", // Jingle Bells - Jingle Bells
+    "mu61lrwb4ur2o": "249D4512-7CC9-40DA-BBAF-A3EE3B535520", // I Love Rock N Roll - Joan Jett
+    "mu61osnrmjyde": "888E3FCA-2D83-417C-88FB-F006839A3E38", // Les Champs Élysées - Joe Dassin
+    "mu61osnr59wsk": "D5809553-AF19-4D32-AB8B-3B9E1BAE7B8C", // Salut Les Amoureux - Joe Dassin
+    "mu61osnr5qlce": "B567F9EF-0B70-43B5-B57E-D39F6252CB09", // Et Si Tu N'Existais Pas - Joe Dassin
+    "mu61osnrvt6e5": "21EF09EA-9203-4C40-9C4E-27095037F8B8", // À Toi - Joe Dassin
+    "mu61osnresdo8": "9DF63DB1-5FA3-46E9-9464-737FB71DF571", // Dans Les Yeux D'Émilie - Joe Dassin
+    "mu61osnr7171a": "D519968E-42FC-4474-8895-55417A133BF1", // Siffler Sur La Colline - Joe Dassin
+    "mu61osnr16o8x": "D847084C-490F-45AF-96A5-142CAE773555", // Le Petit Pain Au Chocolat - Joe Dassin
+    "mu61osnr0j709": "3A1F0870-6E3C-4C78-AB49-98C15CA5B8CE", // Le Moustique - Joe Dassin
+    "mu61ro755bk14": "0A19D751-18C3-4CF5-B371-B9CA393EFEE2", // Country Roads - John Denver (Country Roads)
+    "mu61sj5yv3v0m": "CD3A9C48-A993-4AD0-BC1C-2B977CD0CFDB", // Happy Xmas War Is Over - John Lenon
+    "mu61txow3ve6x": "AA6971B4-30F4-489C-8921-3927F5EA2117", // Slow Dancing In A Burning Room - John Mayer
+    "mu61txowr9v5c": "D5781DCA-0D6B-4BC9-935A-60E2D7D4EAAA", // Waiting On The World To Change - John Mayer
+    "mu61ugh6sfmgm": "857AE88E-DC63-4FC4-940D-E0BDEDADD5F8", // Hurt So Good - John Mellencamp
+    "mu61w0nze8nin": "7525AE2A-215F-4F18-86B5-3475B4DEAAE3", // I Walk The Line - Johnny Cash
+    "mu61w0nzxj6a3": "D5608F6D-5063-4BA2-88B3-FF46CDC3E2C9", // Ring Of Fire - Johnny Cash
+    "mu61w0nz47xty": "FC8B81E2-47F0-41AD-9483-FE820AA5B556", // Folsom Prison Blues - Johnny Cash
+    "mu61w0nza3by3": "A18965E4-2D44-4CF8-B79D-F8B1E55D9C91", // Hurt - Johnny Cash
+    "mu61w0nzszap7": "8C86DCC1-35FF-4713-A698-6F1F0458FCAA", // Cry Cry Cry - Johnny Cash
+    "mu61wy1w54bcr": "D2F425DF-4BE9-45A6-A5A4-F1357330592C", // Dirt On My Boots - Jon Pardi
+    "mu61wy1wcqfph": "D0F4CA2A-EA0B-48A4-AD89-4DDCEECE7E3B", // Heartache On The Dance Floor - Jon Pardi
+    "mu61yk9n3rns6": "90303CE9-1978-41DF-8C44-6DF1B996BA7D", // Espionne Russe - Joseph Edgar
+    "mu61z9yeezjxp": "B5B4F357-1DD7-4533-B97D-FC59C32E4AF5", // Don't Stop Believing - Journey
+    "mu6204u8zkt22": "F4EEB1F3-D1DE-44F1-94CA-AB2EA90618DF", // C'est Zéro - Julie Masse
+    "mu62400bbhtb3": "B60753C3-1CF8-47AB-98D9-E3F3DDAE6CF8", // Coeur De Rocker - Julien Clerc
+    "mu624fyhg6g0j": "788468F5-F24C-4D91-A962-689A784A4DFF", // Love Yourself - Justin Bieber
+    "mu6260zr0iqdi": "0FEED6C6-B88E-4259-BE13-09F51E3A5EC3", // Say Something (Feat Chris Stapleton) - Justin Timberlake
+    "mu626gj4u3qea": "F2F5ADA2-FBFA-4976-BD42-3B856376D9C1", // Femme Like You - K-Maro
+    "mu627up81xc4t": "4A77894D-9F52-4C3E-A1F9-532762E31F30", // Embarque Ma Belle - Kaïn
+    "mu627up8hvnak": "79A58C0E-F512-4712-BDEB-C7EFD377821F", // Mexico - Kaïn
+    "mu627up85aynz": "FB5FF4CA-20E0-4EF2-A40F-279F1B9186FA", // Adam Et Êve - Kaïn
+    "mu627up8rgbpi": "07240A13-69DA-429B-919B-CD85B3D5456B", // Comme Dans Le Temps - Kaïn
+    "mu6285tfv66uy": "5F5D94A1-28FD-4526-95D2-3612B6BCE0D8", // Dust In The Wind - Kansas
+    "mu628k8i3y37h": "5972F891-1C56-4BC6-AC27-C820408C6299", // Si Fragile - Karim Oullet
+    "mu628x1fl45c0": "5451E4F5-FA8C-4ECF-AF8C-573F1FBC57EB", // Firework - Katty Perry
+    "mu629cf1d427a": "2DEB5C31-857B-43C5-ADC0-E7F0F5460171", // Somewhere Only We Know - Keane
+    "mu629xl5jv8ad": "8C6FB965-83F8-48A3-9C91-6EDB6A55B52C", // Footloose - Kenny Loggins
+    "mu62cufb3l53x": "74B179AD-1ABE-4857-85AF-D283523FC481", // The Gamblers - Kenny Rogers
+    "mu62dfajly555": "D1527880-A07E-4043-BE80-9C543844670A", // Island In The Stream (Dolly Parton) - Kenny Rogers
+    "mu8mma4lp66z0": "5C7171A7-75D8-4F5A-A037-DA1B70F8C3B5", // Fréquenter l'oubli - Kevin Parent
+    "mu8mmq2vug4sc": "BBA46D84-ADBF-4419-9DC6-AC16A816EE5E", // C'est La Vie - Khaled
+    "mu8mn3ztfqmey": "B117FDA2-38DE-4E8F-BC54-BCE861DC5DF4", // Without You - Kid Laroi
+    "mu8mnjys1mtz5": "455D7A59-CAC5-4FA5-B3CD-353ED71BB3EF", // Picture - Kid Rock
+    "mu8mo08rz0xok": "98527D44-6DB3-4A7C-99F9-29D03E1C0CFA", // Sex On Fire - Kings Of Leon
+    "mu8mobs2d1fjd": "86934EEA-236C-4D40-906B-E297F44C5F4F", // Use Somebody - Kings Of Leon
+    "mu8mopukogw25": "B79BBDFB-FC77-408E-9470-2D10EF662847", // I Was Made For Lovon You - Kiss
+    "mu8mpesmahmv5": "78E0AB32-14F2-4810-AF16-143A201DF1F2", // Dondaine La Ridaine - La Botine Souriante
+    "mu8mqt76a96zm": "D956AB79-EE5A-4589-8AF3-38C1B1CAD26D", // LA Zigezon - La Botine Souriante
+    "mu8mqt76kklk5": "7087DA86-BCBA-40E4-8608-5FB950E82889", // LA Cuisinière - La Botine Souriante
+    "mu8mqt762tkt1": "7463DF7D-9CAD-416E-B750-B2E728CDC7A1", // LA Poule À Colin - La Botine Souriante
+    "mu8mqt76ed4fx": "E8D77AEB-4E17-41BE-9499-458FD3D63E00", // Dans Nos Vieilles Maisons - La Botine Souriante
+    "mu8mruyj67gb3": "A36EA2C5-2FAE-49E9-8EE8-9A2D89DAAA67", // Calvaire - La Chicane
+    "mu8mruyjjz9bv": "CCD88391-FF6D-41AF-A85F-398783E4F444", // Juste Pour Voir Le Monde - La Chicane
+    "mu8mruyj10o2b": "2E0ACFBB-A01C-4D6C-9578-A54064EDF51E", // Tu M'Manque - La Chicane
+    "mu8msdcg2atd3": "DB0898E8-CB97-483B-80C1-E6EC1C722BBE", // Ça Fait Rire Les Oiseaux - La Compagnie Créole
+    "mu8mz45aib0cj": "7D050D3B-1C9E-4219-A571-D1580A9A8CDD", // La Petite Grenouille - André Guitare
+    "mu8mzxdg4ucnd": "E8D39DA7-506F-43A9-8660-9488AC7B8BB7", // Always Remember Us This Way - Lady Gaga
+    "mu8mzxdgmsqt1": "F1B7B017-358B-4A90-B99E-EA9837E8430D", // Shallow - Lady Gaga
+    "mu8n4lrbgpkv1": "87A8582B-0475-453C-8451-5AFE63F1A11F", // Killing Me Softly - Lauren Hill
+    "mu8n5ig3j2nr4": "98F9228C-1389-442A-8E6D-7DC47A98B46F", // Le Petit Castor - Le Petit Castor
+    "mu8n5wvmqv3fw": "0B54B211-42D3-476C-8EFB-286FA9BE2CDA", // Income Tax - Le Ptit Beliveau
+    "mu8n6i21nmzwd": "29DF80CA-6FDA-4CF5-9B17-9E11067F9BAD", // Texas Sun - Leon Bridges
+    "mu8n74c74mmxw": "8F9AAE02-A417-45AF-A53A-9D6A62F1C4B4", // Hallelujah - Leonard Cohen
+    "mu8niac5cm2og": "71180C22-843A-4160-ABBD-E6EA29FF9587", // Donne-Moi Ma Chance - Les BB
+    "mu8nioolpozin": "9F3CE674-1AF3-4783-A09A-828CFDEE724C", // Tu Ne Sauras Jamais - Les BB
+    "mu8nwd37o9rja": "57451F40-AC56-4B07-9A9F-7ACBA09A7A4C", // Les Mystérieuses Cités D'or - Les Mystérieuses Cités D'or
+    "mu8nwrqck8zvi": "3041624A-FBB7-4406-8562-201121667BBE", // Ma Vie À L'Heure - Les Respectables
+    "mu8nzo83gnnxb": "239B58D8-1261-44A5-B090-ABF1E3180906", // J'aime Ta Grand-Mère - Les Trois Accords
+    "mu8nzo83kop5f": "40F87D7F-4C2C-428F-9FAF-C8612DEDD83E", // Saskatchewan - Les Trois Accords
+    "mu8nzo8353kc0": "DB239CE1-0675-4ADD-A8BF-1EF102337D37", // Vraiment Beau - Les Trois Accords
+    "mu8nzo833mftc": "F29314FB-8394-4A9C-9360-6BB7118EE570", // Lucille - Les Trois Accords
+    "mu8nzo83htoga": "B6ED8F2B-2CFE-4C01-96DB-FF91C12ECC9B", // Le Bureau Du Médecin - Les Trois Accords
+    "mu8nzo83ya7r7": "18691080-04B0-460C-8123-1013F4809FDF", // Hawaienne - Les Trois Accords
+    "mu8nzo83w8lw4": "68DF9B50-D190-45ED-B3B7-51AA94F3845A", // Tout Nu Sur La plage - Les Trois Accords
+    "mu8nzo83djfbv": "C62C8D63-EF4F-419C-ADDC-A7C2BD52E397", // Dans Mon Corps - Les Trois Accords
+    "mu8o05cpsifi5": "4505A72D-4E09-4B88-BDCF-66724AE41D8C", // Old Town Road - Lil Nas
+    "mu8o0kbuejyhl": "C41B1952-50FD-418F-BEDF-DE5D08C188B0", // Behind Blue Eyes - Limp Bizkit
+    "mu8o0xwxkm8fj": "CA285BAF-BAB6-4614-B314-9684115950C9", // Break Stuff - Limp Bizkit
+    "mu8o4yx8g5de3": "6D43B597-5D09-4684-A715-C154AD6AF338", // In The End - Linkin Park
+    "mu8o4yx89gs5f": "A2C8999A-081A-4A8D-B769-B72D48CB0AAB", // Numb - Linkin Park
+    "mu8o4yx8f9ltk": "A0A5DD8F-4A37-4290-9D4C-390C96AC2C06", // Shadow Of The Day - Linkin Park
+    "mu8o4yx8u5nbd": "877B534E-B588-434C-B5B1-CEA22CB18729", // Breaking The Habit - Linkin Park
+    "mu8o4yx8cw3nu": "4F2163DA-F172-405D-BAE5-057EB0DF5FA1", // Somewhere I Belong - Linkin Park
+    "mu8o5i0heblk4": "B4F96928-2E60-4BE3-ACEB-42EA3558E999", // Stuck On You - Lionel Ritchie
+    "mu8q1cg2es4yd": "BC4404CF-AEA9-4AC2-A469-DFFB60476FC6", // My Own Worst Enemy - Lit
+    "mu8q1rs8v5xb5": "EDEFA454-1603-4028-899C-9CA2CE985AC5", // The Loco-Motion - Little Eva
+    "mu8q2ci2b2age": "D1B1D6B9-EE86-4581-A0D7-E69E06FCA71D", // Lightning Crashes - Live
+    "mu8q2otb25tp3": "B30A192A-0076-47A1-BF4A-7AF2047588C9", // Amazed - Lonstar
+    "mu8q34zbmu6qp": "B08DD152-8065-47AF-927E-1A6485847A8E", // La Macarena - Los Del Rio
+    "mu8q3psijjisy": "13C5C32B-2113-40DF-8857-1E9D71ACE0C3", // J'T'Emmène Au Vent - Louise Attaque
+    "mu8q417aprw9m": "F9FCBD61-025F-434A-B058-6F35DED1DC19", // Broken - Lovely The Band
+    "mu8q4rci732n1": "29245133-CE0A-43ED-88D5-74A442436EC3", // Vivre En Amour - Luc Cousineau
+    "mu8q5udz9euxh": "1F0C669E-A785-445F-8459-72788FE60FF5", // Les Soirs De Scotch - Luce Dufault
+    "mu8q7xahpbq7x": "CC6FD529-A04F-4BC6-B217-7E7B24FDC9CC", // That's My Kind Of Night - Luke Bryan
+    "mu8q7xahq4hhs": "12E928B7-7B6A-4809-9C2E-4140962159F0", // Country Girl Shake It For Me - Luke Bryan
+    "mu8q7xah7j5lc": "F347C5ED-7A73-43D7-BE39-3390D43C758D", // When It Rains It Poors - Luke Combs
+    "mu8q7xahdc631": "60C5ED58-3A12-4075-9850-675AA035266F", // Bee Never Broke My Heart - Luke Combs
+    "mu8q9hkqy2tje": "C716FDE9-CDC9-4481-933A-7EB1A0A7217A", // Sweet Home Alabama - Lynyrd Skynyrd
+    "mu8q9hkq6m9sx": "F0A498E8-A256-433E-A10B-39620A19C7AD", // Simple Man (Shinedown) - Lynyrd Skynyrd
+    "mu8qag98ghqly": "3B2FEFE6-1A11-4D29-AB2E-9B99023154CA", // La Isla Bonita - Madonna
+    "mu8qag98uh2va": "F9212434-3FC6-4708-8A6D-BFC4A00F054B", // Like A Prayer - Madonna
+    "mu8qar92soafb": "FE405823-210D-4AB4-81FE-CF715B9ACD35", // Rude - Magic
+    "mu8qb4avl5d64": "3A50D24A-45CE-4486-BEB1-F55AAFC3572F", // La Tribu De Dana - Manau
+    "mu8qbisj7sa4s": "B3808770-F768-4D15-95CA-6693930A0917", // Nous Sommes Les Mêmes - Marc Dupré
+    "mu8qbz7tbrdvw": "C9F92E56-8DD2-4198-92F7-773C3D09E86A", // All I Want For Christmas Is You - Maria Carey
+    "mu8qccoimdnnv": "47A8BB97-6504-40FC-AC54-F200DB26A996", // L'Aigle Noir - Marie Carmen
+    "mu8qd1lvcfwvf": "C8D8DE22-0C14-4EF1-9B89-74BFB1848B62", // Soirée De Fille - Marie-Chantale Toupin
+    "mu8qdjf3enq7j": "B5424906-7F93-46CA-9501-A47494136402", // Tous Les Cris Les SOS - Marie Denise Pelletier
+    "mu8r7j6z1f5p6": "72B2451D-868B-42B0-AAA2-7654F3136C13", // Provocante - Marjo
+    "mu8r7j6zj9hbr": "482FD397-1B21-48A2-8B54-A98AFA0E0882", // Chats Sauvages - Marjo
+    "mu8r7j6zk7je0": "5C3C3C29-21D2-4EF7-A101-CF50EEC74DDD", // Ailleurs - Marjo
+    "mu8r7j6zw8x3o": "7B3CDB4A-EDBE-4A04-8769-5FA56CD3B8FB", // Illegal - Marjo
+    "mu8r8hmfumoo6": "1DB9091E-1681-443E-8668-C281B2CDAC36", // Ce Soir L'amour Est Dans Tes Yeux - Martine St-Claire
+    "mu8r9omrdo01t": "A3346769-856E-4F4D-8D10-B6653FE36ECC", // Mauvais Charactère - Les Colocs
+    "mu8ra813qgy5x": "C1CEE3FB-76C2-42A0-8888-C8B3E521A026", // Fade Into You - Mazzy Star
+    "mu8rbry3kubgs": "C69D8351-87CF-47DE-925B-031E62E708D0", // Nothing Else Matters - Metallica
+    "mu8rbry35q91p": "14BEAAA7-EDC0-4175-8173-39A1F96D8760", // The Unforgiven - Metallica
+    "mu8rc5ndgadyl": "E7D47B4A-A3FC-4ECF-B5A9-205A1875CFE9", // Bille Jean - Michael Jackson
+    "mu8rcpbvvy16x": "6F96B9C6-040D-4F98-B6BF-FF92EEA96881", // Une Belle Histoire - Michel Fugain
+    "mu8rd6av6xdl2": "84C9E30D-B3ED-44E7-AAD1-3CC34F953AD2", // La Dame En Bleu - Michel Louvain
+    "mu8rdq8mpigi9": "4FC23832-3352-4E63-8989-E99A1CDD3407", // J'Entend Frapper - Michel Pagliaro
+    "mu8re18ryzzc5": "518EB665-EB7F-4403-9E4C-AF7BDFA68202", // Flowers - Miley Cyrus
+    "mu8recy3v0kw0": "48D15B26-B38E-4DBB-ACFE-971B2BE1F9AE", // Wreking Ball - Miley Cyrus
+    "mu8reqkkitfng": "F2A15D99-B9F4-4852-970E-9AE43B5C8FE7", // Stolen Dance - Milky Chance
+    "mu8rf9mby416c": "FDB616CC-6213-4BFE-8D47-2596A652CAFB", // Minuit Chrétien - Minuit Chrétien
+    "mu8rg1mz02szl": "1715ABAB-3A47-4277-9799-6D85DB6CB8FC", // Les Grosses Torches Acadiennes - Mononc Serge
+    "mu8rgo5oeek2l": "5195926D-6DAA-4736-8133-3CC64E898E42", // Wiskey Glasses - Morgan Wallen
+    "mu8rgo5ot2jpc": "0FD86F57-E72A-459A-8BE3-50F3A5C45DFC", // Cover Me Up - Morgan Wallen
+    "mu8rh1au1qt6j": "5FC6E90B-035B-4F54-B3F0-FE4F423085EE", // Ace Of Spades - Motorhead
+    "mu8rhqw7ofbth": "554F9CB7-A394-4E9A-AECA-508CD0FAD405", // The Cave - Mumford & Son
+    "mu8riackalnnj": "A7A30641-7346-4931-AD41-D96D66E8766E", // I Will Wait - Muimfor & Son
+    "mu8rlliuyiwfm": "A522FFBB-0B52-4E56-B7D0-341E4E1243E8", // Little Lion Man - Mumford & Son
+    "mu8rm3aoyp37p": "651B1E3A-1E1C-4103-86A4-F347298C441F", // Désanchante - Mylène Farmer
+    "mu8rmnflv98qh": "02523378-9727-4511-A659-11F099B101A8", // Unwritten - Natasha Bedingfield
+    "mu8rnpatgyvrz": "1CCA1B9A-5835-4CAE-9637-51E3B3CF01B3", // Torn - Natalie Imbruglia
+    "mu8roatqp3tco": "95FFDB47-7149-408E-BF51-4D409B341FCD", // Sweet Caroline - Neil Diamond
+    "mu8rqg0gccku1": "B99A8EE0-FD85-44F0-8CDB-F34BABEFF8A5", // Heart Of Gold - Neil Young
+    "mu8rqg0g6u5de": "DCB16041-E2A2-4728-BF2F-245348D850CA", // Old Man - Neil Young
+    "mu8rqg0grfj1a": "ADC83BF7-4902-48F3-BC58-9439841623FB", // Down By The River - Neil Young
+    "mu8rqg0gju1df": "8D5D4AA7-F948-41C2-911D-0A29BA8E4022", // Rockin In The Free World - Neil Young
+    "mu8rqg0grn155": "0ECE2EA1-C002-42AC-96AB-9B6636462D58", // Harvest Moon - Neil Young
+    "mu8rqg0gplqai": "86228AED-F42B-410A-90BA-63D743CC6950", // Hey Hey My My - Neil Young
+    "mu8rqg0ga612v": "69614F0C-0F5A-4E1A-A9F6-7D01F66F415D", // The Needle And The Damage - Neil Young
+    "mu8rqg0gaduux": "E399CF50-FCC5-4FD9-AC35-06A12C44EF9F", // Out On The Weekend - Neil Young
+    "mu8rqwh6wum58": "8DD798BE-9B76-4E2E-9590-3022AFEEED52", // How You Remind Me - Nickelback
+    "mu8rt0top8abn": "DCD94A9C-83F8-45AA-9C3B-50448CCB0F0C", // Lake Of Fire - Nirvana
+    "mu8rt0to09tub": "869665F8-055A-41C7-B77B-99AE7DFBA37D", // About A Girl - Nirvana
+    "mu8rt0toa1m34": "63F27B28-00EC-4FAA-9EE3-31AD841A8EBC", // In Bloom - Nirvana
+    "mu8rt0to05kha": "B307ADA6-3C8F-493B-9D0F-FD338748AB5E", // Breed - Nirvana
+    "mu8rt0toyou2k": "AC2AD1C4-B042-4483-B393-61A53AA51E21", // Come As You Are - Nirvana
+    "mu8rtjxsnsz13": "FAA44C25-AF4B-4D70-8CD0-2342AD2427EC", // International You Day - No Use For A Name
+    "mu8rtv1vkysfv": "0778A1E7-D503-4CD5-9041-94F2126FD732", // July - Noah Cyrus
+    "mu8ruyysk0hmq": "FA3CAB56-8EBA-49C0-B2AF-47968AE53E50", // Stick Season - Noah Kahan
+    "mu8ruyyse28kg": "3A6785C3-DE5D-490A-B853-B1069FFBB575", // Dial Drunk - Noah Kahan
+    "mu8rvunlhvtsq": "4951DB9F-C86D-40C5-9563-7CDAD21376AD", // Linoleum - NOFX
+    "mu8rvunljgozy": "9C9A1FEB-71B6-47C4-8994-2E32ED6FC91A", // Don't Call Me White - NOFX
+    "mu8rvunlwrkg3": "CB7E04AB-827A-4DF2-BFD5-417F0C3ED796", // Bottle To The Ground - NOFX
+    "mu8rw50ny5bud": "C7B1C881-7390-4E5A-8B7D-D520975B2AB5", // On Jase De Toi - Noir Silence
+    "mu8rwsg3ijrd5": "B791800D-A5F1-470F-A078-31F302D365B3", // Don't Look Back In Anger - Oasis
+    "mu8rz2waflbfz": "0552C3C1-BE7C-4E1C-87BF-042A7B170ABD", // Champagne Supernova - Oasis
+    "mu8rz2wa1nr0u": "0F373460-78D6-445D-964B-AE24D3BAD5C2", // Shes Electric - Oasis
+    "mu8rz2way48n0": "D143DE87-9D5A-434C-BFA3-CBC7FB8771F6", // Live Forever - Oasis
+    "mu8rz2wabf1b0": "330C47B2-182A-4622-97EA-E31FBA568574", // Morning Glory - Oasis
+    "mu8rzjc6ne1kq": "D640E392-3384-45D1-8EE5-A0E97C3459F7", // Mes Blues Passent Plus Dans Porte - Offenbach
+    "mu8s0fctku2ba": "2B09D72C-0EFA-489F-9C65-539A5014F46B", // Gone Away - Offspring
+    "mu8s0fctp0ime": "8FA32109-6AF8-40DA-9D14-81AA76E8F6B2", // Hit That - Offspring
+    "mu8s0fctky8hc": "EEC28B7D-3D97-49DB-8895-40078BFBB74F", // Self Esteem - Offspring
+    "mu8s1iv1965a7": "65C4B59C-F75B-4DB7-AA5B-F951B09CCCA4", // Dis Moi Pas Ça - Okoumé
+    "mu8s1iv12xpbf": "8BF8A3CC-2EF0-4DB6-873F-148B994DF0CB", // À L'Enfant Que J'aurai - Okoumé
+    "mu8s1iv1id7a3": "4CABE12F-E89B-4125-B22A-8A5D5ACB5178", // La Lune Pleure - Okoumé
+    "mu8s26rt6r8ky": "B93E3A1A-8CF8-4097-AA6D-A628FDDEDC2B", // Wagon Wheel - Old Crow Medecine Show
+    "mu8s2knymqw7p": "70532EBB-1C74-4967-BC5F-7F60092BACF5", // What Makes You Beautiful - One Direction
+    "mu8s429khh72x": "C7C8BD2E-20A8-4FBC-BBE6-1424E531C7A2", // La Pendaison De Crémaillière - Orloge Simard
+    "mu8s429klli0u": "64421F48-FBC9-43C2-AE82-640264145440", // Mireille - Orloge Simard
+    "mu8s429k08kpk": "B5B49113-FDEA-47D4-BC67-B560898072D1", // Plotte Au Bic - Orloge Simard
+    "mu8s429kp0ugv": "25222F7C-C36B-4EE9-8431-B410653833E6", // Cabane À Pêche - Orloge Simard
+    "mu8s429k233s2": "49F74A78-57E9-49BA-85FB-D90EC53B6604", // Rose Flash - Orloge Simard
+    "mu8s94gxrxd2j": "B8E3333C-1440-42D5-9E70-7DB623967AA8", // Sittin On The Dock Of The Bay - Otis Redding
+    "mu8s9gb9ws7jc": "DC859C88-BBE7-4663-9C24-30E3BBB4CA53", // Clumsy - Our Lady Peace
+    "mu8s9y44js8u5": "147827E5-72D2-43F7-8B9A-9EA97FBCF384", // The Rocky Road To Dublin - Paddy Reilley
+    "mu8sanrclue8g": "3119857D-C413-402B-B7DE-76FEE2BED9D0", // The Only Exception - Paramore
+    "mu8sayfhlp1iq": "260EE96B-32C0-4104-B774-524412B39302", // Let Her Go - Passenger
+    "mu8sbhys5f2mi": "9038CA69-F467-42D4-8975-8ABFABAE1AD1", // Qui À Le Droit - Patrick Bruel
+    "mu8shgjjg0w16": "4E81575E-1D8F-4066-B42C-DE455A3B41DC", // Quand On Est En Amour - Patrick Normand
+    "mu8sipdzt27er": "D6EFBA48-86B9-408A-8271-F3A64BA183C2", // Heureux D'un Printemps - Paul Piché
+    "mu8sipdz50s27": "1A841391-6FDD-4A3C-B416-75F327357E9C", // Ya Pas Grand Chose Dans Le Ciel À Soir - Paul Piché
+    "mu8sipdztx29p": "8B3261C0-BB0E-488F-A5A8-C71A012AD9BE", // L'escalier - Paul Piché
+    "mu8sjlwqkahmc": "B13734E7-9304-40B5-8740-B3B9302DE6AD", // Last Kiss - Pearl Jam
+    "mu8sjlwq5oiuo": "7D0B6C22-E475-43D8-B0B6-56B37377F84A", // Jeremy - Pearl Jam
+    "mu8sjlwq5dj52": "25EAE2E3-0712-46DE-ABA9-148158047E13", // Better Man - Pearl Jam
+    "mu8sjlwqno0jr": "D98101AA-2515-4ECC-9D92-A00C34A4924E", // Just Breathe - Pearl Jam
+    "mu8sk07h69wsm": "C3F9541B-EF31-4D3B-A180-E4B8AAFE4EF3", // Fuck Authority - Pennywise
+    "mu8skj03mvqgy": "C652570D-0AB1-4A47-A52E-2C475B755C11", // Coeur De Loup - Philippe Lafontaine
+    "mu8sm4r1w9s5l": "D0C112B4-858D-44FB-B52F-1616AC012517", // Confortably Numb - Pink Floyd
+    "mu8sm4r1ashka": "FF79CB6B-1F12-48DC-9AAC-CB298AB264C3", // Wish You Were Here - Pink Floyd
+    "mu8sm4r11rod0": "1F32D45B-5047-431D-B515-E4B077D49922", // Time - Pink Floyd
+    "mu8sm4r1mgddf": "9D0DDC84-9A88-48E1-B4E8-799AA63717DB", // Mother - Pink Floyd
+    "mu8smj66e5nk6": "796B1734-3471-4411-8BDF-ED5F5AA6E584", // Pixies - Where Is My Mind
+    "mu8sn0un0eq2s": "6008ED5B-1EC6-4B0D-8E44-243B8AF59749", // Hey There Delilah - Plain White T's
+    "mu8snemh0neix": "70170993-E1D1-4217-8277-BA8C34FBE458", // Jonquière - Plume Latraverse
+    "mu8sp0vl18n0k": "14AF40CE-3D17-43D8-809B-BC2195DD5558", // La Bienséance - Plume Latraverse
+    "mu8sp0vl1izmr": "99002D25-8645-489F-9683-C240BF0656A3", // Bobépine - Plume Latraverse
+    "mu8sp0vlkpsgi": "0ECEF868-F5FA-4AAB-8C85-E111722A9F79", // UFO - Plume Latraverse
+    "mu8sp0vltqozf": "ED4D2473-BF39-41C1-BF16-6621EB1A716A", // Ainsi Soit-Il - Plume Latraverse
+    "mu8spmi3p8cfc": "7EE9A17B-6221-4BE1-81FB-A98DFDFE8599", // I'm So Excited - Pointer Sisters
+    "mu8sq75x8f3u1": "B1088BE9-F35C-4DEE-A494-64F59DFFE03C", // I Had Some Help - Post Malone (Morgan Wallen)
+    "mu8sqnc68hpnd": "E6286263-B7D3-4665-9B92-C890B0777C1C", // Peaches - President Of The United State
+    "mu8ss9of62mf3": "087450C6-1AEE-4E0C-88BD-5DEA890E50E7", // Chu Ben Plus Cool Sua Brosse - Quebec Redneck Bluegrass Project
+    "mu8ss9of21269": "CFCCB66F-1C3A-4B40-B636-1727B1B26D5D", // Tsé Quand Ça Va Bin - Quebec Redneck Bluegrass Project
+    "mu8ss9ofljqj8": "0DA99E84-D989-412F-9CAE-54EFDCAA65E7", // Pantera Artic Cat Tripple 800 - Quebec Redneck Bluegrass Project
+    "mu8stlpk4t6xs": "B86DC883-7716-465A-80AE-81CC4E6AD06E", // Another One Bites The Dust - Queen
+    "mu8stlpkeymj6": "63326F48-27DA-4A0D-B7DF-4673DCB235BF", // Crazy Little Things Called Love - Queen
+    "mu8stlpkvcbuh": "8532C728-4D84-404C-8D92-617CA820C2C5", // We Are The Champions - Queen
+    "mu8stlpk6o8aj": "7EE1BCC3-5FE6-441A-B859-5593C17D65DF", // Fat Bottomed Girls - Queen
+    "mu8su1mb5zefm": "8D33ADE2-1375-4CD6-9575-3160146CE92E", // Losing My Religion - R.E.M.
+    "mu8supgvmohx4": "3B2E9E95-D5F0-40E2-979A-6F0CACED9543", // Karma Police - Radiohead
+    "mu8supgvtvlro": "A8F61E16-E58C-4CF8-8754-2445A941CE90", // Creep - Radiohead
+    "mu8suzki6gjsh": "6869757E-4836-4101-95AE-AB6CC266F5C4", // Time Bomb - Rancid
+    "mu8svshn9lw5o": "7CFDDABE-E61B-4177-A218-85728740A3F4", // Otherside - Red Hot Chili Peppers
+    "mu8svshnt6e6h": "2625720B-9242-4138-837C-4F54B89D4A43", // Californaication - Red Hot Chili Peppers
+    "mu8svshn0dy3d": "D6BBA17E-99DF-4434-A2CF-D90FFB6F1D37", // Under The Bridge - Red Hot Chili Peppers
+    "mu8sw5iwn6xjj": "4633C7BA-A990-457A-89F0-557420391A58", // Cotton Eye Joe - Rednex
+    "mu8swfeae2y3m": "8A5E6634-E76A-4A12-B055-043F96595F6C", // Beer - Reel Big Fish
+    "mu8swtks6xbg6": "A0B762B9-2A4A-4E4B-951F-068213926D56", // Dès Que le Vent Soufflera - Renaud
+    "mu8sx4ehxlhig": "40A80A9D-CBBF-4C0B-A71C-9D872AFAC3D6", // Le Chum Du Bum - Richard Desjardins
+    "mu8sxw8bcvwfn": "D1A95E4C-56BE-4F24-B7F0-44E4F65AD79B", // Journée D'Amérique - Richard Séguin
+    "mu8sxw8biitez": "35AB71D4-644D-412B-8D72-81B6030D38C8", // Aux Portes Du Matin - Richard Séguin
+    "mu8syczladuct": "627E3CC8-6C78-474C-8DF1-5255C695CFA6", // Never Gonna Give You Up - Rick Astley
+    "mu8syqlby1zt7": "1E108FBC-36D0-44BC-BBDC-1B8558BA666D", // Umbrella - Rihanna
+    "mu8sz4h42pxdr": "9E763D89-4690-445F-BAC6-81C7E8D44696", // Swing Life Away - Rise Against
+    "mu8szjffcazmp": "C4377EC6-7508-4175-99D8-9F9C89772098", // Hero Of War - Rise Against
+    "mu8t0mbgrzyj6": "5BDAAF6B-3372-4C50-B6FC-A25B9A7186F7", // La Bamba - Ritchie Valens
+    "mu8t10khlxled": "7179CDC7-B143-4B68-8C8B-8FE5BCEC19E8", // Les Ailes D'un Ange - Robet Charlebois
+    "mu8t25e5vo5yh": "991FB4EC-01D7-4639-8890-DFE460A4D1BA", // Darlin - Rock Voisine
+    "mu8t25e5amuz5": "D59DE9C0-D6CB-4AC1-A49E-374223CABAF8", // Helene - Rock Voisine
+    "mu8t25e5xju8m": "91AD7CDC-8623-42A0-BAC8-6B158306DD4A", // La Légende de OoChigeas - Rock Voisine
+    "mu8t2jlvm2mkp": "B9F5C95C-7134-4005-BB26-25E2B788932F", // Paint It Black - Rolling Stone
+    "mu8t2vjkcdltw": "426A51A9-B1FC-44EB-A08D-0788E8370C5D", // Angie - Rolling Stones
+    "mu8t35ffxl1pv": "97B3AB61-6C04-4513-BF7F-98BE7C29D591", // You Got It - Roy Orbison
+    "mu8t3nu4gfp8o": "DF73FC0D-5041-4CD8-BF31-792979D154A8", // Pretty Woman - Roy Orbison
+    "mu8t4aelt2r1p": "D2CB608A-0909-4895-83C2-86F9BDF8DAA2", // Escape (The Pina Colada Song) - Rupert Holmes
+    "mu8t4s0j30o5e": "2B1652B0-463A-43DF-A927-177E3A6E355F", // Maria Maria - Santana
+    "mu8t6wpuyl98u": "AF3E087E-E6F2-4971-AE83-174BEE9FEAF0", // L'Incendie À Rio - Sasha Distel
+    "mu8t7l7jdbew8": "875A6C12-683C-417C-BABE-FA5021672FE2", // Still Loving You - Scorpions
+    "mu8t7l7j2a3tq": "7DA62AE3-EAE6-413B-A722-890E8281D745", // Wind Of Change - Scorpions
+    "mu8t8x6se1mua": "8948EDE5-5414-4285-9D14-FAD37ABE90F2", // San Fransisco - Scott McKensie
+    "mu8t9bai9icod": "D6BF9C8A-CB39-4478-B945-F25B27DCA415", // Closing Time - Semisonic
+    "mu8takmlnk295": "929B4C90-D303-486C-B4A9-A1F522AEF0DA", // A Bar Song (Tipsy) - Shaboozey
+    "mu8taxbv4rdg3": "AF6CDB33-6DF4-4C3C-8FE1-81DAFD993EA1", // Whenever Wherever - Shakira
+    "mu8tcqx7ae3a8": "710F3832-0B8B-4120-9F56-BF19DA4A54AB", // If You're Not In It For Love I'm Out Of Here - Shania Twain
+    "mu8tcqx7uryhe": "CF46BA51-2C17-48EE-9A66-1B1307545970", // Man I Fell Like A Woman - Shania Twain
+    "mu8teeph37xal": "86789DA0-8C23-4261-8A20-D46F16F0590C", // Perfect - Simple Plan
+    "mu8teephdjc2w": "0A90E835-A700-49B5-B109-7D1C999CF62B", // I'm Just A Kid - Simple Plan
+    "mu8teeph2hbgh": "5527CF2E-8C00-4D3D-BA49-95341F59B818", // Welcome To My Life - Simple Plan
+    "mu8teepheksl7": "2767060E-8072-4684-9927-1E450A38CF54", // Crazy - Simple Plan
+    "mu8tey1rp2h4o": "068577CA-239D-43E6-BBD6-5CD42B12CF34", // Before I Forget - Slipknot
+    "mu8tfe8w3zcog": "1C345FFF-FDC9-431E-991E-B18DC102E543", // All Star - Smash Mouth
+    "mu8tfvq9ihqon": "50B5AD00-6F8A-4AD8-A5F2-B8D8C16D14A2", // 1979 - Smashing Pumpkins
+    "mu8tgat9ogr81": "880D8EBB-CAEB-41C0-8081-38AF0BA6A9A8", // Du Rhum Des Femmes - Soldat Louis
+    "mu8thhy4zz9xe": "2B29DEA0-08CB-4503-BE0F-3A2AFAAF5A68", // Black Hole Sun - Soundgarden
+    "mu8thvklc4i97": "66D1BFC6-477F-478E-9430-81CEAD7825FD", // Wannabe - Spice Girls
+    "mu8tijc4ace3v": "0594D5B9-591E-4DCE-B18C-A3391A0333F4", // The Galway Girl - Steeve Earl
+    "mu8tiyczkyn69": "98BEB8BF-6D4D-401C-B596-841EB36266BB", // The Joker - Steve Miller Band
+    "mu8tjpyin48e4": "F3B4AABE-1F83-4645-A4AE-65BBC21D23CC", // Interstate Long Song - Stone Temple Pilots
+    "mu8tk052901vy": "9C56F255-D7A8-49B2-8996-85ADB4F9FA30", // Papaoutai - Stromae
+    "mu8tkfmywskai": "67E289C5-1543-4F5B-B9A8-BD3568D21626", // What I Got - Sublime
+    "mu8tkfmy4p3lg": "1BD1DBCA-0F36-4C02-B7C0-A5E20A688549", // Santeria - Sublime
+    "mu8tkram02nup": "49ABD8C4-DE05-4C16-ADB3-2F7ED629E9B6", // Fly - Sugar Ray
+    "mu8tlgr23onsq": "80CE3F47-0FC6-478F-932D-BDDA0A01EA99", // Pieces - Sum41
+    "mu8tlgr282f66": "E6CCE6F0-C1D9-4550-8126-497EC25AD014", // In Too Deep - Sum41
+    "mu8tlgr22y6e3": "C86A96CF-EF49-453D-89DE-76B8DD2962A1", // Some Say - Sum41
+    "mu8tlu58d6oz5": "F7052A62-5823-47E5-8EB9-D26195B28CB0", // Give A Little Bit - Supertramp
+    "mu8tm9mgtkz3o": "00784989-2353-4E96-8F7B-8F223D43BBF6", // Eye Of The Tiger - Survivor
+    "mu8tmxixob9sc": "085A6D95-6BB9-46A1-8E9C-A642B7103556", // Lonely Day - System Of A Down
+    "mu8tmxix0ojg8": "11D1828F-AECC-4670-95DB-A46432820044", // Aerials - System Of A Down
+    "muaanngruekel": "1FCCAF8F-8F55-430C-B21C-44DA93CC7150", // Runaway To Mars - Talk
+    "muaao2uoaf7no": "8146EF9D-0DEF-4AC8-AE66-721AE92E901F", // Blank Space - Taylor Swift
+    "muaap507v7nz1": "3D3F9436-4BBF-4B78-88DE-1B91C88E8F03", // Everybody Wants To Rule The World - Tears For Fears
+    "muaaqave56pdh": "FA9263C6-02E8-48B6-8866-E68A80B469D8", // Tribute - Tenacious D
+    "muablq2aouumn": "465EBBAC-9EC6-4D79-B670-A760A217F66D", // House Of The Rising Sun - The Animals
+    "muablzcsgks69": "1F1A80BF-9254-49B2-95E9-A7DB78E74866", // The Weight - The Band
+    "muahxlvbfo89q": "C01FABFA-3A33-432F-A314-34CE7104ACD2", // A Hard Days Night - The Beatles
+    "muahxlvbkukph": "5D9D81B1-2060-4F0C-985A-2D1F3F35CEB0", // Twist And Shout - The Beatles
+    "muahxlvb15t10": "8254D410-236E-4BA2-B1E9-1A8DA0F80783", // I Want To Hold Your Hand - The Beatles
+    "muahxlvbgpxcs": "65A31C09-4CF1-4356-8093-4D4E57F45994", // Get Back - The Beatles
+    "muahxlvbxnvpn": "29D79D77-EDEE-454D-B66F-3F9A12BF0FB3", // Back In The Ussr - The Beatles
+    "muahxlvbx8bht": "14661E48-A52B-412B-BA40-27FE403D4969", // Blackbird - The Beatles
+    "muahxlvbwqgpa": "38B28D06-D453-4B18-9CF6-2AAE7825506F", // Let It Be - The Beatles
+    "muai3r1dciwfe": "2F7128E9-6D3C-46C9-BF1B-B168C510342C", // Imagine - The Beatles
+    "muai3r1dk731f": "2E17B25B-10F8-49FA-A9EC-6A5A81B38B7C", // I Saw Her Standing There - The Beatles
+    "muai3r1durpol": "93CA8F47-1C7E-476C-86E9-7284DC477F1F", // Drive My Car - The Beatles
+    "muai3r1d02pt5": "5B1F4CFC-1140-49FF-9ADC-F58D9AF24FF0", // Revolution - The Beatles
+    "muai3r1d2psgd": "0796E60D-55D9-44C6-B15D-338E4961C4DA", // Come Together - The Beatles
+    "muai3r1d0il52": "29FA8FDE-AFAC-4291-BAB6-922C77E1DFF4", // Help - The Beatles
+    "muai3r1duvh29": "30E91CD6-799C-45EB-BB78-720CBFBE445A", // Love Me Do - The Beatles
+    "muai3r1deeya0": "42CCF37F-CD72-4B2C-9258-470A5ECE778E", // Hey Jude - The Beatles
+    "muai3r1dbxy3t": "C3800E18-CEFE-4B23-B9BD-E0C4F7C481F7", // She Loves You - The Beatles
+    "muai3r1d4cgb7": "97DD6B75-9D0B-4988-91AF-8CE1360155EF", // Yesterday - The Beatles
+    "muai3r1d2ixa7": "A3E70AE8-D5A9-4BEE-9FB9-5BE5A21D1933", // From Me To You - The Beatles
+    "muai3r1db7ugb": "D3906E36-F2B3-41F9-B87E-5DABE12887D2", // Eight Days A Week - The Beatles
+    "muai3r1dx97kb": "28D2A005-D44C-4F31-A5A3-AC904E9CAD2C", // With A Little Help From MY Friend - The Beatles
+    "muai3r1dlvck5": "851A125C-1BFD-4F10-9701-3C14D30B7F7C", // In My Life - The Beatles
+    "muai3r1dzhl84": "A5BB3074-DAF0-478A-964F-77A1560C7BD3", // We Can Work It Out - The Beatles
+    "muai3r1d1yacm": "33CB3438-58B3-4362-A64B-3D666834D9D0", // Something - The Beatles
+    "muai3r1dryuew": "5B58B695-18FA-4F97-9CA7-5BC608E686B2", // In Only Sleeping - The Beatles
+    "muai3r1d9d2wg": "F69CE59C-CFDA-48F7-A02C-C9D1FDBE9A5D", // Ob-La-Di Ob-La-Da - The Beatles
+    "muai3r1dn37fp": "1BE0F095-4955-4695-95C4-0AD1726AF743", // All My Loving - The Beatles
+    "muai3r1dl7hu6": "B0520EE2-73F0-4DD4-B5C0-015BE6FDDF25", // Can't Buy Me Love - The Beatles
+    "muai3r1dlp4wu": "75E80CF5-2F1A-4997-AB83-85AF5325026C", // Here Comes The Sun - The Beatles
+    "muai3r1d8c6t8": "46A4E290-9A59-4486-A17E-9A12A1D0C758", // Norwegian Wood - The Beatles
+    "muai3r1dul3d2": "8C172B52-6747-42CF-992E-2FF226A9491E", // Oh Darling - The Beatles
+    "muai3r1dj9exe": "43468DEE-0D96-46F7-8557-26F3F9C6E52B", // Ive Just Seen A Face - The Beatles
+    "muai3r1dszpvj": "5081F83C-B492-47F0-8951-F45B8E239ECF", // Day Tripper - The Beatles
+    "muai3r1d4infq": "77F590FF-2E2B-459D-A633-F23CB7391C65", // I Feel Fine - The Beatles
+    "muai3r1dtn18l": "0E730475-418A-4E40-A51A-AAE7C4C81D83", // While My Guitar Gently Weeps - The Beatles
+    "muai69t8m2ffq": "0E3F01A3-9A3A-46F2-9AE5-618B6615D5A6", // Jug Of Punch - The Clancy Brothers
+    "muai6jr7vmz5q": "7D07F9CF-A6CB-431D-9C6C-E9E11B9E3D29", // Friday I'm In Love - The Cure
+    "muai6xhk07o4s": "DB746DBD-5701-4AF3-B414-B8E711CD8D92", // People Are Strange - The Doors
+    "muaizwyggtto6": "027817BF-5E3A-47A7-AD96-65607CC2E118", // Black Velvet Band - The Dubliners
+    "muaizwyg1xjqw": "0CBDAD87-3E49-430C-82D0-F7AABBB463E2", // Drunken Sailor - The Dubliners
+    "muaizwyge3oh1": "752AC41A-CCD5-4950-8BEC-A90B4D8166C9", // Whiskey In The Jar - The Dubliners
+    "muaizwyg4dkzt": "6522DD07-DB3D-417B-A9AC-0B2B994AAA64", // The Wild Rover - The Dubliners
+    "muaizwygitjjl": "46354A1A-6E9D-4C31-A2EF-FD3EF68FE063", // The Fields Of Athernry - The Dubliners
+    "muaizwygzv4wv": "7318E204-85D1-4D19-865F-8C623FA32C40", // Finnegans Wake - The Dubliners
+    "muaizwygfvlus": "8235FA68-C6BD-4DA2-A9FE-68D6B69543A1", // The Leaving Of Liverpool - The Dubliners
+    "muaizwygmqen9": "36AC3A73-8281-4F2C-9765-7376E7E6F6EB", // Molly Malone - The Dubliners
+    "muaizwygxbcd5": "4F08D6E5-2D75-4294-A296-6191CE9195D7", // Ill Tell Me Ma - The Dubliners
+    "muaj0at1a15ot": "58A305B7-5787-461F-B936-FA7F0A5D54EC", // How To Save A life - The Fray
+    "muaj0mrfy280q": "DAADF74C-D976-4F65-AF9D-CDC27972DD8C", // Mr Brightside - The Killers
+    "muaj0xyls63mm": "F974C9F9-514A-4E1D-9DE7-A73D01E5672A", // Lola - The Kinks
+    "muaj1b3udpsai": "29B719A5-76E3-4025-86A2-974808A351A4", // Im A Believer - The Monkees
+    "muaj1olnpqafa": "328ACEFD-4BA4-4439-9CC2-49DFCB709BB7", // Dirty Old Town - The Pogues
+    "muaj25boxkyl7": "46A96C0E-993C-438A-A2D5-B5F9BD6E2ED9", // The Irish Rover - The Pogues
+    "muaj2g2xwzg6r": "D7F46245-C0D1-4FC9-91D7-A1B5CDA6F7CD", // Roxanne - The Police
+    "muaj2xzadeq2s": "6C47D69D-F061-4599-9A70-0F4B524CA346", // Im Gonna Be 500 Miles - The Proclaimers
+    "muajckl0fbigy": "15D8A743-4A36-4F6A-967D-8441B97C485E", // Happy Together - The Turtles
+    "muajd5k7f9k24": "367ECB58-88AD-424F-84D9-14806BB78465", // One Great City - The Weakerthans
+    "muajjk808p96m": "589305F0-1423-4353-8203-E218E1F43B8D", // Behind Blue Eyes - The Who
+    "muajkx7gzqbst": "8BD18017-994A-4446-A361-9E0BA00B3AB9", // Come Out Ye Black And Tans - The Wolfe Tone
+    "muajl9zvmn09m": "86F0F1DA-CAAC-44D5-BFDC-B25DF4650BAA", // God Save Ireland - The Wolfe Tones
+    "muajm3nwhkxvq": "74720CCE-8EE7-4621-A2D2-F8A9E8C2FC69", // Semi-Charmed Life - Third Eye Blind
+    "muajmix0ksasq": "37F4E7AA-B6F0-4665-BD10-39D887A90650", // Life Is A Highway - Tom Cochrane
+    "muajmzldn3jqo": "7BD0BDE0-E849-49A2-B9E8-47986A1000FC", // Free Fallin - Tom Petty
+    "muajnj7gpncrt": "015166E0-994D-4AF0-AB8D-3042076DBFFD", // Mary Janes Last Dance - Tom Petty
+    "muajnytdtr9s2": "B306B933-E1E7-42F1-9588-6AADE1F61948", // Dance Monkey - Tones And I
+    "muajo9pex96hr": "2DC7D7A8-198B-4D7D-B4CA-4EC1664A359D", // Breaking Me - Topic
+    "muajohxstyoy5": "93F44232-F9EC-4102-9CAB-54D6B296A642", // Africa - Toto
+    "muak1215lld3i": "B5BA4AD1-03D5-4FCF-BFE9-3CD2D80FCD30", // Give Me One Reason - Tracy Chapman
+    "muak1215ulwza": "CEA65087-6533-4D59-9D42-05712CB96F00", // Fast Car - Tracy Chapman
+    "muak2pxp9p8qp": "94683E5D-54ED-4B2E-8AEC-A0D9D25BF31A", // New Orleans Is Sinking - Tragically Hip
+    "muak344u0uhpy": "C011150B-5212-489B-879F-B9CEFAECB8C7", // Bloodshot Eyes - Trampled By Turtles
+    "muak3ucn3nq9z": "388735BA-C34B-4707-BC95-221E62D149CF", // Désolé Pour Hier Soir - Tryo
+    "muak3ucnmeh5z": "89D4F564-A01E-4EDB-8A8E-4E2378537898", // Serre-Moi - Tryo
+    "muak4gzdwadmo": "EE27A4C9-C300-4D4A-8E03-A5639624B04A", // Ride - Twenty One Pilots
+    "muak4y2rhalv5": "7B2477C2-CCC3-4830-8F60-F68181B75B56", // Were Not Gonna Take It - Twisted Sister
+    "muak6vwfsymcj": "A0130240-7FA2-449D-9822-E3FE9449312B", // Sunday Bloody Sunday - U2
+    "muak6vwfromhv": "2AC9E105-EEE2-460E-B517-2FF9827397C7", // One - U2
+    "muak6vwfvzg8p": "E923266C-8C3C-4470-A2DA-77439ACD9327", // Where The Street Have No Name - U2
+    "muak6vwfpa7j1": "0E23FDE2-43FA-44EF-8C5B-D00FC41789E8", // With Or Without You - U2
+    "muak98e5zb50z": "282EB500-7ABC-4C07-847A-457DD62E438C", // Brown Eyed Girl - Van Morrison
+    "muak9mwledif4": "0296B7CE-E75A-488F-9C6F-0BACB0509DCD", // Riptide - Vance Joy
+    "muak9xs64q11h": "D5A8D271-EC8D-49D6-9B86-2CCAA758E5AB", // I'm With You - Vance Joy
+    "muakapldvxqng": "6A8CA3A2-4862-4BE8-B875-B01F815DA0D8", // Le Train - Vilain Pingouin
+    "muakb2b8baych": "F22EC82A-54DC-4953-A365-9CF8BC415ACC", // YMCA - Village People
+    "muakok0geliu9": "6D344D53-13F1-4912-B8BC-A795C533CF6E", // On Va S'Aimer Encore - Vincent Vallières
+    "muakp05cyph9m": "5ED74B00-BB6F-4043-839E-4589C00BDF2B", // Puits Sans Fond - Vulgaires Machins
+    "muakpab3vudqi": "56AA910F-24D3-4313-835D-DBC8D05BA07B", // Say It Ain't So - Weezer
+    "muakpm4upz2cy": "01A70615-7C48-4B0A-8F08-0401D3C2B70C", // Island In The Sun - Weezer
+    "muakq9t103fc3": "24020ECB-8775-4330-8803-1D373BE66383", // The World Has Turned And Left Me Here - Weezer
+    "muakqlafy0dyj": "F28BA2FD-E23B-4623-97DA-6651F02BED49", // Last Christmas - Wham
+    "muakr8rytfvd6": "ED35D578-1BF7-4573-B069-8F0BF9FE8675", // Teenage Dirtbag - Wheatus
+    "muaks4pfl4x1c": "6E8DCAA4-425E-41F2-85CE-0C1698D21199", // Seven Nation Army - The White Stripes
+    "muaktnu7kpe2f": "FA4CD8DC-DCAF-4443-B46D-43C3AD37BA76", // I Wanna Dance With Somebody - Whitney Houston
+    "mual0o3g1rd00": "7A09541F-A961-4384-805B-4DE221858E25", // On The Road Again - Willie Nelson
+    "mual1dhvewpjk": "FC9621CD-7006-4E59-B123-2F33F969EDEE", // I'm A Rover And Seldon Sober - Ye Vagabonds
+    "mual1u8pbaudu": "E6406690-C2B6-40F7-84B5-D267313C344C", // Chicken Fried - Zac Brown Band
+    "mualel6060xw5": "072CF069-2134-4360-9F4F-4FFACEE19EA1", // Something In The Orange - Zach Bryan
+    "mualel60la5a9": "6FA083AE-50CB-419C-9E14-9EE4C507E945", // Revival - Zach Bryan
+    "mualel600axcz": "87CB31FF-487E-4FB6-B890-CBFE35356472", // I Remember Everything - Zach Bryan
+    "mualel60nc9jb": "55BC7B58-45D1-48BC-AC77-EEA927D31755", // Heavy Eyes - Zach Bryan
+    "mualf6snspjic": "5B6C04BC-B4E1-4DFA-83C9-B3492E939134", // La Ballade De Jean Batailleur - Zachary Richard
+    "mualfccidr32f": "4825B2C6-CEB6-4895-9AC5-02CF4D5739FD", // Je Veux - Zaz
+    "muam5bt1pftvw": "C322EEA4-8BC9-4064-B099-E656AF38F413", // You Shook Me All Night Long - ACDC
+    "mv7gn62qzgkvf": "A663612E-A2F8-4779-8F8C-F4411C714DE6", // Fuck Her Gently - Tenacious D
+    "mva12g7c5qgii": "0066F722-7E9E-41C0-8583-CEA806C3AF27", // When Im Gone - 3 Doors Down
+  };
+  function onsongHref(id, title) {
+    const uuid = ONSONG_IDS[id];
+    return uuid
+      ? `onsong://open/songs/?song=${uuid}`
+      : `onsong://open/songs?song=${encodeURIComponent(onsongSlug(title))}`;
+  }
   function showToast(msg) {
     const t = document.createElement("div");
     t.className = "jb-toast";
@@ -3982,7 +4670,7 @@
       // majuscules + accents conservés, a fonctionné). Voir l'historique détaillé au-dessus
       // d'onsongSlug().
       li.innerHTML = `
-        <a class="jb-slot-onsong-wrap jb-onsong-link" href="onsong://open/songs?song=${encodeURIComponent(onsongSlug(v.title))}" title="Ouvrir la partition dans OnSong">
+        <a class="jb-slot-onsong-wrap jb-onsong-link" href="${onsongHref(id, v.title)}" title="Ouvrir la partition dans OnSong">
           <span class="jb-slot-rank">${i + 1}</span>
           <span class="jb-slot-votes">${v.requests}</span>
           <span class="jb-slot-info">
