@@ -469,11 +469,23 @@
   #jb-app .jb-unmark-btn { background: var(--card2); color: var(--text-dim); font-weight: 600; padding: 6px 10px; border-radius: 8px; font-size: 0.75rem; cursor: pointer; }
 
   #jb-app .jb-cooldown-list { display: flex; flex-direction: column; gap: 8px; }
-  #jb-app .jb-cooldown-row { display: flex; align-items: center; gap: 10px; background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 10px 12px; }
-  #jb-app .jb-cooldown-row .jb-song-info { flex: 1; min-width: 0; }
+  /* Titre/artiste maintenant sur leur PROPRE ligne, au-dessus du minuteur/des boutons (voir
+     .jb-cooldown-row-controls plus bas), plutôt qu'à côté d'eux sur une seule ligne horizontale —
+     demande explicite de Hubert (captures à l'appui, iPad avec le panneau admin partagé à l'écran
+     avec son appli de partitions OnSong) : dans une fenêtre étroite, le minuteur (largeur fixe) +
+     les 2 boutons (largeur fixe, texte jamais coupé) occupaient à eux seuls toute la largeur
+     disponible, ne laissant plus rien pour le titre/artiste (flex:1, min-width:0) — invisibles en
+     pratique, pas juste tronqués. Empiler plutôt que serrer sur une ligne garantit que le titre et
+     l'artiste restent toujours visibles, peu importe l'étroitesse de la fenêtre.
+     .jb-song-info n'a donc plus besoin de "flex: 1" ici (il n'a plus de voisin horizontal avec qui
+     se partager la largeur) : par défaut, un enfant d'un conteneur flex en colonne (align-items:
+     stretch, valeur par défaut) prend déjà toute la largeur disponible tout seul. */
+  #jb-app .jb-cooldown-row { display: flex; flex-direction: column; gap: 8px; background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 10px 12px; }
+  #jb-app .jb-cooldown-row .jb-song-info { min-width: 0; }
+  #jb-app .jb-cooldown-row-controls { display: flex; align-items: center; gap: 10px; }
   #jb-app .jb-bypass-btn { background: var(--accent); color: #2b0a1a; font-weight: 700; padding: 8px 10px; border-radius: 9px; font-size: 0.78rem; cursor: pointer; flex-shrink: 0; white-space: nowrap; }
   #jb-app .jb-burn-btn { background: #3a1620; color: #ff9c8f; border: 1px solid var(--danger); font-weight: 700; padding: 8px 10px; border-radius: 9px; font-size: 0.78rem; cursor: pointer; flex-shrink: 0; white-space: nowrap; }
-  #jb-app .jb-unburn-btn { background: var(--success); color: #062420; font-weight: 700; padding: 8px 10px; border-radius: 9px; font-size: 0.78rem; cursor: pointer; flex-shrink: 0; white-space: nowrap; }
+  #jb-app .jb-unburn-btn { background: var(--success); color: #062420; font-weight: 700; padding: 8px 10px; border-radius: 9px; font-size: 0.78rem; cursor: pointer; flex-shrink: 0; white-space: nowrap; align-self: flex-start; }
 
   #jb-app .jb-admin-catalog { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; max-height: 420px; overflow-y: auto; }
   #jb-app .jb-admin-catalog-item { display: flex; flex-direction: column; gap: 8px; padding: 8px 10px; background: var(--card); border-radius: 10px; }
@@ -1476,7 +1488,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-15.87";
+  const APP_BUILD = "2026-10-15.88";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -4079,14 +4091,21 @@
           <button class="jb-unburn-btn" data-unburn="${id}">♻️ Réactiver</button>`;
       } else {
         row.dataset.until = v.cooldownUntil;
+        // Titre/artiste sur leur propre ligne, AU-DESSUS du minuteur/des boutons (voir
+        // .jb-cooldown-row-controls plus haut dans le <style>) — demande explicite de Hubert
+        // (captures à l'appui) : dans une fenêtre étroite (ex. son panneau admin partagé à
+        // l'écran avec OnSong sur son iPad), le minuteur + les 2 boutons prenaient déjà toute la
+        // largeur disponible, rendant le titre/artiste invisibles.
         row.innerHTML = `
-          <div class="jb-cooldown-badge" data-until="${v.cooldownUntil}"><span class="jb-cooldown-num">${formatCooldown(v)}</span></div>
           <div class="jb-song-info">
             <div class="jb-song-title">${escapeHtml(v.title)}</div>
             <div class="jb-song-artist">${escapeHtml(v.artist || "")}</div>
           </div>
-          <button class="jb-bypass-btn" data-bypass="${id}">▶️ Disponible</button>
-          <button class="jb-burn-btn" data-burn="${id}">🔥 Brûler</button>`;
+          <div class="jb-cooldown-row-controls">
+            <div class="jb-cooldown-badge" data-until="${v.cooldownUntil}"><span class="jb-cooldown-num">${formatCooldown(v)}</span></div>
+            <button class="jb-bypass-btn" data-bypass="${id}">▶️ Disponible</button>
+            <button class="jb-burn-btn" data-burn="${id}">🔥 Brûler</button>
+          </div>`;
       }
       container.appendChild(row);
     });
