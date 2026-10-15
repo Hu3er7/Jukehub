@@ -1499,7 +1499,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-15.91";
+  const APP_BUILD = "2026-10-15.92";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -2511,16 +2511,22 @@
   // accents retirés via norm() comme pour la recherche, tout ce qui n'est pas une lettre/un
   // chiffre remplacé par un tiret, tirets en trop retirés aux extrémités).
   //
-  // IMPORTANT (testé en vrai par Hubert avec vidéo à l'appui) : on passe v.artist à cette
-  // fonction, PAS v.title, dans renderAdminPalmares() ci-dessous. Raison : Hubert écrit toujours
-  // le nom de l'artiste sur la 1re ligne et le titre de la chanson sur la 2e quand il importe une
-  // partition dans OnSong (convention inversée par rapport à l'habitude habituelle). OnSong lit
-  // donc la 1re ligne comme le champ "titre" interne de la partition — chercher avec le VRAI
-  // titre de la chanson (ex. "1979") ne trouvait donc jamais rien, alors que chercher avec le nom
-  // de l'artiste (ex. "Smashing Pumpkins") correspond à ce qu'OnSong a réellement indexé. Vidéo de
-  // Hubert : le lien déclenchait bien OnSong (alerte iOS "repeatedly trying to open another
-  // application" confirmée), mais OnSong restait sur la dernière partition ouverte faute de
-  // correspondance — cohérent avec cette hypothèse.
+  // IMPORTANT (testé en vrai par Hubert avec vidéo à l'appui, puis en spectacle) : on passe
+  // `${artiste} ${titre}` à cette fonction dans renderAdminPalmares() ci-dessous, pas seulement
+  // l'un ou l'autre. Historique des deux correctifs successifs :
+  //  1. D'abord testé avec v.title seul (le vrai titre de la chanson) : ne trouvait jamais rien,
+  //     car Hubert écrit toujours le nom de l'artiste sur la 1re ligne et le titre de la chanson
+  //     sur la 2e quand il importe une partition dans OnSong (convention inversée). Vidéo à
+  //     l'appui : le lien déclenchait bien OnSong (alerte iOS "repeatedly trying to open another
+  //     application" confirmée), mais OnSong restait sur la dernière partition ouverte, faute de
+  //     correspondance.
+  //  2. Puis testé avec v.artist seul : amenait bien OnSong à la bonne section (ex. "Beau
+  //     Dommage"), mais OnSong a PLUSIEURS partitions pour un même artiste, toutes avec le même
+  //     "titre" interne (l'artiste, 1re ligne) — recherche ambiguë, OnSong ouvrait la 1re chanson
+  //     en ordre alphabétique de cet artiste plutôt que la bonne (ex. demande de "23 Décembre" ->
+  //     ouvrait une autre chanson de Beau Dommage). D'où la recherche combinée artiste + titre
+  //     maintenant utilisée, qui inclut le texte des DEUX premières lignes de la partition pour
+  //     désambiguïser entre les chansons d'un même artiste.
   function onsongSlug(text) {
     return norm(text).replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
   }
@@ -3969,13 +3975,14 @@
       // onsongSlug() plus haut — ce lien reste une meilleure estimation (la règle exacte de
       // conversion titre -> "song" n'est pas publique), à tester en vrai par Hubert.
       //
-      // Recherche sur v.artist (pas v.title) + ordre visuel artiste/titre inversé (artiste en
-      // 1re ligne, titre en 2e) — demande explicite de Hubert suite à son test réel : il met
-      // toujours l'artiste au-dessus du titre dans ses partitions OnSong, donc c'est l'artiste
-      // qu'OnSong a indexé comme "titre" de la partition. Repli sur v.title si jamais une chanson
-      // du répertoire n'a pas d'artiste renseigné. L'icône 📄 reste sur la ligne du haut, quelle
-      // qu'elle soit, comme indice visuel constant du lien cliquable.
-      const onsongQuery = v.artist || v.title;
+      // Recherche sur "artiste + titre" combinés (pas seulement l'un ou l'autre — voir l'historique
+      // détaillé au-dessus d'onsongSlug()) + ordre visuel artiste/titre inversé (artiste en 1re
+      // ligne, titre en 2e) — demande explicite de Hubert : il met toujours l'artiste au-dessus du
+      // titre dans ses partitions OnSong, et la recherche doit couvrir les DEUX premières lignes
+      // de la partition pour distinguer deux chansons d'un même artiste. Repli sur v.title seul si
+      // jamais une chanson du répertoire n'a pas d'artiste renseigné. L'icône 📄 reste sur la ligne
+      // du haut, quelle qu'elle soit, comme indice visuel constant du lien cliquable.
+      const onsongQuery = v.artist ? `${v.artist} ${v.title}` : v.title;
       li.innerHTML = `
         <a class="jb-slot-onsong-wrap jb-onsong-link" href="onsong://open/songs?song=${encodeURIComponent(onsongSlug(onsongQuery))}" title="Ouvrir la partition dans OnSong">
           <span class="jb-slot-rank">${i + 1}</span>
