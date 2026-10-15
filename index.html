@@ -263,6 +263,11 @@
     flex-shrink: 0; text-align: center;
   }
   #jb-app .jb-slot-info { flex: 1; min-width: 0; display: flex; flex-direction: column; overflow: hidden; }
+  /* .jb-slot-info est un <a href="onsong://..."> UNIQUEMENT dans le palmarès admin (voir
+     renderAdminPalmares()/onsongSlug()) — jamais côté client, où il reste un <span> normal. Ce
+     sélecteur ne vise donc que ce cas-là (balise <a>), sans toucher au palmarès public. */
+  #jb-app a.jb-slot-info { text-decoration: none; color: inherit; cursor: pointer; }
+  #jb-app a.jb-slot-info:active { opacity: 0.6; }
   #jb-app .jb-slot-title {
     font-weight: 700; font-size: 0.95rem; overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
   }
@@ -1488,7 +1493,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-15.88";
+  const APP_BUILD = "2026-10-15.89";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -2489,6 +2494,19 @@
 
   function slugId() {
     return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+  }
+  // Transforme un titre en "slug" (ex. "Hymne à l'amour" -> "hymne-a-l-amour") pour le lien
+  // onsong://open/songs?song=... (voir renderAdminPalmares() plus bas) — demande explicite de
+  // Hubert : "accéder à la partition de mes chansons, en appuyant sur les chansons, dans le
+  // palmarès de mon compte admin [...] linker mon app OnSong à mon système". La doc officielle
+  // d'OnSong (onsongapp.com/developers/open-song) ne montre qu'UN SEUL exemple de cette
+  // conversion ("Be Still" -> "be-still") et ne précise pas la règle exacte pour les accents,
+  // apostrophes ou parenthèses — cette fonction est donc une MEILLEURE ESTIMATION (minuscules,
+  // accents retirés via norm() comme pour la recherche, tout ce qui n'est pas une lettre/un
+  // chiffre remplacé par un tiret, tirets en trop retirés aux extrémités) et reste à valider en
+  // vrai avec quelques chansons du répertoire de Hubert.
+  function onsongSlug(title) {
+    return norm(title).replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
   }
   function showToast(msg) {
     const t = document.createElement("div");
@@ -3922,14 +3940,19 @@
     ranked.forEach(([id, v], i) => {
       const li = document.createElement("li");
       li.className = "jb-slot";
+      // Titre/artiste maintenant dans un <a href="onsong://..."> plutôt qu'un <span> : demande
+      // explicite de Hubert, "accéder à la partition de mes chansons, en appuyant sur les
+      // chansons, dans le palmarès de mon compte admin [...] linker mon app ONSONG à mon
+      // système". Voir onsongSlug() plus haut — ce lien reste une meilleure estimation (la règle
+      // exacte de conversion titre -> "song" n'est pas publique), à tester en vrai par Hubert.
       li.innerHTML = `
         <span class="jb-slot-rank">${i + 1}</span>
         <span class="jb-slot-votes">${v.requests}</span>
-        <span class="jb-slot-info">
-          <span class="jb-slot-title">${escapeHtml(v.title)}</span>
+        <a class="jb-slot-info jb-onsong-link" href="onsong://open/songs?song=${encodeURIComponent(onsongSlug(v.title))}" title="Ouvrir la partition dans OnSong">
+          <span class="jb-slot-title">📄 ${escapeHtml(v.title)}</span>
           ${v.artist ? `<span class="jb-slot-artist">${escapeHtml(v.artist)}</span>` : ""}
           ${renderVotersLine(v.voters)}
-        </span>
+        </a>
         <button class="jb-mark-played-btn${isMarkPlayedArmed(id) ? " jb-mark-played-armed" : ""}" data-played="${id}">${isMarkPlayedArmed(id) ? "❓ Confirmer ?" : "✅ Jouée"}</button>`;
       list.appendChild(li);
     });
