@@ -1242,6 +1242,24 @@
         <p class="jb-hint">Efface le palmarès et les chansons "déjà jouées". Le répertoire complet reste intact.</p>
       </section>
 
+      <!-- TEMPORAIRE — diagnostic du lien OnSong pour "Léo Gagné" (voir onsongSlug() plus bas dans le
+           JS). À retirer une fois le bon format trouvé. Hubert : touche chaque lien un par un (ferme
+           OnSong entre chaque essai si besoin) et dis-moi lesquels ouvrent VRAIMENT "Léo Gagné". -->
+      <section class="jb-admin-section" style="background:#2a1f3d;border:2px dashed #a78bfa;border-radius:10px;padding:12px;">
+        <h3 style="margin-top:0;">🧪 Test diagnostic — lien OnSong "Léo Gagné"</h3>
+        <p class="jb-hint">Touche chaque lien un par un (dans l'ordre) et note le ou les numéros qui ouvrent vraiment "Léo Gagné" dans OnSong. Envoie-moi la liste des numéros qui fonctionnent.</p>
+        <ol style="padding-left:20px;line-height:2.2;">
+          <li><a href="onsong://open/songs?song=leo-gagne">1. leo-gagne</a> <span class="jb-hint">(minuscules, sans accent, tiret)</span></li>
+          <li><a href="onsong://open/songs?song=Leo-Gagne">2. Leo-Gagne</a> <span class="jb-hint">(majuscules, sans accent, tiret)</span></li>
+          <li><a href="onsong://open/songs?song=l%C3%A9o-gagn%C3%A9">3. léo-gagné</a> <span class="jb-hint">(minuscules, AVEC accents, tiret)</span></li>
+          <li><a href="onsong://open/songs?song=L%C3%A9o-Gagn%C3%A9">4. Léo-Gagné</a> <span class="jb-hint">(majuscules, AVEC accents, tiret)</span></li>
+          <li><a href="onsong://open/songs?song=Leo+Gagne">5. Leo Gagne</a> <span class="jb-hint">(majuscules, sans accent, espace)</span></li>
+          <li><a href="onsong://open/songs?song=L%C3%A9o+Gagn%C3%A9">6. Léo Gagné</a> <span class="jb-hint">(majuscules, AVEC accents, espace)</span></li>
+          <li><a href="onsong://open/songs?song=leo%20gagne">7. leo gagne</a> <span class="jb-hint">(minuscules, sans accent, %20)</span></li>
+          <li><a href="onsong://open/songs?song=L%C3%89O%20GAGN%C3%89">8. LÉO GAGNÉ</a> <span class="jb-hint">(TOUT MAJUSCULES, comme dans le fichier, %20)</span></li>
+        </ol>
+      </section>
+
       <section class="jb-admin-section jb-admin-columns">
         <div class="jb-admin-column">
           <h3>🏆 Palmarès en direct</h3>
@@ -1499,7 +1517,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-15.93";
+  const APP_BUILD = "2026-10-15.94";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
