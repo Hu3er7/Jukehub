@@ -1476,7 +1476,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-14.86";
+  const APP_BUILD = "2026-10-15.87";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -2269,6 +2269,37 @@
   function isUnavailable(v) {
     return isBurned(v) || isInCooldown(v);
   }
+  // Chanson "éteinte" : bogue signalé par Hubert (pub St-Patrick, Québec, soir du 14 oct. 2026) —
+  // "des clients se sont connectés [...] et ont demandé des chansons [...] j'appuie sur joué,
+  // les chansons se mettent en mode décompte (1h) et, quand le décompte est terminé, les chansons
+  // retombent dans ma liste de demande" alors qu'aucun client ne les avait redemandées entre-temps.
+  // Cause trouvée en auditant le code : markPlayed() remet "requests" à 0 et pose "cooldownUntil"
+  // (voir plus haut), mais NE SUPPRIME JAMAIS le document "votes/{id}" — et seules "burned"/
+  // "cooldownUntil" (voir isUnavailable() juste au-dessus) décidaient jusqu'ici si une chanson
+  // sortait du palmarès. Une fois le refroidissement d'une heure écoulé, le document redevenait
+  // donc automatiquement "disponible" et se retrouvait reclassé à 0 vote, exactement comme une
+  // TOUTE NOUVELLE demande à 0 vote (fonctionnalité voulue séparément par Hubert, voir
+  // requestSong()) — les deux cas étaient indiscernables l'un de l'autre, purement par le passage
+  // du temps, sans aucune action d'un client. Une chanson est donc "éteinte" si elle a déjà été
+  // jouée au moins une fois ce soir (playedAt non vide) ET que son solde est retombé/resté
+  // exactement à 0 depuis (personne n'a voté pour elle depuis qu'elle a été jouée) — une chanson
+  // JAMAIS encore jouée ce soir reste elle bel et bien classée dès 0 vote, comme voulu. Voir
+  // isHiddenFromPalmares() juste en dessous (utilisée partout où le palmarès est filtré) et
+  // requestSong() (seul moyen de sortir une chanson de cet état : une VRAIE nouvelle demande d'un
+  // client, qui la réactive explicitement plutôt que de ne rien faire comme avant ce correctif).
+  function isDormant(v) {
+    return !!(v && !v.burned && !isInCooldown(v) && (v.requests || 0) === 0 && playedAtMillis(v) > 0);
+  }
+  // Même filtre que isUnavailable(), en excluant EN PLUS les chansons "éteintes" (voir isDormant()
+  // juste au-dessus) : à utiliser partout où le palmarès/classement est filtré (getSongRank(),
+  // renderPalmares(), renderAdminPalmares(), castVote()) — PAS dans la liste admin des chansons
+  // "temporairement indisponibles" (refroidissement/brûlées encore en cours, voir
+  // renderCooldownList()), qui doit continuer à n'utiliser QUE isUnavailable() : une chanson
+  // éteinte n'a justement plus rien à afficher là (son refroidissement est terminé depuis belle
+  // lurette).
+  function isHiddenFromPalmares(v) {
+    return isUnavailable(v) || isDormant(v);
+  }
   // Horodatage (ms) de la toute première demande d'une chanson ce soir (v.createdAt, posé une
   // seule fois à la création du document — jamais réécrit ensuite, voir requestSong()). Même
   // principe que playedAtMillis() plus haut pour lire un Timestamp Firestore, mais via
@@ -2313,10 +2344,11 @@
     // Plus de condition "requests > 0" (demande explicite de Hubert : les votes à la baisse
     // peuvent maintenant descendre à 0 et en négatif, voir castVote()) — une chanson reste
     // classée tant qu'elle a un document "votes/{id}" (donc a été demandée au moins une fois ce
-    // soir) et n'est ni brûlée ni en refroidissement, peu importe le signe de son chiffre.
-    if (!v || isUnavailable(v)) return null;
+    // soir) et n'est ni brûlée ni en refroidissement, ni "éteinte" (voir isHiddenFromPalmares()/
+    // isDormant() plus haut), peu importe le signe de son chiffre.
+    if (!v || isHiddenFromPalmares(v)) return null;
     const ranked = Object.entries(votes)
-      .filter(([, vv]) => !isUnavailable(vv))
+      .filter(([, vv]) => !isHiddenFromPalmares(vv))
       .sort(compareVoteEntries);
     const idx = ranked.findIndex(([rid]) => rid === id);
     return idx === -1 ? null : idx + 1;
@@ -2608,7 +2640,7 @@
   async function castVote(id, delta) {
     if (palmaresAnimating) return;
     const v = votes[id];
-    if (!v || isUnavailable(v)) return;
+    if (!v || isHiddenFromPalmares(v)) return;
     // Plus de plancher à 1 (demande explicite de Hubert) : "je veux que si je vote à la baisse,
     // ça puisse descendre à zéro et -1, -2, -3, -4, etc." — un vote à la baisse coûte donc
     // toujours 1 (une fois la contribution personnelle "up" épuisée, voir isRefund plus bas),
@@ -3028,9 +3060,12 @@
     // tout si personne n'a encore rien demandé — pour que chacun voie exactement où se
     // situe sa demande, même très loin dans le classement. Plus de condition "requests > 0"
     // (demande explicite de Hubert) : une chanson descendue à 0 ou en négatif reste visible ici,
-    // avec son chiffre réel — voir castVote()/getSongRank().
+    // avec son chiffre réel — voir castVote()/getSongRank(). isHiddenFromPalmares() (et pas
+    // seulement isUnavailable()) exclut en plus les chansons "éteintes" (déjà jouées, refroidies
+    // depuis, et jamais redemandées — voir isDormant()), pour qu'une chanson jouée ne retombe pas
+    // ici toute seule une fois son refroidissement terminé.
     const ranked = Object.entries(votes)
-      .filter(([, v]) => !isUnavailable(v))
+      .filter(([, v]) => !isHiddenFromPalmares(v))
       .sort(compareVoteEntries);
 
     empty.hidden = ranked.length > 0;
@@ -3565,7 +3600,16 @@
     if (alreadyRequested(song.id)) return;
     await ensureClientName();
     const staySameList = currentResultsCount() > 1;
-    const tokenAtRequest = roundToken(votes[song.id]);
+    // Si la chanson est actuellement "éteinte" (voir isDormant() plus haut), cette demande va la
+    // réactiver plus bas (optimiste ET côté serveur) en effaçant son "playedAt" — son "jeton de
+    // tour" (roundToken(), basé sur playedAt) passe donc à 0 PAR CETTE MÊME DEMANDE. On le sait
+    // d'avance plutôt que de relire roundToken(votes[song.id]) APRÈS la réactivation plus bas, pour
+    // que "requestedRounds[song.id]" (posé juste en dessous) corresponde bien au nouveau jeton et
+    // que ce client se voie lui-même correctement comme "déjà demandée" tout de suite (sans ça,
+    // alreadyRequested() aurait comparé l'ANCIEN jeton — celui d'avant réactivation — au nouveau,
+    // et serait resté bloqué à "pas encore demandée" pour ce même client malgré son propre clic).
+    const wasDormant = isDormant(votes[song.id]);
+    const tokenAtRequest = wasDormant ? 0 : roundToken(votes[song.id]);
     const ref = doc(db, "votes", song.id);
 
     // Capture le titre tel qu'il est affiché LÀ, MAINTENANT (encore en couleur normale, pas
@@ -3614,6 +3658,14 @@
         createdAt: { seconds: Math.floor(Date.now() / 1000) },
       };
       renderPalmares();
+    } else if (wasDormant) {
+      // Réactivation optimiste d'une chanson "éteinte" (voir isDormant() plus haut et la
+      // transaction Firestore plus bas, qui fait le même effacement de "playedAt" côté serveur) :
+      // sans ça, elle resterait invisible du palmarès de CE client jusqu'à ce que l'écouteur
+      // onSnapshot(collection(db, "votes")) relivre un nouvel instantané confirmé par le serveur —
+      // même raison que le correctif précédent plus haut (listener parfois lent, Safari).
+      votes[song.id] = { ...votes[song.id], requests: 0, playedAt: null, createdAt: { seconds: Math.floor(Date.now() / 1000) } };
+      renderPalmares();
     }
     showToast(t("request_added_toast"));
     // Illumine la ligne elle-même — même animation que la sélection de la chanson démo dans le
@@ -3650,13 +3702,26 @@
       // choisir dans le répertoire) ne touche donc plus JAMAIS "requests" ni "voters", ni pour la
       // toute première demande de la soirée (création à 0, pas à 1, et aucun votant pré-crédité),
       // ni pour une demande suivante par un AUTRE client sur une chanson déjà au palmarès (pur
-      // no-op côté Firestore : la chanson y est déjà, rien à écrire). Seuls les clics sur les
-      // flèches haut/bas de castVote() font maintenant bouger ce chiffre. On garde malgré tout
-      // une transaction (lecture + écriture) plutôt qu'un simple setDoc : elle lit d'abord pour
-      // savoir si quelqu'un d'autre a déjà créé le document ce soir (course possible entre deux
-      // clients qui demandent la même chanson en même temps) et ne fait l'écriture de création
-      // QUE si le document n'existe pas encore, sans jamais réécrire title/artist/createdAt
-      // d'un document déjà existant (ce que les règles Firestore interdisent de toute façon).
+      // no-op côté Firestore SI la chanson est déjà activement au palmarès : la chanson y est
+      // déjà, rien à écrire. Seuls les clics sur les flèches haut/bas de castVote() font
+      // normalement bouger ce chiffre. EXCEPTION ajoutée suite à un bogue signalé par Hubert (pub
+      // St-Patrick, Québec, 14 oct. 2026) : une chanson déjà JOUÉE ce soir, dont le refroidissement
+      // est terminé et dont le solde est resté à 0 ("éteinte", voir isDormant() plus haut),
+      // retombait toute seule dans le palmarès dès la fin du refroidissement, sans qu'aucun client
+      // ne l'ait redemandée — ce vrai no-op en était la cause directe : SI le document existe déjà,
+      // requestSong() ne faisait jusqu'ici RIEN, qu'il s'agisse d'une chanson encore active OU
+      // d'une chanson éteinte, les deux cas étant alors indiscernables l'un de l'autre. Une chanson
+      // éteinte est donc maintenant explicitement réactivée ici ("playedAt" effacé, "createdAt"
+      // remis à l'instant présent pour ne pas injustement doubler une chanson plus récente à
+      // égalité de 0 vote — voir compareVoteEntries()), ET SEULEMENT dans ce cas précis — voir
+      // firestore.rules, qui n'autorise cette écriture que si "requests" est déjà exactement 0 et
+      // que la chanson a déjà été jouée ("playedAt" non vide) ; les règles exigent par ailleurs
+      // toujours une transaction (lecture + écriture) plutôt qu'un simple setDoc pour la création :
+      // elle lit d'abord pour savoir si quelqu'un d'autre a déjà créé le document ce soir (course
+      // possible entre deux clients qui demandent la même chanson en même temps) et ne fait
+      // l'écriture de création QUE si le document n'existe pas encore, sans jamais réécrire
+      // title/artist d'un document déjà existant (ce que les règles Firestore interdisent de toute
+      // façon).
       await runTransaction(db, async (tx) => {
         const snap = await tx.get(ref);
         if (!snap.exists()) {
@@ -3668,9 +3733,14 @@
             artist: song.artist || "",
             createdAt: serverTimestamp(),
           });
+        } else if (isDormant(snap.data())) {
+          // Chanson "éteinte" (voir le commentaire ci-dessus) : cette nouvelle demande la relance
+          // comme une toute nouvelle entrée du palmarès, à 0 vote.
+          tx.update(ref, { createdAt: serverTimestamp(), playedAt: null });
         }
-        // Sinon (déjà au palmarès ce soir, demandée par ce client ou par un autre avant lui) :
-        // rien à faire ici, voir le commentaire ci-dessus.
+        // Sinon (déjà activement au palmarès ce soir, demandée par ce client ou par un autre avant
+        // lui, ou encore en refroidissement/brûlée) : rien à faire ici, voir le commentaire
+        // ci-dessus.
       });
       // Compteur cumulatif par artiste (Top Pick) — jamais réinitialisé par "Nouvelle soirée",
       // pour refléter les tendances sur plusieurs soirées plutôt qu'une seule.
@@ -3825,8 +3895,11 @@
     // Pas de limite non plus côté admin : toute la file d'attente reste gérable, même
     // pour une chanson demandée bien après les premières positions. Plus de condition
     // "requests > 0" (demande explicite de Hubert, voir castVote()/renderPalmares()).
+    // isHiddenFromPalmares() exclut aussi les chansons "éteintes" (voir isDormant()) : sans ça,
+    // une chanson déjà jouée retombait toute seule ici une fois son refroidissement terminé,
+    // sans qu'aucun client ne l'ait redemandée (bogue signalé par Hubert, pub St-Patrick).
     const ranked = Object.entries(votes)
-      .filter(([, v]) => !isUnavailable(v))
+      .filter(([, v]) => !isHiddenFromPalmares(v))
       .sort(compareVoteEntries);
 
     list.innerHTML = "";
