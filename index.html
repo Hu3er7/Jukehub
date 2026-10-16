@@ -1190,8 +1190,8 @@
   #jb-public .jb-slot-mid > .jb-slot-voters { margin-top: 1px; }
   /* Solde de chaque votant à côté de son nom ("Néo +2" / "Néo -2", voir renderVotersLine()) */
   #jb-app .jb-voter-delta { font-family: 'Share Tech Mono', monospace; font-weight: 700; }
-  #jb-app .jb-voter-delta-up { color: #00ff41; }
-  #jb-app .jb-voter-delta-down { color: #3c9a55; }
+  #jb-app .jb-voter-delta-up { color: #fff200; }
+  #jb-app .jb-voter-delta-down { color: #a89d3a; }
   #jb-public .jb-slot-bar-row { display: flex; align-items: center; gap: 10px; margin-top: 3px; }
   #jb-public .jb-slot-bar-row .jb-slot-bar { flex: 1; min-width: 0; margin-top: 0; }
   #jb-public .jb-slot-bar-row .jb-slot-votes { line-height: 1; }
@@ -1248,9 +1248,9 @@
 
   /* Tous les textes "blancs" passent au vert fluo Matrix (demande de Hubert) — titres de chansons,
      tirets, textes courants qui utilisent var(--text). */
-  #jb-public { --text: #00ff41; }
+  #jb-public { --text: #fff200; }
   #jb-public .jb-slot-title,
-  #jb-public .jb-song-title { text-shadow: 0 0 6px rgba(0, 255, 65, 0.45); }
+  #jb-public .jb-song-title { text-shadow: 0 0 6px rgba(255, 242, 0, 0.45); }
 
   /* Boutons d'action et badges */
   #jb-public .jb-btn-primary {
@@ -1279,102 +1279,102 @@
   #jb-public .jb-cal-row { border-bottom: 1px dashed var(--border); }
   #jb-public .jb-name-prompt-card { border: 1px solid var(--danger); }
 
-  /* ===== "Full Matrix" (demande de Hubert) : TOUT en teintes de vert =====
+  /* ===== "Full Matrix" — maintenant TOUT en teintes de JAUNE FLUO (demande de Hubert, 16 oct. 2026 ; avant : vert) =====
      Placé en dernier pour l'emporter sur le reste. Le jaune (accent2) devient un vert pâle, le cyan
      (accent) un vert vif, le magenta/rouge (danger) un vert moyen ; puis chaque couleur codée en dur
      plus haut (lueurs, cadres, flèches, barres) est reprise ici en vert. */
-  html, body, #jb-app { background: #010802; }
+  html, body, #jb-app { background: #080701; }
   #jb-app #jb-public, #jb-app #jb-admin { background: transparent; }
   #jb-public {
-    --bg: #010802;
-    --bg2: #03120a;
-    --card: #03120a;
-    --card2: #062014;
-    --text: #00ff41;
-    --text-dim: #3c9a55;
-    --accent: #00ff41;
-    --accent2: #b6ffc6;
-    --danger: #00b837;
-    --success: #00ff41;
-    --border: #0d3a1b;
+    --bg: #080701;
+    --bg2: #121003;
+    --card: #121003;
+    --card2: #201d04;
+    --text: #fff200;
+    --text-dim: #a89d3a;
+    --accent: #fff200;
+    --accent2: #fffaa8;
+    --danger: #d4c000;
+    --success: #fff200;
+    --border: #3d380d;
   }
   #jb-public .jb-top-bar h1 {
     background:
       var(--jb-cp-diag) top right / 10px 10px no-repeat border-box,
       var(--jb-cp-diag) bottom left / 10px 10px no-repeat border-box,
-      rgba(0, 255, 65, 0.05);
-    text-shadow: 0 0 4px rgba(182, 255, 198, 0.7), 0 0 14px rgba(0, 255, 65, 0.4);
+      rgba(255, 242, 0, 0.05);
+    text-shadow: 0 0 4px rgba(255, 250, 168, 0.7), 0 0 14px rgba(255, 242, 0, 0.4);
   }
-  #jb-public .jb-top-bar::before { filter: drop-shadow(0 0 6px rgba(0, 255, 65, 0.6)); }
+  #jb-public .jb-top-bar::before { filter: drop-shadow(0 0 6px rgba(255, 242, 0, 0.6)); }
   #jb-public .jb-cp-status { color: var(--text-dim); }
-  #jb-public .jb-cp-live { background: #00ff41; color: #010802; }
-  #jb-public .jb-catalog-searchbar input[type="text"] { background: #03120a; border-color: rgba(0, 255, 65, 0.45); }
-  #jb-public input::placeholder { color: rgba(0, 255, 65, 0.5); }
-  #jb-public input:focus { box-shadow: 0 0 12px rgba(0, 255, 65, 0.35); }
+  #jb-public .jb-cp-live { background: #fff200; color: #080701; }
+  #jb-public .jb-catalog-searchbar input[type="text"] { background: #121003; border-color: rgba(255, 242, 0, 0.45); }
+  #jb-public input::placeholder { color: rgba(255, 242, 0, 0.5); }
+  #jb-public input:focus { box-shadow: 0 0 12px rgba(255, 242, 0, 0.35); }
   #jb-public .jb-catalog-frame {
-    box-shadow: 0 -2px 16px 2px rgba(0, 255, 65, 0.4), 0 2px 16px 2px rgba(0, 255, 65, 0.4);
+    box-shadow: 0 -2px 16px 2px rgba(255, 242, 0, 0.4), 0 2px 16px 2px rgba(255, 242, 0, 0.4);
   }
-  #jb-public #jb-catalog-list { border-top-color: rgba(0, 255, 65, 0.6); border-bottom-color: rgba(0, 255, 65, 0.6); }
-  #jb-public .jb-catalog-frame-cap { background: #00ff41; box-shadow: 0 0 6px 1px rgba(0, 255, 65, 0.8); }
+  #jb-public #jb-catalog-list { border-top-color: rgba(255, 242, 0, 0.6); border-bottom-color: rgba(255, 242, 0, 0.6); }
+  #jb-public .jb-catalog-frame-cap { background: #fff200; box-shadow: 0 0 6px 1px rgba(255, 242, 0, 0.8); }
   /* Les 3 boutons de navigation : 3 verts différents au lieu de magenta/cyan/jaune */
-  #jb-public .jb-mode-btn { --jb-cp-c: #00ff41; }
-  #jb-public .jb-mode-btn:nth-child(3n+2) { --jb-cp-c: #b6ffc6; }
-  #jb-public .jb-mode-btn:nth-child(3n+3) { --jb-cp-c: #00b837; }
-  #jb-public .jb-mode-btn:active { color: #010802; }
-  #jb-public #jb-palmares-title::after { color: #00b837; }
+  #jb-public .jb-mode-btn { --jb-cp-c: #fff200; }
+  #jb-public .jb-mode-btn:nth-child(3n+2) { --jb-cp-c: #fffaa8; }
+  #jb-public .jb-mode-btn:nth-child(3n+3) { --jb-cp-c: #d4c000; }
+  #jb-public .jb-mode-btn:active { color: #080701; }
+  #jb-public #jb-palmares-title::after { color: #d4c000; }
   /* Barres : rail vert très sombre, barres en 3 verts */
-  #jb-app #jb-public .jb-slot-bar { background: #08261a; }
-  #jb-public .jb-slot:nth-child(3n+1) .jb-slot-bar-fill { background: #00ff41; box-shadow: 0 0 6px rgba(0, 255, 65, 0.6); }
-  #jb-public .jb-slot:nth-child(3n+2) .jb-slot-bar-fill { background: #b6ffc6; box-shadow: 0 0 6px rgba(182, 255, 198, 0.5); }
-  #jb-public .jb-slot:nth-child(3n+3) .jb-slot-bar-fill { background: #00b837; box-shadow: 0 0 6px rgba(0, 184, 55, 0.6); }
+  #jb-app #jb-public .jb-slot-bar { background: #29250a; }
+  #jb-public .jb-slot:nth-child(3n+1) .jb-slot-bar-fill { background: #fff200; box-shadow: 0 0 6px rgba(255, 242, 0, 0.6); }
+  #jb-public .jb-slot:nth-child(3n+2) .jb-slot-bar-fill { background: #fffaa8; box-shadow: 0 0 6px rgba(255, 250, 168, 0.5); }
+  #jb-public .jb-slot:nth-child(3n+3) .jb-slot-bar-fill { background: #d4c000; box-shadow: 0 0 6px rgba(212, 192, 0, 0.6); }
   #jb-public .jb-slot-votes,
-  #jb-public .jb-song-votes { text-shadow: 0 0 8px rgba(182, 255, 198, 0.45); }
+  #jb-public .jb-song-votes { text-shadow: 0 0 8px rgba(255, 250, 168, 0.45); }
   /* Flèches : monter = vert vif, descendre = vert foncé (pas de rouge) */
-  #jb-public .jb-slot-vote-up { background: #00ff41; box-shadow: 0 0 8px rgba(0, 255, 65, 0.4); color: #010802; }
-  #jb-public .jb-slot-vote-down { background: #0a6b25; box-shadow: 0 0 8px rgba(0, 184, 55, 0.3); color: #b6ffc6; }
+  #jb-public .jb-slot-vote-up { background: #fff200; box-shadow: 0 0 8px rgba(255, 242, 0, 0.4); color: #080701; }
+  #jb-public .jb-slot-vote-down { background: #6e6300; box-shadow: 0 0 8px rgba(212, 192, 0, 0.3); color: #fffaa8; }
   /* Chanson déjà à 0 : flèche du bas atténuée (plancher à 0 — un clic affiche seulement un message,
      sans dépenser de vote, voir castVote()) */
   #jb-public .jb-slot-vote-down.jb-slot-vote-floor { opacity: 0.3; box-shadow: none; }
-  #jb-public .jb-my-vote-delta-down { color: #00b837; }
-  #jb-public .jb-btn-primary { color: #010802; }
+  #jb-public .jb-my-vote-delta-down { color: #d4c000; }
+  #jb-public .jb-btn-primary { color: #080701; }
   #jb-public .jb-cooldown-badge,
-  #jb-public .jb-cooldown-wait-seg { background: #062014; }
+  #jb-public .jb-cooldown-wait-seg { background: #201d04; }
   #jb-public .jb-offline-card,
-  #jb-public .jb-name-prompt-card { background: #03120a; }
+  #jb-public .jb-name-prompt-card { background: #121003; }
 
   /* ===== Panneau admin en style Matrix (demande de Hubert : "mon admin dans le même template") =====
      Même palette verte que le site public. Titres de section et boutons en police terminal ; les
      titres de chansons gardent une police lisible (Hubert les lit en plein spectacle, à côté
      d'OnSong). Coins carrés/biseautés partout au lieu des pastilles arrondies. */
   #jb-app, #jb-admin {
-    --bg: #010802;
-    --bg2: #03120a;
-    --card: #03120a;
-    --card2: #062014;
-    --text: #00ff41;
-    --text-dim: #3c9a55;
-    --accent: #00ff41;
-    --accent2: #b6ffc6;
-    --danger: #00b837;
-    --success: #00ff41;
-    --border: #0d3a1b;
+    --bg: #080701;
+    --bg2: #121003;
+    --card: #121003;
+    --card2: #201d04;
+    --text: #fff200;
+    --text-dim: #a89d3a;
+    --accent: #fff200;
+    --accent2: #fffaa8;
+    --danger: #d4c000;
+    --success: #fff200;
+    --border: #3d380d;
     --radius: 0;
     --jb-cp-cut-sm: polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 6px 100%, 0 calc(100% - 6px));
   }
   #jb-admin h2, #jb-admin h3 {
     font-family: 'Share Tech Mono', monospace; font-weight: 400; text-transform: uppercase;
-    letter-spacing: 1.5px; color: var(--accent); text-shadow: 0 0 6px rgba(0, 255, 65, 0.35);
+    letter-spacing: 1.5px; color: var(--accent); text-shadow: 0 0 6px rgba(255, 242, 0, 0.35);
   }
   #jb-admin .jb-admin-topbar h2::before,
   #jb-admin .jb-login h2::before { content: "// "; color: var(--accent2); }
   #jb-admin .jb-admin-section { border-top: 1px dashed var(--border); }
   #jb-admin .jb-hint, #jb-admin .jb-empty { color: var(--text-dim); font-family: 'Share Tech Mono', monospace; }
   #jb-admin input[type="text"], #jb-admin input[type="email"], #jb-admin input[type="password"], #jb-admin textarea {
-    background: #03120a; color: var(--accent); border: 1px solid rgba(0, 255, 65, 0.4);
+    background: #121003; color: var(--accent); border: 1px solid rgba(255, 242, 0, 0.4);
     border-left: 4px solid var(--accent); border-radius: 0; font-family: 'Share Tech Mono', monospace;
   }
-  #jb-admin input::placeholder, #jb-admin textarea::placeholder { color: rgba(0, 255, 65, 0.45); }
-  #jb-admin input:focus, #jb-admin textarea:focus { outline: none; box-shadow: 0 0 12px rgba(0, 255, 65, 0.35); }
+  #jb-admin input::placeholder, #jb-admin textarea::placeholder { color: rgba(255, 242, 0, 0.45); }
+  #jb-admin input:focus, #jb-admin textarea:focus { outline: none; box-shadow: 0 0 12px rgba(255, 242, 0, 0.35); }
 
   /* Boutons : carrés, biseautés, police terminal */
   #jb-admin button.jb-btn-primary, #jb-admin button.jb-btn-danger, #jb-admin button.jb-btn-ghost,
@@ -1383,43 +1383,43 @@
     border-radius: 0; clip-path: var(--jb-cp-cut-sm);
     font-family: 'Share Tech Mono', monospace; letter-spacing: 1px; text-transform: uppercase;
   }
-  #jb-admin .jb-btn-primary { background: var(--accent); color: #010802; }
+  #jb-admin .jb-btn-primary { background: var(--accent); color: #080701; }
   /* "Nouvelle soirée" efface le palmarès : plein vert vif + lueur pour rester le plus visible */
-  #jb-admin .jb-btn-danger { background: #00ff41; color: #010802; box-shadow: 0 0 14px rgba(0, 255, 65, 0.45); }
+  #jb-admin .jb-btn-danger { background: #fff200; color: #080701; box-shadow: 0 0 14px rgba(255, 242, 0, 0.45); }
   #jb-admin .jb-btn-ghost { background: transparent; color: var(--accent); border: 1px solid var(--accent); }
-  #jb-admin .jb-mark-played-btn { background: var(--accent); color: #010802; }
-  #jb-admin .jb-mark-played-btn.jb-mark-played-armed { background: #b6ffc6; color: #010802; }
+  #jb-admin .jb-mark-played-btn { background: var(--accent); color: #080701; }
+  #jb-admin .jb-mark-played-btn.jb-mark-played-armed { background: #fffaa8; color: #080701; }
   @keyframes jb-mark-played-pulse {
     0%, 100% { box-shadow: none; }
-    50% { box-shadow: 0 0 12px 2px rgba(182, 255, 198, 0.9); }
+    50% { box-shadow: 0 0 12px 2px rgba(255, 250, 168, 0.9); }
   }
   #jb-admin .jb-unmark-btn, #jb-admin .jb-dismiss-special-btn {
     background: transparent; color: var(--text-dim); border: 1px solid var(--border);
   }
-  #jb-admin .jb-bypass-btn { background: var(--accent); color: #010802; }
-  #jb-admin .jb-burn-btn { background: #062014; color: #b6ffc6; border: 1px solid #00b837; }
-  #jb-admin .jb-unburn-btn { background: #00b837; color: #010802; }
-  #jb-admin .jb-icon-btn.jb-del { background: var(--card2); color: #b6ffc6; }
+  #jb-admin .jb-bypass-btn { background: var(--accent); color: #080701; }
+  #jb-admin .jb-burn-btn { background: #201d04; color: #fffaa8; border: 1px solid #d4c000; }
+  #jb-admin .jb-unburn-btn { background: #d4c000; color: #080701; }
+  #jb-admin .jb-icon-btn.jb-del { background: var(--card2); color: #fffaa8; }
   #jb-admin .jb-icon-btn.jb-plus { background: var(--card2); color: var(--accent); }
-  #jb-admin .jb-icon-btn.jb-fire { background: var(--card2); color: #b6ffc6; }
-  #jb-admin .jb-icon-btn.jb-fire.jb-active { background: #0a6b25; border: 1px solid #00ff41; }
+  #jb-admin .jb-icon-btn.jb-fire { background: var(--card2); color: #fffaa8; }
+  #jb-admin .jb-icon-btn.jb-fire.jb-active { background: #6e6300; border: 1px solid #fff200; }
 
   /* Listes (palmarès, demandes spéciales, refroidissement, répertoire) */
   #jb-admin .jb-slot { border-bottom: 1px dashed var(--border); background: transparent; }
   #jb-admin .jb-slot-rank { font-family: 'Share Tech Mono', monospace; color: var(--accent2); }
-  #jb-admin .jb-slot-votes { color: var(--accent2); text-shadow: 0 0 8px rgba(182, 255, 198, 0.45); }
-  #jb-admin .jb-slot-title, #jb-admin .jb-song-title { color: var(--text); text-shadow: 0 0 6px rgba(0, 255, 65, 0.4); }
+  #jb-admin .jb-slot-votes { color: var(--accent2); text-shadow: 0 0 8px rgba(255, 250, 168, 0.45); }
+  #jb-admin .jb-slot-title, #jb-admin .jb-song-title { color: var(--text); text-shadow: 0 0 6px rgba(255, 242, 0, 0.4); }
   #jb-admin .jb-slot-artist, #jb-admin .jb-song-artist { font-family: 'Share Tech Mono', monospace; }
   #jb-admin .jb-cooldown-row, #jb-admin .jb-admin-catalog-item, #jb-admin .jb-rank-item, #jb-admin .jb-song-item {
     border-radius: 0; background: rgba(3, 18, 10, 0.85); border: 1px solid var(--border);
   }
   #jb-admin .jb-cooldown-badge, #jb-admin .jb-cooldown-explicit, #jb-admin .jb-burned-badge { border-radius: 0; }
-  #jb-admin .jb-cooldown-badge, #jb-admin .jb-cooldown-wait-seg { background: #062014; }
-  #jb-admin .jb-cooldown-played-seg { color: #010802; }
-  #jb-admin .jb-burned-badge { background: #062014; border-color: #00b837; color: #b6ffc6; }
+  #jb-admin .jb-cooldown-badge, #jb-admin .jb-cooldown-wait-seg { background: #201d04; }
+  #jb-admin .jb-cooldown-played-seg { color: #080701; }
+  #jb-admin .jb-burned-badge { background: #201d04; border-color: #d4c000; color: #fffaa8; }
   #jb-admin .jb-genre-chip { border-radius: 0; font-family: 'Share Tech Mono', monospace; }
-  #jb-admin .jb-genre-chip.jb-genre-chip-active { background: #0a6b25; border-color: var(--accent); color: #b6ffc6; }
-  #jb-admin .jb-error { color: #b6ffc6; }
+  #jb-admin .jb-genre-chip.jb-genre-chip-active { background: #6e6300; border-color: var(--accent); color: #fffaa8; }
+  #jb-admin .jb-error { color: #fffaa8; }
   #jb-admin .jb-back-link { font-family: 'Share Tech Mono', monospace; }
   #jb-app .jb-toast { border-radius: 0; font-family: 'Share Tech Mono', monospace; }
 
@@ -1433,19 +1433,19 @@
   #jb-app.jb-splash-open #jb-public,
   #jb-app.jb-splash-open .jb-boot-loading { visibility: hidden; }
   #jb-app .jb-splash-btn {
-    --jb-cp-c: #00ff41;
+    --jb-cp-c: #fff200;
     --jb-cp-diag: linear-gradient(to top right, transparent calc(50% - 1.2px), var(--jb-cp-c) calc(50% - 0.6px), var(--jb-cp-c) calc(50% + 0.6px), transparent calc(50% + 1.2px));
     width: min(280px, 76vw); padding: 18px 20px; cursor: pointer;
-    font-family: 'Share Tech Mono', monospace; font-size: 1.3rem; letter-spacing: 3px; color: #00ff41;
-    border: 1px solid #00ff41; border-radius: 0;
+    font-family: 'Share Tech Mono', monospace; font-size: 1.3rem; letter-spacing: 3px; color: #fff200;
+    border: 1px solid #fff200; border-radius: 0;
     clip-path: polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 14px 100%, 0 calc(100% - 14px));
     background:
       var(--jb-cp-diag) top right / 14px 14px no-repeat border-box,
       var(--jb-cp-diag) bottom left / 14px 14px no-repeat border-box,
-      rgba(1, 8, 2, 0.75);
-    text-shadow: 0 0 8px rgba(0, 255, 65, 0.6);
+      rgba(8, 7, 1, 0.75);
+    text-shadow: 0 0 8px rgba(255, 242, 0, 0.6);
   }
-  #jb-app .jb-splash-btn:active { background: #00ff41; color: #010802; text-shadow: none; }
+  #jb-app .jb-splash-btn:active { background: #fff200; color: #080701; text-shadow: none; }
 </style>
 
 <div id="jb-app">
@@ -2199,7 +2199,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-16.109";
+  const APP_BUILD = "2026-10-16.110";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
