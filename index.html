@@ -1100,6 +1100,11 @@
   }
   #jb-public input::placeholder { color: rgba(5, 217, 232, 0.55); }
   #jb-public input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 12px rgba(5, 217, 232, 0.35); }
+  /* Demande de Hubert : la barre de recherche + le bouton RETOUR (et le titre de dossier juste
+     dessous) ne restent PLUS collés en haut de l'écran pendant le défilement — ils restent à
+     leur place dans la page, comme le reste du contenu. */
+  #jb-public .jb-catalog-searchbar,
+  #jb-public .jb-folder-title-wrap { position: static; }
   #jb-public .jb-back-btn {
     background: transparent; border: 1px solid var(--accent2); color: var(--accent2); border-radius: 0;
     font-family: 'Share Tech Mono', monospace; letter-spacing: 1px; clip-path: var(--jb-cp-cut-sm);
@@ -1991,7 +1996,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-15.100";
+  const APP_BUILD = "2026-10-15.101";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
