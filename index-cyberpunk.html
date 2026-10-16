@@ -1201,6 +1201,29 @@
   #jb-public .jb-vote-remaining-num { font-family: 'Orbitron', sans-serif; }
   #jb-public .jb-my-vote-delta-down { color: var(--danger); }
 
+  /* Section "// N VOTES UTILISÉS" (maquette de Hubert) : "VOTES" fin, "UTILISÉS" gras ; chaque
+     ligne = "+2 VOTES - Titre ......... Artiste" */
+  #jb-public .jb-vote-unit { font-weight: 400; }
+  #jb-public .jb-vote-used-word {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-weight: 800; letter-spacing: 0.5px;
+  }
+  #jb-public .jb-my-vote-line { padding: 12px 2px; border-bottom: 1px solid var(--border); align-items: baseline; }
+  #jb-public .jb-my-vote-delta {
+    font-family: 'Share Tech Mono', monospace; font-weight: 400; font-size: 1.05rem;
+    display: inline-flex; align-items: baseline; gap: 3px;
+  }
+  #jb-public .jb-my-vote-unit { font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: 0.62rem; letter-spacing: 0.3px; }
+  #jb-public .jb-my-vote-line .jb-my-vote-dash { color: var(--text); }
+  #jb-public .jb-my-vote-line .jb-slot-title { font-weight: 800; }
+  #jb-public .jb-my-vote-line .jb-slot-artist { font-family: 'Share Tech Mono', monospace; text-align: right; }
+
+  /* Tous les textes "blancs" passent au vert fluo Matrix (demande de Hubert) — titres de chansons,
+     tirets, textes courants qui utilisent var(--text). */
+  #jb-public { --text: #00ff41; }
+  #jb-public .jb-slot-title,
+  #jb-public .jb-song-title { text-shadow: 0 0 6px rgba(0, 255, 65, 0.45); }
+
   /* Boutons d'action et badges */
   #jb-public .jb-btn-primary {
     background: var(--accent2); color: #05060a; border-radius: 0; clip-path: var(--jb-cp-cut-sm);
@@ -1901,6 +1924,7 @@
       // de ce mot dans les deux cas.
       my_votes_empty: "Tu n'as pas encore voté ce soir.",
       votes_unit: (n) => `VOTE${n === 1 ? "" : "S"}`,
+      votes_used_word: (n) => `UTILISÉ${n === 1 ? "" : "S"}`,
       style_title: "Chansons",
       style_title_count: (n) => `${n} Chansons`,
       artist_title_count: (n) => `${n} Artistes`,
@@ -1957,6 +1981,7 @@
       vote_down_aria: "Remove a vote from this song",
       my_votes_empty: "You haven't voted on anything yet tonight.",
       votes_unit: (n) => `VOTE${n === 1 ? "" : "S"}`,
+      votes_used_word: () => "USED",
       style_title: "Songs",
       style_title_count: (n) => `${n} Songs`,
       artist_title_count: (n) => `${n} Artists`,
@@ -3625,7 +3650,10 @@
     // public : cyan, gras, majuscules — voir #jb-public h2). Appelée après CHAQUE vote (castVote())
     // ET à chaque instantané Firestore du palmarès (renderPalmares()) : le décompte se met donc à
     // jour en direct, au fur et à mesure que des votes s'ajoutent ou se retirent.
-    remainingEl.innerHTML = `<span class="jb-vote-remaining-num">${r}</span> ${t("votes_unit", r)}`;
+    // Habillage cyberpunk (maquette de Hubert) : "// N VOTES UTILISÉS" — on affiche maintenant le
+    // nombre de votes DÉJÀ utilisés (sur MAX_VOTES), pour que le chiffre corresponde au mot.
+    const used = Math.max(0, MAX_VOTES - r);
+    remainingEl.innerHTML = `<span class="jb-vote-remaining-num">${used}</span> <span class="jb-vote-unit">${t("votes_unit", used)}</span> <span class="jb-vote-used-word">${t("votes_used_word", used)}</span>`;
   }
   // Nouvelle section "Mes votes" (demande explicite de Hubert) : liste, pour CE client, les
   // chansons où il a un solde NET de votes encore actif ce soir (entry.up - entry.down, voir
@@ -3665,7 +3693,7 @@
         return `
         <div class="jb-my-vote-line">
           <span class="jb-my-vote-line-left">
-            <span class="jb-my-vote-delta ${deltaClass}">${sign}${n}</span>
+            <span class="jb-my-vote-delta ${deltaClass}">${sign}${n}<span class="jb-my-vote-unit">${t("votes_unit", n)}</span></span>
             <span class="jb-my-vote-dash">-</span>
             <span class="jb-slot-title">${escapeHtml(v.title)}</span>
           </span>
