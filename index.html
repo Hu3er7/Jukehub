@@ -1057,7 +1057,7 @@
      admin : z-index 0, sous les deux vues (.jb-view, z-index 1), qui doivent donc être transparentes. */
   #jb-app .jb-cp-matrix {
     position: fixed; inset: 0; width: 100%; height: 100%;
-    z-index: 0; pointer-events: none; opacity: 0.25;
+    z-index: 0; pointer-events: none; opacity: 0.55;
   }
   /* Lignes de balayage d'écran, très discrètes */
   #jb-public::after {
@@ -1480,8 +1480,10 @@
     </div>
   </div>
 
-   <!-- Fond "pluie de chiffres" façon Matrix (demande de Hubert : remplace la pluie fine). Calque
-        fixe derrière TOUT le contenu (site public ET panneau admin, demande de Hubert) ; dessiné
+   <!-- Fond "circuit électronique" (demande de Hubert, image de référence à l'appui : remplace la
+        pluie de chiffres façon Matrix). Une puce au centre de l'écran, des pistes qui en partent par
+        groupes de lignes parallèles avec des coudes à 45°, et des impulsions lumineuses qui filent le
+        long des pistes. Calque fixe derrière TOUT le contenu (site public ET panneau admin) ; dessiné
         par le petit script juste en dessous. -->
    <canvas id="jb-cp-matrix" class="jb-cp-matrix" aria-hidden="true"></canvas>
    <script>
@@ -1489,66 +1491,140 @@
      const canvas = document.getElementById("jb-cp-matrix");
      const ctx = canvas && canvas.getContext && canvas.getContext("2d");
      if (!ctx) return;
-     const CHARS = "0123456789アイウエオカキクケコサシスセソタチツテトナニヌネノ01";
-     const SIZE = 16;      // taille d'un caractère = largeur d'une colonne
-     const FPS = 18;       // rythme volontairement modéré : léger même sur un vieux téléphone
+     const FPS = 30;          // assez fluide pour les impulsions, léger même sur un vieux téléphone
+     const PULSES = 26;       // nombre d'impulsions lumineuses en même temps
+     const TRAIL = 46;        // longueur (px) de la traînée lumineuse d'une impulsion
      const reduceMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-     let w = 0, h = 0, cols = 0, drops = [], speeds = [], last = 0;
-     function resize() {
-       const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
-       const newW = window.innerWidth;
-       h = window.innerHeight;
-       canvas.width = Math.round(newW * dpr);
-       canvas.height = Math.round(h * dpr);
-       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-       // La barre d'adresse de Safari change souvent la HAUTEUR en défilant : on ne repart de zéro
-       // que si la LARGEUR change (rotation), pour ne pas faire "sauter" la pluie à chaque défilement.
-       if (newW !== w) {
-         w = newW;
-         cols = Math.ceil(w / SIZE);
-         drops = Array.from({ length: cols }, () => Math.random() * h / SIZE - h / SIZE / 3);
-         speeds = Array.from({ length: cols }, () => 0.5 + Math.random() * 0.6);
+     let w = 0, h = 0, dpr = 1, paths = [], pulses = [], last = 0;
+     const board = document.createElement("canvas"); // pistes + puce, dessinées une seule fois
+     const bctx = board.getContext("2d");
+
+     // Une piste = suite de points ; on garde aussi les longueurs cumulées pour placer les impulsions.
+     function makePath(pts) {
+       const cum = [0];
+       for (let i = 1; i < pts.length; i++) {
+         cum.push(cum[i - 1] + Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]));
        }
-       ctx.fillStyle = "#010802";
-       ctx.fillRect(0, 0, w, h);
+       return { pts, cum, len: cum[cum.length - 1] };
      }
-     function step() {
-       // Voile sombre semi-transparent : efface lentement les caractères précédents (la "traîne")
-       ctx.fillStyle = "rgba(1, 8, 2, 0.06)";
-       ctx.fillRect(0, 0, w, h);
-       ctx.font = SIZE + "px 'Share Tech Mono', monospace";
-       for (let i = 0; i < cols; i++) {
-         // Arrondi à la rangée : les caractères s'empilent proprement en colonne bien verticale
-         const y = Math.floor(drops[i]) * SIZE;
-         if (y > 0) {
-           // Vert "Matrice" classique (demande de Hubert), quelques caractères presque blancs qui scintillent
-           ctx.fillStyle = Math.random() < 0.12 ? "#c8ffd4" : "#00ff41";
-           ctx.fillText(CHARS[(Math.random() * CHARS.length) | 0], i * SIZE, y);
+     function pointAt(p, d) {
+       let i = 1;
+       while (i < p.cum.length - 1 && p.cum[i] < d) i++;
+       const seg = p.cum[i] - p.cum[i - 1] || 1;
+       const k = Math.max(0, Math.min(1, (d - p.cum[i - 1]) / seg));
+       const a = p.pts[i - 1], b = p.pts[i];
+       return [a[0] + (b[0] - a[0]) * k, a[1] + (b[1] - a[1]) * k];
+     }
+
+     function build() {
+       paths = [];
+       const cx = w / 2, cy = h / 2;
+       // Puce assez grande et pistes serrées (pas de 7 px) pour un circuit dense, même sur un téléphone
+       const chip = Math.max(120, Math.min(200, Math.min(w, h) * 0.4));
+       const half = chip / 2, pitch = 7, far = Math.max(w, h);
+       // 4 côtés de la puce : direction "vers l'extérieur" (ox, oy) et direction le long du côté (sx, sy)
+       const sides = [
+         { ox: 0, oy: -1, sx: 1, sy: 0 }, { ox: 1, oy: 0, sx: 0, sy: 1 },
+         { ox: 0, oy: 1, sx: -1, sy: 0 }, { ox: -1, oy: 0, sx: 0, sy: -1 },
+       ];
+       sides.forEach((s) => {
+         const count = Math.floor((chip - 16) / pitch);
+         let i = 0;
+         while (i < count) {
+           // Groupe ("bus") de 2 à 6 pistes parallèles : même coude à 45°, même longueur
+           const size = Math.min(count - i, 2 + Math.floor(Math.random() * 5));
+           const a = 10 + Math.random() * chip * 0.5;            // 1er tronçon droit
+           const b = 15 + Math.random() * chip * 0.8;            // tronçon en diagonale
+           const dir = Math.random() < 0.5 ? -1 : 1;              // diagonale vers la gauche ou la droite
+           const stop = Math.random() < 0.3 ? 40 + Math.random() * chip : far; // certaines s'arrêtent en route
+           for (let j = 0; j < size; j++, i++) {
+             const off = -half + 8 + i * pitch;
+             const x0 = cx + s.ox * half + s.sx * off, y0 = cy + s.oy * half + s.sy * off;
+             // Pistes du groupe décalées pour rester parallèles dans le coude (sans se croiser)
+             const aj = a + (dir > 0 ? (size - 1 - j) : j) * pitch * 0.42;
+             const x1 = x0 + s.ox * aj, y1 = y0 + s.oy * aj;
+             const dx = (s.ox + s.sx * dir) * b * 0.7071, dy = (s.oy + s.sy * dir) * b * 0.7071;
+             const x2 = x1 + dx, y2 = y1 + dy;
+             const x3 = x2 + s.ox * stop, y3 = y2 + s.oy * stop;
+             const p = makePath([[x0, y0], [x1, y1], [x2, y2], [x3, y3]]);
+             p.via = stop !== far; // pastille ronde au bout des pistes qui s'arrêtent en route
+             paths.push(p);
+           }
+           i += Math.random() < 0.5 ? 1 : 0; // petit espace entre deux groupes
          }
-         drops[i] += speeds[i];
-         if (y > h && Math.random() > 0.94) drops[i] = 0;
-       }
+       });
+       // Dessin fixe : pistes vert foncé, puce, pastilles
+       board.width = canvas.width; board.height = canvas.height;
+       bctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+       bctx.clearRect(0, 0, w, h);
+       bctx.lineWidth = 1.4; bctx.lineJoin = "round"; bctx.lineCap = "round";
+       bctx.strokeStyle = "rgba(0, 184, 55, 0.55)";
+       paths.forEach((p) => {
+         bctx.beginPath();
+         p.pts.forEach((pt, k) => (k ? bctx.lineTo(pt[0], pt[1]) : bctx.moveTo(pt[0], pt[1])));
+         bctx.stroke();
+         const end = p.pts[p.pts.length - 1];
+         if (p.via) { bctx.beginPath(); bctx.arc(end[0], end[1], 2.6, 0, Math.PI * 2); bctx.fillStyle = "rgba(0, 255, 65, 0.6)"; bctx.fill(); }
+         bctx.beginPath(); bctx.arc(p.pts[0][0], p.pts[0][1], 1.8, 0, Math.PI * 2); bctx.fillStyle = "rgba(0, 255, 65, 0.5)"; bctx.fill();
+       });
+       bctx.fillStyle = "#010802";
+       bctx.fillRect(cx - half, cy - half, chip, chip);
+       bctx.strokeStyle = "rgba(0, 255, 65, 0.5)"; bctx.lineWidth = 1.2;
+       bctx.strokeRect(cx - half + 0.5, cy - half + 0.5, chip - 1, chip - 1);
+       bctx.strokeRect(cx - half + 8.5, cy - half + 8.5, chip - 17, chip - 17);
+       pulses = [];
+       for (let k = 0; k < PULSES; k++) pulses.push(newPulse(true));
+     }
+     function newPulse(randomStart) {
+       const p = paths[(Math.random() * paths.length) | 0];
+       return { p, d: randomStart ? Math.random() * p.len : 0, v: 90 + Math.random() * 160 };
+     }
+     function resize() {
+       dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+       w = window.innerWidth; h = window.innerHeight;
+       canvas.width = Math.round(w * dpr); canvas.height = Math.round(h * dpr);
+       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+       build();
+       draw(0);
+     }
+     function draw(dt) {
+       ctx.clearRect(0, 0, w, h);
+       ctx.drawImage(board, 0, 0, w, h);
+       ctx.lineCap = "round"; ctx.lineJoin = "round";
+       pulses.forEach((q, idx) => {
+         q.d += q.v * dt;
+         const visibleEnd = Math.min(q.d, q.p.len);
+         if (q.d - TRAIL > q.p.len) { pulses[idx] = newPulse(false); return; }
+         const d0 = Math.max(0, q.d - TRAIL);
+         const pts = [pointAt(q.p, d0)];
+         for (let i = 1; i < q.p.cum.length - 1; i++) if (q.p.cum[i] > d0 && q.p.cum[i] < visibleEnd) pts.push(q.p.pts[i]);
+         pts.push(pointAt(q.p, visibleEnd));
+         // 2 passes : halo large et transparent, puis cœur fin et brillant (pas de shadowBlur, trop lourd)
+         [[6, "rgba(0, 255, 65, 0.18)"], [2.2, "rgba(182, 255, 198, 0.95)"]].forEach(([lw, col]) => {
+           ctx.beginPath();
+           pts.forEach((pt, k) => (k ? ctx.lineTo(pt[0], pt[1]) : ctx.moveTo(pt[0], pt[1])));
+           ctx.lineWidth = lw; ctx.strokeStyle = col; ctx.stroke();
+         });
+       });
      }
      function frame(t) {
        requestAnimationFrame(frame);
-       // En pause si l'onglet est en arrière-plan ou si la vue publique est cachée (panneau admin)
-       if (document.hidden || canvas.getClientRects().length === 0) return;
+       if (document.hidden || canvas.getClientRects().length === 0) { last = t; return; }
        if (t - last < 1000 / FPS) return;
+       const dt = Math.min(0.1, (t - last) / 1000);
        last = t;
-       step();
+       draw(dt);
      }
-     let resizeTimer = null;
+     let resizeTimer = null, lastW = 0;
      window.addEventListener("resize", () => {
        clearTimeout(resizeTimer);
-       resizeTimer = setTimeout(() => { resize(); if (reduceMotion) for (let k = 0; k < 60; k++) step(); }, 150);
+       // La barre d'adresse de Safari change souvent la hauteur en défilant : on ne redessine le
+       // circuit que si la LARGEUR change (rotation), sinon il "sauterait" à chaque défilement.
+       resizeTimer = setTimeout(() => { if (window.innerWidth !== lastW) { lastW = window.innerWidth; resize(); } }, 150);
      });
+     lastW = window.innerWidth;
      resize();
-     if (reduceMotion) {
-       // Le téléphone demande moins d'animations : une seule image fixe de la pluie, sans mouvement
-       for (let k = 0; k < 60; k++) step();
-     } else {
-       requestAnimationFrame(frame);
-     }
+     if (!reduceMotion) requestAnimationFrame(frame); // moins d'animations demandé : circuit fixe, sans impulsions
    })();
    </script>
   <!-- Écran de choix de langue (demande de Hubert) : écran vide avec seulement la pluie Matrix et
@@ -2058,7 +2134,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-15.103";
+  const APP_BUILD = "2026-10-15.104";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
