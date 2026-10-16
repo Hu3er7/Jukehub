@@ -1450,7 +1450,12 @@
   /* Section de recherche en "terminal" (option A choisie par Hubert) — voir #jb-catalog-browse et
      renderModeButtons(). Remplace l'ancien cadre néon + 3 gros boutons biseautés de cet écran
      d'accueil seulement ; le cadre des listes de chansons (#jb-catalog-results) ne change pas. */
-  #jb-public .jb-term { border: 1px solid var(--accent); background: rgba(8, 7, 1, 0.88); margin-bottom: 6px; }
+  /* Fenêtre élargie (demande de Hubert) : déborde sur la marge de la page (24 px de chaque côté)
+     pour ne laisser que 6 px jusqu'au bord de l'écran. */
+  #jb-public .jb-term {
+    border: 1px solid var(--accent); background: rgba(8, 7, 1, 0.88);
+    margin: 0 -18px 6px; width: calc(100% + 36px);
+  }
   #jb-public .jb-term-bar {
     display: flex; justify-content: space-between; background: var(--accent); color: #080701;
     font-family: 'Share Tech Mono', monospace; font-size: 0.78rem; letter-spacing: 1px; padding: 3px 10px;
@@ -2256,7 +2261,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-16.113";
+  const APP_BUILD = "2026-10-16.114";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
