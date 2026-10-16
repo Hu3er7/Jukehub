@@ -673,7 +673,7 @@
        #jb-app (sinon l'ancien violet resterait visible dans les marges de
        .jb-view, qui n'a pas de fond propre) + grille de points façon HUD. */
     background-color: var(--bg);
-    background-image: radial-gradient(circle, rgba(24, 241, 255, 0.28) 1px, transparent 1.4px);
+    background-image: radial-gradient(circle, rgba(24, 241, 255, 0.12) 1px, transparent 1.4px);
     background-size: 24px 24px;
     min-height: 100vh;
     min-height: 100dvh;
@@ -1057,7 +1057,7 @@
      admin : z-index 0, sous les deux vues (.jb-view, z-index 1), qui doivent donc être transparentes. */
   #jb-app .jb-cp-matrix {
     position: fixed; inset: 0; width: 100%; height: 100%;
-    z-index: 0; pointer-events: none; opacity: 0.3;
+    z-index: 0; pointer-events: none; opacity: 0.14;
   }
   /* Lignes de balayage d'écran, très discrètes */
   #jb-public::after {
@@ -1465,8 +1465,6 @@
     width: auto;
     margin: 20px -10px;
     background-color: #04121c;
-    background-image: radial-gradient(circle, rgba(0, 230, 220, 0.22) 1.1px, transparent 1.6px);
-    background-size: 11px 11px;
     border: 2px solid #3ff6ee;
     box-shadow: 0 0 18px rgba(0, 230, 220, 0.45), inset 0 0 26px rgba(0, 230, 220, 0.14);
     border-radius: 3px;
@@ -2457,7 +2455,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-16.116";
+  const APP_BUILD = "2026-10-16.117";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
