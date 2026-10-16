@@ -1198,7 +1198,8 @@
   #jb-public .jb-slot-vote-up { background: #39ff14; box-shadow: 0 0 8px rgba(57, 255, 20, 0.35); }
   #jb-public .jb-slot-vote-down { background: #ff1f3d; box-shadow: 0 0 8px rgba(255, 31, 61, 0.35); }
 
-  #jb-public .jb-vote-remaining-num { font-family: 'Orbitron', sans-serif; }
+  /* Pas d'Orbitron ici non plus : son "0" barré ressemble à un panneau "interdit" (⊘). */
+  #jb-public .jb-vote-remaining-num { font-weight: 900; }
   #jb-public .jb-my-vote-delta-down { color: var(--danger); }
 
   /* Section "// N VOTES UTILISÉS" (maquette de Hubert) : "VOTES" fin, "UTILISÉS" gras ; chaque
@@ -1250,6 +1251,65 @@
   #jb-public .jb-cal-day { font-family: 'Share Tech Mono', monospace; color: var(--accent2); }
   #jb-public .jb-cal-row { border-bottom: 1px dashed var(--border); }
   #jb-public .jb-name-prompt-card { border: 1px solid var(--danger); }
+
+  /* ===== "Full Matrix" (demande de Hubert) : TOUT en teintes de vert =====
+     Placé en dernier pour l'emporter sur le reste. Le jaune (accent2) devient un vert pâle, le cyan
+     (accent) un vert vif, le magenta/rouge (danger) un vert moyen ; puis chaque couleur codée en dur
+     plus haut (lueurs, cadres, flèches, barres) est reprise ici en vert. */
+  html, body, #jb-app, #jb-app #jb-public { background: #010802; }
+  #jb-public {
+    --bg: #010802;
+    --bg2: #03120a;
+    --card: #03120a;
+    --card2: #062014;
+    --text: #00ff41;
+    --text-dim: #3c9a55;
+    --accent: #00ff41;
+    --accent2: #b6ffc6;
+    --danger: #00b837;
+    --success: #00ff41;
+    --border: #0d3a1b;
+  }
+  #jb-public .jb-top-bar h1 {
+    background:
+      var(--jb-cp-diag) top right / 10px 10px no-repeat border-box,
+      var(--jb-cp-diag) bottom left / 10px 10px no-repeat border-box,
+      rgba(0, 255, 65, 0.05);
+    text-shadow: 0 0 4px rgba(182, 255, 198, 0.7), 0 0 14px rgba(0, 255, 65, 0.4);
+  }
+  #jb-public .jb-top-bar::before { filter: drop-shadow(0 0 6px rgba(0, 255, 65, 0.6)); }
+  #jb-public .jb-cp-status { color: var(--text-dim); }
+  #jb-public .jb-cp-live { background: #00ff41; color: #010802; }
+  #jb-public .jb-catalog-searchbar input[type="text"] { background: #03120a; border-color: rgba(0, 255, 65, 0.45); }
+  #jb-public input::placeholder { color: rgba(0, 255, 65, 0.5); }
+  #jb-public input:focus { box-shadow: 0 0 12px rgba(0, 255, 65, 0.35); }
+  #jb-public .jb-catalog-frame {
+    box-shadow: 0 -2px 16px 2px rgba(0, 255, 65, 0.4), 0 2px 16px 2px rgba(0, 255, 65, 0.4);
+  }
+  #jb-public #jb-catalog-list { border-top-color: rgba(0, 255, 65, 0.6); border-bottom-color: rgba(0, 255, 65, 0.6); }
+  #jb-public .jb-catalog-frame-cap { background: #00ff41; box-shadow: 0 0 6px 1px rgba(0, 255, 65, 0.8); }
+  /* Les 3 boutons de navigation : 3 verts différents au lieu de magenta/cyan/jaune */
+  #jb-public .jb-mode-btn { --jb-cp-c: #00ff41; }
+  #jb-public .jb-mode-btn:nth-child(3n+2) { --jb-cp-c: #b6ffc6; }
+  #jb-public .jb-mode-btn:nth-child(3n+3) { --jb-cp-c: #00b837; }
+  #jb-public .jb-mode-btn:active { color: #010802; }
+  #jb-public #jb-palmares-title::after { color: #00b837; }
+  /* Barres : rail vert très sombre, barres en 3 verts */
+  #jb-app #jb-public .jb-slot-bar { background: #08261a; }
+  #jb-public .jb-slot:nth-child(3n+1) .jb-slot-bar-fill { background: #00ff41; box-shadow: 0 0 6px rgba(0, 255, 65, 0.6); }
+  #jb-public .jb-slot:nth-child(3n+2) .jb-slot-bar-fill { background: #b6ffc6; box-shadow: 0 0 6px rgba(182, 255, 198, 0.5); }
+  #jb-public .jb-slot:nth-child(3n+3) .jb-slot-bar-fill { background: #00b837; box-shadow: 0 0 6px rgba(0, 184, 55, 0.6); }
+  #jb-public .jb-slot-votes,
+  #jb-public .jb-song-votes { text-shadow: 0 0 8px rgba(182, 255, 198, 0.45); }
+  /* Flèches : monter = vert vif, descendre = vert foncé (pas de rouge) */
+  #jb-public .jb-slot-vote-up { background: #00ff41; box-shadow: 0 0 8px rgba(0, 255, 65, 0.4); color: #010802; }
+  #jb-public .jb-slot-vote-down { background: #0a6b25; box-shadow: 0 0 8px rgba(0, 184, 55, 0.3); color: #b6ffc6; }
+  #jb-public .jb-my-vote-delta-down { color: #00b837; }
+  #jb-public .jb-btn-primary { color: #010802; }
+  #jb-public .jb-cooldown-badge,
+  #jb-public .jb-cooldown-wait-seg { background: #062014; }
+  #jb-public .jb-offline-card,
+  #jb-public .jb-name-prompt-card { background: #03120a; }
 </style>
 
 <div id="jb-app">
@@ -1313,12 +1373,12 @@
          drops = Array.from({ length: cols }, () => Math.random() * h / SIZE - h / SIZE / 3);
          speeds = Array.from({ length: cols }, () => 0.5 + Math.random() * 0.6);
        }
-       ctx.fillStyle = "#05060a";
+       ctx.fillStyle = "#010802";
        ctx.fillRect(0, 0, w, h);
      }
      function step() {
        // Voile sombre semi-transparent : efface lentement les caractères précédents (la "traîne")
-       ctx.fillStyle = "rgba(5, 6, 10, 0.06)";
+       ctx.fillStyle = "rgba(1, 8, 2, 0.06)";
        ctx.fillRect(0, 0, w, h);
        ctx.font = SIZE + "px 'Share Tech Mono', monospace";
        for (let i = 0; i < cols; i++) {
