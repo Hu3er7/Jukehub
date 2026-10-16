@@ -1492,8 +1492,9 @@
      const ctx = canvas && canvas.getContext && canvas.getContext("2d");
      if (!ctx) return;
      const FPS = 30;          // assez fluide pour les impulsions, léger même sur un vieux téléphone
-     const PULSES = 44;       // nombre d'impulsions lumineuses en même temps
-     const TRAIL = 46;        // longueur (px) de la traînée lumineuse d'une impulsion
+     // Demande de Hubert : moins de courant à la fois, mais qui passe plus vite
+     const PULSES = 12;       // nombre d'impulsions lumineuses en même temps
+     const TRAIL = 70;        // longueur (px) de la traînée lumineuse d'une impulsion
      const reduceMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
      let w = 0, h = 0, dpr = 1, paths = [], pulses = [], last = 0;
      const board = document.createElement("canvas"); // pistes + puce, dessinées une seule fois
@@ -1641,7 +1642,7 @@
      }
      function newPulse(randomStart) {
        const p = paths[(Math.random() * paths.length) | 0];
-       return { p, d: randomStart ? Math.random() * p.len : 0, v: 90 + Math.random() * 160 };
+       return { p, d: randomStart ? Math.random() * p.len : 0, v: 380 + Math.random() * 300 };
      }
      function resize() {
        dpr = Math.min(window.devicePixelRatio || 1, 1.5);
@@ -2198,7 +2199,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-16.108";
+  const APP_BUILD = "2026-10-16.109";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
