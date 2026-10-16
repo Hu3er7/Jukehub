@@ -1056,6 +1056,7 @@
   @media (prefers-reduced-motion: reduce) {
     #jb-public::before { animation: none; }
     #jb-public .jb-top-bar h1 { animation: none; }
+    #jb-public .jb-cp-live { animation: none; }
   }
 
   /* Titre : jaune néon + petit "glitch" une seule fois à l'apparition de l'appli */
@@ -1097,9 +1098,35 @@
   /* clip-path coupe les 2 coins, mais emporte aussi la bordure à ces endroits (coins "ouverts" sur
      la 1re version — remarqué par Hubert). Les 2 diagonales sont donc redessinées par-dessus avec
      un trait en dégradé dans chaque coin coupé, pour un contour biseauté continu comme la maquette. */
+  #jb-public .jb-mode-btn,
+  #jb-public .jb-top-bar h1 {
+    --jb-cp-diag: linear-gradient(to top right, transparent calc(50% - 1.2px), var(--jb-cp-c) calc(50% - 0.6px), var(--jb-cp-c) calc(50% + 0.6px), transparent calc(50% + 1.2px));
+  }
+  /* Cadre biseauté autour du titre (même technique que les boutons ci-dessous) — marges calculées
+     avec --jb-topbar-scale pour que fitTopBar() garde tout le bandeau sur une seule ligne. */
+  #jb-public .jb-top-bar h1 {
+    --jb-cp-c: var(--accent2);
+    padding: calc(4px * var(--jb-topbar-scale, 1)) calc(14px * var(--jb-topbar-scale, 1));
+    border: 1px solid var(--accent2);
+    clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px));
+    background:
+      var(--jb-cp-diag) top right / 10px 10px no-repeat border-box,
+      var(--jb-cp-diag) bottom left / 10px 10px no-repeat border-box,
+      rgba(252, 238, 10, 0.04);
+  }
+  /* Ligne d'état sous le titre : badge LIVE (cette page n'est visible QUE pendant un spectacle) */
+  #jb-public .jb-cp-status {
+    display: flex; align-items: center; gap: 8px; margin-top: 10px;
+    font-family: 'Share Tech Mono', monospace; font-size: 0.78rem; letter-spacing: 1px; color: var(--accent);
+  }
+  #jb-public .jb-cp-live {
+    background: var(--danger); color: #05060a; font-weight: 700; padding: 1px 7px;
+    animation: jb-cp-live-blink 2s ease-in-out infinite;
+  }
+  @keyframes jb-cp-live-blink { 50% { opacity: 0.55; } }
+  #jb-public #jb-palmares-title::after { content: ".EXE"; color: var(--danger); }
   #jb-public .jb-mode-btn {
     --jb-cp-c: var(--danger);
-    --jb-cp-diag: linear-gradient(to top right, transparent calc(50% - 1.2px), var(--jb-cp-c) calc(50% - 0.6px), var(--jb-cp-c) calc(50% + 0.6px), transparent calc(50% + 1.2px));
     background:
       var(--jb-cp-diag) top right / 12px 12px no-repeat border-box,
       var(--jb-cp-diag) bottom left / 12px 12px no-repeat border-box,
@@ -1125,7 +1152,8 @@
   /* Listes : texte blanc bleuté lisible, séparateurs pointillés */
   #jb-public #jb-catalog-list .jb-song-item { border-bottom: 1px dashed var(--border); }
   #jb-public .jb-slot { border-bottom: 1px dashed var(--border); }
-  #jb-public .jb-slot-rank { font-family: 'Share Tech Mono', monospace; color: var(--accent2); }
+  #jb-public .jb-slot-rank { font-family: 'Share Tech Mono', monospace; color: var(--accent2); width: 30px; }
+  @media (max-width: 420px) { #jb-public .jb-slot-rank { width: 24px; } }
   /* Chiffres de votes : PAS en Orbitron — son "0" barré ressemble à un panneau "interdit" (⊘). */
   #jb-public .jb-slot-votes,
   #jb-public .jb-song-votes { color: var(--accent2); text-shadow: 0 0 8px rgba(252, 238, 10, 0.35); }
@@ -1215,6 +1243,7 @@
         </div>
       </div>
     </header>
+    <div class="jb-cp-status" aria-hidden="true"><span class="jb-cp-live">LIVE</span><span>// signal ok</span></div>
     <section class="jb-catalog">
       <div id="jb-catalog-searchbar" class="jb-catalog-searchbar">
         <button id="jb-back-btn" class="jb-back-btn" hidden>⬅ RETOUR</button>
@@ -2055,8 +2084,16 @@
     const available = bar.clientWidth;
     const needed = left.scrollWidth + right.scrollWidth + 10; // +10 = le "gap" entre les 2 groupes
     if (available > 0 && needed > available) {
-      const scale = Math.max(0.55, (available / needed) * 0.97);
+      let scale = Math.max(0.55, (available / needed) * 0.97);
       bar.style.setProperty("--jb-topbar-scale", String(scale));
+      // Habillage cyberpunk : la bordure du cadre du titre ne rétrécit pas avec l'échelle, donc une
+      // seule passe peut dépasser de quelques pixels — on remesure et on corrige une fois de plus.
+      void bar.offsetWidth;
+      const neededAfter = left.scrollWidth + right.scrollWidth + 10;
+      if (neededAfter > available) {
+        scale = Math.max(0.55, scale * (available / neededAfter) * 0.98);
+        bar.style.setProperty("--jb-topbar-scale", String(scale));
+      }
     }
   }
   let topBarFitRaf = null;
@@ -4038,7 +4075,7 @@
       // gauche). Juste le nombre brut ici, sans le mot "Demande" (contrairement à
       // renderSongRow()).
       el.innerHTML = `
-        <span class="jb-slot-rank">${i + 1}</span>
+        <span class="jb-slot-rank">${String(i + 1).padStart(2, "0")}</span>
         <span class="jb-slot-info">
           <span class="jb-slot-title"${flyingTitleKeys.has(id) ? ' style="visibility:hidden"' : ""}>${escapeHtml(v.title)}</span>
           ${v.artist ? `<span class="jb-slot-artist">${escapeHtml(v.artist)}</span>` : ""}
