@@ -1168,10 +1168,24 @@
   /* Ligne du palmarès (2e croquis de Hubert) : [▲▲ vert][▼▼ rouge] | rang | titre/artiste, avec
      en dessous la barre de progression terminée par "N VOTES" sur la même ligne. */
   #jb-public .jb-palmares-grid .jb-slot { gap: 10px; padding: 12px 0; }
-  #jb-public .jb-slot-arrows { display: flex; gap: 8px; flex-shrink: 0; }
+  /* 3e photo de Hubert : flèches plus espacées ; titre à gauche et artiste à droite sur la même
+     ligne (l'artiste tombe donc juste au-dessus de "N VOTES") ; prénoms des votants dessous ;
+     titre/prénoms resserrés contre la barre ; "N VOTES" centré verticalement sur la barre. */
+  #jb-public .jb-palmares-grid .jb-slot { align-items: flex-start; }
+  #jb-public .jb-slot-arrows { display: flex; gap: 22px; flex-shrink: 0; margin-top: -2px; }
+  #jb-public .jb-palmares-grid .jb-slot-rank { align-self: flex-start; line-height: 1.3; }
   #jb-public .jb-slot-mid { flex: 1; min-width: 0; display: flex; flex-direction: column; }
-  #jb-public .jb-slot-bar-row { display: flex; align-items: center; gap: 10px; margin-top: 6px; }
+  #jb-public .jb-slot-head {
+    flex-direction: row; align-items: baseline; justify-content: space-between; gap: 10px; overflow: hidden;
+  }
+  #jb-public .jb-slot-head .jb-slot-title { flex: 1 1 auto; min-width: 0; line-height: 1.3; }
+  #jb-public .jb-slot-head .jb-slot-artist {
+    flex: 0 1 auto; max-width: 48%; text-align: right; font-family: 'Share Tech Mono', monospace; color: var(--text-dim);
+  }
+  #jb-public .jb-slot-mid > .jb-slot-voters { margin-top: 1px; }
+  #jb-public .jb-slot-bar-row { display: flex; align-items: center; gap: 10px; margin-top: 3px; }
   #jb-public .jb-slot-bar-row .jb-slot-bar { flex: 1; min-width: 0; margin-top: 0; }
+  #jb-public .jb-slot-bar-row .jb-slot-votes { line-height: 1; }
   /* Largeur fixe (alignée à droite) : sans ça, "1 VOTE" étant plus étroit que "2 VOTES", les barres
      n'avaient pas toutes la même longueur d'une ligne à l'autre. */
   #jb-public .jb-slot-votes-wrap { display: flex; align-items: baseline; justify-content: flex-end; gap: 5px; flex-shrink: 0; min-width: 84px; }
@@ -1182,7 +1196,7 @@
   #jb-public .jb-palmares-grid.jb-animating .jb-slot-vote-btn { pointer-events: none; opacity: 0.55; }
   @media (max-width: 420px) {
     #jb-public .jb-palmares-grid .jb-slot { gap: 7px; }
-    #jb-public .jb-slot-arrows { gap: 6px; }
+    #jb-public .jb-slot-arrows { gap: 16px; }
     #jb-public .jb-slot-rank { width: 14px; }
     #jb-public .jb-slot-votes-label { font-size: 0.62rem; }
     #jb-public .jb-slot-votes-wrap { min-width: 66px; }
@@ -1977,7 +1991,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-15.99";
+  const APP_BUILD = "2026-10-15.100";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -4361,11 +4375,11 @@
         </span>
         <span class="jb-slot-rank">${i + 1}</span>
         <span class="jb-slot-mid">
-          <span class="jb-slot-info">
+          <span class="jb-slot-info jb-slot-head">
             <span class="jb-slot-title"${flyingTitleKeys.has(id) ? ' style="visibility:hidden"' : ""}>${escapeHtml(v.title)}</span>
             ${v.artist ? `<span class="jb-slot-artist">${escapeHtml(v.artist)}</span>` : ""}
-            ${renderVotersLine(v.voters)}
           </span>
+          ${renderVotersLine(v.voters)}
           <span class="jb-slot-bar-row">
             <span class="jb-slot-bar" aria-hidden="true"><span class="jb-slot-bar-fill" style="width:${barPct}%"></span></span>
             <span class="jb-slot-votes-wrap">
