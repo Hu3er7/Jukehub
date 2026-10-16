@@ -1308,6 +1308,9 @@
   /* Flèches : monter = vert vif, descendre = vert foncé (pas de rouge) */
   #jb-public .jb-slot-vote-up { background: #00ff41; box-shadow: 0 0 8px rgba(0, 255, 65, 0.4); color: #010802; }
   #jb-public .jb-slot-vote-down { background: #0a6b25; box-shadow: 0 0 8px rgba(0, 184, 55, 0.3); color: #b6ffc6; }
+  /* Chanson déjà à 0 : flèche du bas atténuée (plancher à 0 — un clic affiche seulement un message,
+     sans dépenser de vote, voir castVote()) */
+  #jb-public .jb-slot-vote-down.jb-slot-vote-floor { opacity: 0.3; box-shadow: none; }
   #jb-public .jb-my-vote-delta-down { color: #00b837; }
   #jb-public .jb-btn-primary { color: #010802; }
   #jb-public .jb-cooldown-badge,
@@ -1973,7 +1976,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-15.97";
+  const APP_BUILD = "2026-10-15.98";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -2054,6 +2057,7 @@
       palmares_title: "Palmarès",
       palmares_empty: "Aucune demande pour l'instant — sois le premier à voter !",
       vote_used_up: "Tu as utilisé tes 6 votes. Attends qu'une chanson sur laquelle tu as voté soit jouée pour en récupérer !",
+      vote_floor: "Cette chanson est déjà à 0 vote — impossible de descendre plus bas.",
       vote_added_up: "👍 Vote ajouté !",
       vote_added_down: "👎 Vote retiré !",
       // Demande explicite de Hubert : si le client enlève un vote qu'il a lui-même mis (flèche du
@@ -2120,6 +2124,7 @@
       palmares_title: "Billboard",
       palmares_empty: "No requests yet — be the first to vote!",
       vote_used_up: "You've used all 6 of your votes. Wait until a song you voted on gets played to get more!",
+      vote_floor: "This song is already at 0 votes — it can't go any lower.",
       vote_added_up: "👍 Vote added!",
       vote_added_down: "👎 Vote removed!",
       vote_refunded: "↩️ Vote refunded!",
@@ -3815,17 +3820,18 @@
     const emptyEl = document.getElementById("jb-my-votes-empty");
     const listEl = document.getElementById("jb-my-votes-list");
     if (!emptyEl || !listEl) return;
-    const entries = Object.keys(voteUsage)
-      .map((id) => {
-        const entry = voteUsage[id];
-        const v = votes[id];
-        if (!entry || !v || entry.token !== roundToken(v)) return null;
-        const delta = (entry.up || 0) - (entry.down || 0);
-        if (delta === 0) return null;
-        return [id, v, delta];
-      })
-      .filter(Boolean)
-      .sort((a, b) => compareVoteEntries([a[0], a[1]], [b[0], b[1]]));
+    // Depuis qu'un vote dépensé n'est plus remboursable (voir castVote()), un client peut avoir à
+    // la fois des votes "+" et "-" sur une même chanson : on affiche alors une ligne pour chacun
+    // (ex. "+1" ET "-1") plutôt qu'un solde net de 0 qui cacherait 2 votes bel et bien dépensés.
+    const entries = [];
+    Object.keys(voteUsage).forEach((id) => {
+      const entry = voteUsage[id];
+      const v = votes[id];
+      if (!entry || !v || entry.token !== roundToken(v)) return;
+      if (entry.up > 0) entries.push([id, v, entry.up]);
+      if (entry.down > 0) entries.push([id, v, -entry.down]);
+    });
+    entries.sort((a, b) => compareVoteEntries([a[0], a[1]], [b[0], b[1]]) || (b[2] - a[2]));
     emptyEl.hidden = entries.length > 0;
     // Format compact (maquette Photoshop de Hubert, 3e itération de cette section) : une seule
     // ligne par chanson — solde net puis tiret puis titre à gauche, artiste à droite — au lieu du
@@ -3868,23 +3874,25 @@
   // par essayer d'annuler une contribution existante DE SIGNE OPPOSÉ (gratuit) ; ce n'est qu'une
   // fois celle-ci à 0 qu'un clic devient un vrai nouveau vote de son propre signe (qui coûte 1).
   // "up" et "down" ne sont donc jamais tous les deux > 0 en même temps pour une même chanson.
+  //
+  // MISE À JOUR (15 oct. 2026) — Hubert a changé ces deux règles : "enlève l'option de pouvoir
+  // descendre plus bas que 0 et fais en sorte qu'un vote dépensé n'est pas récupérable".
+  //  1. Plus aucun remboursement par la flèche opposée : CHAQUE clic (haut ou bas) coûte 1 vote de
+  //     la réserve. "up" et "down" peuvent donc maintenant être tous les deux > 0 pour une chanson.
+  //     (Les votes reviennent toujours quand Hubert marque la chanson "Jouée" — voir activeVotesCount().)
+  //  2. Plancher remis, à 0 : impossible de voter à la baisse sur une chanson déjà à 0 (ou moins).
   async function castVote(id, delta) {
     if (palmaresAnimating) return;
     const v = votes[id];
     if (!v || isHiddenFromPalmares(v)) return;
-    // Plus de plancher à 1 (demande explicite de Hubert) : "je veux que si je vote à la baisse,
-    // ça puisse descendre à zéro et -1, -2, -3, -4, etc." — un vote à la baisse coûte donc
-    // toujours 1 (une fois la contribution personnelle "up" épuisée, voir isRefund plus bas),
-    // peu importe où en est "requests", même déjà à 0 ou négatif. Seule limite restante : la
-    // réserve de 6 votes du client (votesRemaining(), juste en dessous) — jamais le chiffre de
-    // la chanson elle-même.
+    if (delta < 0 && (v.requests || 0) <= 0) {
+      showToast(t("vote_floor"));
+      return;
+    }
     const token = roundToken(v);
     const existing = voteUsage[id];
     const entry = (existing && existing.token === token) ? existing : { up: 0, down: 0, token };
-    const isRefundUp = delta < 0 && entry.up > 0; // reprise d'un vote à la hausse déjà mis
-    const isRefundDown = delta > 0 && entry.down > 0; // reprise d'un vote à la baisse déjà mis
-    const isRefund = isRefundUp || isRefundDown;
-    if (!isRefund && votesRemaining() <= 0) {
+    if (votesRemaining() <= 0) {
       showToast(t("vote_used_up"));
       pulseAttention(document.getElementById("jb-vote-remaining"));
       return;
@@ -3896,24 +3904,15 @@
     const clientName = getClientName();
     let toastMsg;
     const payload = { requests: increment(delta) };
-    if (isRefundDown) {
-      entry.down -= 1; // reprend 1 de SA propre contribution à la baisse -> remboursé, ne coûte rien
-      toastMsg = t("vote_refunded");
-      // Les votes à la baisse n'ont jamais touché "voters" (voir la branche "else" plus bas) :
-      // leur reprise n'y touche donc pas non plus.
-    } else if (delta > 0) {
+    if (delta > 0) {
       entry.up += 1;
       toastMsg = t("vote_added_up");
       // Le prénom des votants (voir renderVotersLine()) ne doit refléter QUE les votes à la
       // hausse — jamais les votes à la baisse (sinon "voter contre" afficherait quand même le nom
       // du client comme s'il avait soutenu la chanson).
       if (clientName) payload[`voters.${sanitizeVoterKey(clientName)}`] = increment(1);
-    } else if (isRefundUp) {
-      entry.up -= 1; // reprend 1 de SA propre contribution à la hausse -> remboursé, ne coûte rien
-      toastMsg = t("vote_refunded");
-      if (clientName) payload[`voters.${sanitizeVoterKey(clientName)}`] = increment(-1);
     } else {
-      entry.down += 1; // vrai vote à la baisse (au-delà de sa propre contribution) -> coûte 1
+      entry.down += 1; // vote à la baisse -> coûte 1, comme tous les votes (plus de remboursement)
       toastMsg = t("vote_added_down");
     }
     voteUsage[id] = entry;
@@ -4356,7 +4355,7 @@
       el.innerHTML = `
         <span class="jb-slot-arrows">
           <button class="jb-slot-vote-btn jb-slot-vote-up${voteUpBtnIllumClass(id)}" data-vote-up="${escapeHtml(id)}" aria-label="${t("vote_up_aria")}" title="${t("vote_up_aria")}"><svg viewBox="0 0 12 12" width="12" height="12" aria-hidden="true"><path d="M6 1 11 5.5H1ZM6 6 11 10.5H1Z" fill="currentColor"/></svg></button>
-          <button class="jb-slot-vote-btn jb-slot-vote-down${voteDownBtnIllumClass(id)}" data-vote-down="${escapeHtml(id)}" aria-label="${t("vote_down_aria")}" title="${t("vote_down_aria")}"><svg viewBox="0 0 12 12" width="12" height="12" aria-hidden="true"><path d="M6 11 11 6.5H1ZM6 6 11 1.5H1Z" fill="currentColor"/></svg></button>
+          <button class="jb-slot-vote-btn jb-slot-vote-down${voteDownBtnIllumClass(id)}${(v.requests || 0) <= 0 ? " jb-slot-vote-floor" : ""}" data-vote-down="${escapeHtml(id)}" aria-label="${t("vote_down_aria")}" title="${t("vote_down_aria")}"><svg viewBox="0 0 12 12" width="12" height="12" aria-hidden="true"><path d="M6 11 11 6.5H1ZM6 6 11 1.5H1Z" fill="currentColor"/></svg></button>
         </span>
         <span class="jb-slot-rank">${i + 1}</span>
         <span class="jb-slot-mid">
@@ -4756,7 +4755,7 @@
         <span class="jb-slot-vote-group">
           <button class="jb-slot-vote-btn jb-slot-vote-up${voteUpBtnIllumClass(song.id)}" data-vote-up="${escapeHtml(song.id)}" aria-label="${t("vote_up_aria")}" title="${t("vote_up_aria")}">▲</button>
           <span class="jb-song-votes${voteIllumClass(song.id)}">${voteCount}</span>
-          <button class="jb-slot-vote-btn jb-slot-vote-down${voteDownBtnIllumClass(song.id)}" data-vote-down="${escapeHtml(song.id)}" aria-label="${t("vote_down_aria")}" title="${t("vote_down_aria")}">▼</button>
+          <button class="jb-slot-vote-btn jb-slot-vote-down${voteDownBtnIllumClass(song.id)}${voteCount <= 0 ? " jb-slot-vote-floor" : ""}" data-vote-down="${escapeHtml(song.id)}" aria-label="${t("vote_down_aria")}" title="${t("vote_down_aria")}">▼</button>
         </span>
       </span>`;
     } else {
