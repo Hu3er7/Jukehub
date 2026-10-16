@@ -1188,6 +1188,10 @@
     flex: 0 1 auto; max-width: 48%; text-align: right; font-family: 'Share Tech Mono', monospace; color: var(--text-dim);
   }
   #jb-public .jb-slot-mid > .jb-slot-voters { margin-top: 1px; }
+  /* Solde de chaque votant à côté de son nom ("Néo +2" / "Néo -2", voir renderVotersLine()) */
+  #jb-app .jb-voter-delta { font-family: 'Share Tech Mono', monospace; font-weight: 700; }
+  #jb-app .jb-voter-delta-up { color: #00ff41; }
+  #jb-app .jb-voter-delta-down { color: #3c9a55; }
   #jb-public .jb-slot-bar-row { display: flex; align-items: center; gap: 10px; margin-top: 3px; }
   #jb-public .jb-slot-bar-row .jb-slot-bar { flex: 1; min-width: 0; margin-top: 0; }
   #jb-public .jb-slot-bar-row .jb-slot-votes { line-height: 1; }
@@ -2054,7 +2058,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-15.102";
+  const APP_BUILD = "2026-10-15.103";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -3993,6 +3997,10 @@
     } else {
       entry.down += 1; // vote à la baisse -> coûte 1, comme tous les votes (plus de remboursement)
       toastMsg = t("vote_added_down");
+      // Demande de Hubert : le palmarès affiche maintenant le SOLDE de chaque votant ("Néo +2",
+      // "Néo -2", rien à 0 — voir renderVotersLine()), donc un vote à la baisse retire 1 de son
+      // compteur "voters" (qui devient un solde net : hausses moins baisses).
+      if (clientName) payload[`voters.${sanitizeVoterKey(clientName)}`] = increment(-1);
     }
     voteUsage[id] = entry;
     saveVotesToStorage();
@@ -4355,12 +4363,19 @@
   // prénom (voters vide ou absent — champ resté facultatif).
   function renderVotersLine(voters) {
     if (!voters || typeof voters !== "object") return "";
+    // Demande de Hubert : à la place du 👍, le SOLDE de votes de chaque personne — "Néo +2" s'il a
+    // mis 2 votes, "Néo -2" s'il en a enlevé 2, et il disparaît s'il revient à 0. Les plus gros
+    // soldes (positifs comme négatifs) en premier, 3 noms au maximum pour garder la ligne courte.
     const names = Object.keys(voters)
-      .filter((k) => (voters[k] || 0) > 0)
-      .sort((a, b) => (voters[b] || 0) - (voters[a] || 0))
+      .filter((k) => (voters[k] || 0) !== 0)
+      .sort((a, b) => Math.abs(voters[b] || 0) - Math.abs(voters[a] || 0))
       .slice(0, 3);
     if (!names.length) return "";
-    return `<span class="jb-slot-voters">${names.map((n) => `${escapeHtml(n)} 👍`).join(" · ")}</span>`;
+    return `<span class="jb-slot-voters">${names.map((n) => {
+      const d = voters[n] || 0;
+      const cls = d > 0 ? "jb-voter-delta-up" : "jb-voter-delta-down";
+      return `${escapeHtml(n)} <span class="jb-voter-delta ${cls}">${d > 0 ? "+" : "-"}${Math.abs(d)}</span>`;
+    }).join(" · ")}</span>`;
   }
 
   function renderPalmares() {
