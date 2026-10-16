@@ -1208,6 +1208,7 @@
   /* Section "// N VOTES UTILISÉS" (maquette de Hubert) : "VOTES" fin, "UTILISÉS" gras ; chaque
      ligne = "+2 VOTES - Titre ......... Artiste" */
   #jb-public .jb-vote-unit { font-weight: 400; }
+  #jb-public .jb-vote-max { font-size: 0.7em; opacity: 0.75; }
   #jb-public .jb-vote-used-word {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     font-weight: 800; letter-spacing: 0.5px;
@@ -1607,7 +1608,7 @@
            palmarès) — "le décompte se fasse au fur et à mesure que les votes s'ajoute ou
            s'enlève". -->
       <div class="jb-my-votes-heading">
-        <h2 id="jb-vote-remaining" class="jb-vote-remaining"><span class="jb-vote-remaining-num">6</span> VOTES</h2>
+        <h2 id="jb-vote-remaining" class="jb-vote-remaining"><span class="jb-vote-remaining-num">0<span class="jb-vote-max">/6</span></span> <span class="jb-vote-unit">VOTES</span> <span class="jb-vote-used-word">UTILISÉS</span></h2>
       </div>
       <p id="jb-my-votes-empty" class="jb-empty">Tu n'as pas encore voté ce soir.</p>
       <!-- 2e demande de Hubert : chaque chanson votée prend maintenant une ligne complète (même
@@ -1976,7 +1977,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-15.98";
+  const APP_BUILD = "2026-10-15.99";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -3804,7 +3805,8 @@
     // Habillage cyberpunk (maquette de Hubert) : "// N VOTES UTILISÉS" — on affiche maintenant le
     // nombre de votes DÉJÀ utilisés (sur MAX_VOTES), pour que le chiffre corresponde au mot.
     const used = Math.max(0, MAX_VOTES - r);
-    remainingEl.innerHTML = `<span class="jb-vote-remaining-num">${used}</span> <span class="jb-vote-unit">${t("votes_unit", used)}</span> <span class="jb-vote-used-word">${t("votes_used_word", used)}</span>`;
+    // "0/6" plutôt que "0" seul (demande de Hubert) : le client voit d'un coup combien il lui en reste.
+    remainingEl.innerHTML = `<span class="jb-vote-remaining-num">${used}<span class="jb-vote-max">/${MAX_VOTES}</span></span> <span class="jb-vote-unit">${t("votes_unit", used)}</span> <span class="jb-vote-used-word">${t("votes_used_word", used)}</span>`;
   }
   // Nouvelle section "Mes votes" (demande explicite de Hubert) : liste, pour CE client, les
   // chansons où il a un solde NET de votes encore actif ce soir (entry.up - entry.down, voir
