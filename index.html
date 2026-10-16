@@ -1492,7 +1492,7 @@
      const ctx = canvas && canvas.getContext && canvas.getContext("2d");
      if (!ctx) return;
      const FPS = 30;          // assez fluide pour les impulsions, léger même sur un vieux téléphone
-     const PULSES = 26;       // nombre d'impulsions lumineuses en même temps
+     const PULSES = 44;       // nombre d'impulsions lumineuses en même temps
      const TRAIL = 46;        // longueur (px) de la traînée lumineuse d'une impulsion
      const reduceMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
      let w = 0, h = 0, dpr = 1, paths = [], pulses = [], last = 0;
@@ -1522,7 +1522,7 @@
      // jamais se croiser, avec une pastille ronde à chaque bout.
      function build() {
        paths = [];
-       const G = 14;                                    // pas de la grille (px)
+       const G = 10;                                    // pas de la grille (px) — serré : circuit très dense
        const cols = Math.ceil(w / G) + 1, rows = Math.ceil(h / G) + 1;
        const used = new Uint8Array(cols * rows);
        const diag = new Set();                          // diagonales déjà tracées (anti-croisement)
@@ -1550,7 +1550,7 @@
          const pts = [[sx, sy]];
          mark(sx, sy);
          let x = sx, y = sy, d = dir, straight = 0;
-         const maxLen = 4 + ((Math.random() * 18) | 0);
+         const maxLen = 6 + ((Math.random() * 24) | 0);
          for (let step = 0; step < maxLen; step++) {
            if (straight >= 2 && Math.random() < 0.28) { d = (d + (Math.random() < 0.5 ? 1 : 7)) % 8; straight = 0; }
            const [dx, dy] = DIRS[d];
@@ -1574,7 +1574,7 @@
          }
          if (pts.length < 2) return;
          const p = makePath(pts.map(([gx, gy]) => [gx * G, gy * G]));
-         if (p.len >= G * 2) paths.push(p);
+         if (p.len >= G * 3) paths.push(p);
        }
 
        // Pistes qui sortent des puces (une par broche, vers l'extérieur)
@@ -1583,7 +1583,7 @@
          for (let y = c.y0; y < c.y0 + c.ch; y++) { walk(c.x0 - 1, y, 4); walk(c.x0 + c.cw, y, 0); }
        });
        // Puis plein de petites pistes partout ailleurs, jusqu'à remplir l'écran
-       const attempts = cols * rows * 0.6;
+       const attempts = cols * rows * 1.3;
        for (let k = 0; k < attempts; k++) {
          walk((Math.random() * cols) | 0, (Math.random() * rows) | 0, (Math.random() * 8) | 0);
        }
@@ -1592,23 +1592,24 @@
        board.width = canvas.width; board.height = canvas.height;
        bctx.setTransform(dpr, 0, 0, dpr, 0, 0);
        bctx.clearRect(0, 0, w, h);
-       bctx.lineWidth = 1.3; bctx.lineJoin = "round"; bctx.lineCap = "round";
-       bctx.strokeStyle = "rgba(0, 184, 55, 0.6)";
+       bctx.lineWidth = 1.4; bctx.lineJoin = "round"; bctx.lineCap = "round";
+       // Couleurs bleues (demande de Hubert) : pistes bleues, impulsions bleu "flash" (voir draw())
+       bctx.strokeStyle = "rgba(40, 140, 255, 0.85)";
        paths.forEach((p) => {
          bctx.beginPath();
          p.pts.forEach((pt, k) => (k ? bctx.lineTo(pt[0], pt[1]) : bctx.moveTo(pt[0], pt[1])));
          bctx.stroke();
        });
-       bctx.fillStyle = "#010802"; bctx.strokeStyle = "rgba(0, 255, 65, 0.55)"; bctx.lineWidth = 1.2;
+       bctx.fillStyle = "#010409"; bctx.strokeStyle = "rgba(70, 170, 255, 0.65)"; bctx.lineWidth = 1.1;
        paths.forEach((p) => {
          [p.pts[0], p.pts[p.pts.length - 1]].forEach((pt) => {
-           bctx.beginPath(); bctx.arc(pt[0], pt[1], 2.6, 0, Math.PI * 2); bctx.fill(); bctx.stroke();
+           bctx.beginPath(); bctx.arc(pt[0], pt[1], 2.1, 0, Math.PI * 2); bctx.fill(); bctx.stroke();
          });
        });
        chips.forEach((c) => {
          const x = c.x0 * G - G / 2, y = c.y0 * G - G / 2, cw = c.cw * G, ch = c.ch * G;
-         bctx.fillStyle = "#03120a"; bctx.fillRect(x, y, cw, ch);
-         bctx.strokeStyle = "rgba(0, 255, 65, 0.55)"; bctx.lineWidth = 1.2;
+         bctx.fillStyle = "#020b1c"; bctx.fillRect(x, y, cw, ch);
+         bctx.strokeStyle = "rgba(70, 170, 255, 0.65)"; bctx.lineWidth = 1.2;
          bctx.strokeRect(x + 0.5, y + 0.5, cw - 1, ch - 1);
          bctx.strokeRect(x + 4.5, y + 4.5, cw - 9, ch - 9);
        });
@@ -1640,7 +1641,7 @@
          for (let i = 1; i < q.p.cum.length - 1; i++) if (q.p.cum[i] > d0 && q.p.cum[i] < visibleEnd) pts.push(q.p.pts[i]);
          pts.push(pointAt(q.p, visibleEnd));
          // 2 passes : halo large et transparent, puis cœur fin et brillant (pas de shadowBlur, trop lourd)
-         [[6, "rgba(0, 255, 65, 0.18)"], [2.2, "rgba(182, 255, 198, 0.95)"]].forEach(([lw, col]) => {
+         [[8, "rgba(0, 150, 255, 0.22)"], [4, "rgba(40, 190, 255, 0.55)"], [1.8, "rgba(225, 245, 255, 1)"]].forEach(([lw, col]) => {
            ctx.beginPath();
            pts.forEach((pt, k) => (k ? ctx.lineTo(pt[0], pt[1]) : ctx.moveTo(pt[0], pt[1])));
            ctx.lineWidth = lw; ctx.strokeStyle = col; ctx.stroke();
@@ -2174,7 +2175,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-15.105";
+  const APP_BUILD = "2026-10-15.106";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
