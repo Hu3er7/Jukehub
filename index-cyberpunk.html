@@ -1052,9 +1052,11 @@
      petit script juste après l'ouverture de #jb-public) — demande de Hubert. Le calque de pluie
      ci-dessus est gardé dans le fichier mais désactivé, au cas où il voudrait y revenir. */
   #jb-public::before { display: none; }
-  #jb-public .jb-cp-matrix {
+  /* Directement sous #jb-app (et non plus dans #jb-public) pour être aussi derrière le panneau
+     admin : z-index 0, sous les deux vues (.jb-view, z-index 1), qui doivent donc être transparentes. */
+  #jb-app .jb-cp-matrix {
     position: fixed; inset: 0; width: 100%; height: 100%;
-    z-index: -1; pointer-events: none; opacity: 0.25;
+    z-index: 0; pointer-events: none; opacity: 0.25;
   }
   /* Lignes de balayage d'écran, très discrètes */
   #jb-public::after {
@@ -1256,7 +1258,8 @@
      Placé en dernier pour l'emporter sur le reste. Le jaune (accent2) devient un vert pâle, le cyan
      (accent) un vert vif, le magenta/rouge (danger) un vert moyen ; puis chaque couleur codée en dur
      plus haut (lueurs, cadres, flèches, barres) est reprise ici en vert. */
-  html, body, #jb-app, #jb-app #jb-public { background: #010802; }
+  html, body, #jb-app { background: #010802; }
+  #jb-app #jb-public, #jb-app #jb-admin { background: transparent; }
   #jb-public {
     --bg: #010802;
     --bg2: #03120a;
@@ -1310,6 +1313,87 @@
   #jb-public .jb-cooldown-wait-seg { background: #062014; }
   #jb-public .jb-offline-card,
   #jb-public .jb-name-prompt-card { background: #03120a; }
+
+  /* ===== Panneau admin en style Matrix (demande de Hubert : "mon admin dans le même template") =====
+     Même palette verte que le site public. Titres de section et boutons en police terminal ; les
+     titres de chansons gardent une police lisible (Hubert les lit en plein spectacle, à côté
+     d'OnSong). Coins carrés/biseautés partout au lieu des pastilles arrondies. */
+  #jb-app, #jb-admin {
+    --bg: #010802;
+    --bg2: #03120a;
+    --card: #03120a;
+    --card2: #062014;
+    --text: #00ff41;
+    --text-dim: #3c9a55;
+    --accent: #00ff41;
+    --accent2: #b6ffc6;
+    --danger: #00b837;
+    --success: #00ff41;
+    --border: #0d3a1b;
+    --radius: 0;
+    --jb-cp-cut-sm: polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 6px 100%, 0 calc(100% - 6px));
+  }
+  #jb-admin h2, #jb-admin h3 {
+    font-family: 'Share Tech Mono', monospace; font-weight: 400; text-transform: uppercase;
+    letter-spacing: 1.5px; color: var(--accent); text-shadow: 0 0 6px rgba(0, 255, 65, 0.35);
+  }
+  #jb-admin .jb-admin-topbar h2::before,
+  #jb-admin .jb-login h2::before { content: "// "; color: var(--accent2); }
+  #jb-admin .jb-admin-section { border-top: 1px dashed var(--border); }
+  #jb-admin .jb-hint, #jb-admin .jb-empty { color: var(--text-dim); font-family: 'Share Tech Mono', monospace; }
+  #jb-admin input[type="text"], #jb-admin input[type="email"], #jb-admin input[type="password"], #jb-admin textarea {
+    background: #03120a; color: var(--accent); border: 1px solid rgba(0, 255, 65, 0.4);
+    border-left: 4px solid var(--accent); border-radius: 0; font-family: 'Share Tech Mono', monospace;
+  }
+  #jb-admin input::placeholder, #jb-admin textarea::placeholder { color: rgba(0, 255, 65, 0.45); }
+  #jb-admin input:focus, #jb-admin textarea:focus { outline: none; box-shadow: 0 0 12px rgba(0, 255, 65, 0.35); }
+
+  /* Boutons : carrés, biseautés, police terminal */
+  #jb-admin button.jb-btn-primary, #jb-admin button.jb-btn-danger, #jb-admin button.jb-btn-ghost,
+  #jb-admin .jb-mark-played-btn, #jb-admin .jb-unmark-btn, #jb-admin .jb-dismiss-special-btn,
+  #jb-admin .jb-bypass-btn, #jb-admin .jb-burn-btn, #jb-admin .jb-unburn-btn, #jb-admin .jb-icon-btn {
+    border-radius: 0; clip-path: var(--jb-cp-cut-sm);
+    font-family: 'Share Tech Mono', monospace; letter-spacing: 1px; text-transform: uppercase;
+  }
+  #jb-admin .jb-btn-primary { background: var(--accent); color: #010802; }
+  /* "Nouvelle soirée" efface le palmarès : plein vert vif + lueur pour rester le plus visible */
+  #jb-admin .jb-btn-danger { background: #00ff41; color: #010802; box-shadow: 0 0 14px rgba(0, 255, 65, 0.45); }
+  #jb-admin .jb-btn-ghost { background: transparent; color: var(--accent); border: 1px solid var(--accent); }
+  #jb-admin .jb-mark-played-btn { background: var(--accent); color: #010802; }
+  #jb-admin .jb-mark-played-btn.jb-mark-played-armed { background: #b6ffc6; color: #010802; }
+  @keyframes jb-mark-played-pulse {
+    0%, 100% { box-shadow: none; }
+    50% { box-shadow: 0 0 12px 2px rgba(182, 255, 198, 0.9); }
+  }
+  #jb-admin .jb-unmark-btn, #jb-admin .jb-dismiss-special-btn {
+    background: transparent; color: var(--text-dim); border: 1px solid var(--border);
+  }
+  #jb-admin .jb-bypass-btn { background: var(--accent); color: #010802; }
+  #jb-admin .jb-burn-btn { background: #062014; color: #b6ffc6; border: 1px solid #00b837; }
+  #jb-admin .jb-unburn-btn { background: #00b837; color: #010802; }
+  #jb-admin .jb-icon-btn.jb-del { background: var(--card2); color: #b6ffc6; }
+  #jb-admin .jb-icon-btn.jb-plus { background: var(--card2); color: var(--accent); }
+  #jb-admin .jb-icon-btn.jb-fire { background: var(--card2); color: #b6ffc6; }
+  #jb-admin .jb-icon-btn.jb-fire.jb-active { background: #0a6b25; border: 1px solid #00ff41; }
+
+  /* Listes (palmarès, demandes spéciales, refroidissement, répertoire) */
+  #jb-admin .jb-slot { border-bottom: 1px dashed var(--border); background: transparent; }
+  #jb-admin .jb-slot-rank { font-family: 'Share Tech Mono', monospace; color: var(--accent2); }
+  #jb-admin .jb-slot-votes { color: var(--accent2); text-shadow: 0 0 8px rgba(182, 255, 198, 0.45); }
+  #jb-admin .jb-slot-title, #jb-admin .jb-song-title { color: var(--text); text-shadow: 0 0 6px rgba(0, 255, 65, 0.4); }
+  #jb-admin .jb-slot-artist, #jb-admin .jb-song-artist { font-family: 'Share Tech Mono', monospace; }
+  #jb-admin .jb-cooldown-row, #jb-admin .jb-admin-catalog-item, #jb-admin .jb-rank-item, #jb-admin .jb-song-item {
+    border-radius: 0; background: rgba(3, 18, 10, 0.85); border: 1px solid var(--border);
+  }
+  #jb-admin .jb-cooldown-badge, #jb-admin .jb-cooldown-explicit, #jb-admin .jb-burned-badge { border-radius: 0; }
+  #jb-admin .jb-cooldown-badge, #jb-admin .jb-cooldown-wait-seg { background: #062014; }
+  #jb-admin .jb-cooldown-played-seg { color: #010802; }
+  #jb-admin .jb-burned-badge { background: #062014; border-color: #00b837; color: #b6ffc6; }
+  #jb-admin .jb-genre-chip { border-radius: 0; font-family: 'Share Tech Mono', monospace; }
+  #jb-admin .jb-genre-chip.jb-genre-chip-active { background: #0a6b25; border-color: var(--accent); color: #b6ffc6; }
+  #jb-admin .jb-error { color: #b6ffc6; }
+  #jb-admin .jb-back-link { font-family: 'Share Tech Mono', monospace; }
+  #jb-app .jb-toast { border-radius: 0; font-family: 'Share Tech Mono', monospace; }
 </style>
 
 <div id="jb-app">
@@ -1344,9 +1428,9 @@
     </div>
   </div>
 
-  <div id="jb-public" class="jb-view">
    <!-- Fond "pluie de chiffres" façon Matrix (demande de Hubert : remplace la pluie fine). Calque
-        fixe derrière tout le contenu public ; dessiné par le petit script juste en dessous. -->
+        fixe derrière TOUT le contenu (site public ET panneau admin, demande de Hubert) ; dessiné
+        par le petit script juste en dessous. -->
    <canvas id="jb-cp-matrix" class="jb-cp-matrix" aria-hidden="true"></canvas>
    <script>
    (function () {
@@ -1415,6 +1499,7 @@
      }
    })();
    </script>
+  <div id="jb-public" class="jb-view">
    <div id="jb-app-content" hidden>
     <header class="jb-top-bar">
       <div class="jb-top-bar-left">
