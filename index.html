@@ -1360,12 +1360,23 @@
   // pour le cas où quelqu'un ouvre un jour l'adresse GitHub Pages directement (sans passer par
   // Carrd) — elle ne coûte rien et pourrait redevenir utile si l'hébergement change.
   const QR_ACCESS_MS = 24 * 60 * 60 * 1000;
-  (function captureQrAccess() {
+  // MISE À JOUR (15 oct. 2026) — bogue signalé par Hubert : un client qui avait DÉJÀ ouvert le site
+  // lors d'un spectacle précédent rescanne le code QR... et tombe quand même sur le calendrier. Cause :
+  // la page Carrd gardait "#qr=1" dans son adresse pour toujours, donc Safari retrouvait/rechargeait
+  // simplement l'ancien onglet (même adresse), où le garde-fou "une seule capture par onglet"
+  // (sessionStorage, voir plus bas) refusait de mettre à jour la date du scan — l'ancien scan, antérieur
+  // à la connexion de ce soir, ne comptait plus (voir hasQrAccess()). Correctif en deux parties :
+  //  1. Le script Carrd retire maintenant "#qr=1" de SA PROPRE adresse juste après l'avoir transmis à
+  //     ce cadre (history.replaceState) : un simple "Actualiser" ne renvoie donc plus "#qr=1" — seul
+  //     un VRAI scan le fait. Le garde-fou sessionStorage n'a donc plus de raison d'être : retiré.
+  //  2. Si le client rescanne alors que l'onglet est déjà ouvert, le navigateur ne fait parfois que
+  //     changer le "#..." (pas de rechargement) : on écoute donc aussi "hashchange" (voir plus bas).
+  function captureQrAccess() {
     try {
       const params = new URLSearchParams(location.search);
       const viaQueryParam = params.has("qr");
       const viaHashFragment = location.hash === "#qr=1";
-      if (!viaQueryParam && !viaHashFragment) return;
+      if (!viaQueryParam && !viaHashFragment) return false;
       // Garde-fou (bogue signalé par Hubert : un client retrouve l'accès en appuyant sur
       // "Actualiser" dans Safari, SANS avoir rescanné le code, après que Hubert se soit
       // reconnecté) : la page Carrd qui pose ce cadre garde "#qr=1" dans SA PROPRE adresse (celle
@@ -1381,28 +1392,23 @@
       // lien QR dans un nouvel onglet) : un rechargement ultérieur de ce même onglet n'écrase plus
       // la date du tout premier scan, et reste donc correctement soumis à la fois à la fenêtre de
       // 24h et à la règle "scanné après la dernière connexion de Hubert" (voir hasQrAccess()).
-      let alreadyCapturedThisTab = false;
-      try {
-        alreadyCapturedThisTab = window.sessionStorage.getItem("jb_qr_captured_tab") === "1";
-      } catch (e2) {
-        // Navigation privée/sessionStorage bloqué : on ne peut pas se souvenir d'un onglet à
-        // l'autre rechargement, donc on retombe sur l'ancien comportement (recapture à chaque
-        // fois) plutôt que de bloquer complètement l'accès.
-      }
-      if (!alreadyCapturedThisTab) {
-        safeStorageSet("jb_qr_access_at", String(Date.now()));
-        try { window.sessionStorage.setItem("jb_qr_captured_tab", "1"); } catch (e3) {}
-      }
+      // (Le garde-fou "une seule capture par onglet" décrit ci-dessus a été retiré — voir la mise à
+      // jour du 15 oct. 2026 plus haut : c'est maintenant le script Carrd qui empêche un simple
+      // "Actualiser" de renvoyer "#qr=1".)
+      safeStorageSet("jb_qr_access_at", String(Date.now()));
       params.delete("qr");
       const query = params.toString();
       const cleanHash = viaHashFragment ? "" : location.hash;
       const clean = location.pathname + (query ? `?${query}` : "") + cleanHash;
       history.replaceState(null, "", clean);
+      return true;
     } catch (e) {
       // Navigation privée/URL bloquée, etc. : tant pis, hasQrAccess() ci-dessous retombera sur
       // "pas d'accès" et affichera la page de scan — pas d'exception qui casserait le reste.
+      return false;
     }
-  })();
+  }
+  captureQrAccess();
   function hasQrAccess() {
     const at = parseInt(safeStorageGet("jb_qr_access_at") || "0", 10);
     if (!(at > 0 && (Date.now() - at) < QR_ACCESS_MS)) return false;
@@ -1499,7 +1505,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-15.95";
+  const APP_BUILD = "2026-10-15.96";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -3460,7 +3466,12 @@
     }
     renderLiveGate();
   }
-  window.addEventListener("hashchange", checkRoute);
+  window.addEventListener("hashchange", () => {
+    // Rescan du code QR alors que la page est déjà ouverte : le cadre ne se recharge pas, seul le
+    // "#qr=1" arrive (voir captureQrAccess()) — on l'enregistre puis on réévalue l'accès.
+    if (captureQrAccess()) renderLiveGate();
+    checkRoute();
+  });
   checkRoute();
 
   // Bascule entre l'appli normale et la page "Pas en spectacle" côté public (jamais sur la route
