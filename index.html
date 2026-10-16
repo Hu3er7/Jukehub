@@ -1057,7 +1057,7 @@
      admin : z-index 0, sous les deux vues (.jb-view, z-index 1), qui doivent donc être transparentes. */
   #jb-app .jb-cp-matrix {
     position: fixed; inset: 0; width: 100%; height: 100%;
-    z-index: 0; pointer-events: none; opacity: 0.22;
+    z-index: 0; pointer-events: none; opacity: 0.3;
   }
   /* Lignes de balayage d'écran, très discrètes */
   #jb-public::after {
@@ -1446,6 +1446,53 @@
     text-shadow: 0 0 8px rgba(255, 242, 0, 0.6);
   }
   #jb-app .jb-splash-btn:active { background: #fff200; color: #080701; text-shadow: none; }
+
+  /* ===== Cadre du catalogue = "puce électronique" branchée sur le circuit du fond =====
+     Demande de Hubert (16 oct. 2026) : couvrir l'arrière des 3 boutons pour qu'on ait vraiment
+     l'impression d'un panneau, changer le design des barres néon, et donner l'impression que les
+     pistes du fond sont CONNECTÉES au panneau. S'applique aux 2 cadres (3 boutons + listes) :
+       - fond opaque (le circuit ne passe plus au travers) ;
+       - bords haut/bas = arêtes nettes jaunes (au lieu de la lueur + pastilles), avec une petite
+         étiquette "IC-670 ▸ JUKEHUB" posée sur l'arête du haut ;
+       - TOUTES les pistes du circuit du fond partent des arêtes du panneau (broches dessinées par le
+         script du fond, voir build() / findPanel()) : elles y sont vraiment branchées. */
+  /* Version "microprocesseur IA" (photo de référence de Hubert) : corps bleu nuit couvert d'une
+     grille de petits points de contact, arêtes cyan lumineuses, cœur intérieur dessiné par un 2e
+     contour, coins biseautés dont un échancré (repère de la broche 1), et un peu plus étroit que
+     l'écran pour qu'on le voie posé sur la carte. Le script du fond lit sa largeur réelle (voir
+     findPanel()) pour brancher les pistes uniquement sur ses arêtes. */
+  #jb-public .jb-catalog-frame {
+    width: auto;
+    margin: 20px -10px;
+    background-color: #04121c;
+    background-image: radial-gradient(circle, rgba(0, 230, 220, 0.22) 1.1px, transparent 1.6px);
+    background-size: 11px 11px;
+    border: 2px solid #3ff6ee;
+    box-shadow: 0 0 18px rgba(0, 230, 220, 0.45), inset 0 0 26px rgba(0, 230, 220, 0.14);
+    border-radius: 3px;
+  }
+  /* Cœur de la puce : 2e contour à l'intérieur, comme le "die" sous le capot */
+  #jb-public .jb-catalog-frame::before {
+    content: ""; position: absolute; inset: 7px; pointer-events: none;
+    border: 1px solid rgba(63, 246, 238, 0.35);
+  }
+  /* Repère de la broche 1 : petit point lumineux dans le coin échancré */
+  #jb-public .jb-catalog-frame::after {
+    content: ""; position: absolute; left: 12px; top: 12px; width: 6px; height: 6px; border-radius: 50%;
+    background: #3ff6ee; box-shadow: 0 0 8px #3ff6ee; pointer-events: none;
+  }
+  #jb-public #jb-catalog-list { border-top: none; border-bottom: none; position: relative; z-index: 1; }
+  #jb-public .jb-catalog-frame .jb-mode-list { position: relative; z-index: 1; }
+  /* Les pastilles en capsules sont remplacées par une étiquette de puce sur l'arête */
+  #jb-public .jb-catalog-frame-cap { display: none; }
+  #jb-public .jb-catalog-frame-caps { gap: 0; z-index: 2; }
+  #jb-public .jb-catalog-frame-caps { left: 30px; }
+  #jb-public .jb-catalog-frame-caps-top::before {
+    content: "AI CORE · JK-670"; background: #3ff6ee; color: #04121c;
+    font-family: 'Share Tech Mono', monospace; font-size: 0.68rem; letter-spacing: 1.5px; padding: 1px 10px;
+    clip-path: polygon(6px 0, calc(100% - 6px) 0, 100% 50%, calc(100% - 6px) 100%, 6px 100%, 0 50%);
+  }
+  /* Pas d'étiquette en bas : à cheval sur l'arête, elle chevauchait la dernière chanson des listes */
 </style>
 
 <div id="jb-app">
@@ -1481,33 +1528,48 @@
   </div>
 
    <!-- Fond "circuit électronique" (demande de Hubert, image de référence à l'appui : remplace la
-        pluie de chiffres façon Matrix). Un circuit qui remplit tout l'écran — petites puces et
-        plein de petites pistes avec des coudes à 45° (voir build()) — et des impulsions lumineuses
-        qui filent le long des pistes. Calque fixe derrière TOUT le contenu (site public ET panneau admin) ; dessiné
-        par le petit script juste en dessous. -->
+        pluie de chiffres façon Matrix), puis "je tiens vraiment à ce que tu connectes TOUS les
+        circuits du fond au panneau" (16 oct. 2026). Quand le panneau du catalogue (.jb-catalog-frame)
+        est affiché, TOUTES les pistes partent de ses broches (arêtes du haut et du bas) et se
+        ramifient pour remplir la page — jamais une piste isolée. Le dessin couvre toute la hauteur
+        de la PAGE (et non plus seulement l'écran) et défile avec elle, pour que les pistes restent
+        branchées au panneau pendant le défilement. Sans panneau (écran de langue, admin) : pistes
+        qui partent des bords, comme avant. Dessiné par le petit script juste en dessous. -->
    <canvas id="jb-cp-matrix" class="jb-cp-matrix" aria-hidden="true"></canvas>
    <script>
    (function () {
      const canvas = document.getElementById("jb-cp-matrix");
      const ctx = canvas && canvas.getContext && canvas.getContext("2d");
      if (!ctx) return;
-     // Le circuit lui-même est dessiné une seule fois ; chaque image ne fait que recopier ce dessin
-     // + tracer quelques impulsions : reste léger, même à la fréquence de l'écran (voir frame()).
-     // Demande de Hubert : moins de courant à la fois, mais qui passe plus vite
-     const PULSES = 3;        // nombre d'impulsions lumineuses en même temps
+     // Le circuit est dessiné UNE fois sur un grand calque (toute la hauteur de la page) ; chaque
+     // image ne fait que recopier la partie visible + tracer quelques impulsions : reste léger.
+     const PULSES = 3;        // nombre d'impulsions lumineuses en même temps (demande de Hubert)
      const TRAIL = 170;       // longueur (px) de la traînée en comète (voir draw())
+     const G = 10;            // pas de la grille invisible (px)
      const reduceMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-     let w = 0, h = 0, dpr = 1, paths = [], pulses = [], last = 0;
-     const board = document.createElement("canvas"); // pistes + puce, dessinées une seule fois
+     let w = 0, vh = 0, H = 0, dpr = 1, bScale = 1, paths = [], pulses = [], last = 0, sig = "";
+     const board = document.createElement("canvas");
      const bctx = board.getContext("2d");
+
+     // Hasard "à graine fixe" : un recalcul (page qui s'allonge, panneau qui bouge) redonne le même
+     // dessin au lieu d'un circuit complètement différent à chaque fois.
+     let seed = 1;
+     function rng() {
+       seed = (seed + 0x6D2B79F5) | 0;
+       let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+       t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+       return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+     }
 
      // Une piste = suite de points ; on garde aussi les longueurs cumulées pour placer les impulsions.
      function makePath(pts) {
        const cum = [0];
-       for (let i = 1; i < pts.length; i++) {
-         cum.push(cum[i - 1] + Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]));
+       let minY = Infinity, maxY = -Infinity;
+       for (let i = 0; i < pts.length; i++) {
+         if (i) cum.push(cum[i - 1] + Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]));
+         minY = Math.min(minY, pts[i][1]); maxY = Math.max(maxY, pts[i][1]);
        }
-       return { pts, cum, len: cum[cum.length - 1] };
+       return { pts, cum, len: cum[cum.length - 1], minY, maxY };
      }
      function pointAt(p, d) {
        let i = 1;
@@ -1518,24 +1580,41 @@
        return [a[0] + (b[0] - a[0]) * k, a[1] + (b[1] - a[1]) * k];
      }
 
-     // Circuit qui traverse l'écran (3e demande de Hubert, image de référence à l'appui : "moins de
-     // chemins courts et plus de chemins qui passent d'une extrémité à l'autre de l'écran"). Sur une
-     // grille invisible, chaque piste part d'un BORD de l'écran, file vers l'intérieur et ne peut
-     // aller que tout droit ou à 45° vers le centre : les pistes voisines se suivent donc en faisceaux
-     // parallèles qui convergent vers le milieu (le "X" de l'image). Quand une piste est bloquée par
-     // une autre, elle essaie l'autre direction permise avant de s'arrêter ; les pistes trop courtes
-     // sont jetées. Jamais de croisement. Petits points lumineux le long des pistes.
+     // Panneau du catalogue actuellement affiché (cadre des 3 boutons OU cadre des listes), en
+     // coordonnées de PAGE — null si aucun (écran admin, appli pas encore affichée).
+     function findPanel() {
+       const frames = document.querySelectorAll("#jb-public .jb-catalog-frame");
+       for (const f of frames) {
+         if (f.offsetParent === null) continue;
+         const r = f.getBoundingClientRect();
+         if (r.height > 0) return { top: r.top + window.scrollY, bottom: r.bottom + window.scrollY, left: r.left, right: r.right };
+       }
+       return null;
+     }
+
      function build() {
+       seed = 0x2A9F;
        paths = [];
-       const G = 10;                                    // pas de la grille (px) — serré : circuit très dense
-       const cols = Math.ceil(w / G) + 1, rows = Math.ceil(h / G) + 1;
-       const used = new Uint8Array(cols * rows);
-       const diag = new Set();                          // diagonales déjà tracées (anti-croisement)
+       // Grille CENTRÉE horizontalement (même marge à gauche et à droite) : avant, elle commençait
+       // pile au bord gauche (1re colonne de pistes à moitié coupée) et débordait à droite — d'où un
+       // fond moins garni à gauche (remarqué par Hubert).
+       let cols = Math.floor((w - 4) / G) + 1;
+       const rows = Math.ceil(H / G) + 1;
+       let ox = Math.round((w - (cols - 1) * G) / 2);
+       let mirror = false;                              // true = moitié droite (générée comme une gauche, puis inversée)
+       let axis = w / 2;                                // axe du miroir = centre du panneau
+       const X = (gx) => (mirror ? 2 * axis - (gx * G + ox) : gx * G + ox);
+       let used = new Uint8Array(cols * rows);
+       let diag = new Set();                            // diagonales déjà tracées (anti-croisement)
        const DIRS = [[1, 0], [1, 1], [0, 1], [-1, 1], [-1, 0], [-1, -1], [0, -1], [1, -1]];
        const inside = (x, y) => x >= 0 && y >= 0 && x < cols && y < rows;
        const free = (x, y) => inside(x, y) && !used[y * cols + x];
        const mark = (x, y) => { used[y * cols + x] = 1; };
-       const dots = [];
+       const dots = [], joints = [], pins = [];
+       let onPath = new Uint8Array(cols * rows);      // cases occupées par une piste gardée
+       // Option (désactivée) : forcer le retour tout droit après 2 cases de diagonale. Essayée puis
+       // écartée par Hubert, qui préfère "plein de petits circuits qui se ramifient".
+       let preferStraight = false;
 
        function canStep(x, y, d) {
          const [dx, dy] = DIRS[d];
@@ -1544,17 +1623,19 @@
          if (dx && dy && (diag.has((x + dx) + "," + y + "|" + x + "," + (y + dy)) || diag.has(x + "," + (y + dy) + "|" + (x + dx) + "," + y))) return false;
          return true;
        }
-       // allowed = directions permises : tout droit vers l'intérieur + la diagonale vers le centre
-       function walk(sx, sy, allowed, minFrac = 0.35) {
-         if (!free(sx, sy)) return;
+       // Une piste avance case par case, tout droit ou à 45° (directions permises : "allowed"),
+       // sans jamais croiser une autre. "anchor" = point (en px) où elle se BRANCHE : broche du
+       // panneau ou autre piste — c'est ce qui garantit que tout le circuit est relié au panneau.
+       function walk(sx, sy, allowed, minPx, anchor) {
+         if (!free(sx, sy)) return null;
          const pts = [[sx, sy]];
-         const cells = [[sx, sy]], diags = []; // pour tout libérer si la piste est jetée
+         const cells = [[sx, sy]], diags = [];
          mark(sx, sy);
          let x = sx, y = sy, d = allowed[0], straight = 0;
          for (let guard = 0; guard < cols + rows; guard++) {
-           // Tourne de temps en temps ; une diagonale dure plus longtemps qu'un tronçon droit (le "X")
            const turnChance = d === allowed[0] ? 0.07 : 0.035;
-           if (straight >= 4 && Math.random() < turnChance) { d = allowed[(Math.random() * allowed.length) | 0]; straight = 0; }
+           if (preferStraight && d !== allowed[0] && straight >= 2) { d = allowed[0]; straight = 0; }
+           else if (straight >= 4 && rng() < turnChance) { d = allowed[(rng() * allowed.length) | 0]; straight = 0; }
            const order = [d].concat(allowed.filter((a) => a !== d));
            const nd = order.find((c) => canStep(x, y, c));
            if (nd === undefined) break;
@@ -1575,65 +1656,186 @@
              if (sameDir) pts[pts.length - 1] = [x, y]; else pts.push([x, y]);
            } else pts.push([x, y]);
          }
-         const p = makePath(pts.map(([gx, gy]) => [gx * G, gy * G]));
-         // Jette les pistes courtes (on ne garde que celles qui traversent une bonne partie de
-         // l'écran) en LIBÉRANT leurs cases, pour que d'autres pistes longues puissent y passer.
-         if (p.len < Math.min(w, h) * minFrac) {
+         const px = pts.map(([gx, gy]) => [X(gx), gy * G]);
+         if (anchor) px.unshift(anchor);
+         const p = makePath(px);
+         if (p.len < minPx) {
            cells.forEach(([cx, cy]) => { used[cy * cols + cx] = 0; });
            diags.forEach((k) => diag.delete(k));
-           return;
+           return null;
          }
-         const onEdge = x === 0 || y === 0 || x === cols - 1 || y === rows - 1;
-         p.deadEnd = !onEdge;
+         p.cells = cells;
+         cells.forEach(([cx, cy]) => { onPath[cy * cols + cx] = 1; });
+         p.deadEnd = !(x === 0 || y === 0 || x === cols - 1 || y === rows - 1);
          paths.push(p);
-         p.pts.slice(1, -1).forEach((pt) => { if (Math.random() < 0.3) dots.push(pt); });
+         px.slice(1, -1).forEach((pt) => { if (rng() < 0.25) dots.push(pt); });
+         return p;
+       }
+       function shuffle(a) { for (let i = a.length - 1; i > 0; i--) { const j = (rng() * (i + 1)) | 0; [a[i], a[j]] = [a[j], a[i]]; } return a; }
+
+       const panel = findPanel();
+       // Avec panneau : chaque MOITIÉ de l'écran est générée par la même recette (la droite comme
+       // une gauche, avec un autre tirage, puis inversée en miroir) — même densité de circuits à
+       // gauche et à droite (demande de Hubert), sans que les deux côtés soient identiques.
+       if (panel) for (const half of [0, 1]) {
+         mirror = half === 1;
+         seed = mirror ? 0x51C3 : 0x2A9F;
+         axis = (panel.left + panel.right) / 2;
+         const hw = (mirror ? w - axis : axis) - G / 2; // dernière colonne d'une moitié : G/2 avant l'axe
+         cols = Math.floor(hw / G) + 1;
+         ox = hw - (cols - 1) * G;
+         used = new Uint8Array(cols * rows); onPath = new Uint8Array(cols * rows); diag = new Set();
+         const pLeft = panel.left;                      // bord du panneau, vu depuis cette moitié (symétrique)
+         // Le panneau bloque sa zone (les pistes passent derrière lui, jamais au travers)
+         const topRow = Math.floor(panel.top / G), botRow = Math.ceil(panel.bottom / G);
+         const leftCol = Math.floor((pLeft - ox) / G), rightCol = cols - 1;
+         for (let y = Math.max(0, topRow); y <= Math.min(rows - 1, botRow); y++) for (let x = Math.max(0, leftCol); x <= Math.min(cols - 1, rightCol); x++) mark(x, y);
+         // 1) Une piste par broche — une broche par colonne (dense, comme les pattes d'une vraie
+         //    puce), en haut ET en bas du panneau, seulement sur sa largeur réelle : tout droit vers
+         //    l'extérieur + diagonale qui s'écarte du centre (éventail)
+         const starts = [];
+         const firstPin = Math.ceil((pLeft + 14 - ox) / G), lastPin = cols - 1;
+         // Du centre vers l'extérieur : c'est cet ordre qui donne les pistes qui bifurquent et se
+         // ramifient (dans l'autre sens, on obtient de longues lignes droites — le côté gauche moins garni)
+         for (let x = lastPin; x >= firstPin; x -= 1) {
+           starts.push([x, topRow - 1, [6, 5], [X(x), panel.top], -1]);
+           starts.push([x, botRow + 1, [2, 3], [X(x), panel.bottom], 1]);
+         }
+         starts.forEach(([sx, sy, allowed, anchor]) => { if (walk(sx, sy, allowed, G * 2, anchor)) pins.push(anchor); });
+         // 2) Ramifications : de nouvelles pistes poussent depuis les pistes existantes (toujours
+         //    en s'éloignant du panneau) pour combler les trous — chacune est donc reliée au panneau.
+         for (let round = 0; round < 6; round++) {
+           shuffle(paths.slice()).forEach((parent) => {
+             parent.cells.forEach(([cx, cy], i) => {
+               if (i < 2 || rng() > 0.45) return;
+               const above = cy * G < panel.top;
+               const sideDir = rng() < 0.5 ? -1 : 1;
+               const nx = cx + sideDir, ny = cy + (above ? -1 : 1);
+               // diagonale, tout droit vers l'extérieur, ou à l'horizontale pour s'étaler sur les côtés
+               // (look "plein de petits circuits qui se ramifient", photo de référence de Hubert)
+               const allowed = above ? [sideDir < 0 ? 5 : 7, 6, sideDir < 0 ? 4 : 0] : [sideDir < 0 ? 3 : 1, 2, sideDir < 0 ? 4 : 0];
+               if (walk(nx, ny, allowed, G * 3, [X(cx), cy * G])) joints.push([X(cx), cy * G]);
+             });
+           });
+         }
+         // 3) Comble les trous restants : une nouvelle piste ne peut partir QUE d'une case qui
+         //    touche une piste existante (à laquelle elle se soude) — le fond devient aussi dense
+         //    qu'avant, sans aucune piste isolée.
+         const NB = [[0, 1], [0, -1], [1, 0], [-1, 0], [1, 1], [-1, 1], [1, -1], [-1, -1]];
+         for (let round = 0; round < 12; round++) {
+           let added = 0;
+           const holes = [];
+           for (let y = 0; y < rows; y++) for (let x = 0; x < cols; x++) if (free(x, y)) holes.push([x, y]);
+           shuffle(holes).forEach(([x, y]) => {
+             if (!free(x, y)) return;
+             for (const [dx, dy] of NB) {
+               const ax = x + dx, ay = y + dy;
+               if (!inside(ax, ay) || !onPath[ay * cols + ax]) continue;
+               const above = y * G < panel.top;
+               const sideDir = dx === 0 ? (rng() < 0.5 ? -1 : 1) : -dx;
+               const allowed = above ? [6, sideDir < 0 ? 5 : 7, sideDir < 0 ? 4 : 0] : [2, sideDir < 0 ? 3 : 1, sideDir < 0 ? 4 : 0];
+               if (walk(x, y, allowed, G * 2, [X(ax), ay * G])) { joints.push([X(ax), ay * G]); added++; }
+               break;
+             }
+           });
+           if (!added) break;
+         }
+         // 4) Équilibrage gauche/droite (demande de Hubert : "le même nombre de circuits à gauche
+         //    qu'à droite") : on mesure la densité par bandes verticales de 3 colonnes et, là où
+         //    une bande est plus vide que la plus pleine, on ajoute des pistes (toujours soudées à
+         //    une piste existante, donc toujours reliées au panneau), dans toutes les directions
+         //    qui s'éloignent du panneau, jusqu'à ce que toutes les bandes soient aussi garnies.
+         const inPanel = (x, y) => y >= topRow && y <= botRow && x >= leftCol && x <= rightCol;
+         const BAND = 3, nBands = Math.ceil(cols / BAND);
+         for (let pass = 0; pass < 8; pass++) {
+           const cnt = new Array(nBands).fill(0), cap = new Array(nBands).fill(0);
+           for (let y = 0; y < rows; y++) for (let x = 0; x < cols; x++) {
+             if (inPanel(x, y)) continue;
+             const b = (x / BAND) | 0;
+             cap[b]++; if (onPath[y * cols + x]) cnt[b]++;
+           }
+           const dens = cnt.map((c, i) => (cap[i] ? c / cap[i] : 1));
+           const target = Math.max(...dens) * 0.95;
+           let added = 0;
+           dens.forEach((dn, b) => {
+             if (dn >= target) return;
+             const cells = [];
+             for (let y = 0; y < rows; y++) for (let x = b * BAND; x < Math.min(cols, (b + 1) * BAND); x++) if (free(x, y)) cells.push([x, y]);
+             shuffle(cells).forEach(([x, y]) => {
+               if (!free(x, y)) return;
+               for (const [dx, dy] of NB) {
+                 const ax = x + dx, ay = y + dy;
+                 if (!inside(ax, ay) || !onPath[ay * cols + ax]) continue;
+                 const above = y * G < panel.top;
+                 const allowed = above ? [6, 5, 7, 4, 0] : [2, 3, 1, 4, 0];
+                 if (walk(x, y, allowed, G, [X(ax), ay * G])) { joints.push([X(ax), ay * G]); added++; }
+                 break;
+               }
+             });
+           });
+           if (!added) break;
+         }
+       } else {
+         // Sans panneau : pistes qui partent des 4 bords de l'écran (comportement d'avant)
+         const starts = [];
+         for (let y = 0; y < rows; y++) { starts.push([0, y, [0, y < rows / 2 ? 1 : 7]]); starts.push([cols - 1, y, [4, y < rows / 2 ? 3 : 5]]); }
+         for (let x = 0; x < cols; x++) { starts.push([x, 0, [2, x < cols / 2 ? 1 : 3]]); starts.push([x, rows - 1, [6, x < cols / 2 ? 7 : 5]]); }
+         shuffle(starts).sort((a, b) => (a[2][0] % 4 === 2 ? 0 : 1) - (b[2][0] % 4 === 2 ? 0 : 1));
+         for (let pass = 0; pass < 3; pass++) starts.forEach(([sx, sy, allowed]) => walk(sx, sy, allowed, Math.min(w, vh) * 0.35));
+         // Dernière passe (comme avant) : comble les zones vides en partant de l'intérieur
+         const holes = [];
+         for (let y = 0; y < rows; y += 2) for (let x = 0; x < cols; x += 2) if (free(x, y)) holes.push([x, y]);
+         shuffle(holes).forEach(([x, y]) => {
+           const down = rng() < 0.5;
+           const side = x < cols / 2 ? (down ? 1 : 7) : (down ? 3 : 5);
+           walk(x, y, [down ? 2 : 6, side], Math.min(w, vh) * 0.2);
+         });
        }
 
-       // Départs : chaque case des 4 bords, dans un ordre mélangé, direction vers l'intérieur +
-       // diagonale vers le centre de l'écran (E/NE ou E/SE à gauche, S/SE ou S/SW en haut, etc.)
-       const starts = [];
-       for (let y = 0; y < rows; y++) {
-         starts.push([0, y, [0, y < rows / 2 ? 1 : 7]]);
-         starts.push([cols - 1, y, [4, y < rows / 2 ? 3 : 5]]);
-       }
-       for (let x = 0; x < cols; x++) {
-         starts.push([x, 0, [2, x < cols / 2 ? 1 : 3]]);
-         starts.push([x, rows - 1, [6, x < cols / 2 ? 7 : 5]]);
-       }
-       // Mélange, puis les départs du HAUT et du BAS en premier : comme sur l'image de référence
-       // (écran de téléphone en hauteur), les longues pistes verticales dominent, les côtés comblent après.
-       for (let i = starts.length - 1; i > 0; i--) { const j = (Math.random() * (i + 1)) | 0; [starts[i], starts[j]] = [starts[j], starts[i]]; }
-       starts.sort((a, b) => (a[2][0] % 4 === 2 ? 0 : 1) - (b[2][0] % 4 === 2 ? 0 : 1));
-       // 3 passes : les suivantes reprennent les départs qui avaient échoué, maintenant que des cases
-       // ont été libérées (les pistes sont tirées au hasard, donc un 2e essai peut passer ailleurs)
-       for (let pass = 0; pass < 3; pass++) starts.forEach(([sx, sy, allowed]) => walk(sx, sy, allowed));
-       // Dernière passe : comble les zones vides restantes en partant de l'intérieur (pistes surtout
-       // verticales, un peu moins longues), pour qu'il n'y ait plus de grands trous noirs.
-       const holes = [];
-       for (let y = 0; y < rows; y += 2) for (let x = 0; x < cols; x += 2) if (free(x, y)) holes.push([x, y]);
-       for (let i = holes.length - 1; i > 0; i--) { const j = (Math.random() * (i + 1)) | 0; [holes[i], holes[j]] = [holes[j], holes[i]]; }
-       holes.forEach(([x, y]) => {
-         const down = Math.random() < 0.5;
-         const side = x < cols / 2 ? (down ? 1 : 7) : (down ? 3 : 5);
-         walk(x, y, [down ? 2 : 6, side], 0.2);
-       });
-
-       // Dessin fixe : pistes, pastilles au bout des pistes qui s'arrêtent en route, petits points
-       board.width = canvas.width; board.height = canvas.height;
-       bctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-       bctx.clearRect(0, 0, w, h);
+       // Dessin fixe sur le grand calque (toute la hauteur de la page)
+       board.width = Math.round(w * bScale); board.height = Math.round(H * bScale);
+       bctx.setTransform(bScale, 0, 0, bScale, 0, 0);
+       bctx.clearRect(0, 0, w, H);
        bctx.lineWidth = 1.4; bctx.lineJoin = "round"; bctx.lineCap = "round";
        // Couleurs turquoise (demande de Hubert) : pistes turquoise, impulsions turquoise "flash" (voir draw())
-       bctx.strokeStyle = "rgba(0, 200, 200, 0.85)";
+       // Avec un panneau : pistes plus vives PRÈS du panneau, qui s'estompent en s'éloignant — on
+       // voit clairement qu'elles s'y branchent, sans rendre tout le fond plus voyant.
+       if (panel) {
+         const grad = bctx.createLinearGradient(0, 0, 0, H);
+         const t = Math.max(0, Math.min(1, panel.top / H)), b = Math.max(0, Math.min(1, panel.bottom / H));
+         const fade = 450 / H;
+         grad.addColorStop(0, "rgba(0, 200, 200, 0.6)");
+         grad.addColorStop(Math.max(0, t - fade), "rgba(0, 200, 200, 0.6)");
+         grad.addColorStop(t, "rgba(0, 220, 215, 1)");
+         grad.addColorStop(b, "rgba(0, 220, 215, 1)");
+         grad.addColorStop(Math.min(1, b + fade), "rgba(0, 200, 200, 0.6)");
+         grad.addColorStop(1, "rgba(0, 200, 200, 0.6)");
+         bctx.strokeStyle = grad;
+       } else {
+         bctx.strokeStyle = "rgba(0, 200, 200, 0.62)"; // même intensité finale qu'avant (calque à 30 %)
+       }
        paths.forEach((p) => {
          bctx.beginPath();
          p.pts.forEach((pt, k) => (k ? bctx.lineTo(pt[0], pt[1]) : bctx.moveTo(pt[0], pt[1])));
          bctx.stroke();
        });
+       // Broches du panneau : petits rectangles pleins là où chaque piste s'y branche
+       bctx.fillStyle = "rgba(120, 255, 245, 1)";
+       pins.forEach(([x, y]) => bctx.fillRect(x - 2, y - 4, 4, 8));
+       // Soudures : point plein là où une ramification se branche sur une piste
+       bctx.fillStyle = "rgba(120, 255, 245, 0.9)";
+       joints.forEach(([x, y]) => { bctx.beginPath(); bctx.arc(x, y, 2.2, 0, Math.PI * 2); bctx.fill(); });
        bctx.fillStyle = "#010606"; bctx.strokeStyle = "rgba(60, 230, 220, 0.7)"; bctx.lineWidth = 1.1;
-       paths.forEach((p) => {
+       paths.forEach((p, i) => {
          if (!p.deadEnd) return;
          const pt = p.pts[p.pts.length - 1];
+         // Quelques pastilles roses en bout de piste (comme sur la photo de puce IA de Hubert)
+         if (panel && i % 4 === 0) {
+           bctx.fillStyle = "rgba(255, 90, 170, 0.95)";
+           bctx.beginPath(); bctx.arc(pt[0], pt[1], 3, 0, Math.PI * 2); bctx.fill();
+           bctx.fillStyle = "#010606";
+           return;
+         }
          bctx.beginPath(); bctx.arc(pt[0], pt[1], 2.4, 0, Math.PI * 2); bctx.fill(); bctx.stroke();
        });
        bctx.fillStyle = "rgba(120, 255, 245, 0.85)";
@@ -1641,29 +1843,52 @@
        pulses = [];
        if (paths.length) for (let k = 0; k < PULSES; k++) pulses.push(newPulse(true));
      }
+     // Les impulsions partent du panneau (début des pistes) vers l'extérieur ; on choisit de
+     // préférence une piste visible à l'écran, sinon le courant passerait souvent hors de vue.
      function newPulse(randomStart) {
-       const p = paths[(Math.random() * paths.length) | 0];
+       const sy = window.scrollY || 0;
+       let p = null;
+       for (let tries = 0; tries < 10 && !p; tries++) {
+         const c = paths[(Math.random() * paths.length) | 0];
+         if (c.maxY >= sy && c.minY <= sy + vh) p = c;
+       }
+       p = p || paths[(Math.random() * paths.length) | 0];
        return { p, d: randomStart ? Math.random() * p.len : 0, v: 1100 + Math.random() * 500 };
+     }
+     function measure() {
+       const docH = Math.max(document.documentElement.scrollHeight, window.innerHeight);
+       // Calque un peu plus haut que la page (arrondi à 500 px) : la page qui s'allonge un peu
+       // (palmarès qui grandit) ne demande pas de tout redessiner à chaque fois.
+       const newH = Math.min(7000, Math.ceil((docH + 300) / 500) * 500);
+       const panel = findPanel();
+       const newSig = window.innerWidth + "|" + newH + "|" + (panel ? [panel.top, panel.bottom, panel.left, panel.right].map(Math.round).join("-") : "none");
+       return { newH, newSig };
      }
      function resize() {
        dpr = Math.min(window.devicePixelRatio || 1, 1.5);
-       w = window.innerWidth; h = window.innerHeight;
-       canvas.width = Math.round(w * dpr); canvas.height = Math.round(h * dpr);
+       // Largeur réellement affichée du calque (innerWidth peut être plus grand : dessin écrasé + bande vide à droite)
+       w = canvas.clientWidth || window.innerWidth; vh = window.innerHeight;
+       canvas.width = Math.round(w * dpr); canvas.height = Math.round(vh * dpr);
        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+       const m = measure();
+       H = m.newH; sig = m.newSig;
+       // Grand calque limité à ~10 millions de pixels (mémoire des vieux iPhone/iPad)
+       bScale = Math.min(dpr, Math.sqrt(10e6 / (w * H)));
        build();
        draw(0);
      }
      function draw(dt) {
-       ctx.clearRect(0, 0, w, h);
-       ctx.drawImage(board, 0, 0, w, h);
+       const sy = Math.max(0, Math.min(H - vh, window.scrollY || 0));
+       ctx.clearRect(0, 0, w, vh);
+       ctx.drawImage(board, 0, sy * bScale, w * bScale, vh * bScale, 0, 0, w, vh);
+       ctx.save();
+       ctx.translate(0, -sy);
        ctx.lineCap = "round"; ctx.lineJoin = "round";
        pulses.forEach((q, idx) => {
          q.d += q.v * dt;
          const visibleEnd = Math.min(q.d, q.p.len);
          if (q.d - TRAIL > q.p.len) { pulses[idx] = newPulse(false); return; }
-         // Traînée en "comète" (demande de Hubert : plus fluide) : découpée en tranches de plus en
-         // plus transparentes vers l'arrière — la tête brillante, la queue qui s'efface. Ce fondu
-         // donne un effet de flou de mouvement bien plus doux qu'un trait uniforme.
+         // Traînée en "comète" : tranches de plus en plus transparentes vers l'arrière
          const SLICES = 7;
          const start = Math.max(0, q.d - TRAIL);
          const span = visibleEnd - start;
@@ -1674,7 +1899,6 @@
            const pts = [pointAt(q.p, a)];
            for (let i = 1; i < q.p.cum.length - 1; i++) if (q.p.cum[i] > a && q.p.cum[i] < b) pts.push(q.p.pts[i]);
            pts.push(pointAt(q.p, b));
-           // 3 passes : halo large et transparent, puis cœur fin et brillant (pas de shadowBlur, trop lourd)
            [[8, 0, 230, 220, 0.22], [4, 40, 240, 230, 0.55], [1.8, 220, 255, 252, 1]].forEach(([lw, r, g, bl, al]) => {
              ctx.beginPath();
              pts.forEach((pt, n) => (n ? ctx.lineTo(pt[0], pt[1]) : ctx.moveTo(pt[0], pt[1])));
@@ -1682,24 +1906,45 @@
            });
          }
        });
+       ctx.restore();
      }
      function frame(t) {
        requestAnimationFrame(frame);
        if (document.hidden || canvas.getClientRects().length === 0) { last = t; return; }
-       // Plus de plafond : une image à CHAQUE rafraîchissement de l'écran (60/s sur un téléphone,
-       // jusqu'à 120/s sur un iPad récent) pour un mouvement le plus fluide possible. Le déplacement
-       // est calculé selon le temps écoulé (dt), donc la vitesse reste la même partout.
+       // Une image à chaque rafraîchissement de l'écran ; vitesse calculée selon le temps écoulé
        const dt = Math.min(0.1, (t - last) / 1000);
        last = t;
        draw(dt);
      }
-     let resizeTimer = null, lastW = 0;
+     // Redessine le circuit quand le panneau bouge/change de taille (passage boutons <-> liste,
+     // appli qui s'affiche après le chargement) ou quand la page s'allonge beaucoup.
+     let rebuildTimer = null;
+     function scheduleCheck() {
+       clearTimeout(rebuildTimer);
+       rebuildTimer = setTimeout(() => { if (measure().newSig !== sig) resize(); }, 200);
+     }
+     // On surveille les PANNEAUX eux-mêmes (ils passent d'invisibles à visibles quand l'appli
+     // s'affiche, ou quand on passe des 3 boutons à une liste) et pas seulement la page : #jb-public
+     // garde souvent la même taille (hauteur minimale = l'écran), donc aucun signal sinon — bogue
+     // trouvé en test : le circuit restait dessiné "sans panneau" après l'ouverture de l'appli.
+     function observeAll() {
+       if (!window.ResizeObserver) return;
+       const ro = new ResizeObserver(scheduleCheck);
+       document.querySelectorAll("#jb-public, #jb-admin, #jb-app-content, #jb-public .jb-catalog-frame").forEach((el) => ro.observe(el));
+     }
+     // Ces éléments n'existent pas encore à ce stade du chargement : on les observe dès qu'ils sont prêts
+     if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", observeAll); else observeAll();
+     // Filet de sécurité : petite vérification toutes les 2 s (quelques mesures, rien de lourd ;
+     // ne redessine que si le panneau a vraiment bougé ou changé de taille)
+     setInterval(() => { if (!document.hidden && measure().newSig !== sig) resize(); }, 2000);
+     window.addEventListener("hashchange", scheduleCheck);
+     let lastW = 0;
      window.addEventListener("resize", () => {
-       clearTimeout(resizeTimer);
-       // La barre d'adresse de Safari change souvent la hauteur en défilant : on ne redessine le
-       // circuit que si la LARGEUR change (rotation), sinon il "sauterait" à chaque défilement.
-       resizeTimer = setTimeout(() => { if (window.innerWidth !== lastW) { lastW = window.innerWidth; resize(); } }, 150);
+       // La barre d'adresse de Safari change souvent la hauteur en défilant : on ne redessine tout
+       // que si la LARGEUR change (rotation), sinon le circuit "sauterait" à chaque défilement.
+       if (window.innerWidth !== lastW) { lastW = window.innerWidth; clearTimeout(rebuildTimer); rebuildTimer = setTimeout(resize, 150); }
      });
+     if (reduceMotion) window.addEventListener("scroll", () => draw(0), { passive: true });
      lastW = window.innerWidth;
      resize();
      if (!reduceMotion) requestAnimationFrame(frame); // moins d'animations demandé : circuit fixe, sans impulsions
@@ -2212,7 +2457,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-16.115";
+  const APP_BUILD = "2026-10-16.116";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
