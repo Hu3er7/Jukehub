@@ -1446,6 +1446,53 @@
     text-shadow: 0 0 8px rgba(255, 242, 0, 0.6);
   }
   #jb-app .jb-splash-btn:active { background: #fff200; color: #080701; text-shadow: none; }
+
+  /* Section de recherche en "terminal" (option A choisie par Hubert) — voir #jb-catalog-browse et
+     renderModeButtons(). Remplace l'ancien cadre néon + 3 gros boutons biseautés de cet écran
+     d'accueil seulement ; le cadre des listes de chansons (#jb-catalog-results) ne change pas. */
+  #jb-public .jb-term { border: 1px solid var(--accent); background: rgba(8, 7, 1, 0.88); margin-bottom: 6px; }
+  #jb-public .jb-term-bar {
+    display: flex; justify-content: space-between; background: var(--accent); color: #080701;
+    font-family: 'Share Tech Mono', monospace; font-size: 0.78rem; letter-spacing: 1px; padding: 3px 10px;
+  }
+  #jb-public .jb-term-body { padding: 8px 12px 10px; font-family: 'Share Tech Mono', monospace; }
+  #jb-public .jb-term-cmd,
+  #jb-public .jb-term-prompt { color: var(--text-dim); font-size: 0.9rem; line-height: 2; }
+  #jb-public .jb-term .jb-mode-list { padding: 2px 0; gap: 2px; }
+  #jb-public .jb-term .jb-mode-btn {
+    display: flex; align-items: center; gap: 12px; width: 100%; padding: 9px 8px; margin: 0;
+    background: none; border: 0; clip-path: none; border-radius: 0; box-shadow: none;
+    color: var(--accent); font-family: 'Share Tech Mono', monospace; font-size: 1.05rem;
+    letter-spacing: 2px; text-align: left; text-transform: uppercase; cursor: pointer;
+  }
+  #jb-public .jb-term .jb-mode-btn::before { content: ">"; width: 1ch; visibility: hidden; }
+  #jb-public .jb-term .jb-mode-btn::after { content: none; }
+  #jb-public .jb-term .jb-term-idx { color: var(--text-dim); }
+  #jb-public .jb-term .jb-term-count { margin-left: auto; color: var(--text-dim); }
+  /* Ligne "sélectionnée" (vidéo inversée) : la 1re par défaut, celle sous le doigt/la souris sinon */
+  #jb-public .jb-term .jb-mode-btn:first-child,
+  #jb-public .jb-term .jb-mode-btn:hover,
+  #jb-public .jb-term .jb-mode-btn:active,
+  #jb-public .jb-term .jb-mode-btn:focus-visible { background: var(--accent); color: #080701; outline: none; }
+  #jb-public .jb-term .jb-mode-list:hover .jb-mode-btn:first-child:not(:hover) { background: none; color: var(--accent); }
+  #jb-public .jb-term .jb-mode-btn:first-child::before,
+  #jb-public .jb-term .jb-mode-btn:hover::before,
+  #jb-public .jb-term .jb-mode-btn:active::before { visibility: visible; }
+  #jb-public .jb-term .jb-mode-list:hover .jb-mode-btn:first-child:not(:hover)::before { visibility: hidden; }
+  #jb-public .jb-term .jb-mode-btn:first-child .jb-term-idx,
+  #jb-public .jb-term .jb-mode-btn:first-child .jb-term-count,
+  #jb-public .jb-term .jb-mode-btn:hover .jb-term-idx,
+  #jb-public .jb-term .jb-mode-btn:hover .jb-term-count,
+  #jb-public .jb-term .jb-mode-btn:active .jb-term-idx,
+  #jb-public .jb-term .jb-mode-btn:active .jb-term-count { color: #080701; }
+  #jb-public .jb-term .jb-mode-list:hover .jb-mode-btn:first-child:not(:hover) .jb-term-idx,
+  #jb-public .jb-term .jb-mode-list:hover .jb-mode-btn:first-child:not(:hover) .jb-term-count { color: var(--text-dim); }
+  #jb-public .jb-term-caret {
+    display: inline-block; width: 0.6em; height: 1em; background: var(--accent); vertical-align: -2px;
+    animation: jb-term-blink 1s steps(1, end) infinite;
+  }
+  @keyframes jb-term-blink { 50% { opacity: 0; } }
+  @media (prefers-reduced-motion: reduce) { #jb-public .jb-term-caret { animation: none; } }
 </style>
 
 <div id="jb-app">
@@ -1777,19 +1824,16 @@
              explicite de Hubert) — seulement ces 3 boutons, qui ouvrent chacun une liste différente
              dans #jb-catalog-results juste en dessous (toujours à l'intérieur des mêmes bandes
              néon rouges — voir .jb-catalog-frame, réutilisé tel quel ici). -->
-        <div class="jb-catalog-frame">
-          <div class="jb-catalog-frame-caps jb-catalog-frame-caps-top" aria-hidden="true">
-            <span class="jb-catalog-frame-cap jb-catalog-frame-cap-lg"></span>
-            <span class="jb-catalog-frame-cap"></span>
-            <span class="jb-catalog-frame-cap"></span>
-            <span class="jb-catalog-frame-cap"></span>
-          </div>
-          <div id="jb-mode-list" class="jb-mode-list"></div>
-          <div class="jb-catalog-frame-caps jb-catalog-frame-caps-bottom" aria-hidden="true">
-            <span class="jb-catalog-frame-cap jb-catalog-frame-cap-lg"></span>
-            <span class="jb-catalog-frame-cap"></span>
-            <span class="jb-catalog-frame-cap"></span>
-            <span class="jb-catalog-frame-cap"></span>
+        <!-- Design "terminal" (option A choisie par Hubert, 16 oct. 2026) : fenêtre d'ordinateur avec
+             barre de titre, ligne de commande avec le total, les 3 modes en lignes numérotées avec
+             leur nombre (voir renderModeButtons()) et un curseur qui clignote. Les 3 boutons gardent
+             exactement le même rôle qu'avant (data-mode -> renderCatalog()). -->
+        <div class="jb-term">
+          <div class="jb-term-bar" aria-hidden="true"><span>SYS://REPERTOIRE.EXE</span><span>■ □ ×</span></div>
+          <div class="jb-term-body">
+            <div class="jb-term-cmd" aria-hidden="true">&gt; select mode_recherche --total <span id="jb-term-total">0</span></div>
+            <div id="jb-mode-list" class="jb-mode-list"></div>
+            <div class="jb-term-prompt" aria-hidden="true">&gt; <span class="jb-term-caret"></span></div>
           </div>
         </div>
       </div>
@@ -2212,7 +2256,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-16.112";
+  const APP_BUILD = "2026-10-16.113";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -2318,6 +2362,9 @@
       mode_songs_btn: "Chercher par chansons",
       mode_artist_btn: "Chercher par artiste",
       mode_genre_btn: "Chercher par genre",
+      mode_songs_short: "CHANSONS",
+      mode_artist_short: "ARTISTES",
+      mode_genre_short: "GENRES",
       back_btn: "⬅ RETOUR",
       search_placeholder: "🔍 Cherche par mots clés",
       catalog_empty: "Aucun résultat pour cette recherche.",
@@ -2376,6 +2423,9 @@
       mode_songs_btn: "Search by songs",
       mode_artist_btn: "Search by artist",
       mode_genre_btn: "Search by genre",
+      mode_songs_short: "SONGS",
+      mode_artist_short: "ARTISTS",
+      mode_genre_short: "GENRES",
       back_btn: "⬅ BACK",
       search_placeholder: "🔍 Search by keywords",
       catalog_empty: "No results for this search.",
@@ -4769,7 +4819,9 @@
     backBtn.hidden = !showResults;
 
     if (!showResults) {
-      sectionTitleRow.hidden = false;
+      // Design "terminal" : le total est maintenant dans la ligne de commande de la fenêtre (voir
+      // renderModeButtons()), donc le titre "// 670 CHANSONS" est masqué sur cet écran d'accueil.
+      sectionTitleRow.hidden = true;
       sectionTitleEl.textContent = t("style_title_count", catalogSongs.length);
       renderModeButtons();
       return;
@@ -4886,11 +4938,21 @@
   // ---------- Écran d'accueil : les 3 boutons "Chercher par..." ----------
   function renderModeButtons() {
     const list = document.getElementById("jb-mode-list");
-    list.innerHTML = `
-      <button class="jb-mode-btn" data-mode="all-songs">${escapeHtml(t("mode_songs_btn"))}</button>
-      <button class="jb-mode-btn" data-mode="artist-list">${escapeHtml(t("mode_artist_btn"))}</button>
-      <button class="jb-mode-btn" data-mode="genre-list">${escapeHtml(t("mode_genre_btn"))}</button>
-    `;
+    // Design "terminal" (option A) : chaque mode = une ligne "01  CHANSONS ...... 670". Le texte
+    // complet ("Chercher par chansons") reste l'étiquette accessible du bouton.
+    const totalEl = document.getElementById("jb-term-total");
+    if (totalEl) totalEl.textContent = catalogSongs.length;
+    const modes = [
+      ["all-songs", "mode_songs_btn", "mode_songs_short", catalogSongs.length],
+      ["artist-list", "mode_artist_btn", "mode_artist_short", buildArtistList().length],
+      ["genre-list", "mode_genre_btn", "mode_genre_short", buildGenreList().length],
+    ];
+    list.innerHTML = modes.map(([mode, fullKey, shortKey, count], i) => `
+      <button class="jb-mode-btn jb-term-row" data-mode="${mode}" aria-label="${escapeHtml(t(fullKey))}">
+        <span class="jb-term-idx">0${i + 1}</span>
+        <span class="jb-term-label">${escapeHtml(t(shortKey))}</span>
+        <span class="jb-term-count">${count}</span>
+      </button>`).join("");
     list.querySelectorAll("[data-mode]").forEach((btn) => {
       btn.addEventListener("click", () => {
         catalogView = { type: btn.dataset.mode };
