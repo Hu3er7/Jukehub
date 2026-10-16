@@ -1162,11 +1162,13 @@
   #jb-public .jb-slot { border-bottom: 1px dashed var(--border); }
   #jb-public .jb-slot-rank { font-family: 'Share Tech Mono', monospace; color: var(--accent2); width: 22px; }
 
-  /* Ligne du palmarès (croquis de Hubert) : ▲ | rang + titre/artiste, barre dessous | N VOTES | ▼ */
-  #jb-public .jb-palmares-grid .jb-slot { gap: 12px; padding: 12px 0; }
+  /* Ligne du palmarès (2e croquis de Hubert) : [▲▲ vert][▼▼ rouge] | rang | titre/artiste, avec
+     en dessous la barre de progression terminée par "N VOTES" sur la même ligne. */
+  #jb-public .jb-palmares-grid .jb-slot { gap: 10px; padding: 12px 0; }
+  #jb-public .jb-slot-arrows { display: flex; gap: 8px; flex-shrink: 0; }
   #jb-public .jb-slot-mid { flex: 1; min-width: 0; display: flex; flex-direction: column; }
-  #jb-public .jb-slot-mid-top { display: flex; align-items: center; gap: 10px; min-width: 0; }
-  #jb-public .jb-slot-mid .jb-slot-bar { margin-top: 8px; }
+  #jb-public .jb-slot-bar-row { display: flex; align-items: center; gap: 10px; margin-top: 6px; }
+  #jb-public .jb-slot-bar-row .jb-slot-bar { flex: 1; min-width: 0; margin-top: 0; }
   /* Largeur fixe (alignée à droite) : sans ça, "1 VOTE" étant plus étroit que "2 VOTES", les barres
      n'avaient pas toutes la même longueur d'une ligne à l'autre. */
   #jb-public .jb-slot-votes-wrap { display: flex; align-items: baseline; justify-content: flex-end; gap: 5px; flex-shrink: 0; min-width: 84px; }
@@ -1176,11 +1178,11 @@
   }
   #jb-public .jb-palmares-grid.jb-animating .jb-slot-vote-btn { pointer-events: none; opacity: 0.55; }
   @media (max-width: 420px) {
-    #jb-public .jb-palmares-grid .jb-slot { gap: 8px; }
-    #jb-public .jb-slot-rank { width: 16px; }
-    #jb-public .jb-slot-mid-top { gap: 6px; }
+    #jb-public .jb-palmares-grid .jb-slot { gap: 7px; }
+    #jb-public .jb-slot-arrows { gap: 6px; }
+    #jb-public .jb-slot-rank { width: 14px; }
     #jb-public .jb-slot-votes-label { font-size: 0.62rem; }
-    #jb-public .jb-slot-votes-wrap { min-width: 68px; }
+    #jb-public .jb-slot-votes-wrap { min-width: 66px; }
   }
   /* Chiffres de votes : PAS en Orbitron — son "0" barré ressemble à un panneau "interdit" (⊘). */
   #jb-public .jb-slot-votes,
@@ -1191,8 +1193,10 @@
 
   /* Flèches de vote : petits blocs biseautés au lieu de pastilles rondes */
   #jb-public .jb-slot-vote-btn { border-radius: 0; clip-path: var(--jb-cp-cut-sm); color: #05060a; }
-  #jb-public .jb-slot-vote-up { background: var(--danger); }
-  #jb-public .jb-slot-vote-down { background: var(--accent); }
+  #jb-public .jb-slot-vote-btn svg { display: block; }
+  /* 2e croquis de Hubert : monter = vert néon, descendre = rouge, doubles flèches */
+  #jb-public .jb-slot-vote-up { background: #39ff14; box-shadow: 0 0 8px rgba(57, 255, 20, 0.35); }
+  #jb-public .jb-slot-vote-down { background: #ff1f3d; box-shadow: 0 0 8px rgba(255, 31, 61, 0.35); }
 
   #jb-public .jb-vote-remaining-num { font-family: 'Orbitron', sans-serif; }
   #jb-public .jb-my-vote-delta-down { color: var(--danger); }
@@ -4172,26 +4176,29 @@
       // Nombre de demandes déplacé à côté du bouton Boost (plutôt que sa propre colonne à
       // gauche). Juste le nombre brut ici, sans le mot "Demande" (contrairement à
       // renderSongRow()).
-      // Disposition cyberpunk (croquis de Hubert) : ▲ tout à gauche, puis rang + titre/artiste avec
-      // la barre de progression en dessous, puis "4 VOTES", et ▼ tout à droite.
+      // Disposition cyberpunk (2e croquis de Hubert) : les 2 flèches côte à côte tout à gauche
+      // (vert = monter, rouge = descendre), puis le rang, puis titre/artiste avec, en dessous, la
+      // barre de progression terminée par "4 VOTES" au bout, sur la même ligne.
       el.innerHTML = `
-        <button class="jb-slot-vote-btn jb-slot-vote-up${voteUpBtnIllumClass(id)}" data-vote-up="${escapeHtml(id)}" aria-label="${t("vote_up_aria")}" title="${t("vote_up_aria")}">▲</button>
+        <span class="jb-slot-arrows">
+          <button class="jb-slot-vote-btn jb-slot-vote-up${voteUpBtnIllumClass(id)}" data-vote-up="${escapeHtml(id)}" aria-label="${t("vote_up_aria")}" title="${t("vote_up_aria")}"><svg viewBox="0 0 12 12" width="12" height="12" aria-hidden="true"><path d="M6 1 11 5.5H1ZM6 6 11 10.5H1Z" fill="currentColor"/></svg></button>
+          <button class="jb-slot-vote-btn jb-slot-vote-down${voteDownBtnIllumClass(id)}" data-vote-down="${escapeHtml(id)}" aria-label="${t("vote_down_aria")}" title="${t("vote_down_aria")}"><svg viewBox="0 0 12 12" width="12" height="12" aria-hidden="true"><path d="M6 11 11 6.5H1ZM6 6 11 1.5H1Z" fill="currentColor"/></svg></button>
+        </span>
+        <span class="jb-slot-rank">${i + 1}</span>
         <span class="jb-slot-mid">
-          <span class="jb-slot-mid-top">
-            <span class="jb-slot-rank">${i + 1}</span>
-            <span class="jb-slot-info">
-              <span class="jb-slot-title"${flyingTitleKeys.has(id) ? ' style="visibility:hidden"' : ""}>${escapeHtml(v.title)}</span>
-              ${v.artist ? `<span class="jb-slot-artist">${escapeHtml(v.artist)}</span>` : ""}
-              ${renderVotersLine(v.voters)}
+          <span class="jb-slot-info">
+            <span class="jb-slot-title"${flyingTitleKeys.has(id) ? ' style="visibility:hidden"' : ""}>${escapeHtml(v.title)}</span>
+            ${v.artist ? `<span class="jb-slot-artist">${escapeHtml(v.artist)}</span>` : ""}
+            ${renderVotersLine(v.voters)}
+          </span>
+          <span class="jb-slot-bar-row">
+            <span class="jb-slot-bar" aria-hidden="true"><span class="jb-slot-bar-fill" style="width:${barPct}%"></span></span>
+            <span class="jb-slot-votes-wrap">
+              <span class="jb-slot-votes${voteIllumClass(id)}">${v.requests}</span>
+              <span class="jb-slot-votes-label">${Math.abs(v.requests) === 1 ? "VOTE" : "VOTES"}</span>
             </span>
           </span>
-          <span class="jb-slot-bar" aria-hidden="true"><span class="jb-slot-bar-fill" style="width:${barPct}%"></span></span>
-        </span>
-        <span class="jb-slot-votes-wrap">
-          <span class="jb-slot-votes${voteIllumClass(id)}">${v.requests}</span>
-          <span class="jb-slot-votes-label">${Math.abs(v.requests) === 1 ? "VOTE" : "VOTES"}</span>
-        </span>
-        <button class="jb-slot-vote-btn jb-slot-vote-down${voteDownBtnIllumClass(id)}" data-vote-down="${escapeHtml(id)}" aria-label="${t("vote_down_aria")}" title="${t("vote_down_aria")}">▼</button>`;
+        </span>`;
     });
 
     // 4) LAST — replace les éléments dans le bon ordre dans le DOM.
