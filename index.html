@@ -1057,7 +1057,7 @@
      admin : z-index 0, sous les deux vues (.jb-view, z-index 1), qui doivent donc être transparentes. */
   #jb-app .jb-cp-matrix {
     position: fixed; inset: 0; width: 100%; height: 100%;
-    z-index: 0; pointer-events: none; opacity: 0.55;
+    z-index: 0; pointer-events: none; opacity: 0.4;
   }
   /* Lignes de balayage d'écran, très discrètes */
   #jb-public::after {
@@ -1481,9 +1481,9 @@
   </div>
 
    <!-- Fond "circuit électronique" (demande de Hubert, image de référence à l'appui : remplace la
-        pluie de chiffres façon Matrix). Une puce au centre de l'écran, des pistes qui en partent par
-        groupes de lignes parallèles avec des coudes à 45°, et des impulsions lumineuses qui filent le
-        long des pistes. Calque fixe derrière TOUT le contenu (site public ET panneau admin) ; dessiné
+        pluie de chiffres façon Matrix). Un circuit qui remplit tout l'écran — petites puces et
+        plein de petites pistes avec des coudes à 45° (voir build()) — et des impulsions lumineuses
+        qui filent le long des pistes. Calque fixe derrière TOUT le contenu (site public ET panneau admin) ; dessiné
         par le petit script juste en dessous. -->
    <canvas id="jb-cp-matrix" class="jb-cp-matrix" aria-hidden="true"></canvas>
    <script>
@@ -1516,64 +1516,104 @@
        return [a[0] + (b[0] - a[0]) * k, a[1] + (b[1] - a[1]) * k];
      }
 
+     // Circuit qui remplit TOUT l'écran (2e demande de Hubert : "plein de petits circuits qui forment
+     // plein de petits chemins") : une grille invisible, quelques petites puces posées au hasard, puis
+     // beaucoup de petites pistes qui serpentent de point en point (tout droit ou coude à 45°) sans
+     // jamais se croiser, avec une pastille ronde à chaque bout.
      function build() {
        paths = [];
-       const cx = w / 2, cy = h / 2;
-       // Puce assez grande et pistes serrées (pas de 7 px) pour un circuit dense, même sur un téléphone
-       const chip = Math.max(120, Math.min(200, Math.min(w, h) * 0.4));
-       const half = chip / 2, pitch = 7, far = Math.max(w, h);
-       // 4 côtés de la puce : direction "vers l'extérieur" (ox, oy) et direction le long du côté (sx, sy)
-       const sides = [
-         { ox: 0, oy: -1, sx: 1, sy: 0 }, { ox: 1, oy: 0, sx: 0, sy: 1 },
-         { ox: 0, oy: 1, sx: -1, sy: 0 }, { ox: -1, oy: 0, sx: 0, sy: -1 },
-       ];
-       sides.forEach((s) => {
-         const count = Math.floor((chip - 16) / pitch);
-         let i = 0;
-         while (i < count) {
-           // Groupe ("bus") de 2 à 6 pistes parallèles : même coude à 45°, même longueur
-           const size = Math.min(count - i, 2 + Math.floor(Math.random() * 5));
-           const a = 10 + Math.random() * chip * 0.5;            // 1er tronçon droit
-           const b = 15 + Math.random() * chip * 0.8;            // tronçon en diagonale
-           const dir = Math.random() < 0.5 ? -1 : 1;              // diagonale vers la gauche ou la droite
-           const stop = Math.random() < 0.3 ? 40 + Math.random() * chip : far; // certaines s'arrêtent en route
-           for (let j = 0; j < size; j++, i++) {
-             const off = -half + 8 + i * pitch;
-             const x0 = cx + s.ox * half + s.sx * off, y0 = cy + s.oy * half + s.sy * off;
-             // Pistes du groupe décalées pour rester parallèles dans le coude (sans se croiser)
-             const aj = a + (dir > 0 ? (size - 1 - j) : j) * pitch * 0.42;
-             const x1 = x0 + s.ox * aj, y1 = y0 + s.oy * aj;
-             const dx = (s.ox + s.sx * dir) * b * 0.7071, dy = (s.oy + s.sy * dir) * b * 0.7071;
-             const x2 = x1 + dx, y2 = y1 + dy;
-             const x3 = x2 + s.ox * stop, y3 = y2 + s.oy * stop;
-             const p = makePath([[x0, y0], [x1, y1], [x2, y2], [x3, y3]]);
-             p.via = stop !== far; // pastille ronde au bout des pistes qui s'arrêtent en route
-             paths.push(p);
+       const G = 14;                                    // pas de la grille (px)
+       const cols = Math.ceil(w / G) + 1, rows = Math.ceil(h / G) + 1;
+       const used = new Uint8Array(cols * rows);
+       const diag = new Set();                          // diagonales déjà tracées (anti-croisement)
+       const DIRS = [[1, 0], [1, 1], [0, 1], [-1, 1], [-1, 0], [-1, -1], [0, -1], [1, -1]];
+       const inside = (x, y) => x >= 0 && y >= 0 && x < cols && y < rows;
+       const free = (x, y) => inside(x, y) && !used[y * cols + x];
+       const mark = (x, y) => { used[y * cols + x] = 1; };
+       const chips = [];
+
+       // Petites puces : rectangles de 3x2 à 6x4 cases
+       const nChips = Math.max(3, Math.round((cols * rows) / 260));
+       for (let k = 0; k < nChips * 4 && chips.length < nChips; k++) {
+         const cw = 3 + ((Math.random() * 4) | 0), ch = 2 + ((Math.random() * 3) | 0);
+         const x0 = 1 + ((Math.random() * (cols - cw - 2)) | 0), y0 = 1 + ((Math.random() * (rows - ch - 2)) | 0);
+         let ok = true;
+         for (let y = y0 - 1; y <= y0 + ch && ok; y++) for (let x = x0 - 1; x <= x0 + cw; x++) if (!free(x, y)) { ok = false; break; }
+         if (!ok) continue;
+         for (let y = y0; y < y0 + ch; y++) for (let x = x0; x < x0 + cw; x++) mark(x, y);
+         chips.push({ x0, y0, cw, ch });
+       }
+
+       // Une piste : part d'un point libre, avance d'une case à la fois, tourne parfois de 45°
+       function walk(sx, sy, dir) {
+         if (!free(sx, sy)) return;
+         const pts = [[sx, sy]];
+         mark(sx, sy);
+         let x = sx, y = sy, d = dir, straight = 0;
+         const maxLen = 4 + ((Math.random() * 18) | 0);
+         for (let step = 0; step < maxLen; step++) {
+           if (straight >= 2 && Math.random() < 0.28) { d = (d + (Math.random() < 0.5 ? 1 : 7)) % 8; straight = 0; }
+           const [dx, dy] = DIRS[d];
+           const nx = x + dx, ny = y + dy;
+           if (!free(nx, ny)) break;
+           if (dx && dy) {
+             // Une diagonale ne doit pas croiser la diagonale inverse de la même case
+             if (diag.has((x + dx) + "," + y + "|" + x + "," + (y + dy)) || diag.has(x + "," + (y + dy) + "|" + (x + dx) + "," + y)) break;
+             diag.add(x + "," + y + "|" + nx + "," + ny);
+             diag.add(nx + "," + ny + "|" + x + "," + y);
            }
-           i += Math.random() < 0.5 ? 1 : 0; // petit espace entre deux groupes
+           mark(nx, ny);
+           x = nx; y = ny; straight++;
+           const lastPt = pts[pts.length - 1];
+           // On ne garde que les coins (les points en ligne droite sont fusionnés)
+           if (pts.length >= 2) {
+             const prev = pts[pts.length - 2];
+             const sameDir = Math.sign(lastPt[0] - prev[0]) === dx && Math.sign(lastPt[1] - prev[1]) === dy;
+             if (sameDir) pts[pts.length - 1] = [x, y]; else pts.push([x, y]);
+           } else pts.push([x, y]);
          }
+         if (pts.length < 2) return;
+         const p = makePath(pts.map(([gx, gy]) => [gx * G, gy * G]));
+         if (p.len >= G * 2) paths.push(p);
+       }
+
+       // Pistes qui sortent des puces (une par broche, vers l'extérieur)
+       chips.forEach((c) => {
+         for (let x = c.x0; x < c.x0 + c.cw; x++) { walk(x, c.y0 - 1, 6); walk(x, c.y0 + c.ch, 2); }
+         for (let y = c.y0; y < c.y0 + c.ch; y++) { walk(c.x0 - 1, y, 4); walk(c.x0 + c.cw, y, 0); }
        });
-       // Dessin fixe : pistes vert foncé, puce, pastilles
+       // Puis plein de petites pistes partout ailleurs, jusqu'à remplir l'écran
+       const attempts = cols * rows * 0.6;
+       for (let k = 0; k < attempts; k++) {
+         walk((Math.random() * cols) | 0, (Math.random() * rows) | 0, (Math.random() * 8) | 0);
+       }
+
+       // Dessin fixe : pistes, pastilles aux deux bouts, puces
        board.width = canvas.width; board.height = canvas.height;
        bctx.setTransform(dpr, 0, 0, dpr, 0, 0);
        bctx.clearRect(0, 0, w, h);
-       bctx.lineWidth = 1.4; bctx.lineJoin = "round"; bctx.lineCap = "round";
-       bctx.strokeStyle = "rgba(0, 184, 55, 0.55)";
+       bctx.lineWidth = 1.3; bctx.lineJoin = "round"; bctx.lineCap = "round";
+       bctx.strokeStyle = "rgba(0, 184, 55, 0.6)";
        paths.forEach((p) => {
          bctx.beginPath();
          p.pts.forEach((pt, k) => (k ? bctx.lineTo(pt[0], pt[1]) : bctx.moveTo(pt[0], pt[1])));
          bctx.stroke();
-         const end = p.pts[p.pts.length - 1];
-         if (p.via) { bctx.beginPath(); bctx.arc(end[0], end[1], 2.6, 0, Math.PI * 2); bctx.fillStyle = "rgba(0, 255, 65, 0.6)"; bctx.fill(); }
-         bctx.beginPath(); bctx.arc(p.pts[0][0], p.pts[0][1], 1.8, 0, Math.PI * 2); bctx.fillStyle = "rgba(0, 255, 65, 0.5)"; bctx.fill();
        });
-       bctx.fillStyle = "#010802";
-       bctx.fillRect(cx - half, cy - half, chip, chip);
-       bctx.strokeStyle = "rgba(0, 255, 65, 0.5)"; bctx.lineWidth = 1.2;
-       bctx.strokeRect(cx - half + 0.5, cy - half + 0.5, chip - 1, chip - 1);
-       bctx.strokeRect(cx - half + 8.5, cy - half + 8.5, chip - 17, chip - 17);
+       bctx.fillStyle = "#010802"; bctx.strokeStyle = "rgba(0, 255, 65, 0.55)"; bctx.lineWidth = 1.2;
+       paths.forEach((p) => {
+         [p.pts[0], p.pts[p.pts.length - 1]].forEach((pt) => {
+           bctx.beginPath(); bctx.arc(pt[0], pt[1], 2.6, 0, Math.PI * 2); bctx.fill(); bctx.stroke();
+         });
+       });
+       chips.forEach((c) => {
+         const x = c.x0 * G - G / 2, y = c.y0 * G - G / 2, cw = c.cw * G, ch = c.ch * G;
+         bctx.fillStyle = "#03120a"; bctx.fillRect(x, y, cw, ch);
+         bctx.strokeStyle = "rgba(0, 255, 65, 0.55)"; bctx.lineWidth = 1.2;
+         bctx.strokeRect(x + 0.5, y + 0.5, cw - 1, ch - 1);
+         bctx.strokeRect(x + 4.5, y + 4.5, cw - 9, ch - 9);
+       });
        pulses = [];
-       for (let k = 0; k < PULSES; k++) pulses.push(newPulse(true));
+       if (paths.length) for (let k = 0; k < PULSES; k++) pulses.push(newPulse(true));
      }
      function newPulse(randomStart) {
        const p = paths[(Math.random() * paths.length) | 0];
@@ -2134,7 +2174,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-15.104";
+  const APP_BUILD = "2026-10-15.105";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
