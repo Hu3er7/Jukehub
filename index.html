@@ -1516,10 +1516,13 @@
        return [a[0] + (b[0] - a[0]) * k, a[1] + (b[1] - a[1]) * k];
      }
 
-     // Circuit qui remplit TOUT l'écran (2e demande de Hubert : "plein de petits circuits qui forment
-     // plein de petits chemins") : une grille invisible, quelques petites puces posées au hasard, puis
-     // beaucoup de petites pistes qui serpentent de point en point (tout droit ou coude à 45°) sans
-     // jamais se croiser, avec une pastille ronde à chaque bout.
+     // Circuit qui traverse l'écran (3e demande de Hubert, image de référence à l'appui : "moins de
+     // chemins courts et plus de chemins qui passent d'une extrémité à l'autre de l'écran"). Sur une
+     // grille invisible, chaque piste part d'un BORD de l'écran, file vers l'intérieur et ne peut
+     // aller que tout droit ou à 45° vers le centre : les pistes voisines se suivent donc en faisceaux
+     // parallèles qui convergent vers le milieu (le "X" de l'image). Quand une piste est bloquée par
+     // une autre, elle essaie l'autre direction permise avant de s'arrêter ; les pistes trop courtes
+     // sont jetées. Jamais de croisement. Petits points lumineux le long des pistes.
      function build() {
        paths = [];
        const G = 10;                                    // pas de la grille (px) — serré : circuit très dense
@@ -1530,65 +1533,90 @@
        const inside = (x, y) => x >= 0 && y >= 0 && x < cols && y < rows;
        const free = (x, y) => inside(x, y) && !used[y * cols + x];
        const mark = (x, y) => { used[y * cols + x] = 1; };
-       const chips = [];
+       const dots = [];
 
-       // Petites puces : rectangles de 3x2 à 6x4 cases
-       const nChips = Math.max(3, Math.round((cols * rows) / 260));
-       for (let k = 0; k < nChips * 4 && chips.length < nChips; k++) {
-         const cw = 3 + ((Math.random() * 4) | 0), ch = 2 + ((Math.random() * 3) | 0);
-         const x0 = 1 + ((Math.random() * (cols - cw - 2)) | 0), y0 = 1 + ((Math.random() * (rows - ch - 2)) | 0);
-         let ok = true;
-         for (let y = y0 - 1; y <= y0 + ch && ok; y++) for (let x = x0 - 1; x <= x0 + cw; x++) if (!free(x, y)) { ok = false; break; }
-         if (!ok) continue;
-         for (let y = y0; y < y0 + ch; y++) for (let x = x0; x < x0 + cw; x++) mark(x, y);
-         chips.push({ x0, y0, cw, ch });
+       function canStep(x, y, d) {
+         const [dx, dy] = DIRS[d];
+         const nx = x + dx, ny = y + dy;
+         if (!free(nx, ny)) return false;
+         if (dx && dy && (diag.has((x + dx) + "," + y + "|" + x + "," + (y + dy)) || diag.has(x + "," + (y + dy) + "|" + (x + dx) + "," + y))) return false;
+         return true;
        }
-
-       // Une piste : part d'un point libre, avance d'une case à la fois, tourne parfois de 45°
-       function walk(sx, sy, dir) {
+       // allowed = directions permises : tout droit vers l'intérieur + la diagonale vers le centre
+       function walk(sx, sy, allowed, minFrac = 0.35) {
          if (!free(sx, sy)) return;
          const pts = [[sx, sy]];
+         const cells = [[sx, sy]], diags = []; // pour tout libérer si la piste est jetée
          mark(sx, sy);
-         let x = sx, y = sy, d = dir, straight = 0;
-         const maxLen = 6 + ((Math.random() * 24) | 0);
-         for (let step = 0; step < maxLen; step++) {
-           if (straight >= 2 && Math.random() < 0.28) { d = (d + (Math.random() < 0.5 ? 1 : 7)) % 8; straight = 0; }
+         let x = sx, y = sy, d = allowed[0], straight = 0;
+         for (let guard = 0; guard < cols + rows; guard++) {
+           // Tourne de temps en temps ; une diagonale dure plus longtemps qu'un tronçon droit (le "X")
+           const turnChance = d === allowed[0] ? 0.07 : 0.035;
+           if (straight >= 4 && Math.random() < turnChance) { d = allowed[(Math.random() * allowed.length) | 0]; straight = 0; }
+           const order = [d].concat(allowed.filter((a) => a !== d));
+           const nd = order.find((c) => canStep(x, y, c));
+           if (nd === undefined) break;
+           if (nd !== d) { d = nd; straight = 0; }
            const [dx, dy] = DIRS[d];
            const nx = x + dx, ny = y + dy;
-           if (!free(nx, ny)) break;
            if (dx && dy) {
-             // Une diagonale ne doit pas croiser la diagonale inverse de la même case
-             if (diag.has((x + dx) + "," + y + "|" + x + "," + (y + dy)) || diag.has(x + "," + (y + dy) + "|" + (x + dx) + "," + y)) break;
-             diag.add(x + "," + y + "|" + nx + "," + ny);
-             diag.add(nx + "," + ny + "|" + x + "," + y);
+             const k1 = x + "," + y + "|" + nx + "," + ny, k2 = nx + "," + ny + "|" + x + "," + y;
+             diag.add(k1); diag.add(k2); diags.push(k1, k2);
            }
            mark(nx, ny);
+           cells.push([nx, ny]);
            x = nx; y = ny; straight++;
            const lastPt = pts[pts.length - 1];
-           // On ne garde que les coins (les points en ligne droite sont fusionnés)
            if (pts.length >= 2) {
              const prev = pts[pts.length - 2];
              const sameDir = Math.sign(lastPt[0] - prev[0]) === dx && Math.sign(lastPt[1] - prev[1]) === dy;
              if (sameDir) pts[pts.length - 1] = [x, y]; else pts.push([x, y]);
            } else pts.push([x, y]);
          }
-         if (pts.length < 2) return;
          const p = makePath(pts.map(([gx, gy]) => [gx * G, gy * G]));
-         if (p.len >= G * 3) paths.push(p);
+         // Jette les pistes courtes (on ne garde que celles qui traversent une bonne partie de
+         // l'écran) en LIBÉRANT leurs cases, pour que d'autres pistes longues puissent y passer.
+         if (p.len < Math.min(w, h) * minFrac) {
+           cells.forEach(([cx, cy]) => { used[cy * cols + cx] = 0; });
+           diags.forEach((k) => diag.delete(k));
+           return;
+         }
+         const onEdge = x === 0 || y === 0 || x === cols - 1 || y === rows - 1;
+         p.deadEnd = !onEdge;
+         paths.push(p);
+         p.pts.slice(1, -1).forEach((pt) => { if (Math.random() < 0.3) dots.push(pt); });
        }
 
-       // Pistes qui sortent des puces (une par broche, vers l'extérieur)
-       chips.forEach((c) => {
-         for (let x = c.x0; x < c.x0 + c.cw; x++) { walk(x, c.y0 - 1, 6); walk(x, c.y0 + c.ch, 2); }
-         for (let y = c.y0; y < c.y0 + c.ch; y++) { walk(c.x0 - 1, y, 4); walk(c.x0 + c.cw, y, 0); }
+       // Départs : chaque case des 4 bords, dans un ordre mélangé, direction vers l'intérieur +
+       // diagonale vers le centre de l'écran (E/NE ou E/SE à gauche, S/SE ou S/SW en haut, etc.)
+       const starts = [];
+       for (let y = 0; y < rows; y++) {
+         starts.push([0, y, [0, y < rows / 2 ? 1 : 7]]);
+         starts.push([cols - 1, y, [4, y < rows / 2 ? 3 : 5]]);
+       }
+       for (let x = 0; x < cols; x++) {
+         starts.push([x, 0, [2, x < cols / 2 ? 1 : 3]]);
+         starts.push([x, rows - 1, [6, x < cols / 2 ? 7 : 5]]);
+       }
+       // Mélange, puis les départs du HAUT et du BAS en premier : comme sur l'image de référence
+       // (écran de téléphone en hauteur), les longues pistes verticales dominent, les côtés comblent après.
+       for (let i = starts.length - 1; i > 0; i--) { const j = (Math.random() * (i + 1)) | 0; [starts[i], starts[j]] = [starts[j], starts[i]]; }
+       starts.sort((a, b) => (a[2][0] % 4 === 2 ? 0 : 1) - (b[2][0] % 4 === 2 ? 0 : 1));
+       // 3 passes : les suivantes reprennent les départs qui avaient échoué, maintenant que des cases
+       // ont été libérées (les pistes sont tirées au hasard, donc un 2e essai peut passer ailleurs)
+       for (let pass = 0; pass < 3; pass++) starts.forEach(([sx, sy, allowed]) => walk(sx, sy, allowed));
+       // Dernière passe : comble les zones vides restantes en partant de l'intérieur (pistes surtout
+       // verticales, un peu moins longues), pour qu'il n'y ait plus de grands trous noirs.
+       const holes = [];
+       for (let y = 0; y < rows; y += 2) for (let x = 0; x < cols; x += 2) if (free(x, y)) holes.push([x, y]);
+       for (let i = holes.length - 1; i > 0; i--) { const j = (Math.random() * (i + 1)) | 0; [holes[i], holes[j]] = [holes[j], holes[i]]; }
+       holes.forEach(([x, y]) => {
+         const down = Math.random() < 0.5;
+         const side = x < cols / 2 ? (down ? 1 : 7) : (down ? 3 : 5);
+         walk(x, y, [down ? 2 : 6, side], 0.2);
        });
-       // Puis plein de petites pistes partout ailleurs, jusqu'à remplir l'écran
-       const attempts = cols * rows * 1.3;
-       for (let k = 0; k < attempts; k++) {
-         walk((Math.random() * cols) | 0, (Math.random() * rows) | 0, (Math.random() * 8) | 0);
-       }
 
-       // Dessin fixe : pistes, pastilles aux deux bouts, puces
+       // Dessin fixe : pistes, pastilles au bout des pistes qui s'arrêtent en route, petits points
        board.width = canvas.width; board.height = canvas.height;
        bctx.setTransform(dpr, 0, 0, dpr, 0, 0);
        bctx.clearRect(0, 0, w, h);
@@ -1602,17 +1630,12 @@
        });
        bctx.fillStyle = "#010606"; bctx.strokeStyle = "rgba(60, 230, 220, 0.7)"; bctx.lineWidth = 1.1;
        paths.forEach((p) => {
-         [p.pts[0], p.pts[p.pts.length - 1]].forEach((pt) => {
-           bctx.beginPath(); bctx.arc(pt[0], pt[1], 2.1, 0, Math.PI * 2); bctx.fill(); bctx.stroke();
-         });
+         if (!p.deadEnd) return;
+         const pt = p.pts[p.pts.length - 1];
+         bctx.beginPath(); bctx.arc(pt[0], pt[1], 2.4, 0, Math.PI * 2); bctx.fill(); bctx.stroke();
        });
-       chips.forEach((c) => {
-         const x = c.x0 * G - G / 2, y = c.y0 * G - G / 2, cw = c.cw * G, ch = c.ch * G;
-         bctx.fillStyle = "#021414"; bctx.fillRect(x, y, cw, ch);
-         bctx.strokeStyle = "rgba(60, 230, 220, 0.7)"; bctx.lineWidth = 1.2;
-         bctx.strokeRect(x + 0.5, y + 0.5, cw - 1, ch - 1);
-         bctx.strokeRect(x + 4.5, y + 4.5, cw - 9, ch - 9);
-       });
+       bctx.fillStyle = "rgba(120, 255, 245, 0.85)";
+       dots.forEach((pt) => { bctx.beginPath(); bctx.arc(pt[0], pt[1], 1.8, 0, Math.PI * 2); bctx.fill(); });
        pulses = [];
        if (paths.length) for (let k = 0; k < PULSES; k++) pulses.push(newPulse(true));
      }
@@ -2175,7 +2198,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-15.107";
+  const APP_BUILD = "2026-10-16.108";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
