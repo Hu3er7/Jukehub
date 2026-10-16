@@ -1418,6 +1418,30 @@
   #jb-admin .jb-error { color: #b6ffc6; }
   #jb-admin .jb-back-link { font-family: 'Share Tech Mono', monospace; }
   #jb-app .jb-toast { border-radius: 0; font-family: 'Share Tech Mono', monospace; }
+
+  /* Écran de choix de langue (voir #jb-splash) : fond transparent pour laisser voir la pluie
+     Matrix ; tout le reste de la page est masqué tant qu'il est ouvert. */
+  #jb-app .jb-splash {
+    position: fixed; inset: 0; z-index: 70;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 22px;
+  }
+  #jb-app .jb-splash[hidden] { display: none; }
+  #jb-app.jb-splash-open #jb-public,
+  #jb-app.jb-splash-open .jb-boot-loading { visibility: hidden; }
+  #jb-app .jb-splash-btn {
+    --jb-cp-c: #00ff41;
+    --jb-cp-diag: linear-gradient(to top right, transparent calc(50% - 1.2px), var(--jb-cp-c) calc(50% - 0.6px), var(--jb-cp-c) calc(50% + 0.6px), transparent calc(50% + 1.2px));
+    width: min(280px, 76vw); padding: 18px 20px; cursor: pointer;
+    font-family: 'Share Tech Mono', monospace; font-size: 1.3rem; letter-spacing: 3px; color: #00ff41;
+    border: 1px solid #00ff41; border-radius: 0;
+    clip-path: polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 14px 100%, 0 calc(100% - 14px));
+    background:
+      var(--jb-cp-diag) top right / 14px 14px no-repeat border-box,
+      var(--jb-cp-diag) bottom left / 14px 14px no-repeat border-box,
+      rgba(1, 8, 2, 0.75);
+    text-shadow: 0 0 8px rgba(0, 255, 65, 0.6);
+  }
+  #jb-app .jb-splash-btn:active { background: #00ff41; color: #010802; text-shadow: none; }
 </style>
 
 <div id="jb-app">
@@ -1523,6 +1547,40 @@
      }
    })();
    </script>
+  <!-- Écran de choix de langue (demande de Hubert) : écran vide avec seulement la pluie Matrix et
+       deux boutons centrés, "Français" au-dessus de "English", AVANT la page principale. Affiché
+       une seule fois par visite (sessionStorage) — pas à chaque rechargement automatique (mise à
+       jour, reconnexion…), pour ne pas redemander la langue en plein spectacle — et jamais sur la
+       route admin. Script classique (pas le module) : visible et cliquable dès l'affichage, même
+       avant que Firebase ait fini de charger. -->
+  <div id="jb-splash" class="jb-splash" hidden>
+    <button type="button" class="jb-splash-btn" data-splash-lang="fr">Français</button>
+    <button type="button" class="jb-splash-btn" data-splash-lang="en">English</button>
+  </div>
+  <script>
+  (function () {
+    const splash = document.getElementById("jb-splash");
+    const app = document.getElementById("jb-app");
+    let chosen = false;
+    try { chosen = window.sessionStorage.getItem("jb_splash_done") === "1"; } catch (e) {}
+    if (chosen || location.hash === "#admin") return;
+    splash.hidden = false;
+    app.classList.add("jb-splash-open");
+    splash.querySelectorAll("[data-splash-lang]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const choice = btn.dataset.splashLang;
+        try { window.localStorage.setItem("jb_lang", choice); } catch (e) {}
+        try { window.sessionStorage.setItem("jb_splash_done", "1"); } catch (e) {}
+        // Si l'appli est déjà chargée, on passe par ses propres boutons FR/EN (qui retraduisent
+        // tout) ; sinon, elle lira simplement "jb_lang" au démarrage.
+        const langBtn = document.querySelector('.jb-lang-btn[data-lang="' + choice + '"]');
+        if (langBtn) langBtn.click();
+        splash.hidden = true;
+        app.classList.remove("jb-splash-open");
+      });
+    });
+  })();
+  </script>
   <div id="jb-public" class="jb-view">
    <div id="jb-app-content" hidden>
     <header class="jb-top-bar">
@@ -1996,7 +2054,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-15.101";
+  const APP_BUILD = "2026-10-15.102";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
