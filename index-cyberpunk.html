@@ -1048,6 +1048,14 @@
     from { transform: rotate(12deg) translateY(0); }
     to { transform: rotate(12deg) translateY(300px); }
   }
+  /* Pluie fine remplacée par la "pluie de chiffres" façon Matrix (canvas #jb-cp-matrix, voir le
+     petit script juste après l'ouverture de #jb-public) — demande de Hubert. Le calque de pluie
+     ci-dessus est gardé dans le fichier mais désactivé, au cas où il voudrait y revenir. */
+  #jb-public::before { display: none; }
+  #jb-public .jb-cp-matrix {
+    position: fixed; inset: 0; width: 100%; height: 100%;
+    z-index: -1; pointer-events: none; opacity: 0.5;
+  }
   /* Lignes de balayage d'écran, très discrètes */
   #jb-public::after {
     content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none;
@@ -1250,6 +1258,76 @@
   </div>
 
   <div id="jb-public" class="jb-view">
+   <!-- Fond "pluie de chiffres" façon Matrix (demande de Hubert : remplace la pluie fine). Calque
+        fixe derrière tout le contenu public ; dessiné par le petit script juste en dessous. -->
+   <canvas id="jb-cp-matrix" class="jb-cp-matrix" aria-hidden="true"></canvas>
+   <script>
+   (function () {
+     const canvas = document.getElementById("jb-cp-matrix");
+     const ctx = canvas && canvas.getContext && canvas.getContext("2d");
+     if (!ctx) return;
+     const CHARS = "0123456789アイウエオカキクケコサシスセソタチツテトナニヌネノ01";
+     const SIZE = 16;      // taille d'un caractère = largeur d'une colonne
+     const FPS = 18;       // rythme volontairement modéré : léger même sur un vieux téléphone
+     const reduceMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+     let w = 0, h = 0, cols = 0, drops = [], speeds = [], last = 0;
+     function resize() {
+       const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+       const newW = window.innerWidth;
+       h = window.innerHeight;
+       canvas.width = Math.round(newW * dpr);
+       canvas.height = Math.round(h * dpr);
+       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+       // La barre d'adresse de Safari change souvent la HAUTEUR en défilant : on ne repart de zéro
+       // que si la LARGEUR change (rotation), pour ne pas faire "sauter" la pluie à chaque défilement.
+       if (newW !== w) {
+         w = newW;
+         cols = Math.ceil(w / SIZE);
+         drops = Array.from({ length: cols }, () => Math.random() * h / SIZE - h / SIZE / 3);
+         speeds = Array.from({ length: cols }, () => 0.5 + Math.random() * 0.6);
+       }
+       ctx.fillStyle = "#05060a";
+       ctx.fillRect(0, 0, w, h);
+     }
+     function step() {
+       // Voile sombre semi-transparent : efface lentement les caractères précédents (la "traîne")
+       ctx.fillStyle = "rgba(5, 6, 10, 0.06)";
+       ctx.fillRect(0, 0, w, h);
+       ctx.font = SIZE + "px 'Share Tech Mono', monospace";
+       for (let i = 0; i < cols; i++) {
+         // Arrondi à la rangée : les caractères s'empilent proprement en colonne bien verticale
+         const y = Math.floor(drops[i]) * SIZE;
+         if (y > 0) {
+           // Vert "Matrice" classique (demande de Hubert), quelques caractères presque blancs qui scintillent
+           ctx.fillStyle = Math.random() < 0.12 ? "#c8ffd4" : "#00ff41";
+           ctx.fillText(CHARS[(Math.random() * CHARS.length) | 0], i * SIZE, y);
+         }
+         drops[i] += speeds[i];
+         if (y > h && Math.random() > 0.94) drops[i] = 0;
+       }
+     }
+     function frame(t) {
+       requestAnimationFrame(frame);
+       // En pause si l'onglet est en arrière-plan ou si la vue publique est cachée (panneau admin)
+       if (document.hidden || canvas.getClientRects().length === 0) return;
+       if (t - last < 1000 / FPS) return;
+       last = t;
+       step();
+     }
+     let resizeTimer = null;
+     window.addEventListener("resize", () => {
+       clearTimeout(resizeTimer);
+       resizeTimer = setTimeout(() => { resize(); if (reduceMotion) for (let k = 0; k < 60; k++) step(); }, 150);
+     });
+     resize();
+     if (reduceMotion) {
+       // Le téléphone demande moins d'animations : une seule image fixe de la pluie, sans mouvement
+       for (let k = 0; k < 60; k++) step();
+     } else {
+       requestAnimationFrame(frame);
+     }
+   })();
+   </script>
    <div id="jb-app-content" hidden>
     <header class="jb-top-bar">
       <div class="jb-top-bar-left">
