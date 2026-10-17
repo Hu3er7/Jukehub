@@ -1344,6 +1344,13 @@
 
   /* ===== "// Tes demandes", fenêtre après vote, case "0 VOTE" du catalogue (maquette de Hubert, 17 oct. 2026) ===== */
   #jb-public .jb-myreq-list { display: flex; flex-direction: column; }
+  #jb-public .jb-my-votes-heading { flex-wrap: nowrap; align-items: baseline; }
+  #jb-public .jb-my-votes-heading h2 { margin-bottom: 0; white-space: nowrap; }
+  /* "5/6 votes restants" au bout de la ligne du titre, plus petit que le titre */
+  #jb-public .jb-myreq-votes-left {
+    margin-left: auto; white-space: nowrap; color: #fffaa8; text-transform: uppercase;
+    font-family: 'Share Tech Mono', monospace; font-size: 0.78rem; letter-spacing: 1px;
+  }
   #jb-public .jb-myreq-row {
     display: flex; align-items: center; gap: 12px; padding: 12px 0; min-width: 0;
     border-bottom: 1px dashed var(--border);
@@ -2140,6 +2147,7 @@
            fenêtre qui suit chaque vote (voir showVoteModal()). -->
       <div class="jb-my-votes-heading">
         <h2 id="jb-my-requests-title">Tes demandes</h2>
+        <span id="jb-vote-remaining" class="jb-myreq-votes-left">6/6 votes restants</span>
       </div>
       <p id="jb-my-votes-empty" class="jb-empty">Tu n'as pas encore fait de demande ce soir.</p>
       <div id="jb-my-votes-list" class="jb-myreq-list"></div>
@@ -2514,7 +2522,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-17.118";
+  const APP_BUILD = "2026-10-17.119";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -2620,6 +2628,9 @@
       vote_modal_left: (n) => (n > 0 ? `Il te reste ${n} vote${n > 1 ? "s" : ""}` : "Tu as utilisé tes 6 votes"),
       vote_modal_back: "Tu les récupères quand ta chanson est jouée",
       vote_modal_btn: "Continuer",
+      votes_left_line: (r, max) => `${r}/${max} vote${r > 1 ? "s" : ""} restant${r > 1 ? "s" : ""}`,
+      req_limit_title: "Tu as atteint ta limite de 5 demandes",
+      req_limit_back: "Tu pourras en faire d'autres quand une de tes chansons sera jouée",
       style_title: "Chansons",
       style_title_count: (n) => `${n} Chansons`,
       artist_title_count: (n) => `${n} Artistes`,
@@ -2684,6 +2695,9 @@
       vote_modal_left: (n) => (n > 0 ? `You have ${n} vote${n > 1 ? "s" : ""} left` : "You've used all 6 votes"),
       vote_modal_back: "You get them back when your song is played",
       vote_modal_btn: "Continue",
+      votes_left_line: (r, max) => `${r}/${max} vote${r === 1 ? "" : "s"} left`,
+      req_limit_title: "You've reached your limit of 5 requests",
+      req_limit_back: "You can make more once one of your songs is played",
       style_title: "Songs",
       style_title_count: (n) => `${n} Songs`,
       artist_title_count: (n) => `${n} Artists`,
@@ -3281,6 +3295,13 @@
   // laquelle il a voté (haut ou bas) est marquée "jouée" par l'admin (même mécanique de
   // verrouillage/libération que l'ancien système de boost, juste sans le compte à rebours).
   const MAX_VOTES = 6; // nombre maximum de votes (haut + bas confondus) par client, par soirée
+  // 17 oct. 2026 (Hubert) : limite revenue, mais à 5 demandes ACTIVES (chansons demandées encore au
+  // palmarès, pas encore jouées) — au-delà, la liste "// Tes demandes" devenait trop longue et le
+  // client s'y perdait. Une chanson jouée libère sa place. Voir activeRequestCount().
+  const MAX_REQUESTS = 5;
+  // songId -> moment de la demande : fixe l'ordre de la liste "// Tes demandes" (l'ordre où le client
+  // a choisi ses chansons, jamais leur rang — si les lignes bougeaient, il se perdrait).
+  let requestOrder = {};
   // voteUsage : songId -> { count, token } — votes actuellement "verrouillés" sur cette chanson
   // (token = roundToken au moment du vote ; libéré automatiquement dès que la chanson est jouée).
   let voteUsage = {};
@@ -4292,11 +4313,28 @@
     } catch (e) {
       requestedRounds = {};
     }
+    try {
+      const raw = safeStorageGet("jb_req_order_" + (nightId || "default"));
+      requestOrder = raw ? JSON.parse(raw) : {};
+    } catch (e) {
+      requestOrder = {};
+    }
   }
   function saveRequestedToStorage() {
     try {
       safeStorageSet(storageKey(), JSON.stringify(requestedRounds));
+      safeStorageSet("jb_req_order_" + (nightId || "default"), JSON.stringify(requestOrder));
     } catch (e) {}
+  }
+  // Chansons demandées par CE client, encore au palmarès ce soir (ni jouées, ni brûlées), dans
+  // l'ordre où il les a choisies.
+  function myActiveRequests() {
+    return Object.keys(votes)
+      .filter((id) => alreadyRequested(id) && !isHiddenFromPalmares(votes[id]))
+      .sort((a, b) => (requestOrder[a] || 0) - (requestOrder[b] || 0) || a.localeCompare(b));
+  }
+  function activeRequestCount() {
+    return myActiveRequests().length;
   }
 
   // ---------- Votes (palmarès) ----------
@@ -4356,9 +4394,8 @@
     // jour en direct, au fur et à mesure que des votes s'ajoutent ou se retirent.
     // Habillage cyberpunk (maquette de Hubert) : "// N VOTES UTILISÉS" — on affiche maintenant le
     // nombre de votes DÉJÀ utilisés (sur MAX_VOTES), pour que le chiffre corresponde au mot.
-    const used = Math.max(0, MAX_VOTES - r);
-    // "0/6" plutôt que "0" seul (demande de Hubert) : le client voit d'un coup combien il lui en reste.
-    remainingEl.innerHTML = `<span class="jb-vote-remaining-num">${used}<span class="jb-vote-max">/${MAX_VOTES}</span></span> <span class="jb-vote-unit">${t("votes_unit", used)}</span> <span class="jb-vote-used-word">${t("votes_used_word", used)}</span>`;
+    // 17 oct. 2026 : petit texte au bout de la ligne "// TES DEMANDES" — "5/6 votes restants".
+    remainingEl.textContent = t("votes_left_line", r, MAX_VOTES);
   }
   // Nouvelle section "Mes votes" (demande explicite de Hubert) : liste, pour CE client, les
   // chansons où il a un solde NET de votes encore actif ce soir (entry.up - entry.down, voir
@@ -4387,15 +4424,15 @@
       .filter(([, v]) => !isHiddenFromPalmares(v))
       .sort(compareVoteEntries);
     const now = Date.now();
-    const rows = [];
-    ranked.forEach(([id, v], i) => {
-      const usage = voteUsage[id];
-      const votedOn = usage && usage.token === roundToken(v) && ((usage.up || 0) + (usage.down || 0)) > 0;
-      if (!alreadyRequested(id) && !votedOn) return;
-      const rank = i + 1;
+    const rankOf = {};
+    ranked.forEach(([id], i) => { rankOf[id] = i + 1; });
+    // 2e avis de Hubert : seulement SES demandes (5 au maximum, voir MAX_REQUESTS), dans l'ordre où
+    // il les a choisies — une chanson qui monte au 1er rang garde sa place dans la liste.
+    const rows = myActiveRequests().map((id) => {
+      const rank = rankOf[id];
       if (myReqPrevRank[id] !== undefined && myReqPrevRank[id] !== rank) myReqRankChangedAt[id] = now;
       myReqPrevRank[id] = rank;
-      rows.push([id, v, rank]);
+      return [id, votes[id], rank];
     });
     emptyEl.hidden = rows.length > 0;
     listEl.innerHTML = rows
@@ -4425,27 +4462,34 @@
     });
   }
 
-  // Fenêtre après chaque vote (maquette de Hubert) : écran assombri, votes restants, bouton
-  // "Continuer" — le seul élément cliquable tant qu'elle est ouverte. Elle apparaît un court
-  // instant APRÈS le vote (VOTE_MODAL_DELAY_MS), pour que le client voie d'abord sa chanson
-  // monter et son rang changer ; pendant ce délai, les autres votes sont ignorés.
+  // Fenêtre d'information (maquette de Hubert) : écran assombri, message, bouton "Continuer" — le
+  // seul élément cliquable tant qu'elle est ouverte. 2e avis de Hubert ("un peu intense" à chaque
+  // vote) : elle ne s'affiche plus qu'au TOUT PREMIER vote à la hausse sur cet appareil, quand le
+  // client vient d'utiliser son dernier vote (ou essaie de voter sans votes), et à sa 5e demande
+  // (ou s'il essaie d'en faire une 6e). Elle apparaît un court instant APRÈS l'action
+  // (VOTE_MODAL_DELAY_MS), pour que le client voie d'abord sa chanson monter et son rang changer ;
+  // pendant ce délai, les autres votes/demandes sont ignorés.
   const VOTE_MODAL_DELAY_MS = 650;
-  let voteModalPending = false;
-  function voteModalBusy() {
-    const modal = document.getElementById("jb-vote-modal");
-    return voteModalPending || (modal && !modal.hidden);
-  }
-  function showVoteModal(remaining, delayMs = 0) {
+  const FIRST_VOTE_SEEN_KEY = "jb_first_vote_msg_seen";
+  function showInfoModal(lineKey, backKey, delayMs = 0, ...args) {
     const modal = document.getElementById("jb-vote-modal");
     if (!modal) return;
     voteModalPending = true;
     setTimeout(() => {
       voteModalPending = false;
       document.getElementById("jb-vote-modal-text").innerHTML =
-        `${escapeHtml(t("vote_modal_left", remaining))}<br>${escapeHtml(t("vote_modal_back"))}`;
+        `${escapeHtml(t(lineKey, ...args))}<br>${escapeHtml(t(backKey))}`;
       modal.hidden = false;
       document.getElementById("jb-vote-modal-btn").focus({ preventScroll: true });
     }, delayMs);
+  }
+  let voteModalPending = false;
+  function voteModalBusy() {
+    const modal = document.getElementById("jb-vote-modal");
+    return voteModalPending || (modal && !modal.hidden);
+  }
+  function showVoteModal(remaining, delayMs = 0) {
+    showInfoModal("vote_modal_left", "vote_modal_back", delayMs, remaining);
   }
   document.getElementById("jb-vote-modal-btn").addEventListener("click", () => {
     document.getElementById("jb-vote-modal").hidden = true;
@@ -4517,8 +4561,15 @@
     saveVotesToStorage();
     updateVoteBadge();
     renderMyVotes();
-    // Votes restants dans la fenêtre "Continuer" (maquette de Hubert) plutôt qu'un toast
-    showVoteModal(votesRemaining(), VOTE_MODAL_DELAY_MS);
+    // Fenêtre "Continuer" seulement au tout premier vote à la hausse (sur cet appareil) et quand le
+    // dernier vote vient d'être utilisé — sinon, juste le compteur "N/6 votes restants" qui s'illumine.
+    const left = votesRemaining();
+    const firstVote = delta > 0 && !safeStorageGet(FIRST_VOTE_SEEN_KEY);
+    if (left <= 0 || firstVote) {
+      if (firstVote) safeStorageSet(FIRST_VOTE_SEEN_KEY, "1");
+      showVoteModal(left, VOTE_MODAL_DELAY_MS);
+    }
+    pulseAttention(document.getElementById("jb-vote-remaining"), "jb-num-glow");
     try {
       await updateDoc(doc(db, "votes", id), payload);
     } catch (e) {
@@ -5452,6 +5503,11 @@
   // ---------- Action : demander une chanson ----------
   async function requestSong(song) {
     if (alreadyRequested(song.id)) return;
+    if (voteModalBusy()) return;
+    if (activeRequestCount() >= MAX_REQUESTS) {
+      showInfoModal("req_limit_title", "req_limit_back");
+      return;
+    }
     await ensureClientName();
     const staySameList = currentResultsCount() > 1;
     // Si la chanson est actuellement "éteinte" (voir isDormant() plus haut), cette demande va la
@@ -5486,6 +5542,7 @@
     // "Demandée") et le laissait ré-essayer indéfiniment. Firestore synchronise de toute façon la
     // vraie écriture en arrière-plan dès que la connexion le permet.
     requestedRounds[song.id] = tokenAtRequest;
+    requestOrder[song.id] = Date.now();
     saveRequestedToStorage();
     // Bug signalé par Hubert (captures à l'appui) : une chanson tout juste demandée pouvait
     // rester invisible du palmarès ("Aucune demande pour l'instant") alors que le document
@@ -5521,7 +5578,10 @@
       votes[song.id] = { ...votes[song.id], requests: 0, playedAt: null, createdAt: { seconds: Math.floor(Date.now() / 1000) } };
       renderPalmares();
     }
-    showToast(t("request_added_toast"));
+    renderMyVotes(); // la chanson apparaît tout de suite dans "// Tes demandes", sans attendre Firestore
+    // 5e demande : on prévient tout de suite qu'il a atteint sa limite (après l'animation du titre)
+    if (activeRequestCount() >= MAX_REQUESTS) showInfoModal("req_limit_title", "req_limit_back", VOTE_MODAL_DELAY_MS);
+    else showToast(t("request_added_toast"));
     // Illumine la ligne elle-même — même animation que la sélection de la chanson démo dans le
     // tuto, demande explicite de Hubert : "je veux que ce soit la même animation d'illumination
     // que dans le tutoriel". Voir rowFlashElapsedMs()/renderSongRow() : la classe est reposée à
