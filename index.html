@@ -2345,19 +2345,32 @@
   // mais qui ne fait jamais planter la page) si localStorage n'est pas accessible.
   const memoryStorageFallback = {};
   function safeStorageGet(key) {
-    try {
-      return window.localStorage.getItem(key);
-    } catch (e) {
-      return Object.prototype.hasOwnProperty.call(memoryStorageFallback, key) ? memoryStorageFallback[key] : null;
+    // 19 oct. 2026 : la mémoire de secours d'abord — Safari peut REFUSER l'écriture dans le stockage du
+    // cadre tout en acceptant la lecture (qui renvoie alors "rien") : sans ça, ce qui avait été mis
+    // en mémoire de secours était ignoré à la relecture (votes revenus à 6/6 sur iPhone).
+    let local;
+    if (Object.prototype.hasOwnProperty.call(memoryStorageFallback, key)) local = memoryStorageFallback[key];
+    else {
+      try { local = window.localStorage.getItem(key); } catch (e) { local = null; }
     }
+    // Données qui comptent (votes, demandes) : on fusionne avec la copie gardée par la page Carrd
+    // (voir "Pont de stockage" plus bas), reçue en mémoire — ne dépend donc pas du stockage du cadre.
+    if (isDurableKey(key) && Object.prototype.hasOwnProperty.call(bridgeData, key)) {
+      return mergeDurable(key, local, bridgeData[key]);
+    }
+    return local;
   }
   function safeStorageSet(key, value) {
     try {
       window.localStorage.setItem(key, value);
+      delete memoryStorageFallback[key];
     } catch (e) {
       memoryStorageFallback[key] = value;
     }
-    if (isDurableKey(key)) bridgeSend({ type: "jb-store-set", key, value });
+    if (isDurableKey(key)) {
+      bridgeData[key] = value;
+      bridgeSend({ type: "jb-store-set", key, value });
+    }
   }
   function safeStorageRemove(key) {
     try {
@@ -2382,6 +2395,8 @@
   let bridgeOrigin = null;            // origine de la page Carrd, connue à sa 1re réponse
   const bridgePendingWrites = [];     // écritures faites avant cette 1re réponse
   let onBridgeData = null;            // posé plus bas (relit les votes/demandes une fois l'appli prête)
+  const bridgeData = {};              // copie de la page Carrd, gardée en mémoire (lue par safeStorageGet)
+  let bridgeReceivedKeys = 0;         // pour l'écran de diagnostic (#diag)
   function isDurableKey(key) {
     return /^jb_(votes|requested|req_order)_/.test(key) || key === "jb_first_vote_msg_seen";
   }
@@ -2419,15 +2434,20 @@
     bridgeOrigin = e.origin;
     const data = (e.data.data && typeof e.data.data === "object") ? e.data.data : {};
     const keys = new Set(Object.keys(data).filter(isDurableKey));
+    bridgeReceivedKeys = keys.size;
     try {
       for (let i = 0; i < window.localStorage.length; i++) {
         const k = window.localStorage.key(i);
         if (k && isDurableKey(k)) keys.add(k);
       }
     } catch (err) {}
+    Object.keys(memoryStorageFallback).filter(isDurableKey).forEach((k) => keys.add(k));
     keys.forEach((k) => {
-      const merged = mergeDurable(k, safeStorageGet(k), data[k] ?? null);
+      // safeStorageGet() fusionne déjà avec bridgeData : on y pose d'abord la copie reçue
+      if (typeof data[k] === "string") bridgeData[k] = mergeDurable(k, bridgeData[k] ?? null, data[k]);
+      const merged = safeStorageGet(k);
       if (merged == null) return;
+      bridgeData[k] = merged;
       try { window.localStorage.setItem(k, merged); } catch (err) { memoryStorageFallback[k] = merged; }
       if (merged !== data[k]) bridgeSend({ type: "jb-store-set", key: k, value: merged });
     });
@@ -2615,7 +2635,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-18.122";
+  const APP_BUILD = "2026-10-19.123";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -6412,4 +6432,36 @@
     renderAll();
   };
   if (bridgeOrigin) onBridgeData(); // copie arrivée pendant le chargement de Firebase
+
+  // ---------- Écran de diagnostic (adresse terminée par #diag) ----------
+  // Pour vérifier sur un vrai iPhone que la copie des votes gardée par la page Carrd fonctionne
+  // (https://myrepertoire.carrd.co/#diag) — invisible autrement.
+  if (location.hash === "#diag") {
+    const box = document.createElement("pre");
+    box.style.cssText = "position:fixed;left:8px;right:8px;bottom:8px;z-index:9999;max-height:60vh;overflow:auto;" +
+      "background:#000;color:#fff200;border:1px solid #fff200;padding:10px;margin:0;font:12px/1.45 monospace;white-space:pre-wrap;";
+    document.body.appendChild(box);
+    const frameStorageWorks = (() => {
+      try {
+        localStorage.setItem("jb_diag_test", "1");
+        const ok = localStorage.getItem("jb_diag_test") === "1";
+        localStorage.removeItem("jb_diag_test");
+        return ok;
+      } catch (e) { return false; }
+    })();
+    const update = () => {
+      box.textContent = [
+        `DIAGNOSTIC — build ${APP_BUILD}`,
+        `dans la page Carrd : ${inFrame ? "oui" : "non"}`,
+        `page Carrd connectée : ${bridgeOrigin ? "oui" : "NON"}`,
+        `données reçues de Carrd : ${bridgeReceivedKeys}`,
+        `stockage du cadre utilisable : ${frameStorageWorks ? "oui" : "NON"}`,
+        `soirée : ${nightId || "(pas encore connue)"}`,
+        `votes restants : ${votesRemaining()}/${MAX_VOTES}`,
+        `copie Carrd des votes : ${bridgeData[voteStorageKey()] || "(aucune)"}`,
+      ].join("\n");
+    };
+    update();
+    setInterval(update, 1000);
+  }
 </script>
