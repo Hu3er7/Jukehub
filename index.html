@@ -2269,7 +2269,7 @@
 
       <section class="jb-admin-section">
         <button id="jb-newnight-btn" class="jb-btn-danger">🌙 Nouvelle soirée (reset palmarès)</button>
-        <p class="jb-hint">Efface le palmarès et les chansons "déjà jouées". Le répertoire complet et les demandes spéciales restent intacts.</p>
+        <p class="jb-hint">Efface le palmarès et les chansons "déjà jouées". Le répertoire complet et la boîte de suggestions restent intacts.</p>
       </section>
 
       <section class="jb-admin-section jb-admin-columns">
@@ -2282,7 +2282,7 @@
              soirée" n'efface que le palmarès) — Hubert y revient chez lui pour apprendre les
              suggestions au chant et à la guitare. -->
         <details id="jb-admin-special-wrap" class="jb-admin-column jb-admin-special-wrap">
-          <summary><h3>📨 Demandes spéciales <span id="jb-admin-special-count" class="jb-admin-special-count"></span></h3></summary>
+          <summary><h3>💡 Boîte de suggestions <span id="jb-admin-special-count" class="jb-admin-special-count"></span></h3></summary>
           <p class="jb-hint">Recherches de clients restées sans résultat dans le répertoire. Gardées d'une soirée à l'autre — « Nouvelle soirée » ne les efface pas.</p>
           <ol id="jb-admin-special" class="jb-admin-palmares"></ol>
           <p id="jb-admin-special-empty" class="jb-empty" hidden>Rien pour l'instant.</p>
@@ -2640,7 +2640,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-19.124";
+  const APP_BUILD = "2026-10-19.125";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -2760,10 +2760,12 @@
       search_placeholder: "🔍 Cherche par mots clés",
       catalog_empty: "Aucun résultat pour cette recherche.",
       genre_song_count_unit: "chansons",
-      special_request_text: "Tu ne trouves pas ta chanson ? Écris-la quand même : elle me parviendra. Qui sait ? Peut-être que je peux essayer de la faire !",
+      // "Boîte de suggestions" (19 oct. 2026, Hubert) : remplace "demande spéciale" — une suggestion
+      // ne promet pas que la chanson sera jouée, et ne se paie jamais.
+      special_request_text: "Tu ne trouves pas ta chanson ? Laisse-la dans ma boîte de suggestions : je l'apprendrai peut-être pour une prochaine fois !",
       special_request_name_placeholder: "Ton prénom (optionnel)",
-      special_request_btn: "📨 Envoyer quand même",
-      special_request_sent_toast: "📨 Envoyé ! Merci, on y jette un œil.",
+      special_request_btn: "💡 Suggérer cette chanson",
+      special_request_sent_toast: "💡 Merci pour la suggestion !",
       name_prompt_title: "Donne toi un nom !",
       name_prompt_text: "Ça l'apparaitra dans le palmarès (Facultatif).",
       name_prompt_placeholder: "Nom",
@@ -2827,10 +2829,10 @@
       search_placeholder: "🔍 Search by keywords",
       catalog_empty: "No results for this search.",
       genre_song_count_unit: "songs",
-      special_request_text: "Can't find your song? Type it in anyway — it'll reach me. Who knows? Maybe I can try to learn it!",
+      special_request_text: "Can't find your song? Drop it in my suggestion box — I might learn it for next time!",
       special_request_name_placeholder: "Your first name (optional)",
-      special_request_btn: "📨 Send it anyway",
-      special_request_sent_toast: "📨 Sent! Thanks, we'll take a look.",
+      special_request_btn: "💡 Suggest this song",
+      special_request_sent_toast: "💡 Thanks for the suggestion!",
       name_prompt_title: "Give yourself a name!",
       name_prompt_text: "It'll show up on the leaderboard (Optional).",
       name_prompt_placeholder: "Name",
@@ -6212,7 +6214,7 @@
 
   // ---------- Nouvelle soirée ----------
   document.getElementById("jb-newnight-btn").addEventListener("click", async () => {
-    if (!confirm("Réinitialiser le palmarès et les chansons jouées pour une nouvelle soirée ? (Les demandes spéciales sont gardées.)")) return;
+    if (!confirm("Réinitialiser le palmarès et les chansons jouées pour une nouvelle soirée ? (La boîte de suggestions est gardée.)")) return;
     // Ne supprime QUE les documents "votes" (palmarès) : la collection "specialRequests" n'est jamais
     // touchée ici — Hubert garde ses suggestions pour les apprendre (demande du 18 oct. 2026).
     try {
