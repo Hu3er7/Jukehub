@@ -1554,7 +1554,8 @@
   #jb-public .jb-catalog-frame-caps { gap: 0; z-index: 2; }
   #jb-public .jb-catalog-frame-caps { left: 30px; }
   #jb-public .jb-catalog-frame-caps-top::before {
-    content: "AI CORE · JK-670"; background: #3ff6ee; color: #04121c;
+    /* Nombre de chansons du répertoire, mis à jour en direct (data-count, voir l'écouteur "catalog") */
+    content: "HU3ER7-" attr(data-count); background: #3ff6ee; color: #04121c;
     font-family: 'Share Tech Mono', monospace; font-size: 0.68rem; letter-spacing: 1.5px; padding: 1px 10px;
     clip-path: polygon(6px 0, calc(100% - 6px) 0, 100% 50%, calc(100% - 6px) 100%, 6px 100%, 0 50%);
   }
@@ -2640,7 +2641,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-19.126";
+  const APP_BUILD = "2026-10-19.127";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -4976,6 +4977,8 @@
 
   onSnapshot(doc(db, "catalog", "all"), (snap) => {
     catalogSongs = snap.data()?.songs || [];
+    // Étiquette du panneau "HU3ER7-670" : suit le nombre de chansons, comme le titre "670 Chansons"
+    document.querySelectorAll(".jb-catalog-frame-caps-top").forEach((el) => { el.dataset.count = catalogSongs.length; });
     // Comme pour "config/settings", ce tout premier instantané peut arriver vide (pas encore de
     // cache local, document pas encore reçu) AVANT le vrai instantané confirmé — voir aussi le
     // filtre "fromCache" sur l'écouteur "config" plus haut. Contrairement à "live" (où "pas encore
