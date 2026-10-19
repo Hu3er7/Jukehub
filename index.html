@@ -2522,7 +2522,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-17.119";
+  const APP_BUILD = "2026-10-18.120";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -3113,13 +3113,15 @@
   const FB_VERSION = "12.18.0";
   let initializeApp, getFirestore, doc, setDoc, updateDoc, deleteDoc, onSnapshot,
     collection, runTransaction, increment, serverTimestamp, writeBatch,
-    enableNetwork, disableNetwork, getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut;
+    enableNetwork, disableNetwork, getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut,
+    initializeFirestore, persistentLocalCache, persistentMultipleTabManager;
   try {
     ({ initializeApp } = await importWithRetry(`https://www.gstatic.com/firebasejs/${FB_VERSION}/firebase-app.js`));
     ({
       getFirestore, doc, setDoc, updateDoc, deleteDoc, onSnapshot,
       collection, runTransaction, increment, serverTimestamp, writeBatch,
       enableNetwork, disableNetwork,
+      initializeFirestore, persistentLocalCache, persistentMultipleTabManager,
     } = await importWithRetry(`https://www.gstatic.com/firebasejs/${FB_VERSION}/firebase-firestore.js`));
     ({
       getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut,
@@ -3137,7 +3139,20 @@
   }
 
   const fbApp = initializeApp(firebaseConfig);
-  const db = getFirestore(fbApp);
+  // Cache local persistant (18 oct. 2026, diagnostic du plantage du 17 oct.) : SANS lui, Firestore
+  // facture chaque déconnexion/reconnexion comme une requête toute neuve — tout le palmarès, le
+  // catalogue et la config relus à chaque fois (voir forceReconnect() plus bas). AVEC lui, une
+  // reconnexion de moins de 30 min ne coûte que les documents qui ont réellement changé.
+  // Si le navigateur refuse ce stockage (ex. navigation privée), on retombe sur le cache en mémoire.
+  let db;
+  try {
+    db = initializeFirestore(fbApp, {
+      localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }),
+    });
+  } catch (e) {
+    console.warn("Cache local Firestore indisponible, cache en mémoire utilisé", e);
+    db = getFirestore(fbApp);
+  }
   const auth = getAuth(fbApp);
 
   // ---------- État local ----------
@@ -4720,12 +4735,26 @@
       .catch(() => {})
       .finally(() => { reconnecting = false; });
   }
+  // 18 oct. 2026 — CAUSE DU PLANTAGE DU 17 OCT. (diagnostic) : le chien de garde plus bas forçait
+  // une reconnexion dès que rien n'avait changé depuis 12 s — donc, sur une soirée calme, CHAQUE
+  // téléphone ouvert se déconnectait/reconnectait toutes les ~16 s (mesuré), en plus d'une
+  // reconnexion à chaque toucher (toutes les 4 s au plus) et à chaque "focus". Sans cache local,
+  // Firestore facture chaque reconnexion comme une requête neuve : palmarès + catalogue + config
+  // relus en entier, des milliers de lectures par téléphone et par heure — le quota quotidien
+  // gratuit (50 000 lectures) s'épuise en cours de soirée et le site cesse de répondre.
+  // Maintenant : on ne force une reconnexion que si AUCUNE nouvelle n'est arrivée du serveur depuis
+  // un bon moment (RECONNECT_IF_STALE_MS) — un flux en santé n'est plus jamais coupé pour rien.
+  const RECONNECT_IF_STALE_MS = 60 * 1000;
+  let lastLiveSnapshotAt = Date.now();
+  function reconnectIfStale(minStaleMs = RECONNECT_IF_STALE_MS) {
+    if (Date.now() - lastLiveSnapshotAt > minStaleMs) forceReconnect();
+  }
   document.addEventListener("visibilitychange", () => {
-    if (document.visibilityState === "visible") forceReconnect();
+    if (document.visibilityState === "visible") reconnectIfStale();
   });
-  window.addEventListener("pageshow", forceReconnect);
-  window.addEventListener("focus", forceReconnect);
-  window.addEventListener("online", forceReconnect);
+  window.addEventListener("pageshow", () => reconnectIfStale());
+  window.addEventListener("focus", () => reconnectIfStale());
+  window.addEventListener("online", forceReconnect); // le réseau revient : là, on reconnecte toujours
   // Bogue signalé par Hubert : un client reste "en ligne" un moment après qu'il se soit déconnecté
   // de son panneau admin — jusqu'à ce que le client touche quelque part sur l'écran, moment où la
   // page bascule enfin sur "Pas en spectacle". Cause probable : Safari iOS peut mettre en veille le
@@ -4738,14 +4767,11 @@
   // prochaine mise à jour Firestore qui pourrait elle-même rester coincée derrière la même mise en
   // veille. "touchstart"/"pointerdown" seulement (pas "scroll", trop fréquent) pour éviter de
   // multiplier les cycles déconnexion/reconnexion réseau à chaque petit geste.
-  let lastInteractionReconnectAt = 0;
-  const INTERACTION_RECONNECT_COOLDOWN_MS = 4000;
+  // (18 oct. 2026 : plus de reconnexion systématique à chaque toucher — seulement si le flux semble
+  // endormi, voir reconnectIfStale() plus haut.)
   function reconnectOnInteraction() {
     renderLiveGate();
-    const now = Date.now();
-    if (now - lastInteractionReconnectAt < INTERACTION_RECONNECT_COOLDOWN_MS) return;
-    lastInteractionReconnectAt = now;
-    forceReconnect();
+    reconnectIfStale();
   }
   ["touchstart", "pointerdown"].forEach((evt) => {
     document.addEventListener(evt, reconnectOnInteraction, { passive: true });
@@ -4760,13 +4786,14 @@
   // Intervalle resserré (était 20s/25s) — toujours suite au même bogue : plus l'écart est grand,
   // plus un client inactif (sans toucher l'écran) peut rester visiblement "en ligne" longtemps
   // après que Hubert se soit déconnecté.
-  let lastLiveSnapshotAt = Date.now();
-  const CONNECTION_WATCHDOG_MS = 8000; // vérifie toutes les 8s
-  const CONNECTION_STALE_MS = 12000; // force une reconnexion si rien de "live" depuis 12s
+  // 18 oct. 2026 : était "toutes les 8 s, si rien depuis 12 s" — c'est ce qui causait la boucle de
+  // reconnexions (voir le commentaire avant RECONNECT_IF_STALE_MS). Une soirée calme n'envoie aucune
+  // nouvelle pendant de longues minutes sans que la connexion soit morte : on attend donc 5 min
+  // sans rien avant de reconnecter un téléphone resté ouvert sans qu'on y touche.
+  const CONNECTION_WATCHDOG_MS = 30 * 1000;
+  const CONNECTION_STALE_MS = 5 * 60 * 1000;
   setInterval(() => {
-    if (document.visibilityState === "visible" && Date.now() - lastLiveSnapshotAt > CONNECTION_STALE_MS) {
-      forceReconnect();
-    }
+    if (document.visibilityState === "visible") reconnectIfStale(CONNECTION_STALE_MS);
   }, CONNECTION_WATCHDOG_MS);
 
   // ---------- Abonnements temps réel ----------
@@ -4838,7 +4865,8 @@
   }, (err) => console.error("artistDemand onSnapshot", err));
 
   onSnapshot(collection(db, "votes"), (snap) => {
-    lastLiveSnapshotAt = Date.now(); // confirme que l'écouteur "votes" reçoit bien des données
+    // confirme que l'écouteur "votes" reçoit bien des données du SERVEUR (pas juste du cache local)
+    if (!snap.metadata.fromCache) lastLiveSnapshotAt = Date.now();
     votes = {};
     // "serverTimestamps: estimate" : sans cette option, le champ "createdAt" (posé via
     // serverTimestamp(), voir requestSong()) lirait "null" le temps que le serveur confirme
@@ -4876,11 +4904,22 @@
     }, 600);
   }, (err) => console.error("votes onSnapshot", err));
 
-  onSnapshot(collection(db, "specialRequests"), (snap) => {
-    specialRequests = {};
-    snap.forEach((d) => { specialRequests[d.id] = d.data(); });
-    renderAdminSpecial();
-  }, (err) => console.error("specialRequests onSnapshot", err));
+  // Admin seulement (18 oct. 2026) : les règles Firestore refusent cette lecture aux clients — chaque
+  // téléphone faisait donc une requête refusée inutile à chaque connexion. Lancé/arrêté par
+  // onAuthStateChanged() plus bas.
+  let stopSpecialRequestsListener = null;
+  function setSpecialRequestsListener(on) {
+    if (on && !stopSpecialRequestsListener) {
+      stopSpecialRequestsListener = onSnapshot(collection(db, "specialRequests"), (snap) => {
+        specialRequests = {};
+        snap.forEach((d) => { specialRequests[d.id] = d.data(); });
+        renderAdminSpecial();
+      }, (err) => console.error("specialRequests onSnapshot", err));
+    } else if (!on && stopSpecialRequestsListener) {
+      stopSpecialRequestsListener();
+      stopSpecialRequestsListener = null;
+    }
+  }
 
   function renderAll() {
     renderPalmares();
@@ -5708,6 +5747,7 @@
   // ============================================================
   onAuthStateChanged(auth, (user) => {
     isAdmin = !!user;
+    setSpecialRequestsListener(isAdmin);
     document.getElementById("jb-login").hidden = isAdmin;
     document.getElementById("jb-dashboard").hidden = !isAdmin;
     if (isAdmin) {
