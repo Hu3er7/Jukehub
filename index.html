@@ -2357,6 +2357,7 @@
     } catch (e) {
       memoryStorageFallback[key] = value;
     }
+    if (isDurableKey(key)) bridgeSend({ type: "jb-store-set", key, value });
   }
   function safeStorageRemove(key) {
     try {
@@ -2365,6 +2366,82 @@
       delete memoryStorageFallback[key];
     }
   }
+
+  // ---------- Pont de stockage avec la page Carrd (18 oct. 2026) ----------
+  // Demande de Hubert : un client ne doit plus récupérer ses 6 votes en fermant le site puis en
+  // rescannant le code QR. Cause : cette appli tourne dans un cadre (iframe) posé par la page Carrd ;
+  // pour Safari, ce cadre est un site "tiers" (github.io dans carrd.co), dont le stockage est isolé et
+  // effacé facilement (fermeture de Safari, nouveau contexte au rescan…) — les votes, gardés
+  // uniquement sur le téléphone, repartaient alors à 6/6. La page Carrd, elle, est le site principal :
+  // SON stockage dure. On lui confie donc une copie des données qui comptent (votes utilisés,
+  // demandes, ordre des demandes) par postMessage, et on la relit à l'ouverture. Le script qui répond
+  // de l'autre côté est dans carrd-embed.html (à coller dans Carrd). Sans page parente (adresse
+  // github.io ouverte directement), rien ne change : le stockage local suffit.
+  const BRIDGE_PARENT_ORIGINS = ["https://myrepertoire.carrd.co"];
+  const inFrame = (() => { try { return window.parent && window.parent !== window; } catch (e) { return false; } })();
+  let bridgeOrigin = null;            // origine de la page Carrd, connue à sa 1re réponse
+  const bridgePendingWrites = [];     // écritures faites avant cette 1re réponse
+  let onBridgeData = null;            // posé plus bas (relit les votes/demandes une fois l'appli prête)
+  function isDurableKey(key) {
+    return /^jb_(votes|requested|req_order)_/.test(key) || key === "jb_first_vote_msg_seen";
+  }
+  function bridgeSend(msg) {
+    if (!inFrame) return;
+    if (!bridgeOrigin) { bridgePendingWrites.push(msg); return; }
+    try { window.parent.postMessage(msg, bridgeOrigin); } catch (e) {}
+  }
+  // Fusionne la copie locale et celle de la page Carrd sans jamais "rendre" de votes : pour une même
+  // chanson et un même tour, on garde le plus grand nombre de votes utilisés.
+  function mergeDurable(key, localRaw, parentRaw) {
+    if (localRaw == null) return parentRaw;
+    if (parentRaw == null) return localRaw;
+    if (key === "jb_first_vote_msg_seen") return "1";
+    let a, b;
+    try { a = JSON.parse(localRaw) || {}; b = JSON.parse(parentRaw) || {}; } catch (e) { return parentRaw; }
+    const out = { ...a };
+    Object.keys(b).forEach((id) => {
+      const x = a[id], y = b[id];
+      if (x === undefined) { out[id] = y; return; }
+      if (key.startsWith("jb_votes_")) {
+        if ((y.token || 0) !== (x.token || 0)) out[id] = (y.token || 0) > (x.token || 0) ? y : x;
+        else out[id] = { up: Math.max(x.up || 0, y.up || 0), down: Math.max(x.down || 0, y.down || 0), token: x.token || 0 };
+      } else if (key.startsWith("jb_req_order_")) {
+        out[id] = Math.min(x, y);           // garde le moment de la toute première demande
+      } else {
+        out[id] = Math.max(x, y);           // jb_requested_ : jeton de tour le plus récent
+      }
+    });
+    return JSON.stringify(out);
+  }
+  window.addEventListener("message", (e) => {
+    if (!BRIDGE_PARENT_ORIGINS.includes(e.origin) || !e.data || e.data.type !== "jb-store-snapshot") return;
+    const first = !bridgeOrigin;
+    bridgeOrigin = e.origin;
+    const data = (e.data.data && typeof e.data.data === "object") ? e.data.data : {};
+    const keys = new Set(Object.keys(data).filter(isDurableKey));
+    try {
+      for (let i = 0; i < window.localStorage.length; i++) {
+        const k = window.localStorage.key(i);
+        if (k && isDurableKey(k)) keys.add(k);
+      }
+    } catch (err) {}
+    keys.forEach((k) => {
+      const merged = mergeDurable(k, safeStorageGet(k), data[k] ?? null);
+      if (merged == null) return;
+      try { window.localStorage.setItem(k, merged); } catch (err) { memoryStorageFallback[k] = merged; }
+      if (merged !== data[k]) bridgeSend({ type: "jb-store-set", key: k, value: merged });
+    });
+    if (first) bridgePendingWrites.splice(0).forEach((m) => bridgeSend(m));
+    if (onBridgeData) onBridgeData();
+  });
+  function bridgeRequest() {
+    if (!inFrame || bridgeOrigin) return;
+    BRIDGE_PARENT_ORIGINS.forEach((o) => {
+      try { window.parent.postMessage({ type: "jb-store-get" }, o); } catch (e) {}
+    });
+  }
+  bridgeRequest();
+  setTimeout(bridgeRequest, 1500); // 2e essai si la page Carrd n'était pas encore prête
 
   // ---------- Accès par code QR, valable 24h ET seulement depuis la connexion admin actuelle ----------
   // Demande explicite de Hubert : passé 24h depuis le dernier scan du code QR (affiché au bar),
@@ -2538,7 +2615,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-18.121";
+  const APP_BUILD = "2026-10-18.122";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -6325,4 +6402,14 @@
   function escapeHtml(str) {
     return String(str).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   }
+
+  // Copie de la page Carrd reçue (voir "Pont de stockage" tout en haut) : on relit les votes et les
+  // demandes de la soirée en cours. Posé ici, tout à la fin, pour que tout le reste soit prêt.
+  onBridgeData = () => {
+    if (!nightId) return; // la soirée n'est pas encore connue : la 1re lecture se fera à son arrivée
+    loadRequestedFromStorage();
+    loadVotesFromStorage();
+    renderAll();
+  };
+  if (bridgeOrigin) onBridgeData(); // copie arrivée pendant le chargement de Firebase
 </script>
