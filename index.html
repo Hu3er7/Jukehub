@@ -2640,7 +2640,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-19.125";
+  const APP_BUILD = "2026-10-19.126";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -3694,6 +3694,17 @@
   // ---------- Utilitaires ----------
   function norm(s) {
     return (s || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+  }
+  // Clé de RECHERCHE (19 oct. 2026, bogue signalé par Hubert) : "J'aime ta grand mère" ne trouvait
+  // pas "J'aime Ta Grand-Mère" — le clavier de l'iPhone tape une apostrophe courbe (’) alors que le
+  // répertoire a des apostrophes droites ('), et un espace ne correspondait pas au trait d'union. On
+  // ignore donc toute ponctuation ET les espaces, des deux côtés ("jaimetagrandmere"). Réservée à la
+  // recherche : norm() reste inchangée ailleurs (regroupement par artiste, statistiques).
+  function searchKey(s) {
+    return norm(s).replace(/œ/g, "oe").replace(/æ/g, "ae").replace(/[^a-z0-9]+/g, "");
+  }
+  function matchesSearch(song, key) {
+    return searchKey(song.title).includes(key) || searchKey(song.artist).includes(key);
   }
 
   function slugId() {
@@ -5317,7 +5328,7 @@
   // sans jamais le modifier lui-même : une fois la recherche effacée, on retrouve exactement la
   // vue où on était (voir le bouton RETOUR plus bas).
   function renderCatalog() {
-    const search = norm(document.getElementById("jb-search-input").value);
+    const search = searchKey(document.getElementById("jb-search-input").value);
     const browse = document.getElementById("jb-catalog-browse");
     const resultsWrap = document.getElementById("jb-catalog-results");
     const backBtn = document.getElementById("jb-back-btn");
@@ -5389,7 +5400,7 @@
       let songs;
       let showArtist = true;
       if (search) {
-        songs = catalogSongs.filter((s) => norm(s.title).includes(search) || norm(s.artist).includes(search));
+        songs = catalogSongs.filter((s) => matchesSearch(s, search));
       } else if (catalogView.type === "all-songs") {
         sectionTitleEl.textContent = t("style_title_count", catalogSongs.length);
         songs = catalogSongs;
@@ -5641,9 +5652,9 @@
   // confirmée, si on le ramène à l'écran principal ou si on le laisse choisir une autre chanson
   // dans la même liste.
   function currentResultsCount() {
-    const search = norm(document.getElementById("jb-search-input").value);
+    const search = searchKey(document.getElementById("jb-search-input").value);
     if (search) {
-      return catalogSongs.filter((s) => norm(s.title).includes(search) || norm(s.artist).includes(search)).length;
+      return catalogSongs.filter((s) => matchesSearch(s, search)).length;
     }
     if (!catalogView) return 0;
     if (catalogView.type === "all-songs") {
@@ -6300,12 +6311,12 @@
   // ---------- Répertoire admin (recherche + suppression) ----------
   function renderAdminCatalog() {
     if (!isAdmin) return;
-    const search = norm(document.getElementById("jb-admin-search").value);
+    const search = searchKey(document.getElementById("jb-admin-search").value);
     document.getElementById("jb-admin-count").textContent = catalogSongs.length;
 
     let songs = catalogSongs;
     if (search) {
-      songs = songs.filter((s) => norm(s.title).includes(search) || norm(s.artist).includes(search));
+      songs = songs.filter((s) => matchesSearch(s, search));
     }
     songs = [...songs].sort((a, b) => a.title.localeCompare(b.title, "fr"));
 
