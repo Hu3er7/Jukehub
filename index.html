@@ -2397,6 +2397,7 @@
   let onBridgeData = null;            // posé plus bas (relit les votes/demandes une fois l'appli prête)
   const bridgeData = {};              // copie de la page Carrd, gardée en mémoire (lue par safeStorageGet)
   let bridgeReceivedKeys = 0;         // pour l'écran de diagnostic (#diag)
+  let bridgeReceivedNames = [];
   function isDurableKey(key) {
     return /^jb_(votes|requested|req_order)_/.test(key) || key === "jb_first_vote_msg_seen";
   }
@@ -2435,6 +2436,7 @@
     const data = (e.data.data && typeof e.data.data === "object") ? e.data.data : {};
     const keys = new Set(Object.keys(data).filter(isDurableKey));
     bridgeReceivedKeys = keys.size;
+    bridgeReceivedNames = [...keys].map((k) => k.replace(/_\d{4}-\d\d-\d\dT[\d:.]+Z$/, ""));
     try {
       for (let i = 0; i < window.localStorage.length; i++) {
         const k = window.localStorage.key(i);
@@ -2451,7 +2453,10 @@
       try { window.localStorage.setItem(k, merged); } catch (err) { memoryStorageFallback[k] = merged; }
       if (merged !== data[k]) bridgeSend({ type: "jb-store-set", key: k, value: merged });
     });
-    if (first) bridgePendingWrites.splice(0).forEach((m) => bridgeSend(m));
+    // Écritures faites avant cette réponse : déjà incluses dans la fusion ci-dessus (qui relit le
+    // stockage du cadre et la mémoire de secours) — on les JETTE au lieu de les renvoyer, sinon une
+    // vieille valeur (ex. "aucun vote") écraserait la bonne copie de la page Carrd.
+    if (first) bridgePendingWrites.length = 0;
     if (onBridgeData) onBridgeData();
   });
   function bridgeRequest() {
@@ -2635,7 +2640,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-19.123";
+  const APP_BUILD = "2026-10-19.124";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -6454,7 +6459,7 @@
         `DIAGNOSTIC — build ${APP_BUILD}`,
         `dans la page Carrd : ${inFrame ? "oui" : "non"}`,
         `page Carrd connectée : ${bridgeOrigin ? "oui" : "NON"}`,
-        `données reçues de Carrd : ${bridgeReceivedKeys}`,
+        `données reçues de Carrd : ${bridgeReceivedKeys}${bridgeReceivedNames.length ? " (" + bridgeReceivedNames.join(", ") + ")" : ""}`,
         `stockage du cadre utilisable : ${frameStorageWorks ? "oui" : "NON"}`,
         `soirée : ${nightId || "(pas encore connue)"}`,
         `votes restants : ${votesRemaining()}/${MAX_VOTES}`,
