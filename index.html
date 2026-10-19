@@ -1387,6 +1387,19 @@
   }
   #jb-public .jb-vote-modal-btn { min-width: 170px; padding: 11px 20px; font-size: 1rem; }
 
+  /* Admin : "Demandes spéciales" en liste repliable (18 oct. 2026) */
+  #jb-admin .jb-admin-special-wrap > summary {
+    cursor: pointer; list-style: none; display: flex; align-items: center; gap: 8px; user-select: none;
+  }
+  #jb-admin .jb-admin-special-wrap > summary::-webkit-details-marker { display: none; }
+  #jb-admin .jb-admin-special-wrap > summary::before {
+    content: "▶"; font-size: 0.8em; transition: transform 0.2s ease; color: var(--accent2, #fffaa8);
+  }
+  #jb-admin .jb-admin-special-wrap[open] > summary::before { transform: rotate(90deg); }
+  #jb-admin .jb-admin-special-wrap > summary h3 { margin: 0; }
+  #jb-admin .jb-admin-special-count { opacity: 0.7; font-size: 0.85em; }
+  #jb-admin .jb-admin-special-wrap[open] > summary { margin-bottom: 8px; }
+
   /* Catalogue, chanson déjà demandée : [▲ jaune] [0 VOTE] — même largeur que le badge "Demande" */
   #jb-public .jb-song-up { width: 30px; height: 30px; font-size: 0.8rem; }
   #jb-public .jb-song-request-badge { min-width: 92px; text-align: center; }
@@ -2256,7 +2269,7 @@
 
       <section class="jb-admin-section">
         <button id="jb-newnight-btn" class="jb-btn-danger">🌙 Nouvelle soirée (reset palmarès)</button>
-        <p class="jb-hint">Efface le palmarès et les chansons "déjà jouées". Le répertoire complet reste intact.</p>
+        <p class="jb-hint">Efface le palmarès et les chansons "déjà jouées". Le répertoire complet et les demandes spéciales restent intacts.</p>
       </section>
 
       <section class="jb-admin-section jb-admin-columns">
@@ -2265,12 +2278,15 @@
           <ol id="jb-admin-palmares" class="jb-admin-palmares"></ol>
           <p id="jb-admin-palmares-empty" class="jb-empty" hidden>Rien pour l'instant.</p>
         </div>
-        <div class="jb-admin-column">
-          <h3>📨 Demandes spéciales</h3>
-          <p class="jb-hint">Recherches de clients restées sans résultat dans le répertoire.</p>
+        <!-- 18 oct. 2026 (Hubert) : liste repliable, et GARDÉE d'une soirée à l'autre ("Nouvelle
+             soirée" n'efface que le palmarès) — Hubert y revient chez lui pour apprendre les
+             suggestions au chant et à la guitare. -->
+        <details id="jb-admin-special-wrap" class="jb-admin-column jb-admin-special-wrap">
+          <summary><h3>📨 Demandes spéciales <span id="jb-admin-special-count" class="jb-admin-special-count"></span></h3></summary>
+          <p class="jb-hint">Recherches de clients restées sans résultat dans le répertoire. Gardées d'une soirée à l'autre — « Nouvelle soirée » ne les efface pas.</p>
           <ol id="jb-admin-special" class="jb-admin-palmares"></ol>
           <p id="jb-admin-special-empty" class="jb-empty" hidden>Rien pour l'instant.</p>
-        </div>
+        </details>
       </section>
 
       <section class="jb-admin-section">
@@ -2522,7 +2538,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-18.120";
+  const APP_BUILD = "2026-10-18.121";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -5950,23 +5966,41 @@
 
     list.innerHTML = "";
     empty.hidden = entries.length > 0;
+    const countEl = document.getElementById("jb-admin-special-count");
+    if (countEl) countEl.textContent = `(${entries.length})`;
 
     entries.forEach(([id, req]) => {
       const li = document.createElement("li");
       li.className = "jb-slot";
+      // Date de la suggestion (utile pour s'y retrouver d'une pratique à l'autre)
+      const ms = req.createdAt?.toMillis ? req.createdAt.toMillis() : 0;
+      const when = ms ? new Date(ms).toLocaleDateString("fr-CA", { day: "numeric", month: "short", year: "numeric" }) : "";
+      const sub = [req.name, when].filter(Boolean).map(escapeHtml).join(" · ");
       li.innerHTML = `
         <span class="jb-slot-info">
           <span class="jb-slot-title">${escapeHtml(req.text || "")}</span>
-          ${req.name ? `<span class="jb-slot-artist">${escapeHtml(req.name)}</span>` : ""}
+          ${sub ? `<span class="jb-slot-artist">${sub}</span>` : ""}
         </span>
         <button class="jb-dismiss-special-btn" data-dismiss="${id}">✖ Retirer</button>`;
       list.appendChild(li);
     });
 
     list.querySelectorAll("[data-dismiss]").forEach((btn) => {
-      btn.addEventListener("click", () => dismissSpecialRequest(btn.dataset.dismiss));
+      btn.addEventListener("click", () => {
+        // Retrait définitif : on demande confirmation (Hubert garde cette liste pour pratiquer)
+        const text = specialRequests[btn.dataset.dismiss]?.text || "";
+        if (!confirm(`Retirer définitivement « ${text} » de la liste ?`)) return;
+        dismissSpecialRequest(btn.dataset.dismiss);
+      });
     });
   }
+  // Liste repliable : se souvient si elle était ouverte ou fermée (sur cet appareil)
+  (() => {
+    const wrap = document.getElementById("jb-admin-special-wrap");
+    if (!wrap) return;
+    wrap.open = safeStorageGet("jb_admin_special_open") === "1";
+    wrap.addEventListener("toggle", () => safeStorageSet("jb_admin_special_open", wrap.open ? "1" : "0"));
+  })();
 
   async function dismissSpecialRequest(id) {
     try {
@@ -6076,7 +6110,9 @@
 
   // ---------- Nouvelle soirée ----------
   document.getElementById("jb-newnight-btn").addEventListener("click", async () => {
-    if (!confirm("Réinitialiser le palmarès et les chansons jouées pour une nouvelle soirée ?")) return;
+    if (!confirm("Réinitialiser le palmarès et les chansons jouées pour une nouvelle soirée ? (Les demandes spéciales sont gardées.)")) return;
+    // Ne supprime QUE les documents "votes" (palmarès) : la collection "specialRequests" n'est jamais
+    // touchée ici — Hubert garde ses suggestions pour les apprendre (demande du 18 oct. 2026).
     try {
       const voteIds = Object.keys(votes);
       for (let i = 0; i < voteIds.length; i += 400) {
