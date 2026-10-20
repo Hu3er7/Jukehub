@@ -1593,6 +1593,34 @@
     clip-path: polygon(6px 0, calc(100% - 6px) 0, 100% 50%, calc(100% - 6px) 100%, 6px 100%, 0 50%);
   }
   /* Pas d'étiquette en bas : à cheval sur l'arête, elle chevauchait la dernière chanson des listes */
+
+  /* ===== "// Tes demandes" en boîte rouge néon (20 oct. 2026, Hubert) =====
+     Même concept visuel que le panneau de sélection ci-dessus (corps sombre, arête lumineuse, 2e
+     contour intérieur, point de repère dans le coin, étiquette sur l'arête), mais en rouge néon. */
+  #jb-public .jb-myreq-frame {
+    position: relative; margin: 22px -10px 20px; padding: 18px 16px 8px;
+    background-color: #1a0409;
+    border: 2px solid #ff2d55; border-radius: 3px;
+    box-shadow: 0 0 18px rgba(255, 45, 85, 0.5), inset 0 0 26px rgba(255, 45, 85, 0.16);
+  }
+  #jb-public .jb-myreq-frame::before {
+    content: ""; position: absolute; inset: 7px; pointer-events: none;
+    border: 1px solid rgba(255, 45, 85, 0.35);
+  }
+  #jb-public .jb-myreq-frame::after {
+    content: ""; position: absolute; left: 12px; top: 12px; width: 6px; height: 6px; border-radius: 50%;
+    background: #ff2d55; box-shadow: 0 0 8px #ff2d55; pointer-events: none;
+  }
+  #jb-public .jb-myreq-frame > * { position: relative; z-index: 1; }
+  #jb-public .jb-myreq-frame-label {
+    position: absolute; top: 0; left: 30px; transform: translateY(-50%); z-index: 2; pointer-events: none;
+    background: #ff2d55; color: #1a0409;
+    font-family: 'Share Tech Mono', monospace; font-size: 0.68rem; letter-spacing: 1.5px; padding: 1px 10px;
+    clip-path: polygon(6px 0, calc(100% - 6px) 0, 100% 50%, calc(100% - 6px) 100%, 6px 100%, 0 50%);
+  }
+  #jb-public .jb-myreq-frame .jb-empty { margin: 4px 0 10px; }
+  /* Dernière ligne sans trait pointillé (le bas de la boîte sert de séparateur) */
+  #jb-public .jb-myreq-frame .jb-myreq-row:last-child { border-bottom: none; }
 </style>
 
 <div id="jb-app">
@@ -2204,8 +2232,13 @@
         <h2 id="jb-my-requests-title">Tes demandes</h2>
         <!-- "N/6 votes restants" retiré le 19 oct. 2026 (plus de votes gratuits, votes payants à venir) -->
       </div>
-      <p id="jb-my-votes-empty" class="jb-empty">Tu n'as pas encore fait de demande ce soir.</p>
-      <div id="jb-my-votes-list" class="jb-myreq-list"></div>
+      <!-- Boîte rouge néon (20 oct. 2026, Hubert) : même concept que le panneau de sélection
+           (.jb-catalog-frame), en rouge. L'étiquette sur l'arête affiche le nombre de demandes (N/5). -->
+      <div class="jb-myreq-frame">
+        <div class="jb-myreq-frame-label" id="jb-myreq-frame-label" aria-hidden="true"></div>
+        <p id="jb-my-votes-empty" class="jb-empty">Tu n'as pas encore fait de demande ce soir.</p>
+        <div id="jb-my-votes-list" class="jb-myreq-list"></div>
+      </div>
     </section>
 
     <section class="jb-palmares">
@@ -2701,7 +2734,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-20.130";
+  const APP_BUILD = "2026-10-20.131";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -2802,6 +2835,7 @@
       votes_used_word: (n) => `UTILISÉ${n === 1 ? "" : "S"}`,
       // Section "// Tes demandes" et fenêtre après chaque vote (maquette de Hubert, 17 oct. 2026)
       my_requests_title: "Tes demandes",
+      myreq_label: (n, max) => `DEMANDES ${n}/${max}`,
       my_req_rank: (n) => `${n}${n === 1 ? "ER" : "E"} RANG`,
       my_req_up_aria: "Faire monter cette chanson",
       vote_modal_left: (n) => (n > 0 ? `Il te reste ${n} vote${n > 1 ? "s" : ""}` : "Tu as utilisé tes 6 votes"),
@@ -2882,6 +2916,7 @@
       votes_unit: (n) => `VOTE${n === 1 ? "" : "S"}`,
       votes_used_word: () => "USED",
       my_requests_title: "Your requests",
+      myreq_label: (n, max) => `REQUESTS ${n}/${max}`,
       my_req_rank: (n) => `RANK ${n}`,
       my_req_up_aria: "Push this song up",
       vote_modal_left: (n) => (n > 0 ? `You have ${n} vote${n > 1 ? "s" : ""} left` : "You've used all 6 votes"),
@@ -4677,6 +4712,9 @@
       return [id, votes[id], rank];
     });
     emptyEl.hidden = rows.length > 0;
+    // Étiquette de la boîte rouge néon : nombre de demandes actives sur le maximum (ex. « DEMANDES 2/5 »)
+    const frameLabel = document.getElementById("jb-myreq-frame-label");
+    if (frameLabel) frameLabel.textContent = t("myreq_label", rows.length, MAX_REQUESTS);
     listEl.innerHTML = rows
       .map(([id, v, rank]) => {
         // Même principe que rowFlashElapsedMs() : la classe reste posée pendant l'animation (0.5s)
