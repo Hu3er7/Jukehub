@@ -2370,7 +2370,7 @@
             <button type="button" class="jb-pay-chip" data-amount="1000">10 $</button>
             <button type="button" class="jb-pay-chip" data-amount="2000">20 $</button>
           </div>
-          <input id="jb-pay-custom" class="jb-pay-custom" type="number" inputmode="decimal" min="2" max="100" step="1" autocomplete="off" />
+          <input id="jb-pay-custom" class="jb-pay-custom" type="number" inputmode="decimal" min="2" max="100" step="0.01" autocomplete="off" />
           <p id="jb-pay-note" class="jb-pay-note"></p>
         </div>
         <button id="jb-vote-modal-btn" type="button" class="jb-btn-primary jb-vote-modal-btn"></button>
@@ -2775,7 +2775,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-20.134";
+  const APP_BUILD = "2026-10-20.135";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -2887,7 +2887,7 @@
       // Fenêtre de paiement (Stripe, 19 oct. 2026) — voir showPayModal()
       pay_title: (title) => `Fais monter « ${title} »`,
       pay_note: "La chanson qui a reçu le plus d'argent passe en premier. Tu es facturé seulement si la chanson est jouée ce soir.",
-      pay_custom_ph: "Autre montant (2 à 100 $)",
+      pay_custom_ph: "Autre montant",
       pay_btn: (amount) => `Payer ${amount}`,
       pay_invalid: "Montant de 2 à 100 $",
       pay_redirect: "Redirection vers le paiement…",
@@ -2968,7 +2968,7 @@
       votes_left_line: (r, max) => `${r}/${max} vote${r === 1 ? "" : "s"} left`,
       pay_title: (title) => `Push “${title}” up`,
       pay_note: "The song with the most money goes first. You're only charged if the song is played tonight.",
-      pay_custom_ph: "Other amount ($2 to $100)",
+      pay_custom_ph: "Other amount",
       pay_btn: (amount) => `Pay ${amount}`,
       pay_invalid: "Amount from $2 to $100",
       pay_redirect: "Opening payment…",
