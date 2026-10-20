@@ -1,0 +1,85 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Admin = UNIQUEMENT le compte de Hubert (19 oct. 2026, paiements). Avant, n'importe quel compte
+    // connecté avait tous les droits ; avec de l'argent en jeu, il faut que ce soit exactement le sien.
+    // Même courriel que ADMIN_EMAIL du serveur de paiement (functions/.env.jukehub-14c98).
+    function isAdmin() {
+      return request.auth != null && request.auth.token.email == 'hubertplante.gd@gmail.com';
+    }
+
+    // Le répertoire complet des chansons (un seul document contenant la liste)
+    match /catalog/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Une chanson au palmarès = un document par chanson demandée ce soir.
+    // 19 oct. 2026 — PAIEMENTS : "requests" = argent payé pour la chanson, EN CENTS, et "voters" =
+    // argent payé par prénom. SEUL le serveur de paiement (functions/index.js, qui passe outre ces
+    // règles) les augmente, une fois le paiement autorisé par Stripe. Un client ne peut donc plus
+    // jamais changer ces chiffres lui-même (l'ancienne règle +1/-1 des votes est retirée).
+    match /votes/{songId} {
+      allow read: if true;
+
+      // Première demande de la soirée : création à 0 $, sans prénoms, rien d'autre.
+      allow create: if isAdmin() || (
+        request.resource.data.keys().hasOnly(['requests', 'burned', 'title', 'artist', 'createdAt']) &&
+        request.resource.data.requests == 0 &&
+        request.resource.data.burned == false &&
+        request.resource.data.title is string &&
+        request.resource.data.title.size() <= 200
+      );
+
+      // Réactivation d'une chanson « éteinte » (déjà jouée, revenue à 0 $) par une nouvelle demande :
+      // seulement "createdAt" et "playedAt" (effacé), jamais le montant ni les prénoms.
+      allow update: if isAdmin() || (
+        resource.data.get('burned', false) == false &&
+        resource.data.requests == 0 &&
+        resource.data.get('playedAt', null) != null &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['createdAt', 'playedAt']) &&
+        request.resource.data.playedAt == null
+      );
+
+      allow delete: if isAdmin();
+    }
+
+    // Paiements (un document par paiement Stripe) : écrits seulement par le serveur de paiement.
+    match /payments/{paymentId} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
+    // Réglages généraux (soirée en cours, en spectacle, afficher les montants…)
+    match /config/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Boîte de suggestions (chansons introuvables dans le répertoire) : jamais payante. Écriture
+    // publique très limitée (un texte court + un prénom facultatif), lecture réservée à l'admin.
+    match /specialRequests/{docId} {
+      allow read: if isAdmin();
+      allow create: if isAdmin() || (
+        request.resource.data.keys().hasOnly(['text', 'createdAt', 'name']) &&
+        request.resource.data.text is string &&
+        request.resource.data.text.size() > 0 &&
+        request.resource.data.text.size() <= 200 &&
+        (!('name' in request.resource.data) || (
+          request.resource.data.name is string &&
+          request.resource.data.name.size() > 0 &&
+          request.resource.data.name.size() <= 15
+        ))
+      );
+      allow update: if false;
+      allow delete: if isAdmin();
+    }
+
+    // Compteur cumulatif de demandes par artiste (mis à jour par chaque client à chaque demande)
+    match /stats/{docId} {
+      allow read: if true;
+      allow write: if true;
+    }
+  }
+}

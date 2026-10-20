@@ -5,12 +5,15 @@ function setFrame() {
   document.getElementById('jbFrame').src = 'https://hu3er7.github.io/Jukehub/' + location.hash;
   // Retire "#qr=1" de l'adresse une fois transmis : un simple "Actualiser" ne compte plus comme un scan,
   // et un nouveau scan du code QR est toujours reconnu (même si l'ancien onglet est encore ouvert).
-  if (location.hash === '#qr=1') history.replaceState(null, '', location.pathname + location.search);
+  // Idem pour "#paid" (retour de la page de paiement Stripe) : un "Actualiser" ne réaffiche pas le merci.
+  if (location.hash === '#qr=1' || location.hash === '#paid') history.replaceState(null, '', location.pathname + location.search);
 }
 setFrame();
 window.addEventListener('hashchange', setFrame);
 
-// Pont de stockage (18 oct. 2026) : garde ici, sur la page Carrd, une copie des votes et demandes du
+// Pont avec l'appli (18-19 oct. 2026) : garde ici, sur la page Carrd, une copie des demandes du
+// client, et ouvre la page de paiement Stripe en plein écran quand l'appli le demande.
+// (Historique) Pont de stockage : garde ici, sur la page Carrd, une copie des votes et demandes du
 // client. Safari efface facilement le stockage du cadre (site "tiers"), mais pas celui de cette page :
 // un client qui ferme le site et rescanne le code QR retrouve donc ses votes déjà utilisés.
 var JB_APP_ORIGIN = 'https://hu3er7.github.io';
@@ -28,6 +31,11 @@ window.addEventListener('message', function (e) {
     } else if (d.type === 'jb-store-set' && typeof d.key === 'string' && d.key.indexOf('jb_') === 0
                && typeof d.value === 'string' && d.value.length < 50000) {
       localStorage.setItem(d.key, d.value);
+    } else if (d.type === 'jb-open-url' && typeof d.url === 'string'
+               && d.url.indexOf('https://checkout.stripe.com/') === 0) {
+      // Paiement (19 oct. 2026) : la page de Stripe refuse de s'ouvrir dans le cadre — c'est donc
+      // cette page-ci qui l'ouvre en plein écran (seulement une adresse de Stripe).
+      location.href = d.url;
     }
   } catch (err) {}
 });

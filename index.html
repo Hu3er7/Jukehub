@@ -1386,6 +1386,39 @@
     text-shadow: 0 0 6px rgba(255, 242, 0, 0.35);
   }
   #jb-public .jb-vote-modal-btn { min-width: 170px; padding: 11px 20px; font-size: 1rem; }
+  /* Bouton "Fermer" de la fenêtre "Acheter des votes" */
+  #jb-public .jb-vote-modal-close {
+    display: block; width: 100%; margin-top: 10px; padding: 10px 20px; cursor: pointer;
+    font-family: 'Share Tech Mono', monospace; letter-spacing: 1px; text-transform: uppercase;
+  }
+  #jb-public .jb-vote-modal-close[hidden] { display: none; }
+  #jb-public .jb-vote-modal-btn:disabled { opacity: 0.45; cursor: default; }
+
+  /* Fenêtre de paiement (Stripe, 19 oct. 2026) : 4 montants rapides + "Autre montant" */
+  #jb-public .jb-pay-amounts[hidden] { display: none; }
+  #jb-public .jb-pay-amounts { margin: -6px 0 16px; }
+  #jb-public .jb-pay-chips { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 10px; }
+  #jb-public .jb-pay-chip {
+    padding: 12px 0; cursor: pointer; background: #121003; color: #fff200;
+    border: 1px solid rgba(255, 242, 0, 0.5); clip-path: var(--jb-cp-cut-sm);
+    font-family: 'Share Tech Mono', monospace; font-size: 1.05rem; font-weight: 700;
+  }
+  #jb-public .jb-pay-chip.jb-pay-chip-on { background: #fff200; color: #080701; box-shadow: 0 0 10px rgba(255, 242, 0, 0.45); }
+  #jb-public .jb-pay-custom {
+    width: 100%; box-sizing: border-box; padding: 11px 12px; text-align: center; font-size: 16px;
+    background: #121003; color: #fff200; border: 1px solid rgba(255, 242, 0, 0.35);
+  }
+  #jb-public .jb-pay-note {
+    margin: 10px 0 0; color: #a89d3a; font-family: 'Share Tech Mono', monospace;
+    font-size: 0.78rem; line-height: 1.4; text-transform: none; letter-spacing: 0.3px;
+  }
+  /* Catalogue, montants cachés : la case devient "Faire monter" (cliquable comme la flèche) */
+  #jb-public .jb-song-boost-word { cursor: pointer; }
+
+  /* Admin : interrupteur « Afficher les montants » (19 oct. 2026) */
+  #jb-admin .jb-admin-toggle { display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 1rem; }
+  #jb-admin .jb-admin-toggle input { width: 22px; height: 22px; accent-color: #fff200; cursor: pointer; }
+  #jb-admin .jb-admin-amount { width: auto; min-width: 54px; font-size: 1.15rem; }
 
   /* Admin : "Demandes spéciales" en liste repliable (18 oct. 2026) */
   #jb-admin .jb-admin-special-wrap > summary {
@@ -1945,6 +1978,9 @@
        draw(0);
      }
      function draw(dt) {
+       // Écran de largeur ou hauteur 0 (page ouverte en arrière-plan, pas encore affichée) : rien à
+       // dessiner — sinon drawImage() plante ("canvas element with a width or height of 0").
+       if (!board.width || !board.height || !canvas.width || !canvas.height) return;
        const sy = Math.max(0, Math.min(H - vh, window.scrollY || 0));
        ctx.clearRect(0, 0, w, vh);
        ctx.drawImage(board, 0, sy * bScale, w * bScale, vh * bScale, 0, 0, w, vh);
@@ -2161,7 +2197,7 @@
            fenêtre qui suit chaque vote (voir showVoteModal()). -->
       <div class="jb-my-votes-heading">
         <h2 id="jb-my-requests-title">Tes demandes</h2>
-        <span id="jb-vote-remaining" class="jb-myreq-votes-left">6/6 votes restants</span>
+        <!-- "N/6 votes restants" retiré le 19 oct. 2026 (plus de votes gratuits, votes payants à venir) -->
       </div>
       <p id="jb-my-votes-empty" class="jb-empty">Tu n'as pas encore fait de demande ce soir.</p>
       <div id="jb-my-votes-list" class="jb-myreq-list"></div>
@@ -2247,7 +2283,20 @@
     <div id="jb-vote-modal" class="jb-vote-modal" role="dialog" aria-modal="true" aria-labelledby="jb-vote-modal-text" hidden>
       <div class="jb-vote-modal-card">
         <p id="jb-vote-modal-text" class="jb-vote-modal-text"></p>
+        <!-- Choix du montant (paiements Stripe, 19 oct. 2026) — seulement en mode "pay", voir showPayModal() -->
+        <div id="jb-pay-amounts" class="jb-pay-amounts" hidden>
+          <div class="jb-pay-chips">
+            <button type="button" class="jb-pay-chip" data-amount="200">2 $</button>
+            <button type="button" class="jb-pay-chip" data-amount="500">5 $</button>
+            <button type="button" class="jb-pay-chip" data-amount="1000">10 $</button>
+            <button type="button" class="jb-pay-chip" data-amount="2000">20 $</button>
+          </div>
+          <input id="jb-pay-custom" class="jb-pay-custom" type="number" inputmode="decimal" min="2" max="100" step="1" autocomplete="off" />
+          <p id="jb-pay-note" class="jb-pay-note"></p>
+        </div>
         <button id="jb-vote-modal-btn" type="button" class="jb-btn-primary jb-vote-modal-btn"></button>
+        <!-- 2e bouton, seulement pour la fenêtre "Acheter des votes" (voir showBuyVotesModal()) -->
+        <button id="jb-vote-modal-close" type="button" class="jb-name-prompt-skip-btn jb-vote-modal-close" hidden></button>
       </div>
     </div>
   </div>
@@ -2271,6 +2320,12 @@
       <section class="jb-admin-section">
         <button id="jb-newnight-btn" class="jb-btn-danger">🌙 Nouvelle soirée (reset palmarès)</button>
         <p class="jb-hint">Efface le palmarès et les chansons "déjà jouées". Le répertoire complet et la boîte de suggestions restent intacts.</p>
+      </section>
+
+      <!-- Paiements (19 oct. 2026) : Hubert choisit si les clients voient les montants payés -->
+      <section class="jb-admin-section">
+        <label class="jb-admin-toggle"><input type="checkbox" id="jb-show-amounts-toggle" /> 💲 Afficher les montants sur le site</label>
+        <p class="jb-hint">Coché : les clients voient combien chaque chanson a reçu (ex. « 25 $ »). Décoché : seulement le rang. Toi, tu vois toujours les montants ici.</p>
       </section>
 
       <section class="jb-admin-section jb-admin-columns">
@@ -2641,7 +2696,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-19.127";
+  const APP_BUILD = "2026-10-20.128";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -2730,7 +2785,7 @@
       // — voir castVote()/entry.up. Message distinct du "vote_added_down" ci-dessus (qui reste
       // pour un VRAI vote à la baisse, contre le choix de quelqu'un d'autre, qui coûte 1 vote).
       vote_refunded: "↩️ Vote récupéré !",
-      vote_up_aria: "Ajouter un vote à cette chanson",
+      vote_up_aria: "Faire monter cette chanson",
       vote_down_aria: "Retirer un vote de cette chanson",
       // Nouvelle section "Mes votes" (demande explicite de Hubert) — voir renderMyVotes(). Chaque
       // chanson votée prend une ligne complète (style palmarès) avec le solde net de votes affiché
@@ -2748,6 +2803,17 @@
       vote_modal_back: "Tu les récupères quand ta chanson est jouée",
       vote_modal_btn: "Continuer",
       votes_left_line: (r, max) => `${r}/${max} vote${r > 1 ? "s" : ""} restant${r > 1 ? "s" : ""}`,
+      // Fenêtre de paiement (Stripe, 19 oct. 2026) — voir showPayModal()
+      pay_title: (title) => `Fais monter « ${title} »`,
+      pay_note: "La chanson qui a reçu le plus d'argent passe en premier. Tu es facturé seulement si la chanson est jouée ce soir.",
+      pay_custom_ph: "Autre montant (2 à 100 $)",
+      pay_btn: (amount) => `Payer ${amount}`,
+      pay_invalid: "Montant de 2 à 100 $",
+      pay_redirect: "Redirection vers le paiement…",
+      pay_error: "Le paiement n'a pas pu démarrer. Réessaie dans un instant.",
+      pay_close: "Fermer",
+      paid_thanks: "💳 Merci ! Ta chanson monte dans le palmarès.",
+      boost_word: "Faire monter",
       req_limit_title: "Tu as atteint ta limite de 5 demandes",
       req_limit_back: "Tu pourras en faire d'autres quand une de tes chansons sera jouée",
       style_title: "Chansons",
@@ -2805,7 +2871,7 @@
       vote_added_up: "👍 Vote added!",
       vote_added_down: "👎 Vote removed!",
       vote_refunded: "↩️ Vote refunded!",
-      vote_up_aria: "Add a vote to this song",
+      vote_up_aria: "Push this song up",
       vote_down_aria: "Remove a vote from this song",
       my_votes_empty: "You haven't requested a song yet tonight.",
       votes_unit: (n) => `VOTE${n === 1 ? "" : "S"}`,
@@ -2817,6 +2883,16 @@
       vote_modal_back: "You get them back when your song is played",
       vote_modal_btn: "Continue",
       votes_left_line: (r, max) => `${r}/${max} vote${r === 1 ? "" : "s"} left`,
+      pay_title: (title) => `Push “${title}” up`,
+      pay_note: "The song with the most money goes first. You're only charged if the song is played tonight.",
+      pay_custom_ph: "Other amount ($2 to $100)",
+      pay_btn: (amount) => `Pay ${amount}`,
+      pay_invalid: "Amount from $2 to $100",
+      pay_redirect: "Opening payment…",
+      pay_error: "The payment couldn't start. Try again in a moment.",
+      pay_close: "Close",
+      paid_thanks: "💳 Thank you! Your song is moving up.",
+      boost_word: "Push up",
       req_limit_title: "You've reached your limit of 5 requests",
       req_limit_back: "You can make more once one of your songs is played",
       style_title: "Songs",
@@ -3235,7 +3311,8 @@
   let initializeApp, getFirestore, doc, setDoc, updateDoc, deleteDoc, onSnapshot,
     collection, runTransaction, increment, serverTimestamp, writeBatch,
     enableNetwork, disableNetwork, getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut,
-    initializeFirestore, persistentLocalCache, persistentMultipleTabManager;
+    initializeFirestore, persistentLocalCache, persistentMultipleTabManager,
+    getFunctions, httpsCallable;
   try {
     ({ initializeApp } = await importWithRetry(`https://www.gstatic.com/firebasejs/${FB_VERSION}/firebase-app.js`));
     ({
@@ -3247,6 +3324,8 @@
     ({
       getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut,
     } = await importWithRetry(`https://www.gstatic.com/firebasejs/${FB_VERSION}/firebase-auth.js`));
+    // Serveur de paiement (admin seulement : prélever à « Jouée », annuler à « Nouvelle soirée »)
+    ({ getFunctions, httpsCallable } = await importWithRetry(`https://www.gstatic.com/firebasejs/${FB_VERSION}/firebase-functions.js`));
   } catch (e) {
     console.error("Impossible de charger Firebase après plusieurs tentatives", e);
     const app = document.getElementById("jb-app");
@@ -3275,6 +3354,12 @@
     db = getFirestore(fbApp);
   }
   const auth = getAuth(fbApp);
+  const fbFunctions = getFunctions(fbApp, "northamerica-northeast1");
+  // Appelle une fonction du serveur de paiement (functions/index.js) ; réservé au compte admin.
+  async function callPayments(name, data = {}) {
+    const res = await httpsCallable(fbFunctions, name)(data);
+    return res.data || {};
+  }
 
   // ---------- État local ----------
   const COOLDOWN_MS = 60 * 60 * 1000; // 1 heure de refroidissement après avoir été jouée
@@ -3375,6 +3460,9 @@
   // scanner le code QR À NOUVEAU après cette reconnexion pour retrouver l'accès — un ancien scan,
   // même encore valide dans sa fenêtre de 24h, ne compte plus.
   let liveFlag = false;
+  // Interrupteur de Hubert dans son admin : afficher (ou non) les montants payés sur le site client
+  // (config/settings.showAmounts, 19 oct. 2026). Caché par défaut.
+  let showAmounts = false;
   let loginAtMs = 0;
   // ---------- Écran de démarrage : voir renderLiveGate() ----------
   // Tant que ces deux drapeaux ne sont pas TOUS LES DEUX vrais, renderLiveGate() ne révèle encore
@@ -4432,13 +4520,15 @@
       ? `onsong://open/songs/?song=${uuid}`
       : `onsong://open/songs?song=${encodeURIComponent(onsongSlug(title))}`;
   }
-  function showToast(msg) {
+  function showToast(msg, durationMs = 2600) {
     const t = document.createElement("div");
     t.className = "jb-toast";
     t.textContent = msg;
     document.getElementById("jb-app").appendChild(t);
-    setTimeout(() => t.remove(), 2600);
+    setTimeout(() => t.remove(), durationMs);
   }
+  // Messages de paiement (admin) : affichés plus longtemps, pour que Hubert ait le temps de les lire
+  const PAYMENT_TOAST_MS = 6000;
   // Avis persistant de mise à jour disponible (admin) — voir setupAutoUpdateCheck() plus haut.
   // Contrairement à showToast(), ne disparaît PAS tout seul : reste affiché tant que Hubert
   // n'a pas touché dessus, pour qu'il choisisse lui-même le moment (jamais en plein show).
@@ -4588,7 +4678,6 @@
         // même si la ligne est redessinée entre-temps, avec un délai négatif pour ne pas la relancer.
         const since = myReqRankChangedAt[id] !== undefined ? now - myReqRankChangedAt[id] : Infinity;
         const glow = since < 500 ? ` jb-num-glow" style="animation-delay:-${since}ms` : "";
-        const n = v.requests || 0;
         return `
         <div class="jb-myreq-row">
           <button class="jb-slot-vote-btn jb-slot-vote-up jb-myreq-up" data-myreq-up="${escapeHtml(id)}" aria-label="${t("my_req_up_aria")}" title="${t("my_req_up_aria")}"><svg viewBox="0 0 12 12" width="14" height="14" aria-hidden="true"><path d="M6 1 11 5.5H1ZM6 6 11 10.5H1Z" fill="currentColor"/></svg></button>
@@ -4597,10 +4686,7 @@
             <span class="jb-slot-title">${escapeHtml(v.title)}</span>
             ${v.artist ? `<span class="jb-slot-artist">${escapeHtml(v.artist)}</span>` : ""}
           </span>
-          <span class="jb-slot-votes-wrap">
-            <span class="jb-slot-votes${voteIllumClass(id)}">${n}</span>
-            <span class="jb-slot-votes-label">${t("votes_unit", Math.abs(n))}</span>
-          </span>
+          ${amountHtml(id, v.requests)}
         </div>`;
       })
       .join("");
@@ -4624,11 +4710,111 @@
     voteModalPending = true;
     setTimeout(() => {
       voteModalPending = false;
+      voteModalMode = "info";
       document.getElementById("jb-vote-modal-text").innerHTML =
         `${escapeHtml(t(lineKey, ...args))}<br>${escapeHtml(t(backKey))}`;
+      document.getElementById("jb-vote-modal-btn").textContent = t("vote_modal_btn");
+      document.getElementById("jb-vote-modal-btn").disabled = false;
+      document.getElementById("jb-vote-modal-close").hidden = true;
+      document.getElementById("jb-pay-amounts").hidden = true;
       modal.hidden = false;
       document.getElementById("jb-vote-modal-btn").focus({ preventScroll: true });
     }, delayMs);
+  }
+
+  // ---------- Paiement d'une chanson (Stripe, 19 oct. 2026) ----------
+  // Modèle de Hubert : plus de votes — pour faire monter une chanson, le client paie le montant de
+  // son choix (2 $ à 100 $). La carte est seulement réservée ; elle est prélevée quand Hubert appuie
+  // sur « Jouée », sinon la réservation est annulée à « Nouvelle soirée ». Tout se passe sur le
+  // serveur (functions/index.js) : l'appli ne fait qu'ouvrir la page de paiement de Stripe.
+  const PAY_FUNCTION_URL = "https://northamerica-northeast1-jukehub-14c98.cloudfunctions.net/createCheckout";
+  const PAY_MIN_CENTS = 200;
+  const PAY_MAX_CENTS = 10000;
+  let voteModalMode = "info";
+  let payTargetId = null;
+  let payAmountCents = 500;
+  function payCustomCents() {
+    const raw = String(document.getElementById("jb-pay-custom").value || "").replace(",", ".").trim();
+    if (!raw) return null;
+    const cents = Math.round(Number(raw) * 100);
+    return Number.isFinite(cents) ? cents : NaN;
+  }
+  function refreshPayButton() {
+    const custom = payCustomCents();
+    const cents = custom === null ? payAmountCents : custom;
+    const ok = Number.isFinite(cents) && cents >= PAY_MIN_CENTS && cents <= PAY_MAX_CENTS;
+    document.querySelectorAll(".jb-pay-chip").forEach((c) => {
+      c.classList.toggle("jb-pay-chip-on", custom === null && Number(c.dataset.amount) === payAmountCents);
+    });
+    const btn = document.getElementById("jb-vote-modal-btn");
+    btn.disabled = !ok;
+    btn.textContent = ok ? t("pay_btn", formatMoney(cents)) : t("pay_invalid");
+    return ok ? cents : null;
+  }
+  function showPayModal(id) {
+    const modal = document.getElementById("jb-vote-modal");
+    if (!modal) return;
+    payTargetId = id;
+    voteModalMode = "pay";
+    payAmountCents = 500;
+    const title = votes[id]?.title || "";
+    document.getElementById("jb-vote-modal-text").textContent = t("pay_title", title);
+    document.getElementById("jb-pay-note").textContent = t("pay_note");
+    const custom = document.getElementById("jb-pay-custom");
+    custom.value = "";
+    custom.placeholder = t("pay_custom_ph");
+    document.getElementById("jb-pay-amounts").hidden = false;
+    const close = document.getElementById("jb-vote-modal-close");
+    close.textContent = t("pay_close");
+    close.hidden = false;
+    refreshPayButton();
+    modal.hidden = false;
+  }
+  document.querySelectorAll(".jb-pay-chip").forEach((chip) => {
+    chip.addEventListener("click", () => {
+      payAmountCents = Number(chip.dataset.amount);
+      document.getElementById("jb-pay-custom").value = "";
+      refreshPayButton();
+    });
+  });
+  document.getElementById("jb-pay-custom").addEventListener("input", refreshPayButton);
+  // Ouvre la page de paiement Stripe EN PLEIN ÉCRAN : Stripe refuse de s'afficher dans un cadre, et
+  // l'appli tourne dans le cadre de la page Carrd — c'est donc la page Carrd qui l'ouvre (voir le
+  // "pont" dans carrd-embed.html). Sans page Carrd (adresse github.io directe) : on quitte la page.
+  function openCheckoutUrl(url) {
+    if (inFrame && bridgeOrigin) {
+      window.parent.postMessage({ type: "jb-open-url", url }, bridgeOrigin);
+      return;
+    }
+    try { window.top.location.href = url; } catch (e) { window.location.href = url; }
+  }
+  async function startPayment() {
+    const cents = refreshPayButton();
+    if (!cents || !payTargetId) return;
+    const btn = document.getElementById("jb-vote-modal-btn");
+    btn.disabled = true;
+    btn.textContent = t("pay_redirect");
+    try {
+      const res = await fetch(PAY_FUNCTION_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ songId: payTargetId, amountCents: cents, name: getClientName() }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.url) throw new Error(data.error || `HTTP ${res.status}`);
+      openCheckoutUrl(data.url);
+      // La fenêtre reste ouverte (bouton "Redirection…") jusqu'à ce que la page de Stripe s'affiche.
+      setTimeout(() => { document.getElementById("jb-vote-modal").hidden = true; }, 4000);
+    } catch (e) {
+      console.error("Paiement", e);
+      showToast(t("pay_error"));
+      refreshPayButton();
+    }
+  }
+  // Retour de la page de paiement Stripe ("#paid", transmis par la page Carrd) : merci !
+  if (location.hash === "#paid") {
+    history.replaceState(null, "", location.pathname + location.search);
+    setTimeout(() => showToast(t("paid_thanks")), 1500);
   }
   let voteModalPending = false;
   function voteModalBusy() {
@@ -4639,7 +4825,12 @@
     showInfoModal("vote_modal_left", "vote_modal_back", delayMs, remaining);
   }
   document.getElementById("jb-vote-modal-btn").addEventListener("click", () => {
+    if (voteModalMode === "pay") { startPayment(); return; }
     document.getElementById("jb-vote-modal").hidden = true;
+  });
+  document.getElementById("jb-vote-modal-close").addEventListener("click", () => {
+    document.getElementById("jb-vote-modal").hidden = true;
+    payTargetId = null;
   });
   // Empêche la page de défiler derrière la fenêtre (iOS laisse passer le geste sinon)
   document.getElementById("jb-vote-modal").addEventListener("touchmove", (e) => e.preventDefault(), { passive: false });
@@ -4674,57 +4865,15 @@
     if (palmaresAnimating || voteModalBusy()) return;
     const v = votes[id];
     if (!v || isHiddenFromPalmares(v)) return;
-    if (delta < 0 && (v.requests || 0) <= 0) {
-      showToast(t("vote_floor"));
-      return;
-    }
-    const token = roundToken(v);
-    const existing = voteUsage[id];
-    const entry = (existing && existing.token === token) ? existing : { up: 0, down: 0, token };
-    if (votesRemaining() <= 0) {
-      showVoteModal(0);
-      return;
-    }
+    // 19 oct. 2026 (Hubert) : plus de votes du tout — la flèche ▲ ouvre la fenêtre de paiement
+    // (montant au choix, 2 $ à 100 $, voir showPayModal()). Plus de flèche ▼. L'appli n'écrit plus
+    // jamais elle-même le total d'une chanson : c'est le serveur qui l'ajoute, une fois le paiement
+    // autorisé par Stripe (sinon on pourrait faire monter une chanson sans payer).
+    if (delta < 0) return;
+    // Prénom facultatif (affiché sous la chanson dans le palmarès) : demandé AVANT d'ouvrir la
+    // fenêtre de paiement, qui passerait sinon par-dessus la fenêtre du prénom.
     await ensureClientName();
-    // Même logique optimiste que pour requestSong() : on met à jour l'état local avant même que
-    // l'écriture soit confirmée par le serveur, pour éviter un faux message d'erreur sur un wifi
-    // lent/instable alors que le vote a déjà été pris en compte côté cache local.
-    const clientName = getClientName();
-    const payload = { requests: increment(delta) };
-    if (delta > 0) {
-      entry.up += 1;
-      // Le prénom des votants (voir renderVotersLine()) ne doit refléter QUE les votes à la
-      // hausse — jamais les votes à la baisse (sinon "voter contre" afficherait quand même le nom
-      // du client comme s'il avait soutenu la chanson).
-      if (clientName) payload[`voters.${sanitizeVoterKey(clientName)}`] = increment(1);
-    } else {
-      entry.down += 1; // vote à la baisse -> coûte 1, comme tous les votes (plus de remboursement)
-      // Demande de Hubert : le palmarès affiche maintenant le SOLDE de chaque votant ("Néo +2",
-      // "Néo -2", rien à 0 — voir renderVotersLine()), donc un vote à la baisse retire 1 de son
-      // compteur "voters" (qui devient un solde net : hausses moins baisses).
-      if (clientName) payload[`voters.${sanitizeVoterKey(clientName)}`] = increment(-1);
-    }
-    voteUsage[id] = entry;
-    saveVotesToStorage();
-    updateVoteBadge();
-    renderMyVotes();
-    // Fenêtre "Continuer" seulement au tout premier vote à la hausse (sur cet appareil) et quand le
-    // dernier vote vient d'être utilisé — sinon, juste le compteur "N/6 votes restants" qui s'illumine.
-    const left = votesRemaining();
-    const firstVote = delta > 0 && !safeStorageGet(FIRST_VOTE_SEEN_KEY);
-    if (left <= 0 || firstVote) {
-      if (firstVote) safeStorageSet(FIRST_VOTE_SEEN_KEY, "1");
-      showVoteModal(left, VOTE_MODAL_DELAY_MS);
-    }
-    pulseAttention(document.getElementById("jb-vote-remaining"), "jb-num-glow");
-    try {
-      await updateDoc(doc(db, "votes", id), payload);
-    } catch (e) {
-      // Écriture non confirmée par le serveur (le plus souvent juste un wifi lent — Firestore la
-      // renverra automatiquement dès que la connexion revient) : on ne défait rien côté client,
-      // on log seulement pour le débogage.
-      console.error(e);
-    }
+    showPayModal(id);
   }
 
   // ---------- Routage (site public vs mode spectacle) ----------
@@ -4970,6 +5119,13 @@
     // "Pas en spectacle" apparaisse/disparaisse chez tout le monde sans recharger, dès que Hubert
     // se connecte ou déconnecte de son panneau admin.
     liveFlag = !!data?.live;
+    const newShowAmounts = data?.showAmounts === true;
+    if (newShowAmounts !== showAmounts) {
+      showAmounts = newShowAmounts;
+      renderAll();
+    }
+    const amountsToggle = document.getElementById("jb-show-amounts-toggle");
+    if (amountsToggle) amountsToggle.checked = showAmounts;
     loginAtMs = data?.loginAt?.toMillis ? data.loginAt.toMillis() : 0;
     bootConfigReady = true; // voir renderLiveGate()/doBootReveal()
     renderLiveGate();
@@ -5096,21 +5252,35 @@
   // les prénoms des 3 clients ayant mis le plus de votes (boosts + demande initiale confondus)
   // sur cette chanson, du plus contributeur au moins. Rien du tout si personne n'a laissé son
   // prénom (voters vide ou absent — champ resté facultatif).
-  function renderVotersLine(voters) {
+  function renderVotersLine(voters, forceAmounts = false) {
     if (!voters || typeof voters !== "object") return "";
-    // Demande de Hubert : à la place du 👍, le SOLDE de votes de chaque personne — "Néo +2" s'il a
-    // mis 2 votes, "Néo -2" s'il en a enlevé 2, et il disparaît s'il revient à 0. Les plus gros
-    // soldes (positifs comme négatifs) en premier, 3 noms au maximum pour garder la ligne courte.
+    // 19 oct. 2026 (paiements) : "voters" = montant payé par chaque prénom, en cents. Les 3 plus gros
+    // contributeurs en premier ; leur montant seulement si Hubert affiche les montants (ou dans
+    // son admin, forceAmounts).
     const names = Object.keys(voters)
-      .filter((k) => (voters[k] || 0) !== 0)
-      .sort((a, b) => Math.abs(voters[b] || 0) - Math.abs(voters[a] || 0))
+      .filter((k) => (voters[k] || 0) > 0)
+      .sort((a, b) => (voters[b] || 0) - (voters[a] || 0))
       .slice(0, 3);
     if (!names.length) return "";
+    const withAmounts = forceAmounts || showAmounts;
     return `<span class="jb-slot-voters">${names.map((n) => {
-      const d = voters[n] || 0;
-      const cls = d > 0 ? "jb-voter-delta-up" : "jb-voter-delta-down";
-      return `${escapeHtml(n)} <span class="jb-voter-delta ${cls}">${d > 0 ? "+" : "-"}${Math.abs(d)}</span>`;
+      const amount = withAmounts ? ` <span class="jb-voter-delta jb-voter-delta-up">${formatMoney(voters[n])}</span>` : "";
+      return `${escapeHtml(n)}${amount}`;
     }).join(" · ")}</span>`;
+  }
+
+  // ---------- Montants (paiements Stripe, 19 oct. 2026) ----------
+  // "requests" contient maintenant le total payé pour la chanson, EN CENTS (voir functions/index.js).
+  // showAmounts : interrupteur de Hubert dans son admin (config/settings.showAmounts).
+  function formatMoney(cents) {
+    const dollars = (cents || 0) / 100;
+    const txt = Number.isInteger(dollars) ? String(dollars) : dollars.toFixed(2).replace(".", lang === "fr" ? "," : ".");
+    return lang === "fr" ? `${txt} $` : `$${txt}`;
+  }
+  // Bloc "25 $" au bout d'une ligne (palmarès, "Tes demandes") — rien si les montants sont cachés.
+  function amountHtml(id, cents, force = false) {
+    if (!force && !showAmounts) return "";
+    return `<span class="jb-slot-votes-wrap"><span class="jb-slot-votes${voteIllumClass(id)}">${escapeHtml(formatMoney(cents))}</span></span>`;
   }
 
   function renderPalmares() {
@@ -5184,7 +5354,6 @@
       el.innerHTML = `
         <span class="jb-slot-arrows">
           <button class="jb-slot-vote-btn jb-slot-vote-up${voteUpBtnIllumClass(id)}" data-vote-up="${escapeHtml(id)}" aria-label="${t("vote_up_aria")}" title="${t("vote_up_aria")}"><svg viewBox="0 0 12 12" width="12" height="12" aria-hidden="true"><path d="M6 1 11 5.5H1ZM6 6 11 10.5H1Z" fill="currentColor"/></svg></button>
-          <button class="jb-slot-vote-btn jb-slot-vote-down${voteDownBtnIllumClass(id)}${(v.requests || 0) <= 0 ? " jb-slot-vote-floor" : ""}" data-vote-down="${escapeHtml(id)}" aria-label="${t("vote_down_aria")}" title="${t("vote_down_aria")}"><svg viewBox="0 0 12 12" width="12" height="12" aria-hidden="true"><path d="M6 11 11 6.5H1ZM6 6 11 1.5H1Z" fill="currentColor"/></svg></button>
         </span>
         <span class="jb-slot-rank">${i + 1}</span>
         <span class="jb-slot-mid">
@@ -5195,10 +5364,7 @@
           ${renderVotersLine(v.voters)}
           <span class="jb-slot-bar-row">
             <span class="jb-slot-bar" aria-hidden="true"><span class="jb-slot-bar-fill" style="width:${barPct}%"></span></span>
-            <span class="jb-slot-votes-wrap">
-              <span class="jb-slot-votes${voteIllumClass(id)}">${v.requests}</span>
-              <span class="jb-slot-votes-label">${Math.abs(v.requests) === 1 ? "VOTE" : "VOTES"}</span>
-            </span>
+            ${amountHtml(id, v.requests)}
           </span>
         </span>`;
     });
@@ -5585,7 +5751,9 @@
       // vote (autre façon de voter, en plus du palmarès et de "Tes demandes").
       btnHtml = `<span class="jb-song-right">
         <button class="jb-slot-vote-btn jb-slot-vote-up jb-song-up${voteUpBtnIllumClass(song.id)}" data-vote-up="${escapeHtml(song.id)}" aria-label="${t("vote_up_aria")}" title="${t("vote_up_aria")}">▲</button>
-        <span class="jb-request-remaining jb-song-request-badge jb-song-vote-box"><span class="jb-song-vote-num${voteIllumClass(song.id)}">${voteCount}</span> ${t("votes_unit", Math.abs(voteCount))}</span>
+        ${showAmounts
+          ? `<span class="jb-request-remaining jb-song-request-badge jb-song-vote-box"><span class="jb-song-vote-num${voteIllumClass(song.id)}">${escapeHtml(formatMoney(voteCount))}</span></span>`
+          : `<span class="jb-request-remaining jb-song-request-badge jb-song-boost-word" data-vote-up="${escapeHtml(song.id)}">${escapeHtml(t("boost_word"))}</span>`}
       </span>`;
     } else {
       // Pas de data-req sur le bouton lui-même : c'est toute la ligne (li) qui porte le
@@ -5966,7 +6134,7 @@
     if (btn) btn.disabled = false;
     loggingOut = false;
     if (!ok) {
-      showToast("⚠️ Problème de connexion — réessaie la déconnexion dans un instant.");
+      showToast("⚠️ Problème de connexion — réessaie la déconnexion dans un instant.", PAYMENT_TOAST_MS);
       return; // on NE déconnecte PAS localement : le bouton reste dispo pour réessayer, plutôt
               // que de laisser croire à Hubert que c'est réglé alors que le site est resté "en
               // spectacle" pour tout le monde.
@@ -6016,11 +6184,11 @@
       li.innerHTML = `
         <a class="jb-slot-onsong-wrap jb-onsong-link" href="${onsongHref(id, v.title)}" title="Ouvrir la partition dans OnSong">
           <span class="jb-slot-rank">${i + 1}</span>
-          <span class="jb-slot-votes">${v.requests}</span>
+          <span class="jb-slot-votes jb-admin-amount">${escapeHtml(formatMoney(v.requests))}</span>
           <span class="jb-slot-info">
             <span class="jb-slot-title">📄 ${escapeHtml(v.title)}</span>
             ${v.artist ? `<span class="jb-slot-artist">${escapeHtml(v.artist)}</span>` : ""}
-            ${renderVotersLine(v.voters)}
+            ${renderVotersLine(v.voters, true)}
           </span>
         </a>
         <button class="jb-mark-played-btn${isMarkPlayedArmed(id) ? " jb-mark-played-armed" : ""}" data-played="${id}">${isMarkPlayedArmed(id) ? "❓ Confirmer ?" : "✅ Jouée"}</button>`;
@@ -6134,10 +6302,20 @@
         cooldownUntil: Date.now() + COOLDOWN_MS,
         playedAt: serverTimestamp(),
         requests: 0, // repart à zéro : ne remonte plus seule dans le palmarès, il faut de nouvelles demandes
+        voters: {},
       });
     } catch (e) {
       console.error(e);
       showToast("Erreur — réessaie.");
+      return;
+    }
+    // Paiements (19 oct. 2026) : la chanson est jouée, on prélève les cartes réservées pour elle.
+    try {
+      const r = await callPayments("captureSong", { songId: id });
+      if (r.count) showToast(`💳 ${r.count} paiement(s) prélevé(s) : ${formatMoney(r.totalCents)}`, PAYMENT_TOAST_MS);
+    } catch (e) {
+      console.error("captureSong", e);
+      showToast("⚠️ Chanson jouée, mais les paiements n'ont pas pu être prélevés. Réessaie « Jouée » plus tard.", PAYMENT_TOAST_MS);
     }
   }
 
@@ -6168,13 +6346,27 @@
             requests: 0, burned: burn, cooldownUntil: 0, playedAt: null,
             title: song?.title || "", artist: song?.artist || "", createdAt: serverTimestamp(),
           });
+        } else if (burn) {
+          // Brûlée : son total repart à 0 (les paiements sont annulés juste après)
+          tx.update(ref, { burned: true, cooldownUntil: 0, requests: 0, voters: {} });
         } else {
-          tx.update(ref, { burned: burn, cooldownUntil: burn ? 0 : (snap.data().cooldownUntil || 0) });
+          tx.update(ref, { burned: false, cooldownUntil: snap.data().cooldownUntil || 0 });
         }
       });
     } catch (e) {
       console.error(e);
       showToast("Erreur — réessaie.");
+      return;
+    }
+    if (burn) {
+      // Paiements (19 oct. 2026) : chanson retirée = jamais jouée → on libère les cartes réservées.
+      try {
+        const r = await callPayments("releaseSong", { songId: id });
+        if (r.count) showToast(`💳 ${r.count} paiement(s) annulé(s)`, PAYMENT_TOAST_MS);
+      } catch (e) {
+        console.error("releaseSong", e);
+        showToast("⚠️ Les paiements de cette chanson n'ont pas pu être annulés.", PAYMENT_TOAST_MS);
+      }
     }
   }
 
@@ -6226,11 +6418,34 @@
     container.querySelectorAll("[data-unburn]").forEach((b) => b.addEventListener("click", () => toggleBurn(b.dataset.unburn, false)));
   }
 
+  // ---------- Interrupteur « Afficher les montants sur le site » (19 oct. 2026) ----------
+  document.getElementById("jb-show-amounts-toggle").addEventListener("change", async (e) => {
+    const on = e.target.checked;
+    try {
+      await setDoc(doc(db, "config", "settings"), { showAmounts: on }, { merge: true });
+      showToast(on ? "💲 Montants affichés sur le site" : "Montants cachés sur le site");
+    } catch (err) {
+      console.error(err);
+      e.target.checked = !on;
+      showToast("Erreur — réessaie.");
+    }
+  });
+
   // ---------- Nouvelle soirée ----------
   document.getElementById("jb-newnight-btn").addEventListener("click", async () => {
     if (!confirm("Réinitialiser le palmarès et les chansons jouées pour une nouvelle soirée ? (La boîte de suggestions est gardée.)")) return;
     // Ne supprime QUE les documents "votes" (palmarès) : la collection "specialRequests" n'est jamais
     // touchée ici — Hubert garde ses suggestions pour les apprendre (demande du 18 oct. 2026).
+    // Paiements (19 oct. 2026) : AVANT tout, on annule les réservations des chansons jamais jouées
+    // — le client ne paie rien. Si ça échoue, on n'efface rien (Hubert peut réessayer).
+    try {
+      const r = await callPayments("releaseNight");
+      if (r.count) showToast(`💳 ${r.count} paiement(s) non joué(s) annulé(s)`, PAYMENT_TOAST_MS);
+    } catch (e) {
+      console.error("releaseNight", e);
+      showToast("⚠️ Les paiements en attente n'ont pas pu être annulés. Réessaie « Nouvelle soirée ».", PAYMENT_TOAST_MS);
+      return;
+    }
     try {
       const voteIds = Object.keys(votes);
       for (let i = 0; i < voteIds.length; i += 400) {
@@ -6345,7 +6560,7 @@
               <div class="jb-song-artist">${escapeHtml(s.artist || "")}${status}</div>
             </div>
             <button class="jb-icon-btn jb-fire${burned ? " jb-active" : ""}" data-toggleburn="${s.id}" title="${burned ? "Réactiver cette chanson" : "Retirer cette chanson (brûlée)"}">${burned ? "♻️" : "🔥"}</button>
-            <button class="jb-icon-btn jb-plus" data-addvote="${s.id}" ${plusDisabled ? "disabled" : ""} title="${plusDisabled ? "Indisponible pendant le refroidissement / brûlée" : "Ajouter une demande manuellement"}">+1</button>
+            <button class="jb-icon-btn jb-plus" data-addvote="${s.id}" ${plusDisabled ? "disabled" : ""} title="${plusDisabled ? "Indisponible pendant le refroidissement / brûlée" : "Ajouter au palmarès (à 0 $)"}">+</button>
             <button class="jb-icon-btn jb-del" data-delsong="${s.id}" title="Supprimer du répertoire">🗑️</button>
           </div>
           <div class="jb-genre-chip-row">${genreChips}</div>
@@ -6415,10 +6630,10 @@
     try {
       await runTransaction(db, async (tx) => {
         const snap = await tx.get(ref);
+        // 19 oct. 2026 (paiements) : "requests" = argent payé, en cents — l'admin ne peut plus en
+        // ajouter à la main. Le bouton « + » ajoute seulement la chanson au palmarès, à 0 $.
         if (!snap.exists()) {
-          tx.set(ref, { requests: 1, burned: false, cooldownUntil: 0, playedAt: null, title: song.title, artist: song.artist || "", createdAt: serverTimestamp() });
-        } else {
-          tx.update(ref, { requests: increment(1) });
+          tx.set(ref, { requests: 0, burned: false, cooldownUntil: 0, playedAt: null, title: song.title, artist: song.artist || "", createdAt: serverTimestamp() });
         }
       });
     } catch (e) { console.error(e); }
