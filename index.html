@@ -2809,7 +2809,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-20.141";
+  const APP_BUILD = "2026-10-20.142";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -2911,7 +2911,7 @@
       votes_used_word: (n) => `UTILISÉ${n === 1 ? "" : "S"}`,
       // Section "// Tes demandes" et fenêtre après chaque vote (maquette de Hubert, 17 oct. 2026)
       my_requests_title: "Tes demandes",
-      my_dons: (amount) => `Tes dons facturés : ${amount}`,
+      my_dons: (amount) => `Tes dons (facturés) : ${amount}`,
       myreq_label: (n, max) => `DEMANDES ${n}/${max}`,
       my_req_rank: (n) => `${n}${n === 1 ? "ER" : "E"} RANG`,
       my_req_up_aria: "Faire monter cette chanson",
@@ -2996,7 +2996,7 @@
       votes_unit: (n) => `VOTE${n === 1 ? "" : "S"}`,
       votes_used_word: () => "USED",
       my_requests_title: "Your requests",
-      my_dons: (amount) => `Billed tips: ${amount}`,
+      my_dons: (amount) => `Your tips (billed): ${amount}`,
       myreq_label: (n, max) => `REQUESTS ${n}/${max}`,
       my_req_rank: (n) => `RANK ${n}`,
       my_req_up_aria: "Push this song up",
