@@ -1362,7 +1362,7 @@
   #jb-public .jb-my-dons {
     margin-left: auto; white-space: nowrap; color: #fff200; text-transform: uppercase;
     font-family: 'Share Tech Mono', monospace; font-weight: 700; font-size: 0.66rem; letter-spacing: 0.8px;
-    align-self: center; /* plus petit que le titre (maquette de Hubert) : centré sur sa hauteur */
+    align-self: baseline; /* plus petit que le titre, mais le bas des lettres aligné sur le sien (Hubert) */
   }
   @media (max-width: 400px) {
     #jb-public .jb-my-dons { font-size: 0.6rem; letter-spacing: 0.4px; }
@@ -2809,7 +2809,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-20.142";
+  const APP_BUILD = "2026-10-20.143";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
