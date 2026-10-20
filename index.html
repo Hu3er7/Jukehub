@@ -2783,7 +2783,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-20.137";
+  const APP_BUILD = "2026-10-20.138";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -2896,7 +2896,7 @@
       pay_title: (title) => `Fais monter « ${title} »`,
       pay_note: "La chanson qui a reçu le plus d'argent passe en premier. Tu es facturé seulement si la chanson est jouée ce soir.",
       pay_custom_ph: "Autre montant",
-      pay_btn: (amount) => `Payer ${amount}`,
+      pay_btn: (amount) => `Donner ${amount}`,
       pay_invalid: "Montant de 2 à 100 $",
       pay_redirect: "Redirection vers le paiement…",
       pay_error: "Le paiement n'a pas pu démarrer. Réessaie dans un instant.",
@@ -2977,7 +2977,7 @@
       pay_title: (title) => `Push “${title}” up`,
       pay_note: "The song with the most money goes first. You're only charged if the song is played tonight.",
       pay_custom_ph: "Other amount",
-      pay_btn: (amount) => `Pay ${amount}`,
+      pay_btn: (amount) => `Give ${amount}`,
       pay_invalid: "Amount from $2 to $100",
       pay_redirect: "Opening payment…",
       pay_error: "The payment couldn't start. Try again in a moment.",
