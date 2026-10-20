@@ -1454,6 +1454,16 @@
   /* Catalogue, chanson déjà demandée : [▲ jaune] [0 VOTE] — même largeur que le badge "Demande" */
   #jb-public .jb-song-up { width: 30px; height: 30px; font-size: 0.8rem; }
   #jb-public .jb-song-request-badge { min-width: 92px; text-align: center; }
+  /* Badge « Demande » d'une chanson déjà demandée (avant/après de Hubert, 20 oct. 2026) : éteint
+     (fond noir, texte presque invisible) avec un crochet vert par-dessus, au centre. */
+  #jb-public .jb-song-done-badge {
+    position: relative; background: #050603; border-color: #1c1c10; color: rgba(255, 250, 168, 0.18);
+    text-shadow: none; box-shadow: none;
+  }
+  #jb-public .jb-song-done-check {
+    position: absolute; left: 50%; top: 50%; width: 26px; height: 26px; transform: translate(-50%, -50%);
+    color: #11a822; filter: drop-shadow(0 0 3px rgba(17, 168, 34, 0.5));
+  }
   #jb-public .jb-song-vote-box {
     display: inline-flex; align-items: baseline; justify-content: center; gap: 5px;
     font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: 0.62rem; letter-spacing: 0.5px;
@@ -2783,7 +2793,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-20.138";
+  const APP_BUILD = "2026-10-20.139";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -2903,6 +2913,8 @@
       pay_close: "Fermer",
       paid_thanks: "💳 Merci ! Ta chanson monte dans le palmarès.",
       boost_word: "Faire monter",
+      req_first_title: (n) => `Il te reste ${n} chansons à sélectionner`,
+      req_first_back: "",
       req_limit_title: "Tu as atteint ta limite de 5 demandes",
       req_limit_back: "Tu pourras en faire d'autres quand une de tes chansons sera jouée",
       style_title: "Chansons",
@@ -2984,6 +2996,8 @@
       pay_close: "Close",
       paid_thanks: "💳 Thank you! Your song is moving up.",
       boost_word: "Push up",
+      req_first_title: (n) => `You have ${n} songs left to pick`,
+      req_first_back: "",
       req_limit_title: "You've reached your limit of 5 requests",
       req_limit_back: "You can make more once one of your songs is played",
       style_title: "Songs",
@@ -4805,8 +4819,9 @@
     setTimeout(() => {
       voteModalPending = false;
       voteModalMode = "info";
+      const back = t(backKey);
       document.getElementById("jb-vote-modal-text").innerHTML =
-        `${escapeHtml(t(lineKey, ...args))}<br>${escapeHtml(t(backKey))}`;
+        escapeHtml(t(lineKey, ...args)) + (back ? `<br>${escapeHtml(back)}` : "");
       document.getElementById("jb-vote-modal-btn").textContent = t("vote_modal_btn");
       document.getElementById("jb-vote-modal-btn").disabled = false;
       document.getElementById("jb-vote-modal-close").hidden = true;
@@ -5837,22 +5852,11 @@
         </div>
       </div>`;
     } else if (requested) {
-      // Jamais désactivé, même à 0 vote restant : cliquer déclenche quand même castVote(),
-      // qui affiche le toast et fait clignoter le badge "Votes" pour rappeler au client qu'il
-      // doit patienter — un bouton disabled empêcherait ce rappel visuel de se déclencher.
-      // Précision de Hubert : le chiffre reste un élément À PART (jamais fusionné dans le badge,
-      // jamais renvoyé à gauche du titre) et reste TOUJOURS juste entre les deux flèches — voir
-      // .jb-song-right ci-dessous, même principe que .jb-slot-right du palmarès. Les flèches
-      // haut/bas sont aussi offertes ici, dans le catalogue, pas seulement au palmarès —
-      // généralisation directe du même mécanisme approuvé par Hubert pour le palmarès.
-      // 17 oct. 2026 (maquette de Hubert) : plus de flèche du bas ici — un bouton ▲ jaune biseauté
-      // suivi d'une case "0 VOTE" de même taille que le badge "Demande" ; chaque appui ajoute un
-      // vote (autre façon de voter, en plus du palmarès et de "Tes demandes").
+      // 20 oct. 2026 (avant/après de Hubert) : une fois demandée, la ligne du catalogue ne montre
+      // plus que le titre assombri et le badge « Demande » éteint avec un crochet vert par-dessus —
+      // « rien d'autre » (plus de rang, de ▲ ni de montant ici : ça se passe dans « Tes demandes »).
       btnHtml = `<span class="jb-song-right">
-        <button class="jb-slot-vote-btn jb-slot-vote-up jb-song-up${voteUpBtnIllumClass(song.id)}" data-vote-up="${escapeHtml(song.id)}" aria-label="${t("vote_up_aria")}" title="${t("vote_up_aria")}">▲</button>
-        ${showAmounts
-          ? `<span class="jb-request-remaining jb-song-request-badge jb-song-vote-box"><span class="jb-song-vote-num${voteIllumClass(song.id)}">${escapeHtml(formatMoney(voteCount))}</span></span>`
-          : `<span class="jb-request-remaining jb-song-request-badge jb-song-boost-word" data-vote-up="${escapeHtml(song.id)}">${escapeHtml(t("boost_word"))}</span>`}
+        <span class="jb-request-remaining jb-song-request-badge jb-song-done-badge">${escapeHtml(t("song_request_word"))}<svg class="jb-song-done-check" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 13.5 9 19 21 5" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="square"/></svg></span>
       </span>`;
     } else {
       // Pas de data-req sur le bouton lui-même : c'est toute la ligne (li) qui porte le
@@ -5868,11 +5872,9 @@
 
     li.innerHTML = `
       ${showLeftCount ? `<span class="jb-song-votes${voteIllumClass(song.id)}">${voteCount}</span>` : ""}
-      ${rank != null ? `<span class="jb-slot-rank">${rank}</span>` : ""}
       <div class="jb-song-info">
         <div class="jb-song-title">${escapeHtml(song.title)}</div>
         ${showArtist && song.artist ? `<div class="jb-song-artist">${escapeHtml(song.artist)}</div>` : ""}
-        ${requested ? renderVotersLine(v?.voters) : ""}
       </div>
       ${btnHtml}`;
     if (!isBurned(v) && !isInCooldown(v) && !requested) {
@@ -6020,8 +6022,11 @@
     }
     renderMyVotes(); // la chanson apparaît tout de suite dans "// Tes demandes", sans attendre Firestore
     // 5e demande : on prévient tout de suite qu'il a atteint sa limite (après l'animation du titre)
-    if (activeRequestCount() >= MAX_REQUESTS) showInfoModal("req_limit_title", "req_limit_back", VOTE_MODAL_DELAY_MS);
-    else showToast(t("request_added_toast"));
+    // 20 oct. 2026 (Hubert) : plus de toast « Chanson demandée ! » — seule la 1re demande affiche un
+    // message (« Il te reste 4 chansons à sélectionner »), les suivantes ne font que cocher la ligne.
+    const reqCount = activeRequestCount();
+    if (reqCount >= MAX_REQUESTS) showInfoModal("req_limit_title", "req_limit_back", VOTE_MODAL_DELAY_MS);
+    else if (reqCount === 1) showInfoModal("req_first_title", "req_first_back", VOTE_MODAL_DELAY_MS, MAX_REQUESTS - 1);
     // Illumine la ligne elle-même — même animation que la sélection de la chanson démo dans le
     // tuto, demande explicite de Hubert : "je veux que ce soit la même animation d'illumination
     // que dans le tutoriel". Voir rowFlashElapsedMs()/renderSongRow() : la classe est reposée à
