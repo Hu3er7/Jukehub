@@ -1650,26 +1650,26 @@
   /* Dernière ligne sans trait pointillé (le bas de la boîte sert de séparateur) */
   #jb-public .jb-myreq-frame .jb-myreq-row:last-child { border-bottom: none; }
 
-  /* Case mauve néon (d'abord verte, puis mauve à la demande de Hubert) autour du "// PALMARÈS" (20 oct. 2026, Hubert) : même concept que la boîte rouge
-     de "Tes demandes" ci-dessus, en mauve. L'étiquette affiche le nombre de chansons au palmarès. */
+  /* Case rose néon (d'abord verte, puis mauve, puis rose à la demande de Hubert) autour du "// PALMARÈS" (20 oct. 2026, Hubert) : même concept que la boîte rouge
+     de "Tes demandes" ci-dessus, en rose. L'étiquette affiche le nombre de chansons au palmarès. */
   #jb-public .jb-palm-frame {
     position: relative; margin: 22px -10px 20px; padding: 18px 16px 8px;
-    background-color: #12051f;
-    border: 2px solid #c04dff; border-radius: 3px;
-    box-shadow: 0 0 18px rgba(192, 77, 255, 0.45), inset 0 0 26px rgba(192, 77, 255, 0.14);
+    background-color: #1f0519;
+    border: 2px solid #ff3bd4; border-radius: 3px;
+    box-shadow: 0 0 18px rgba(255, 59, 212, 0.45), inset 0 0 26px rgba(255, 59, 212, 0.14);
   }
   #jb-public .jb-palm-frame::before {
     content: ""; position: absolute; inset: 7px; pointer-events: none;
-    border: 1px solid rgba(192, 77, 255, 0.32);
+    border: 1px solid rgba(255, 59, 212, 0.32);
   }
   #jb-public .jb-palm-frame::after {
     content: ""; position: absolute; left: 12px; top: 12px; width: 6px; height: 6px; border-radius: 50%;
-    background: #c04dff; box-shadow: 0 0 8px #c04dff; pointer-events: none;
+    background: #ff3bd4; box-shadow: 0 0 8px #ff3bd4; pointer-events: none;
   }
   #jb-public .jb-palm-frame > * { position: relative; z-index: 1; }
   #jb-public .jb-palm-frame-label {
     position: absolute; top: 0; left: 30px; transform: translateY(-50%); z-index: 2; pointer-events: none;
-    background: #c04dff; color: #12051f;
+    background: #ff3bd4; color: #1f0519;
     font-family: 'Share Tech Mono', monospace; font-size: 0.68rem; letter-spacing: 1.5px; padding: 1px 10px;
     clip-path: polygon(6px 0, calc(100% - 6px) 0, 100% 50%, calc(100% - 6px) 100%, 6px 100%, 0 50%);
   }
@@ -2299,7 +2299,7 @@
       <div class="jb-palmares-heading">
         <h2 id="jb-palmares-title">Palmarès</h2>
       </div>
-      <!-- Case mauve néon (20 oct. 2026, Hubert) : même concept que la boîte rouge de "Tes demandes".
+      <!-- Case rose néon (20 oct. 2026, Hubert) : même concept que la boîte rouge de "Tes demandes".
            L'étiquette sur l'arête affiche le nombre de chansons au palmarès (voir renderPalmares()). -->
       <div class="jb-palm-frame">
         <div class="jb-palm-frame-label" id="jb-palm-frame-label" aria-hidden="true"></div>
@@ -2793,7 +2793,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-20.139";
+  const APP_BUILD = "2026-10-20.140";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
