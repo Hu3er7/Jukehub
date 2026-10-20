@@ -1192,7 +1192,9 @@
   #jb-app .jb-voter-delta { font-family: 'Share Tech Mono', monospace; font-weight: 700; }
   #jb-app .jb-voter-delta-up { color: #fff200; }
   #jb-app .jb-voter-delta-down { color: #a89d3a; }
-  #jb-public .jb-slot-bar-row { display: flex; align-items: center; gap: 10px; margin-top: 3px; }
+  /* Montant aligné par le bas sur la barre de popularité (20 oct. 2026, Hubert : "le bas du montant
+     devrait être à la même hauteur que la ligne de popularité") plutôt que centré sur elle. */
+  #jb-public .jb-slot-bar-row { display: flex; align-items: flex-end; gap: 10px; margin-top: 3px; }
   #jb-public .jb-slot-bar-row .jb-slot-bar { flex: 1; min-width: 0; margin-top: 0; }
   #jb-public .jb-slot-bar-row .jb-slot-votes { line-height: 1; }
   /* Largeur fixe (alignée à droite) : sans ça, "1 VOTE" étant plus étroit que "2 VOTES", les barres
@@ -2765,7 +2767,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-20.132";
+  const APP_BUILD = "2026-10-20.133";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
