@@ -1621,6 +1621,32 @@
   #jb-public .jb-myreq-frame .jb-empty { margin: 4px 0 10px; }
   /* Dernière ligne sans trait pointillé (le bas de la boîte sert de séparateur) */
   #jb-public .jb-myreq-frame .jb-myreq-row:last-child { border-bottom: none; }
+
+  /* Case vert néon autour du "// PALMARÈS" (20 oct. 2026, Hubert) : même concept que la boîte rouge
+     de "Tes demandes" ci-dessus, en vert. L'étiquette affiche le nombre de chansons au palmarès. */
+  #jb-public .jb-palm-frame {
+    position: relative; margin: 22px -10px 20px; padding: 18px 16px 8px;
+    background-color: #031a08;
+    border: 2px solid #39ff6a; border-radius: 3px;
+    box-shadow: 0 0 18px rgba(57, 255, 106, 0.45), inset 0 0 26px rgba(57, 255, 106, 0.14);
+  }
+  #jb-public .jb-palm-frame::before {
+    content: ""; position: absolute; inset: 7px; pointer-events: none;
+    border: 1px solid rgba(57, 255, 106, 0.32);
+  }
+  #jb-public .jb-palm-frame::after {
+    content: ""; position: absolute; left: 12px; top: 12px; width: 6px; height: 6px; border-radius: 50%;
+    background: #39ff6a; box-shadow: 0 0 8px #39ff6a; pointer-events: none;
+  }
+  #jb-public .jb-palm-frame > * { position: relative; z-index: 1; }
+  #jb-public .jb-palm-frame-label {
+    position: absolute; top: 0; left: 30px; transform: translateY(-50%); z-index: 2; pointer-events: none;
+    background: #39ff6a; color: #031a08;
+    font-family: 'Share Tech Mono', monospace; font-size: 0.68rem; letter-spacing: 1.5px; padding: 1px 10px;
+    clip-path: polygon(6px 0, calc(100% - 6px) 0, 100% 50%, calc(100% - 6px) 100%, 6px 100%, 0 50%);
+  }
+  #jb-public .jb-palm-frame .jb-empty { margin: 4px 0 10px; }
+  #jb-public .jb-palm-frame .jb-slot:last-child { border-bottom: none; }
 </style>
 
 <div id="jb-app">
@@ -2245,8 +2271,13 @@
       <div class="jb-palmares-heading">
         <h2 id="jb-palmares-title">Palmarès</h2>
       </div>
-      <div id="jb-palmares-list" class="jb-palmares-grid"></div>
-      <p id="jb-palmares-empty" class="jb-empty" hidden>Aucune demande pour l'instant — sois le premier à demander une chanson !</p>
+      <!-- Case vert néon (20 oct. 2026, Hubert) : même concept que la boîte rouge de "Tes demandes".
+           L'étiquette sur l'arête affiche le nombre de chansons au palmarès (voir renderPalmares()). -->
+      <div class="jb-palm-frame">
+        <div class="jb-palm-frame-label" id="jb-palm-frame-label" aria-hidden="true"></div>
+        <div id="jb-palmares-list" class="jb-palmares-grid"></div>
+        <p id="jb-palmares-empty" class="jb-empty" hidden>Aucune demande pour l'instant — sois le premier à demander une chanson !</p>
+      </div>
     </section>
    </div>
 
@@ -2734,7 +2765,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-20.131";
+  const APP_BUILD = "2026-10-20.132";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -2813,6 +2844,7 @@
     fr: {
       page_title: "Mon Répertoire",
       palmares_title: "Palmarès",
+      palm_label: (n) => `${n} CHANSON${n > 1 ? "S" : ""}`,
       palmares_empty: "Aucune demande pour l'instant — sois le premier à demander une chanson !",
       vote_used_up: "Tu as utilisé tes 6 votes. Attends qu'une chanson sur laquelle tu as voté soit jouée pour en récupérer !",
       vote_floor: "Cette chanson est déjà à 0 vote — impossible de descendre plus bas.",
@@ -2904,6 +2936,7 @@
     en: {
       page_title: "My Repertoire",
       palmares_title: "Billboard",
+      palm_label: (n) => `${n} SONG${n === 1 ? "" : "S"}`,
       palmares_empty: "No requests yet — be the first to request a song!",
       vote_used_up: "You've used all 6 of your votes. Wait until a song you voted on gets played to get more!",
       vote_floor: "This song is already at 0 votes — it can't go any lower.",
@@ -5332,6 +5365,7 @@
     const remaining = votesRemaining();
     updateVoteBadge(remaining);
     empty.textContent = t("palmares_empty");
+    const palmLabel = document.getElementById("jb-palm-frame-label");
 
     // Pas de limite de position : autant de lignes que de demandes actives, et rien du
     // tout si personne n'a encore rien demandé — pour que chacun voie exactement où se
@@ -5346,6 +5380,8 @@
       .sort(compareVoteEntries);
 
     empty.hidden = ranked.length > 0;
+    // Étiquette de la case vert néon : nombre de chansons au palmarès (ex. « 3 CHANSONS »)
+    if (palmLabel) palmLabel.textContent = t("palm_label", ranked.length);
 
     if (ranked.length === 0) {
       palmaresElByKey.forEach((el) => el.remove());
