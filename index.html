@@ -1365,19 +1365,27 @@
     display: flex; align-items: center; gap: 12px; padding: 12px 0; min-width: 0;
     border-bottom: 1px dashed var(--border);
   }
-  #jb-public .jb-myreq-up { width: 32px; height: 32px; }
-  #jb-public .jb-myreq-rank {
-    flex-shrink: 0; min-width: 84px; white-space: nowrap; color: #fffaa8;
-    font-family: 'Share Tech Mono', monospace; font-size: 1.1rem; letter-spacing: 1px;
+  /* Maquette de Hubert (20 oct. 2026) : gros bouton ▲ avec une 2e "carte" décalée derrière lui
+     (en haut à gauche), et le rang AU-DESSUS du titre plutôt qu'entre le bouton et le titre. */
+  #jb-public .jb-myreq-up-wrap { position: relative; flex-shrink: 0; margin: 6px 6px 0 6px; display: flex; }
+  /* "Carte" arrière = simple équerre jaune foncé (haut + gauche), séparée du bouton par un petit vide */
+  #jb-public .jb-myreq-up-wrap::before {
+    content: ""; position: absolute; pointer-events: none; top: -6px; left: -6px; width: 80%; height: 80%;
+    border-top: 2px solid rgba(255, 242, 0, 0.55); border-left: 2px solid rgba(255, 242, 0, 0.55);
   }
-  #jb-public .jb-myreq-info { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+  #jb-public .jb-myreq-up { position: relative; z-index: 1; width: 44px; height: 44px; }
+  #jb-public .jb-myreq-rank {
+    white-space: nowrap; color: #fffaa8; line-height: 1.2;
+    font-family: 'Share Tech Mono', monospace; font-size: 1.05rem; letter-spacing: 2px;
+  }
+  #jb-public .jb-myreq-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
   #jb-public .jb-myreq-info .jb-slot-artist { font-family: 'Share Tech Mono', monospace; }
   #jb-public .jb-myreq-row .jb-slot-votes-wrap { min-width: 0; align-items: baseline; }
-  #jb-public .jb-myreq-row .jb-slot-votes { width: auto; line-height: 1; }
+  #jb-public .jb-myreq-row .jb-slot-votes { width: auto; line-height: 1; font-size: 1.25rem; }
   @media (max-width: 420px) {
     #jb-public .jb-myreq-row { gap: 9px; }
-    #jb-public .jb-myreq-up { width: 28px; height: 28px; }
-    #jb-public .jb-myreq-rank { min-width: 70px; font-size: 0.95rem; }
+    #jb-public .jb-myreq-up { width: 38px; height: 38px; }
+    #jb-public .jb-myreq-rank { font-size: 0.92rem; }
   }
 
   /* Fenêtre "Il te reste N votes" : tout l'écran est assombri et bloqué, seul "Continuer" répond */
@@ -2775,7 +2783,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-20.135";
+  const APP_BUILD = "2026-10-20.136";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -4766,9 +4774,9 @@
         const glow = since < 500 ? ` jb-num-glow" style="animation-delay:-${since}ms` : "";
         return `
         <div class="jb-myreq-row">
-          <button class="jb-slot-vote-btn jb-slot-vote-up jb-myreq-up" data-myreq-up="${escapeHtml(id)}" aria-label="${t("my_req_up_aria")}" title="${t("my_req_up_aria")}"><svg viewBox="0 0 12 12" width="14" height="14" aria-hidden="true"><path d="M6 1 11 5.5H1ZM6 6 11 10.5H1Z" fill="currentColor"/></svg></button>
-          <span class="jb-myreq-rank${glow}">${t("my_req_rank", rank)}</span>
+          <span class="jb-myreq-up-wrap"><button class="jb-slot-vote-btn jb-slot-vote-up jb-myreq-up" data-myreq-up="${escapeHtml(id)}" aria-label="${t("my_req_up_aria")}" title="${t("my_req_up_aria")}"><svg viewBox="0 0 12 12" width="16" height="16" aria-hidden="true"><path d="M6 1 11 5.5H1ZM6 6 11 10.5H1Z" fill="currentColor"/></svg></button></span>
           <span class="jb-myreq-info">
+            <span class="jb-myreq-rank${glow}">${t("my_req_rank", rank)}</span>
             <span class="jb-slot-title">${escapeHtml(v.title)}</span>
             ${v.artist ? `<span class="jb-slot-artist">${escapeHtml(v.artist)}</span>` : ""}
           </span>
@@ -5366,6 +5374,8 @@
   // Bloc "25 $" au bout d'une ligne (palmarès, "Tes demandes") — rien si les montants sont cachés.
   function amountHtml(id, cents, force = false) {
     if (!force && !showAmounts) return "";
+    // Rien du tout à 0 $ (20 oct. 2026, Hubert : "si il y a 0 $, affiche rien")
+    if (!(cents > 0)) return "";
     return `<span class="jb-slot-votes-wrap"><span class="jb-slot-votes${voteIllumClass(id)}">${escapeHtml(formatMoney(cents))}</span></span>`;
   }
 
