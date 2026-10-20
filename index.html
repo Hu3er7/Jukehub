@@ -1680,9 +1680,14 @@
        return [a[0] + (b[0] - a[0]) * k, a[1] + (b[1] - a[1]) * k];
      }
 
+     const CIRCUITS_FROM_PANEL = false;
      // Panneau du catalogue actuellement affiché (cadre des 3 boutons OU cadre des listes), en
      // coordonnées de PAGE — null si aucun (écran admin, appli pas encore affichée).
      function findPanel() {
+       // 20 oct. 2026 (Hubert) : le site client prend le même fond que l'admin — les circuits ne sont
+       // plus branchés sur le panneau de sélection, ils partent des bords de l'écran (mode "sans
+       // panneau" de build()). Remettre CIRCUITS_FROM_PANEL à true pour revenir aux pistes branchées.
+       if (!CIRCUITS_FROM_PANEL) return null;
        const frames = document.querySelectorAll("#jb-public .jb-catalog-frame");
        for (const f of frames) {
          if (f.offsetParent === null) continue;
@@ -2696,7 +2701,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-20.129";
+  const APP_BUILD = "2026-10-20.130";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
