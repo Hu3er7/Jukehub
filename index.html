@@ -1354,9 +1354,19 @@
 
   /* ===== "// Tes demandes", fenêtre après vote, case "0 VOTE" du catalogue (maquette de Hubert, 17 oct. 2026) ===== */
   #jb-public .jb-myreq-list { display: flex; flex-direction: column; }
-  #jb-public .jb-my-votes-heading { flex-wrap: nowrap; align-items: baseline; }
+  /* wrap : sur un téléphone étroit, « TES DONS FACTURÉS : N $ » passe sous le titre (aligné à droite) */
+  #jb-public .jb-my-votes-heading { flex-wrap: wrap; align-items: baseline; row-gap: 4px; }
   #jb-public .jb-my-votes-heading h2 { margin-bottom: 0; white-space: nowrap; }
   /* "5/6 votes restants" au bout de la ligne du titre, plus petit que le titre */
+  /* « TES DONS : 0 $ » au bout de la ligne du titre, même style que le titre lui-même */
+  #jb-public .jb-my-dons {
+    margin-left: auto; white-space: nowrap; color: #fff200; text-transform: uppercase;
+    font-family: 'Share Tech Mono', monospace; font-weight: 700; font-size: 0.66rem; letter-spacing: 0.8px;
+    align-self: center; /* plus petit que le titre (maquette de Hubert) : centré sur sa hauteur */
+  }
+  @media (max-width: 400px) {
+    #jb-public .jb-my-dons { font-size: 0.6rem; letter-spacing: 0.4px; }
+  }
   #jb-public .jb-myreq-votes-left {
     margin-left: auto; white-space: nowrap; color: #fffaa8; text-transform: uppercase;
     font-family: 'Share Tech Mono', monospace; font-size: 0.78rem; letter-spacing: 1px;
@@ -2285,6 +2295,8 @@
       <div class="jb-my-votes-heading">
         <h2 id="jb-my-requests-title">Tes demandes</h2>
         <!-- "N/6 votes restants" retiré le 19 oct. 2026 (plus de votes gratuits, votes payants à venir) -->
+        <!-- « TES DONS : N $ » (maquette de Hubert, 20 oct. 2026) : total donné ce soir sur CE téléphone -->
+        <span id="jb-my-dons" class="jb-my-dons"></span>
       </div>
       <!-- Boîte rouge néon (20 oct. 2026, Hubert) : même concept que le panneau de sélection
            (.jb-catalog-frame), en rouge. L'étiquette sur l'arête affiche le nombre de demandes (N/5). -->
@@ -2552,7 +2564,7 @@
   let bridgeReceivedKeys = 0;         // pour l'écran de diagnostic (#diag)
   let bridgeReceivedNames = [];
   function isDurableKey(key) {
-    return /^jb_(votes|requested|req_order)_/.test(key) || key === "jb_first_vote_msg_seen";
+    return /^jb_(votes|requested|req_order|dons)_/.test(key) || key === "jb_first_vote_msg_seen" || key === "jb_pay_pending";
   }
   function bridgeSend(msg) {
     if (!inFrame) return;
@@ -2567,6 +2579,8 @@
     if (key === "jb_first_vote_msg_seen") return "1";
     let a, b;
     try { a = JSON.parse(localRaw) || {}; b = JSON.parse(parentRaw) || {}; } catch (e) { return parentRaw; }
+    // Paiement en cours (voir startPayment()) : on garde le plus récent des deux
+    if (key === "jb_pay_pending") return (a.at || 0) >= (b.at || 0) ? localRaw : parentRaw;
     const out = { ...a };
     Object.keys(b).forEach((id) => {
       const x = a[id], y = b[id];
@@ -2574,6 +2588,8 @@
       if (key.startsWith("jb_votes_")) {
         if ((y.token || 0) !== (x.token || 0)) out[id] = (y.token || 0) > (x.token || 0) ? y : x;
         else out[id] = { up: Math.max(x.up || 0, y.up || 0), down: Math.max(x.down || 0, y.down || 0), token: x.token || 0 };
+      } else if (key.startsWith("jb_dons_")) {
+        out[id] = (y && y.b && !(x && x.b)) ? y : x; // même don des deux côtés : garde la copie "facturé"
       } else if (key.startsWith("jb_req_order_")) {
         out[id] = Math.min(x, y);           // garde le moment de la toute première demande
       } else {
@@ -2793,7 +2809,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-20.140";
+  const APP_BUILD = "2026-10-20.141";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -2895,6 +2911,7 @@
       votes_used_word: (n) => `UTILISÉ${n === 1 ? "" : "S"}`,
       // Section "// Tes demandes" et fenêtre après chaque vote (maquette de Hubert, 17 oct. 2026)
       my_requests_title: "Tes demandes",
+      my_dons: (amount) => `Tes dons facturés : ${amount}`,
       myreq_label: (n, max) => `DEMANDES ${n}/${max}`,
       my_req_rank: (n) => `${n}${n === 1 ? "ER" : "E"} RANG`,
       my_req_up_aria: "Faire monter cette chanson",
@@ -2979,6 +2996,7 @@
       votes_unit: (n) => `VOTE${n === 1 ? "" : "S"}`,
       votes_used_word: () => "USED",
       my_requests_title: "Your requests",
+      my_dons: (amount) => `Billed tips: ${amount}`,
       myreq_label: (n, max) => `REQUESTS ${n}/${max}`,
       my_req_rank: (n) => `RANK ${n}`,
       my_req_up_aria: "Push this song up",
@@ -4777,6 +4795,7 @@
       return [id, votes[id], rank];
     });
     emptyEl.hidden = rows.length > 0;
+    renderMyDons();
     // Étiquette de la boîte rouge néon : nombre de demandes actives sur le maximum (ex. « DEMANDES 2/5 »)
     const frameLabel = document.getElementById("jb-myreq-frame-label");
     if (frameLabel) frameLabel.textContent = t("myreq_label", rows.length, MAX_REQUESTS);
@@ -4911,6 +4930,11 @@
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok || !data.url) throw new Error(data.error || `HTTP ${res.status}`);
+      // Retenu AVANT de partir chez Stripe : au retour ("#paid"), ce montant s'ajoute à « Tes dons »
+      safeStorageSet("jb_pay_pending", JSON.stringify({
+        id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        cents, songId: payTargetId, nightId: nightId || "default", at: Date.now(),
+      }));
       openCheckoutUrl(data.url);
       // La fenêtre reste ouverte (bouton "Redirection…") jusqu'à ce que la page de Stripe s'affiche.
       setTimeout(() => { document.getElementById("jb-vote-modal").hidden = true; }, 4000);
@@ -4921,10 +4945,58 @@
     }
   }
   // Retour de la page de paiement Stripe ("#paid", transmis par la page Carrd) : merci !
-  if (location.hash === "#paid") {
+  const paidReturn = location.hash === "#paid";
+  if (paidReturn) {
     history.replaceState(null, "", location.pathname + location.search);
     setTimeout(() => showToast(t("paid_thanks")), 1500);
   }
+  // « TES DONS FACTURÉS » : total des dons de CE téléphone ce soir, mais SEULEMENT pour les chansons
+  // que Hubert a marquées « Jouée » après le don (c'est là que la carte est vraiment prélevée — voir
+  // markPlayed()/captureSong). jb_dons_<soirée> = { id: { c: cents, s: chanson, t: moment, b: facturé } }.
+  // Le paiement en cours (jb_pay_pending, posé par startPayment()) n'y entre qu'au retour réussi de
+  // Stripe ("#paid"). Rejouer cette fonction ne compte jamais deux fois le même paiement (même id) —
+  // elle est rappelée quand la copie de la page Carrd arrive (onBridgeData).
+  function readDons(key) {
+    try { return JSON.parse(safeStorageGet(key) || "{}") || {}; } catch (e) { return {}; }
+  }
+  function applyPaidReturn() {
+    if (!paidReturn) return;
+    let p;
+    try { p = JSON.parse(safeStorageGet("jb_pay_pending") || "null"); } catch (e) { p = null; }
+    if (!p || !p.id || !(p.cents > 0) || Date.now() - (p.at || 0) > 6 * 3600 * 1000) return;
+    const key = "jb_dons_" + (p.nightId || "default");
+    const dons = readDons(key);
+    if (dons[p.id]) return;
+    dons[p.id] = { c: p.cents, s: p.songId || "", t: p.at || Date.now() };
+    safeStorageSet(key, JSON.stringify(dons));
+    renderMyDons();
+  }
+  // Moment où la chanson a été jouée pour la dernière fois (0 si jamais) — playedAt, ou à défaut
+  // cooldownUntil moins le refroidissement (playedAt est effacé si la chanson est redemandée).
+  function songPlayedMs(v) {
+    if (!v) return 0;
+    const a = v.playedAt?.toMillis ? v.playedAt.toMillis() : 0;
+    const b = v.cooldownUntil ? v.cooldownUntil - COOLDOWN_MS : 0;
+    return Math.max(a, b);
+  }
+  function renderMyDons() {
+    const el = document.getElementById("jb-my-dons");
+    if (!el) return;
+    const key = "jb_dons_" + (nightId || "default");
+    const dons = readDons(key);
+    let total = 0;
+    let changed = false;
+    Object.values(dons).forEach((d) => {
+      if (!d || typeof d !== "object") return;
+      // Une fois vu « facturé », le don le reste (la chanson peut ensuite être redemandée et
+      // perdre son playedAt) : on le note pour ne plus dépendre de l'état de la chanson.
+      if (!d.b && d.s && songPlayedMs(votes[d.s]) > (d.t || 0)) { d.b = 1; changed = true; }
+      if (d.b) total += Number(d.c) || 0;
+    });
+    if (changed) safeStorageSet(key, JSON.stringify(dons));
+    el.textContent = t("my_dons", formatMoney(total));
+  }
+  applyPaidReturn();
   let voteModalPending = false;
   function voteModalBusy() {
     const modal = document.getElementById("jb-vote-modal");
@@ -6766,6 +6838,7 @@
   // Copie de la page Carrd reçue (voir "Pont de stockage" tout en haut) : on relit les votes et les
   // demandes de la soirée en cours. Posé ici, tout à la fin, pour que tout le reste soit prêt.
   onBridgeData = () => {
+    applyPaidReturn(); // le paiement en cours a pu n'être gardé que par la page Carrd
     if (!nightId) return; // la soirée n'est pas encore connue : la 1re lecture se fera à son arrivée
     loadRequestedFromStorage();
     loadVotesFromStorage();
