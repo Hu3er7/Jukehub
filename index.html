@@ -1468,6 +1468,15 @@
   /* Catalogue, chanson déjà au palmarès (21 oct. 2026) : même ligne que « Tes demandes » */
   #jb-public .jb-song-item-inpalm { gap: 12px; }
   #jb-public .jb-song-item-inpalm .jb-song-info { display: flex; flex-direction: column; gap: 1px; }
+  /* …avec, à droite, le badge « Demande » éteint et un crochet vert par-dessus (Hubert : « garde-le ») */
+  #jb-public .jb-song-done-badge {
+    position: relative; background: #050603; border-color: #1c1c10; color: rgba(255, 250, 168, 0.18);
+    text-shadow: none; box-shadow: none;
+  }
+  #jb-public .jb-song-done-check {
+    position: absolute; left: 50%; top: 50%; width: 26px; height: 26px; transform: translate(-50%, -50%);
+    color: #11a822; filter: drop-shadow(0 0 3px rgba(17, 168, 34, 0.5));
+  }
   #jb-public .jb-song-vote-box {
     display: inline-flex; align-items: baseline; justify-content: center; gap: 5px;
     font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: 0.62rem; letter-spacing: 0.5px;
@@ -2807,7 +2816,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-21.146";
+  const APP_BUILD = "2026-10-21.147";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -5918,7 +5927,9 @@
           <div class="jb-song-title">${escapeHtml(song.title)}</div>
           ${showArtist && song.artist ? `<div class="jb-song-artist">${escapeHtml(song.artist)}</div>` : ""}
         </div>
-        ${amountHtml(song.id, v?.requests)}`;
+        <span class="jb-song-right">
+          <span class="jb-request-remaining jb-song-request-badge jb-song-done-badge">${escapeHtml(t("song_request_word"))}<svg class="jb-song-done-check" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 13.5 9 19 21 5" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="square"/></svg></span>
+        </span>`;
       return li;
     }
 
