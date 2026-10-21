@@ -1468,6 +1468,15 @@
   /* Catalogue, chanson déjà au palmarès (21 oct. 2026) : même ligne que « Tes demandes » */
   #jb-public .jb-song-item-inpalm { gap: 12px; }
   #jb-public .jb-song-item-inpalm .jb-song-info { display: flex; flex-direction: column; gap: 1px; }
+  /* Textes du menu de sélection nettement plus petits (21 oct. 2026, Hubert : « de beaucoup »).
+     La barre de recherche garde 16px : en dessous, l'iPhone zoome la page quand on y tape. */
+  #jb-public #jb-catalog-list .jb-song-title { font-size: 0.8rem; }
+  #jb-public #jb-catalog-list .jb-song-artist { font-size: 0.66rem; }
+  #jb-public #jb-catalog-list .jb-myreq-rank { font-size: 0.74rem; }
+  #jb-public #jb-catalog-list .jb-song-request-badge { font-size: 0.62rem; min-width: 76px; padding: 4px 8px; }
+  #jb-public #jb-catalog-list .jb-song-votes { font-size: 0.9rem; }
+  #jb-public #jb-catalog-list .jb-song-done-check { width: 20px; height: 20px; }
+  #jb-public .jb-mode-btn { font-size: 0.78rem; }
   /* …avec, à droite, le badge « Demande » éteint et un crochet vert par-dessus (Hubert : « garde-le ») */
   #jb-public .jb-song-done-badge {
     position: relative; background: #050603; border-color: #1c1c10; color: rgba(255, 250, 168, 0.18);
@@ -2816,7 +2825,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-21.147";
+  const APP_BUILD = "2026-10-21.148";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
