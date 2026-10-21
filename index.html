@@ -1380,10 +1380,11 @@
   #jb-public .jb-myreq-up-wrap { position: relative; flex-shrink: 0; margin: 6px 6px 0 6px; display: flex; }
   /* "Carte" arrière = simple équerre jaune foncé (haut + gauche), séparée du bouton par un petit vide */
   #jb-public .jb-myreq-up-wrap::before {
-    content: ""; position: absolute; pointer-events: none; top: -6px; left: -6px; width: 80%; height: 80%;
+    content: ""; position: absolute; pointer-events: none; top: -5px; left: -5px; width: 80%; height: 80%;
     border-top: 2px solid rgba(255, 242, 0, 0.55); border-left: 2px solid rgba(255, 242, 0, 0.55);
   }
-  #jb-public .jb-myreq-up { position: relative; z-index: 1; width: 44px; height: 44px; }
+  /* Bouton réduit (21 oct. 2026, Hubert) — même taille dans « Tes demandes », la sélection et le palmarès */
+  #jb-public .jb-myreq-up { position: relative; z-index: 1; width: 34px; height: 34px; }
   #jb-public .jb-myreq-rank {
     white-space: nowrap; color: #fffaa8; line-height: 1.2;
     font-family: 'Share Tech Mono', monospace; font-size: 1.05rem; letter-spacing: 2px;
@@ -1394,7 +1395,7 @@
   #jb-public .jb-myreq-row .jb-slot-votes { width: auto; line-height: 1; font-size: 1.25rem; }
   @media (max-width: 420px) {
     #jb-public .jb-myreq-row { gap: 9px; }
-    #jb-public .jb-myreq-up { width: 38px; height: 38px; }
+    #jb-public .jb-myreq-up { width: 30px; height: 30px; }
     #jb-public .jb-myreq-rank { font-size: 0.92rem; }
   }
 
@@ -1464,16 +1465,9 @@
   /* Catalogue, chanson déjà demandée : [▲ jaune] [0 VOTE] — même largeur que le badge "Demande" */
   #jb-public .jb-song-up { width: 30px; height: 30px; font-size: 0.8rem; }
   #jb-public .jb-song-request-badge { min-width: 92px; text-align: center; }
-  /* Badge « Demande » d'une chanson déjà demandée (avant/après de Hubert, 20 oct. 2026) : éteint
-     (fond noir, texte presque invisible) avec un crochet vert par-dessus, au centre. */
-  #jb-public .jb-song-done-badge {
-    position: relative; background: #050603; border-color: #1c1c10; color: rgba(255, 250, 168, 0.18);
-    text-shadow: none; box-shadow: none;
-  }
-  #jb-public .jb-song-done-check {
-    position: absolute; left: 50%; top: 50%; width: 26px; height: 26px; transform: translate(-50%, -50%);
-    color: #11a822; filter: drop-shadow(0 0 3px rgba(17, 168, 34, 0.5));
-  }
+  /* Catalogue, chanson déjà au palmarès (21 oct. 2026) : même ligne que « Tes demandes » */
+  #jb-public .jb-song-item-inpalm { gap: 12px; }
+  #jb-public .jb-song-item-inpalm .jb-song-info { display: flex; flex-direction: column; gap: 1px; }
   #jb-public .jb-song-vote-box {
     display: inline-flex; align-items: baseline; justify-content: center; gap: 5px;
     font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: 0.62rem; letter-spacing: 0.5px;
@@ -2813,7 +2807,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-21.145";
+  const APP_BUILD = "2026-10-21.146";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -5543,12 +5537,12 @@
       // Disposition cyberpunk (2e croquis de Hubert) : les 2 flèches côte à côte tout à gauche
       // (vert = monter, rouge = descendre), puis le rang, puis titre/artiste avec, en dessous, la
       // barre de progression terminée par "4 VOTES" au bout, sur la même ligne.
+      // 21 oct. 2026 (maquette de Hubert) : même visuel que « Tes demandes » — bouton ▲ avec son
+      // équerre, et « 1ER RANG » au-dessus du titre (plus de chiffre seul à gauche).
       el.innerHTML = `
-        <span class="jb-slot-arrows">
-          <button class="jb-slot-vote-btn jb-slot-vote-up${voteUpBtnIllumClass(id)}" data-vote-up="${escapeHtml(id)}" aria-label="${t("vote_up_aria")}" title="${t("vote_up_aria")}"><svg viewBox="0 0 12 12" width="12" height="12" aria-hidden="true"><path d="M6 1 11 5.5H1ZM6 6 11 10.5H1Z" fill="currentColor"/></svg></button>
-        </span>
-        <span class="jb-slot-rank">${i + 1}</span>
+        <span class="jb-myreq-up-wrap"><button class="jb-slot-vote-btn jb-slot-vote-up jb-myreq-up${voteUpBtnIllumClass(id)}" data-vote-up="${escapeHtml(id)}" aria-label="${t("vote_up_aria")}" title="${t("vote_up_aria")}"><svg viewBox="0 0 12 12" width="14" height="14" aria-hidden="true"><path d="M6 1 11 5.5H1ZM6 6 11 10.5H1Z" fill="currentColor"/></svg></button></span>
         <span class="jb-slot-mid">
+          <span class="jb-myreq-rank">${t("my_req_rank", i + 1)}</span>
           <span class="jb-slot-info jb-slot-head">
             <span class="jb-slot-title"${flyingTitleKeys.has(id) ? ' style="visibility:hidden"' : ""}>${escapeHtml(v.title)}</span>
             ${v.artist ? `<span class="jb-slot-artist">${escapeHtml(v.artist)}</span>` : ""}
@@ -5903,16 +5897,30 @@
     // Chiffre de position au palmarès (voir getSongRank() plus haut) : uniquement pour l'état
     // "déjà demandée" normal (jamais brûlée/refroidissement, qui ont leur propre affichage) —
     // demande explicite de Hubert, "copier le design du palmarès" pour cette ligne.
-    const rank = requested ? getSongRank(song.id) : null;
+    // 21 oct. 2026 (maquette de Hubert) : TOUTE chanson déjà au palmarès (demandée par n'importe qui,
+    // pas seulement par ce client) s'affiche ici comme dans « Tes demandes » — bouton ▲ (payer pour la
+    // faire monter), « 1ER RANG » au-dessus du titre — et ne peut plus être redemandée. Lu du palmarès
+    // en direct (Firestore), donc vrai même si le client ferme et rouvre le site.
+    const rank = !isBurned(v) && !isInCooldown(v) ? getSongRank(song.id) : null;
     const li = document.createElement("li");
     // Illumination de la ligne juste après une vraie demande (voir rowFlashElapsedMs()/
     // requestSong() plus bas — animation-delay négatif pour que la ligne reprenne le flash là où
     // il devrait en être plutôt que de le relancer à 0%, même recréée plusieurs fois de suite).
     const rowFlashMs = rowFlashElapsedMs(song.id);
-    // .jb-song-item-requested assombrit le titre (voir CSS) pour évoquer une chanson "partie"
-    // rejoindre le palmarès plus bas — demande explicite de Hubert : "la chanson est assombrie".
-    li.className = "jb-song-item" + (rowFlashMs != null ? " jb-pulse-attn-row" : "") + (rank != null ? " jb-song-item-requested" : "");
+    li.className = "jb-song-item" + (rowFlashMs != null ? " jb-pulse-attn-row" : "") + (rank != null ? " jb-song-item-inpalm" : "");
     if (rowFlashMs != null) li.style.animationDelay = `-${rowFlashMs}ms`;
+
+    if (rank != null) {
+      li.innerHTML = `
+        <span class="jb-myreq-up-wrap"><button class="jb-slot-vote-btn jb-slot-vote-up jb-myreq-up${voteUpBtnIllumClass(song.id)}" data-vote-up="${escapeHtml(song.id)}" aria-label="${t("vote_up_aria")}" title="${t("vote_up_aria")}"><svg viewBox="0 0 12 12" width="14" height="14" aria-hidden="true"><path d="M6 1 11 5.5H1ZM6 6 11 10.5H1Z" fill="currentColor"/></svg></button></span>
+        <div class="jb-song-info">
+          <span class="jb-myreq-rank">${t("my_req_rank", rank)}</span>
+          <div class="jb-song-title">${escapeHtml(song.title)}</div>
+          ${showArtist && song.artist ? `<div class="jb-song-artist">${escapeHtml(song.artist)}</div>` : ""}
+        </div>
+        ${amountHtml(song.id, v?.requests)}`;
+      return li;
+    }
 
     const voteCount = v?.requests || 0;
     let btnHtml;
@@ -5932,13 +5940,6 @@
           <span>${t("cooldown_in_label")} <span class="jb-cooldown-num">${formatCooldown(v)}</span></span>
         </div>
       </div>`;
-    } else if (requested) {
-      // 20 oct. 2026 (avant/après de Hubert) : une fois demandée, la ligne du catalogue ne montre
-      // plus que le titre assombri et le badge « Demande » éteint avec un crochet vert par-dessus —
-      // « rien d'autre » (plus de rang, de ▲ ni de montant ici : ça se passe dans « Tes demandes »).
-      btnHtml = `<span class="jb-song-right">
-        <span class="jb-request-remaining jb-song-request-badge jb-song-done-badge">${escapeHtml(t("song_request_word"))}<svg class="jb-song-done-check" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 13.5 9 19 21 5" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="square"/></svg></span>
-      </span>`;
     } else {
       // Pas de data-req sur le bouton lui-même : c'est toute la ligne (li) qui porte le
       // data-req et le clic, pour que le client puisse appuyer n'importe où sur la chanson,
@@ -5958,7 +5959,7 @@
         ${showArtist && song.artist ? `<div class="jb-song-artist">${escapeHtml(song.artist)}</div>` : ""}
       </div>
       ${btnHtml}`;
-    if (!isBurned(v) && !isInCooldown(v) && !requested) {
+    if (!isBurned(v) && !isInCooldown(v) && !alreadyRequested(song.id)) {
       li.classList.add("jb-song-item-clickable");
       li.dataset.req = song.id;
     }
