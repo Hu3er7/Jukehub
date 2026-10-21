@@ -1380,11 +1380,12 @@
   #jb-public .jb-myreq-up-wrap { position: relative; flex-shrink: 0; margin: 6px 6px 0 6px; display: flex; }
   /* "Carte" arrière = simple équerre jaune foncé (haut + gauche), séparée du bouton par un petit vide */
   #jb-public .jb-myreq-up-wrap::before {
-    content: ""; position: absolute; pointer-events: none; top: -5px; left: -5px; width: 80%; height: 80%;
+    content: ""; position: absolute; pointer-events: none; top: -4px; left: -4px; width: 80%; height: 80%;
     border-top: 2px solid rgba(255, 242, 0, 0.55); border-left: 2px solid rgba(255, 242, 0, 0.55);
   }
   /* Bouton réduit (21 oct. 2026, Hubert) — même taille dans « Tes demandes », la sélection et le palmarès */
-  #jb-public .jb-myreq-up { position: relative; z-index: 1; width: 34px; height: 34px; }
+  #jb-public .jb-myreq-up { position: relative; z-index: 1; width: 27px; height: 27px; }
+  #jb-public .jb-myreq-up svg { width: 12px; height: 12px; } /* boutons encore réduits (21 oct. 2026, Hubert) */
   #jb-public .jb-myreq-rank {
     white-space: nowrap; color: #fffaa8; line-height: 1.2;
     font-family: 'Share Tech Mono', monospace; font-size: 1.05rem; letter-spacing: 2px;
@@ -1395,7 +1396,7 @@
   #jb-public .jb-myreq-row .jb-slot-votes { width: auto; line-height: 1; font-size: 1.25rem; }
   @media (max-width: 420px) {
     #jb-public .jb-myreq-row { gap: 9px; }
-    #jb-public .jb-myreq-up { width: 30px; height: 30px; }
+    #jb-public .jb-myreq-up { width: 25px; height: 25px; }
     #jb-public .jb-myreq-rank { font-size: 0.92rem; }
   }
 
@@ -1466,8 +1467,14 @@
   #jb-public .jb-song-up { width: 30px; height: 30px; font-size: 0.8rem; }
   #jb-public .jb-song-request-badge { min-width: 92px; text-align: center; }
   /* Catalogue, chanson déjà au palmarès (21 oct. 2026) : même ligne que « Tes demandes » */
-  #jb-public .jb-song-item-inpalm { gap: 12px; }
-  #jb-public .jb-song-item-inpalm .jb-song-info { display: flex; flex-direction: column; gap: 1px; }
+  /* [▲] RANG à droite, rang aligné à gauche sur une largeur fixe pour que les boutons s'alignent d'une ligne à l'autre */
+  #jb-public .jb-inpalm-right { display: flex; align-items: center; gap: 14px; flex-shrink: 0; }
+  /* 2e maquette de Hubert : ligne entière sur un fond plus sombre (teinte olive), artiste aussi visible qu'ailleurs,
+     et le rang dans une case comme le badge « Demande » (même taille), texte pâle bien espacé */
+  #jb-public #jb-catalog-list .jb-song-item-inpalm { background: #0d110e; }
+  #jb-public #jb-catalog-list .jb-inpalm-rank {
+    color: #a0a06e; text-shadow: none; letter-spacing: 3px; font-weight: 400; white-space: nowrap;
+  }
   /* Textes du menu de sélection nettement plus petits (21 oct. 2026, Hubert : « de beaucoup »).
      La barre de recherche garde 16px : en dessous, l'iPhone zoome la page quand on y tape. */
   #jb-public #jb-catalog-list .jb-song-title { font-size: 0.8rem; }
@@ -1475,17 +1482,7 @@
   #jb-public #jb-catalog-list .jb-myreq-rank { font-size: 0.74rem; }
   #jb-public #jb-catalog-list .jb-song-request-badge { font-size: 0.62rem; min-width: 76px; padding: 4px 8px; }
   #jb-public #jb-catalog-list .jb-song-votes { font-size: 0.9rem; }
-  #jb-public #jb-catalog-list .jb-song-done-check { width: 20px; height: 20px; }
   #jb-public .jb-mode-btn { font-size: 0.78rem; }
-  /* …avec, à droite, le badge « Demande » éteint et un crochet vert par-dessus (Hubert : « garde-le ») */
-  #jb-public .jb-song-done-badge {
-    position: relative; background: #050603; border-color: #1c1c10; color: rgba(255, 250, 168, 0.18);
-    text-shadow: none; box-shadow: none;
-  }
-  #jb-public .jb-song-done-check {
-    position: absolute; left: 50%; top: 50%; width: 26px; height: 26px; transform: translate(-50%, -50%);
-    color: #11a822; filter: drop-shadow(0 0 3px rgba(17, 168, 34, 0.5));
-  }
   #jb-public .jb-song-vote-box {
     display: inline-flex; align-items: baseline; justify-content: center; gap: 5px;
     font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: 0.62rem; letter-spacing: 0.5px;
@@ -1648,59 +1645,165 @@
   #jb-public #jb-catalog-browse .jb-mode-list { margin-top: 6px; } /* un peu d'air sous l'étiquette agrandie */
   /* Pas d'étiquette en bas : à cheval sur l'arête, elle chevauchait la dernière chanson des listes */
 
-  /* ===== "// Tes demandes" en boîte rouge néon (20 oct. 2026, Hubert) =====
-     Même concept visuel que le panneau de sélection ci-dessus (corps sombre, arête lumineuse, 2e
-     contour intérieur, point de repère dans le coin, étiquette sur l'arête), mais en rouge néon. */
-  #jb-public .jb-myreq-frame {
-    position: relative; margin: 26px -10px 20px; padding: 24px 16px 8px;
-    background-color: #1a0409;
-    border: 2px solid #ff2d55; border-radius: 3px;
-    box-shadow: 0 0 18px rgba(255, 45, 85, 0.5), inset 0 0 26px rgba(255, 45, 85, 0.16);
+  /* ===== Cadre « dossier HUD » du menu de sélection (21 oct. 2026, image de Hubert) =====
+     Coins biseautés, onglet plein en haut à gauche (qui porte l'étiquette), 2e trait le long du
+     haut à droite, « échelle » à gauche et équerre intérieure en bas à droite — couleur cyan
+     inchangée. Dessiné par .jb-frame-deco (le trait lumineux) et ::before (le fond sombre) : des
+     découpes clip-path aux biseaux de taille FIXE, qui suivent la hauteur variable du cadre. */
+  #jb-public .jb-catalog-frame { --fc: #5af4f0; --fbg: #04121c; --fglow: rgba(0, 230, 220, 0.6); }
+  /* Le contenu commence SOUS le trait du haut et l'encoche : sinon le fond d'une ligne de chanson
+     (ex. chanson déjà au palmarès) passait par-dessus en faisant défiler la liste (Hubert) */
+  #jb-public .jb-catalog-frame { padding-top: calc(var(--ft) + 10px) !important; padding-right: 14px !important; padding-bottom: 13px !important; }
+  #jb-public .jb-catalog-frame, #jb-public .jb-myreq-frame, #jb-public .jb-palm-frame {
+    --fb: 12px; --ft: 28px; --tabw: 150px;
+    border: none; border-radius: 0; background: none; box-shadow: none;
+    margin: 14px -10px 20px; padding: var(--ft) 8px 8px 32px;
   }
-  #jb-public .jb-myreq-frame::before {
-    content: ""; position: absolute; inset: 7px; pointer-events: none;
-    border: 1px solid rgba(255, 45, 85, 0.35);
+  #jb-public .jb-catalog-frame::before, #jb-public .jb-myreq-frame::before, #jb-public .jb-palm-frame::before {
+    /* fond sombre du corps (sous le trait), sans le 2e contour d'avant */
+    content: ""; position: absolute; pointer-events: none; inset: 0; border: none; background: var(--fbg);
+    clip-path: polygon(0 calc(var(--ft) + var(--fb)), var(--fb) var(--ft), calc(100% - var(--fb)) var(--ft),
+      100% calc(var(--ft) + var(--fb)), 100% calc(100% - var(--fb)), calc(100% - var(--fb)) 100%,
+      var(--fb) 100%, 0 calc(100% - var(--fb)));
   }
-  #jb-public .jb-myreq-frame::after {
-    content: ""; position: absolute; left: 12px; top: 12px; width: 6px; height: 6px; border-radius: 50%;
-    background: #ff2d55; box-shadow: 0 0 8px #ff2d55; pointer-events: none;
+  #jb-public .jb-catalog-frame::after, #jb-public .jb-myreq-frame::after, #jb-public .jb-palm-frame::after { display: none; }
+  /* 2e version (maquette de Hubert, 21 oct. 2026) : onglet plein collé au coin haut-gauche, rail
+     épais avec pointillés au-dessus du haut du cadre, encoche sous le haut, contour extérieur plus
+     discret et équerre lumineuse en bas à droite. Repères : --ft = hauteur du haut du corps, --tabw =
+     largeur du haut de l'onglet (sa pente droite gagne 12px jusqu'en bas). */
+  #jb-public .jb-catalog-frame, #jb-public .jb-myreq-frame, #jb-public .jb-palm-frame { --fc-dim: var(--fc); --tr: calc(var(--tabw) + 12px); } /* contour aussi lumineux que l'onglet (retouche Photoshop de Hubert) */
+  #jb-public .jb-catalog-frame::before, #jb-public .jb-myreq-frame::before, #jb-public .jb-palm-frame::before {
+    clip-path: polygon(0 0, var(--tabw) 0, var(--tr) var(--ft), calc(100% - 8px) var(--ft), 100% calc(var(--ft) + 8px),
+      100% calc(100% - var(--fb)), calc(100% - var(--fb)) 100%, var(--fb) 100%, 0 calc(100% - var(--fb)));
   }
-  #jb-public .jb-myreq-frame > * { position: relative; z-index: 1; }
-  #jb-public .jb-myreq-frame-label {
-    position: absolute; top: 0; left: 30px; transform: translateY(-50%); z-index: 2; pointer-events: none;
-    background: #ff2d55; color: #1a0409;
-    font-family: 'Share Tech Mono', monospace; font-size: 1rem; font-weight: 700; letter-spacing: 1.5px; padding: 3px 18px;
-    clip-path: polygon(10px 0, calc(100% - 10px) 0, 100% 50%, calc(100% - 10px) 100%, 10px 100%, 0 50%);
+  #jb-public .jb-frame-deco {
+    position: absolute; inset: 0; pointer-events: none; z-index: 0;
+    filter: drop-shadow(0 0 5px var(--fglow));
   }
-  #jb-public .jb-myreq-frame .jb-empty { margin: 4px 0 10px; }
-  /* Dernière ligne sans trait pointillé (le bas de la boîte sert de séparateur) */
-  #jb-public .jb-myreq-frame .jb-myreq-row:last-child { border-bottom: none; }
+  #jb-public .jb-frame-deco > i { position: absolute; display: block; }
+  /* Contour extérieur (discret) : gauche, bas, droite et biseau haut-droit — le haut est le trait
+     lumineux .jb-fd-bodyline. Bord extérieur puis bord intérieur en sens inverse. */
+  #jb-public .jb-fd-ring {
+    inset: 0; background: var(--fc-dim);
+    clip-path: polygon(
+      0 var(--ft), 0 calc(100% - var(--fb)), var(--fb) 100%, calc(100% - var(--fb)) 100%, 100% calc(100% - var(--fb)),
+      100% calc(var(--ft) + 8px), calc(100% - 8px) var(--ft),
+      calc(100% - 9.24px) calc(var(--ft) + 3px), calc(100% - 3px) calc(var(--ft) + 9.24px),
+      calc(100% - 3px) calc(100% - var(--fb) - 1.24px), calc(100% - var(--fb) - 1.24px) calc(100% - 3px),
+      calc(var(--fb) + 1.24px) calc(100% - 3px), 3px calc(100% - var(--fb) - 1.24px), 3px var(--ft));
+  }
+  /* Onglet plein, collé au coin haut-gauche, pente à droite */
+  #jb-public .jb-fd-tabfill {
+    inset: 0; background: var(--fc);
+    clip-path: polygon(0 0, var(--tabw) 0, calc(var(--tr) + 1px) calc(var(--ft) + 3px), 0 calc(var(--ft) + 3px));
+  }
+  /* Coin intérieur sous l'onglet (pied de l'onglet / bord gauche) en diagonale comme les autres
+     coins (Hubert) : petit triangle à 45°, de la couleur de l'onglet */
+  /* Posé PAR-DESSUS le contour gauche et le pied de l'onglet (et non bout à bout) : sinon, quand le
+     cadre tombe sur un demi-pixel, il restait une couture de bleu plus foncé dans le coin (Hubert) */
+  #jb-public .jb-fd-fillet {
+    left: 0; top: var(--ft); width: 15px; height: 15px;
+    background: var(--fc); clip-path: polygon(0 0, 100% 0, 0 100%);
+  }
+  /* Haut du corps : trait lumineux de 3px, du pied de l'onglet jusqu'au biseau haut-droit */
+  #jb-public .jb-fd-bodyline {
+    top: var(--ft); height: 3px; background: var(--fc); left: calc(var(--tr) - 4px); right: 5px;
+    /* bout droit coupé à 45°, pile sur le biseau haut-droit (sinon 1–2px dépassaient de l'angle) */
+    clip-path: polygon(0 0, calc(100% - 3px) 0, 100% 100%, 0 100%);
+  }
+  /* Rail au-dessus du haut : crochet parallèle à la pente de l'onglet, barre pleine puis pointillés */
+  #jb-public .jb-fd-rail {
+    top: 0; left: 0; height: var(--ft); width: 63%; background: var(--fc);
+    clip-path: polygon(calc(var(--tabw) + 9px) 10px, calc(var(--tabw) + 11.5px) 10px, calc(var(--tabw) + 14px) calc(var(--ft) - 11px),
+      100% calc(var(--ft) - 11px), 100% calc(var(--ft) - 7px), calc(var(--tabw) + 13.5px) calc(var(--ft) - 7px));
+  }
+  #jb-public .jb-fd-dots {
+    top: calc(var(--ft) - 11px); height: 4px; left: calc(63% + 4px); width: 13%;
+    background: repeating-linear-gradient(to right, var(--fc) 0 4px, transparent 4px 8px);
+  }
+  /* Encoche pleine sous le haut, extrémités en biais */
+  #jb-public .jb-fd-notch {
+    top: calc(var(--ft) + 2px); height: 7px; left: 54%; width: 20%; background: var(--fc);
+    clip-path: polygon(0 0, 100% 0, calc(100% - 7px) 100%, 7px 100%);
+  }
+  /* « Échelle » à gauche : 2 pointes + 11 barreaux, espacement identique partout (4px) */
+  #jb-public .jb-fd-ladder {
+    left: 9px; width: 11px; height: 95px; top: calc(var(--ft) + (100% - var(--ft) - 95px) / 2);
+    background: repeating-linear-gradient(to bottom, var(--fc) 0 3px, transparent 3px 7px) 0 11px / 100% 73px no-repeat;
+  }
+  #jb-public .jb-fd-ladder::before, #jb-public .jb-fd-ladder::after {
+    content: ""; position: absolute; left: 0; width: 100%; height: 7px; background: var(--fc);
+  }
+  #jb-public .jb-fd-ladder::before { top: 0; clip-path: polygon(50% 0, 100% 55%, 100% 100%, 0 100%, 0 55%); }
+  #jb-public .jb-fd-ladder::after { bottom: 0; clip-path: polygon(0 0, 100% 0, 100% 45%, 50% 100%, 0 45%); }
+  /* Trait fin vertical entre l'échelle et le contenu (retouche Photoshop de Hubert) */
+  /* Centré sur l'échelle (même milieu), 2px de large, 30px de plus en haut et en bas (sans
+     jamais toucher le haut ni le bas du cadre) */
+  #jb-public .jb-fd-vline {
+    --vh: min(155px, calc(100% - var(--ft) - 24px));
+    left: 27px; width: 2px; height: var(--vh); top: calc(var(--ft) + (100% - var(--ft) - var(--vh)) / 2); background: var(--fc);
+  }
+  /* Équerre lumineuse en bas à droite : part du bord droit en diagonale, descend, coin biseauté,
+     longe le bas et rejoint le bord du bas en diagonale — un seul trait de 2px */
+  #jb-public .jb-fd-accent {
+    right: 0; bottom: 0; top: calc(var(--ft) + 34%); width: 28%; background: var(--fc);
+    clip-path: polygon(100% 0, calc(100% - 7px) 7px, calc(100% - 7px) calc(100% - 17px), calc(100% - 17px) calc(100% - 7px),
+      7px calc(100% - 7px), 0 100%, 0 calc(100% - 2.83px), 6.17px calc(100% - 9px), calc(100% - 17.83px) calc(100% - 9px),
+      calc(100% - 9px) calc(100% - 17.83px), calc(100% - 9px) 6.17px, calc(100% - 2.83px) 0);
+  }
+  /* L'étiquette (texte seul) centrée dans l'onglet */
+  #jb-public .jb-catalog-frame-caps-top {
+    left: 0; top: 0; width: calc(var(--tabw) + 6px); height: var(--ft); transform: none; z-index: 2;
+    display: flex; align-items: center; justify-content: center;
+  }
+  #jb-public .jb-catalog-frame-caps-top::before {
+    background: none; clip-path: none; padding: 0; margin: 0; width: auto; height: auto; font-size: 0.95rem; white-space: nowrap;
+  }
+  #jb-public #jb-catalog-browse .jb-mode-list { margin-top: 0; padding: 6px 10px 10px 4px; }
 
-  /* Case rose néon (d'abord verte, puis mauve, puis rose à la demande de Hubert) autour du "// PALMARÈS" (20 oct. 2026, Hubert) : même concept que la boîte rouge
-     de "Tes demandes" ci-dessus, en rose. L'étiquette affiche le nombre de chansons au palmarès. */
-  #jb-public .jb-palm-frame {
-    position: relative; margin: 26px -10px 20px; padding: 24px 16px 8px;
-    background-color: #1f0519;
-    border: 2px solid #ff3bd4; border-radius: 3px;
-    box-shadow: 0 0 18px rgba(255, 59, 212, 0.45), inset 0 0 26px rgba(255, 59, 212, 0.14);
+  /* ===== "// Tes demandes" (rouge) et "// Palmarès" (rose) : même cadre HUD que la sélection
+     (21 oct. 2026, Hubert), sans l'échelle ni le trait vertical de gauche. L'étiquette (nombre de
+     demandes / de chansons) devient le texte de l'onglet. ===== */
+  #jb-public .jb-myreq-frame { --fc: #ff2d55; --fbg: #1a0409; --fglow: rgba(255, 45, 85, 0.6); }
+  #jb-public .jb-palm-frame { --fc: #ff3bd4; --fbg: #1f0519; --fglow: rgba(255, 59, 212, 0.55); }
+  #jb-public .jb-myreq-frame, #jb-public .jb-palm-frame { position: relative; padding: calc(var(--ft) + 6px) 14px 10px 16px; }
+  #jb-public .jb-myreq-frame > :not(.jb-frame-deco),
+  #jb-public .jb-palm-frame > :not(.jb-frame-deco) { position: relative; z-index: 1; }
+  #jb-public .jb-myreq-frame-label, #jb-public .jb-palm-frame-label {
+    position: absolute !important; left: 0; top: 0; width: calc(var(--tabw) + 6px); height: var(--ft); z-index: 2 !important;
+    display: flex; align-items: center; justify-content: center; pointer-events: none; white-space: nowrap;
+    color: var(--fbg); font-family: 'Share Tech Mono', monospace; font-size: 0.95rem; font-weight: 700; letter-spacing: 1.5px;
   }
-  #jb-public .jb-palm-frame::before {
-    content: ""; position: absolute; inset: 7px; pointer-events: none;
-    border: 1px solid rgba(255, 59, 212, 0.32);
+  #jb-public .jb-myreq-frame .jb-empty, #jb-public .jb-palm-frame .jb-empty { margin: 4px 0 10px; }
+
+  /* Bouton « RETOUR » : les 2 coins biseautés n'avaient pas de trait (la découpe coupait la bordure).
+     On trace la diagonale de chaque coin coupé, de la même couleur que la bordure (Hubert). */
+  #jb-public #jb-back-btn {
+    border-width: 3px; /* contour épaissi (Hubert : « encore ») */
+    clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px));
+    background-image:
+      linear-gradient(to bottom left, transparent 50%, currentColor 50%, currentColor calc(50% + 3px), transparent calc(50% + 3px)),
+      linear-gradient(to top right, transparent 50%, currentColor 50%, currentColor calc(50% + 3px), transparent calc(50% + 3px));
+    background-size: 8px 8px, 8px 8px;
+    background-position: right top, left bottom;
+    background-repeat: no-repeat;
+    background-origin: border-box;
   }
-  #jb-public .jb-palm-frame::after {
-    content: ""; position: absolute; left: 12px; top: 12px; width: 6px; height: 6px; border-radius: 50%;
-    background: #ff3bd4; box-shadow: 0 0 8px #ff3bd4; pointer-events: none;
+  /* Barre de recherche : contour jaune néon (plein + lueur) au lieu du jaune pâle à 45 % (Hubert) */
+  #jb-public #jb-search-input {
+    border-color: #fff200;
+    box-shadow: 0 0 8px rgba(255, 242, 0, 0.55), inset 0 0 6px rgba(255, 242, 0, 0.12);
   }
-  #jb-public .jb-palm-frame > * { position: relative; z-index: 1; }
-  #jb-public .jb-palm-frame-label {
-    position: absolute; top: 0; left: 30px; transform: translateY(-50%); z-index: 2; pointer-events: none;
-    background: #ff3bd4; color: #1f0519;
-    font-family: 'Share Tech Mono', monospace; font-size: 1rem; font-weight: 700; letter-spacing: 1.5px; padding: 3px 18px;
-    clip-path: polygon(10px 0, calc(100% - 10px) 0, 100% 50%, calc(100% - 10px) 100%, 10px 100%, 0 50%);
-  }
-  #jb-public .jb-palm-frame .jb-empty { margin: 4px 0 10px; }
-  #jb-public .jb-palm-frame .jb-slot:last-child { border-bottom: none; }
+  /* Palmarès : bouton ▲ centré sur les 3 lignes (rang, titre, artiste) — marges égales en haut et
+     en bas (avant, seule la marge du haut le décalait vers le bas) */
+  #jb-public .jb-palm-frame .jb-slot { align-items: center; }
+  #jb-public .jb-palm-frame .jb-myreq-up-wrap { margin: 5px 8px 5px 6px; align-self: center; }
+  #jb-public .jb-palm-frame .jb-slot > .jb-slot-votes-wrap { min-width: 0; margin-left: 8px; }
+  /* Boutons ▲ un peu plus grands dans ces 2 sections que dans la sélection (Hubert) */
+  #jb-public .jb-myreq-frame .jb-myreq-up, #jb-public .jb-palm-frame .jb-myreq-up { width: 31px; height: 31px; }
+  #jb-public .jb-myreq-frame .jb-myreq-up svg, #jb-public .jb-palm-frame .jb-myreq-up svg { width: 14px; height: 14px; }
+  /* Dernière ligne sans trait pointillé (le bas de la boîte sert de séparateur) */
+  #jb-public .jb-myreq-frame .jb-myreq-row:last-child { border-bottom: none; }  #jb-public .jb-palm-frame .jb-slot:last-child { border-bottom: none; }
 </style>
 
 <div id="jb-app">
@@ -2239,6 +2342,7 @@
              dans #jb-catalog-results juste en dessous (toujours à l'intérieur des mêmes bandes
              néon rouges — voir .jb-catalog-frame, réutilisé tel quel ici). -->
         <div class="jb-catalog-frame">
+          <div class="jb-frame-deco" aria-hidden="true"><i class="jb-fd-ring"></i><i class="jb-fd-tabfill"></i><i class="jb-fd-fillet"></i><i class="jb-fd-bodyline"></i><i class="jb-fd-rail"></i><i class="jb-fd-dots"></i><i class="jb-fd-notch"></i><i class="jb-fd-ladder"></i><i class="jb-fd-vline"></i><i class="jb-fd-accent"></i></div>
           <div class="jb-catalog-frame-caps jb-catalog-frame-caps-top" aria-hidden="true">
             <span class="jb-catalog-frame-cap jb-catalog-frame-cap-lg"></span>
             <span class="jb-catalog-frame-cap"></span>
@@ -2267,6 +2371,7 @@
              (.jb-catalog-frame-caps) sont purement décoratives (pointer-events: none, aria-hidden)
              et posées par-dessus le contour de #jb-catalog-list, en haut et en bas. -->
         <div class="jb-catalog-frame">
+          <div class="jb-frame-deco" aria-hidden="true"><i class="jb-fd-ring"></i><i class="jb-fd-tabfill"></i><i class="jb-fd-fillet"></i><i class="jb-fd-bodyline"></i><i class="jb-fd-rail"></i><i class="jb-fd-dots"></i><i class="jb-fd-notch"></i><i class="jb-fd-ladder"></i><i class="jb-fd-vline"></i><i class="jb-fd-accent"></i></div>
           <div class="jb-catalog-frame-caps jb-catalog-frame-caps-top" aria-hidden="true">
             <span class="jb-catalog-frame-cap jb-catalog-frame-cap-lg"></span>
             <span class="jb-catalog-frame-cap"></span>
@@ -2317,6 +2422,7 @@
       <!-- Boîte rouge néon (20 oct. 2026, Hubert) : même concept que le panneau de sélection
            (.jb-catalog-frame), en rouge. L'étiquette sur l'arête affiche le nombre de demandes (N/5). -->
       <div class="jb-myreq-frame">
+        <div class="jb-frame-deco" aria-hidden="true"><i class="jb-fd-ring"></i><i class="jb-fd-tabfill"></i><i class="jb-fd-fillet"></i><i class="jb-fd-bodyline"></i><i class="jb-fd-rail"></i><i class="jb-fd-dots"></i><i class="jb-fd-notch"></i><i class="jb-fd-accent"></i></div>
         <div class="jb-myreq-frame-label" id="jb-myreq-frame-label" aria-hidden="true"></div>
         <p id="jb-my-votes-empty" class="jb-empty">Tu n'as pas encore fait de demande ce soir.</p>
         <div id="jb-my-votes-list" class="jb-myreq-list"></div>
@@ -2330,6 +2436,7 @@
       <!-- Case rose néon (20 oct. 2026, Hubert) : même concept que la boîte rouge de "Tes demandes".
            L'étiquette sur l'arête affiche le nombre de chansons au palmarès (voir renderPalmares()). -->
       <div class="jb-palm-frame">
+        <div class="jb-frame-deco" aria-hidden="true"><i class="jb-fd-ring"></i><i class="jb-fd-tabfill"></i><i class="jb-fd-fillet"></i><i class="jb-fd-bodyline"></i><i class="jb-fd-rail"></i><i class="jb-fd-dots"></i><i class="jb-fd-notch"></i><i class="jb-fd-accent"></i></div>
         <div class="jb-palm-frame-label" id="jb-palm-frame-label" aria-hidden="true"></div>
         <div id="jb-palmares-list" class="jb-palmares-grid"></div>
         <p id="jb-palmares-empty" class="jb-empty" hidden>Aucune demande pour l'instant — sois le premier à demander une chanson !</p>
@@ -2825,7 +2932,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-21.148";
+  const APP_BUILD = "2026-10-21.149";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -5566,11 +5673,10 @@
             ${v.artist ? `<span class="jb-slot-artist">${escapeHtml(v.artist)}</span>` : ""}
           </span>
           ${renderVotersLine(v.voters)}
-          <span class="jb-slot-bar-row">
-            <span class="jb-slot-bar" aria-hidden="true"><span class="jb-slot-bar-fill" style="width:${barPct}%"></span></span>
-            ${amountHtml(id, v.requests)}
-          </span>
-        </span>`;
+        </span>
+        ${amountHtml(id, v.requests)}`;
+      // 21 oct. 2026 (Hubert) : plus de barre de popularité ; le montant (s'il y en a un) passe au
+      // bout de la ligne, centré comme le bouton ▲ (barPct n'est plus affiché).
     });
 
     // 4) LAST — replace les éléments dans le bon ordre dans le DOM.
@@ -5929,15 +6035,16 @@
     if (rowFlashMs != null) li.style.animationDelay = `-${rowFlashMs}ms`;
 
     if (rank != null) {
+      // 21 oct. 2026 (maquette de Hubert) : titre/artiste à la même place qu'une chanson à demander ;
+      // à droite, à la place du badge « Demande » : le bouton ▲ jaune, puis le rang à sa droite.
       li.innerHTML = `
-        <span class="jb-myreq-up-wrap"><button class="jb-slot-vote-btn jb-slot-vote-up jb-myreq-up${voteUpBtnIllumClass(song.id)}" data-vote-up="${escapeHtml(song.id)}" aria-label="${t("vote_up_aria")}" title="${t("vote_up_aria")}"><svg viewBox="0 0 12 12" width="14" height="14" aria-hidden="true"><path d="M6 1 11 5.5H1ZM6 6 11 10.5H1Z" fill="currentColor"/></svg></button></span>
         <div class="jb-song-info">
-          <span class="jb-myreq-rank">${t("my_req_rank", rank)}</span>
           <div class="jb-song-title">${escapeHtml(song.title)}</div>
           ${showArtist && song.artist ? `<div class="jb-song-artist">${escapeHtml(song.artist)}</div>` : ""}
         </div>
-        <span class="jb-song-right">
-          <span class="jb-request-remaining jb-song-request-badge jb-song-done-badge">${escapeHtml(t("song_request_word"))}<svg class="jb-song-done-check" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 13.5 9 19 21 5" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="square"/></svg></span>
+        <span class="jb-song-right jb-inpalm-right">
+          <span class="jb-myreq-up-wrap"><button class="jb-slot-vote-btn jb-slot-vote-up jb-myreq-up${voteUpBtnIllumClass(song.id)}" data-vote-up="${escapeHtml(song.id)}" aria-label="${t("vote_up_aria")}" title="${t("vote_up_aria")}"><svg viewBox="0 0 12 12" width="14" height="14" aria-hidden="true"><path d="M6 1 11 5.5H1ZM6 6 11 10.5H1Z" fill="currentColor"/></svg></button></span>
+          <span class="jb-request-remaining jb-song-request-badge jb-inpalm-rank">${t("my_req_rank", rank)}</span>
         </span>`;
       return li;
     }
