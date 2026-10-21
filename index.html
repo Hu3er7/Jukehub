@@ -1468,7 +1468,8 @@
   #jb-public .jb-song-request-badge { min-width: 92px; text-align: center; }
   /* Catalogue, chanson déjà au palmarès (21 oct. 2026) : même ligne que « Tes demandes » */
   /* [▲] RANG à droite, rang aligné à gauche sur une largeur fixe pour que les boutons s'alignent d'une ligne à l'autre */
-  #jb-public .jb-inpalm-right { display: flex; align-items: center; gap: 14px; flex-shrink: 0; }
+  #jb-public .jb-inpalm-right { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+  #jb-public .jb-inpalm-right .jb-myreq-up-wrap { margin-right: 0; } /* bouton collé à la case du rang (Hubert) */
   /* 2e maquette de Hubert : ligne entière sur un fond plus sombre (teinte olive), artiste aussi visible qu'ailleurs,
      et le rang dans une case comme le badge « Demande » (même taille), texte pâle bien espacé */
   #jb-public #jb-catalog-list .jb-song-item-inpalm { background: #0d110e; }
@@ -1654,10 +1655,14 @@
   /* Le contenu commence SOUS le trait du haut et l'encoche : sinon le fond d'une ligne de chanson
      (ex. chanson déjà au palmarès) passait par-dessus en faisant défiler la liste (Hubert) */
   #jb-public .jb-catalog-frame { padding-top: calc(var(--ft) + 10px) !important; padding-right: 14px !important; padding-bottom: 13px !important; }
+  /* Titre/artiste collés plus à gauche, badge « Demande » poussé plus à droite (Hubert) */
+  #jb-public #jb-catalog-list .jb-song-item { padding-left: 6px; padding-right: 4px; }
+  /* Séparateurs entre les chansons : pointillés bleu néon flash, comme le cadre (Hubert) */
+  #jb-public #jb-catalog-list .jb-song-item { border-bottom: 1px dashed #5af4f0; }
   #jb-public .jb-catalog-frame, #jb-public .jb-myreq-frame, #jb-public .jb-palm-frame {
     --fb: 12px; --ft: 28px; --tabw: 150px;
     border: none; border-radius: 0; background: none; box-shadow: none;
-    margin: 14px -10px 20px; padding: var(--ft) 8px 8px 32px;
+    margin: 14px -10px 20px; padding: var(--ft) 8px 8px 26px;
   }
   #jb-public .jb-catalog-frame::before, #jb-public .jb-myreq-frame::before, #jb-public .jb-palm-frame::before {
     /* fond sombre du corps (sous le trait), sans le 2e contour d'avant */
@@ -1726,23 +1731,17 @@
     top: calc(var(--ft) + 2px); height: 7px; left: 54%; width: 20%; background: var(--fc);
     clip-path: polygon(0 0, 100% 0, calc(100% - 7px) 100%, 7px 100%);
   }
-  /* « Échelle » à gauche : 2 pointes + 11 barreaux, espacement identique partout (4px) */
+  /* « Échelle » à gauche : 2 pointes + 19 barreaux (pointes plus haut et plus bas, Hubert),
+     espacement identique partout (4px) */
   #jb-public .jb-fd-ladder {
-    left: 9px; width: 11px; height: 95px; top: calc(var(--ft) + (100% - var(--ft) - 95px) / 2);
-    background: repeating-linear-gradient(to bottom, var(--fc) 0 3px, transparent 3px 7px) 0 11px / 100% 73px no-repeat;
+    left: 9px; width: 11px; height: 151px; top: calc(var(--ft) + (100% - var(--ft) - 151px) / 2);
+    background: repeating-linear-gradient(to bottom, var(--fc) 0 3px, transparent 3px 7px) 0 11px / 100% 129px no-repeat;
   }
   #jb-public .jb-fd-ladder::before, #jb-public .jb-fd-ladder::after {
     content: ""; position: absolute; left: 0; width: 100%; height: 7px; background: var(--fc);
   }
   #jb-public .jb-fd-ladder::before { top: 0; clip-path: polygon(50% 0, 100% 55%, 100% 100%, 0 100%, 0 55%); }
   #jb-public .jb-fd-ladder::after { bottom: 0; clip-path: polygon(0 0, 100% 0, 100% 45%, 50% 100%, 0 45%); }
-  /* Trait fin vertical entre l'échelle et le contenu (retouche Photoshop de Hubert) */
-  /* Centré sur l'échelle (même milieu), 2px de large, 30px de plus en haut et en bas (sans
-     jamais toucher le haut ni le bas du cadre) */
-  #jb-public .jb-fd-vline {
-    --vh: min(155px, calc(100% - var(--ft) - 24px));
-    left: 27px; width: 2px; height: var(--vh); top: calc(var(--ft) + (100% - var(--ft) - var(--vh)) / 2); background: var(--fc);
-  }
   /* Équerre lumineuse en bas à droite : part du bord droit en diagonale, descend, coin biseauté,
      longe le bas et rejoint le bord du bas en diagonale — un seul trait de 2px */
   #jb-public .jb-fd-accent {
@@ -2342,7 +2341,7 @@
              dans #jb-catalog-results juste en dessous (toujours à l'intérieur des mêmes bandes
              néon rouges — voir .jb-catalog-frame, réutilisé tel quel ici). -->
         <div class="jb-catalog-frame">
-          <div class="jb-frame-deco" aria-hidden="true"><i class="jb-fd-ring"></i><i class="jb-fd-tabfill"></i><i class="jb-fd-fillet"></i><i class="jb-fd-bodyline"></i><i class="jb-fd-rail"></i><i class="jb-fd-dots"></i><i class="jb-fd-notch"></i><i class="jb-fd-ladder"></i><i class="jb-fd-vline"></i><i class="jb-fd-accent"></i></div>
+          <div class="jb-frame-deco" aria-hidden="true"><i class="jb-fd-ring"></i><i class="jb-fd-tabfill"></i><i class="jb-fd-fillet"></i><i class="jb-fd-bodyline"></i><i class="jb-fd-rail"></i><i class="jb-fd-dots"></i><i class="jb-fd-notch"></i><i class="jb-fd-ladder"></i><i class="jb-fd-accent"></i></div>
           <div class="jb-catalog-frame-caps jb-catalog-frame-caps-top" aria-hidden="true">
             <span class="jb-catalog-frame-cap jb-catalog-frame-cap-lg"></span>
             <span class="jb-catalog-frame-cap"></span>
@@ -2371,7 +2370,7 @@
              (.jb-catalog-frame-caps) sont purement décoratives (pointer-events: none, aria-hidden)
              et posées par-dessus le contour de #jb-catalog-list, en haut et en bas. -->
         <div class="jb-catalog-frame">
-          <div class="jb-frame-deco" aria-hidden="true"><i class="jb-fd-ring"></i><i class="jb-fd-tabfill"></i><i class="jb-fd-fillet"></i><i class="jb-fd-bodyline"></i><i class="jb-fd-rail"></i><i class="jb-fd-dots"></i><i class="jb-fd-notch"></i><i class="jb-fd-ladder"></i><i class="jb-fd-vline"></i><i class="jb-fd-accent"></i></div>
+          <div class="jb-frame-deco" aria-hidden="true"><i class="jb-fd-ring"></i><i class="jb-fd-tabfill"></i><i class="jb-fd-fillet"></i><i class="jb-fd-bodyline"></i><i class="jb-fd-rail"></i><i class="jb-fd-dots"></i><i class="jb-fd-notch"></i><i class="jb-fd-ladder"></i><i class="jb-fd-accent"></i></div>
           <div class="jb-catalog-frame-caps jb-catalog-frame-caps-top" aria-hidden="true">
             <span class="jb-catalog-frame-cap jb-catalog-frame-cap-lg"></span>
             <span class="jb-catalog-frame-cap"></span>
@@ -2932,7 +2931,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-21.149";
+  const APP_BUILD = "2026-10-21.150";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
