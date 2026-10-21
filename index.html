@@ -1627,16 +1627,20 @@
   #jb-public .jb-catalog-frame-caps-top::before {
     /* Nombre de chansons du répertoire, mis à jour en direct (data-count, voir l'écouteur "catalog") */
     content: "HU3ER7-" attr(data-count); background: #3ff6ee; color: #04121c;
-    font-family: 'Share Tech Mono', monospace; font-size: 0.68rem; letter-spacing: 1.5px; padding: 1px 10px;
-    clip-path: polygon(6px 0, calc(100% - 6px) 0, 100% 50%, calc(100% - 6px) 100%, 6px 100%, 0 50%);
+    /* Étiquettes agrandies (21 oct. 2026, maquette de Hubert) — même taille pour les 3 cadres */
+    font-family: 'Share Tech Mono', monospace; font-size: 1rem; font-weight: 700; letter-spacing: 1.5px; padding: 3px 18px;
+    clip-path: polygon(10px 0, calc(100% - 10px) 0, 100% 50%, calc(100% - 10px) 100%, 10px 100%, 0 50%);
   }
+  /* Panneau d'accueil : « CHERCHER PAR » (data-label, posé par renderModeButtons()) */
+  #jb-public #jb-catalog-browse .jb-catalog-frame-caps-top::before { content: attr(data-label); text-transform: uppercase; }
+  #jb-public #jb-catalog-browse .jb-mode-list { margin-top: 6px; } /* un peu d'air sous l'étiquette agrandie */
   /* Pas d'étiquette en bas : à cheval sur l'arête, elle chevauchait la dernière chanson des listes */
 
   /* ===== "// Tes demandes" en boîte rouge néon (20 oct. 2026, Hubert) =====
      Même concept visuel que le panneau de sélection ci-dessus (corps sombre, arête lumineuse, 2e
      contour intérieur, point de repère dans le coin, étiquette sur l'arête), mais en rouge néon. */
   #jb-public .jb-myreq-frame {
-    position: relative; margin: 22px -10px 20px; padding: 18px 16px 8px;
+    position: relative; margin: 26px -10px 20px; padding: 24px 16px 8px;
     background-color: #1a0409;
     border: 2px solid #ff2d55; border-radius: 3px;
     box-shadow: 0 0 18px rgba(255, 45, 85, 0.5), inset 0 0 26px rgba(255, 45, 85, 0.16);
@@ -1653,8 +1657,8 @@
   #jb-public .jb-myreq-frame-label {
     position: absolute; top: 0; left: 30px; transform: translateY(-50%); z-index: 2; pointer-events: none;
     background: #ff2d55; color: #1a0409;
-    font-family: 'Share Tech Mono', monospace; font-size: 0.68rem; letter-spacing: 1.5px; padding: 1px 10px;
-    clip-path: polygon(6px 0, calc(100% - 6px) 0, 100% 50%, calc(100% - 6px) 100%, 6px 100%, 0 50%);
+    font-family: 'Share Tech Mono', monospace; font-size: 1rem; font-weight: 700; letter-spacing: 1.5px; padding: 3px 18px;
+    clip-path: polygon(10px 0, calc(100% - 10px) 0, 100% 50%, calc(100% - 10px) 100%, 10px 100%, 0 50%);
   }
   #jb-public .jb-myreq-frame .jb-empty { margin: 4px 0 10px; }
   /* Dernière ligne sans trait pointillé (le bas de la boîte sert de séparateur) */
@@ -1663,7 +1667,7 @@
   /* Case rose néon (d'abord verte, puis mauve, puis rose à la demande de Hubert) autour du "// PALMARÈS" (20 oct. 2026, Hubert) : même concept que la boîte rouge
      de "Tes demandes" ci-dessus, en rose. L'étiquette affiche le nombre de chansons au palmarès. */
   #jb-public .jb-palm-frame {
-    position: relative; margin: 22px -10px 20px; padding: 18px 16px 8px;
+    position: relative; margin: 26px -10px 20px; padding: 24px 16px 8px;
     background-color: #1f0519;
     border: 2px solid #ff3bd4; border-radius: 3px;
     box-shadow: 0 0 18px rgba(255, 59, 212, 0.45), inset 0 0 26px rgba(255, 59, 212, 0.14);
@@ -1680,8 +1684,8 @@
   #jb-public .jb-palm-frame-label {
     position: absolute; top: 0; left: 30px; transform: translateY(-50%); z-index: 2; pointer-events: none;
     background: #ff3bd4; color: #1f0519;
-    font-family: 'Share Tech Mono', monospace; font-size: 0.68rem; letter-spacing: 1.5px; padding: 1px 10px;
-    clip-path: polygon(6px 0, calc(100% - 6px) 0, 100% 50%, calc(100% - 6px) 100%, 6px 100%, 0 50%);
+    font-family: 'Share Tech Mono', monospace; font-size: 1rem; font-weight: 700; letter-spacing: 1.5px; padding: 3px 18px;
+    clip-path: polygon(10px 0, calc(100% - 10px) 0, 100% 50%, calc(100% - 10px) 100%, 10px 100%, 0 50%);
   }
   #jb-public .jb-palm-frame .jb-empty { margin: 4px 0 10px; }
   #jb-public .jb-palm-frame .jb-slot:last-child { border-bottom: none; }
@@ -2809,7 +2813,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-20.144";
+  const APP_BUILD = "2026-10-21.145";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -2938,9 +2942,10 @@
       style_title_count: (n) => `${n} Chansons`,
       artist_title_count: (n) => `${n} Artistes`,
       genre_title_count: (n) => `${n} Genres`,
-      mode_songs_btn: "Chercher par chansons",
-      mode_artist_btn: "Chercher par artiste",
-      mode_genre_btn: "Chercher par genre",
+      search_by_label: "Chercher par",
+      mode_songs_btn: "Chansons",
+      mode_artist_btn: "Artiste",
+      mode_genre_btn: "Genre",
       back_btn: "⬅ RETOUR",
       search_placeholder: "🔍 Cherche par mots clés",
       catalog_empty: "Aucun résultat pour cette recherche.",
@@ -3022,9 +3027,10 @@
       style_title_count: (n) => `${n} Songs`,
       artist_title_count: (n) => `${n} Artists`,
       genre_title_count: (n) => `${n} Genres`,
-      mode_songs_btn: "Search by songs",
-      mode_artist_btn: "Search by artist",
-      mode_genre_btn: "Search by genre",
+      search_by_label: "Search by",
+      mode_songs_btn: "Songs",
+      mode_artist_btn: "Artist",
+      mode_genre_btn: "Genre",
       back_btn: "⬅ BACK",
       search_placeholder: "🔍 Search by keywords",
       catalog_empty: "No results for this search.",
@@ -5819,6 +5825,9 @@
   // ---------- Écran d'accueil : les 3 boutons "Chercher par..." ----------
   function renderModeButtons() {
     const list = document.getElementById("jb-mode-list");
+    // Étiquette du panneau d'accueil (21 oct. 2026, Hubert) : « CHERCHER PAR » à la place de "HU3ER7-670"
+    const cap = document.querySelector("#jb-catalog-browse .jb-catalog-frame-caps-top");
+    if (cap) cap.dataset.label = t("search_by_label");
     list.innerHTML = `
       <button class="jb-mode-btn" data-mode="all-songs">${escapeHtml(t("mode_songs_btn"))}</button>
       <button class="jb-mode-btn" data-mode="artist-list">${escapeHtml(t("mode_artist_btn"))}</button>
