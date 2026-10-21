@@ -1474,7 +1474,24 @@
      et le rang dans une case comme le badge « Demande » (même taille), texte pâle bien espacé */
   #jb-public #jb-catalog-list .jb-song-item-inpalm { background: #0d110e; }
   #jb-public #jb-catalog-list .jb-inpalm-rank {
-    color: #a0a06e; text-shadow: none; letter-spacing: 3px; font-weight: 400; white-space: nowrap;
+    color: #a0a06e; text-shadow: none; letter-spacing: 2.5px; font-weight: 400; white-space: nowrap;
+    box-sizing: border-box; width: 76px; min-width: 76px; padding-left: 0; padding-right: 0; overflow: hidden;
+  }
+  /* Texte plus long (« 1ER RANG », « 10E RANG ») : police réduite pour garder la même case (Hubert) */
+  #jb-public #jb-catalog-list .jb-inpalm-rank-long { font-size: 0.56rem; letter-spacing: 1.5px; }
+  /* 1er rang : case dorée, texte noir */
+  #jb-public #jb-catalog-list .jb-inpalm-rank-first {
+    background: #d4af37; border-color: #f0cf5a; color: #000; font-weight: 700;
+    box-shadow: 0 0 8px rgba(212, 175, 55, 0.45);
+  }
+  /* 2e rang argent, 3e rang bronze (Hubert) */
+  #jb-public #jb-catalog-list .jb-inpalm-rank-second {
+    background: #c0c0c0; border-color: #e4e4e4; color: #000; font-weight: 700;
+    box-shadow: 0 0 8px rgba(192, 192, 192, 0.4);
+  }
+  #jb-public #jb-catalog-list .jb-inpalm-rank-third {
+    background: #cd7f32; border-color: #e39a55; color: #000; font-weight: 700;
+    box-shadow: 0 0 8px rgba(205, 127, 50, 0.4);
   }
   /* Textes du menu de sélection nettement plus petits (21 oct. 2026, Hubert : « de beaucoup »).
      La barre de recherche garde 16px : en dessous, l'iPhone zoome la page quand on y tape. */
@@ -1657,8 +1674,20 @@
   #jb-public .jb-catalog-frame { padding-top: calc(var(--ft) + 10px) !important; padding-right: 14px !important; padding-bottom: 13px !important; }
   /* Titre/artiste collés plus à gauche, badge « Demande » poussé plus à droite (Hubert) */
   #jb-public #jb-catalog-list .jb-song-item { padding-left: 6px; padding-right: 4px; }
-  /* Séparateurs entre les chansons : pointillés bleu néon flash, comme le cadre (Hubert) */
-  #jb-public #jb-catalog-list .jb-song-item { border-bottom: 1px dashed #5af4f0; }
+  /* Liste de chansons : les lignes vont d'un bord à l'autre du cadre (le fond assombri d'une chanson
+     demandée touche le contour, Hubert) ; le décor (contour, échelle, équerre) est dessiné PAR-DESSUS
+     (z-index 2), et c'est le padding des lignes qui garde le texte à sa place. */
+  #jb-public #jb-catalog-results .jb-catalog-frame { padding-left: 3px !important; padding-right: 3px !important; }
+  #jb-public #jb-catalog-results #jb-catalog-list .jb-song-item { padding-left: 29px; padding-right: 15px; }
+  /* …sauf 2 zones laissées vides (Hubert) : une marge invisible autour de l'échelle (centrée,
+     151px de haut, voir .jb-fd-ladder) et le coin de l'équerre en bas à droite (à partir de 34 % de
+     la hauteur, voir .jb-fd-accent) — la liste y est découpée, lignes et fonds s'arrêtent avant. */
+  #jb-public #jb-catalog-results #jb-catalog-list {
+    clip-path: polygon(0 0, 100% 0, 100% calc(34% + 2px), calc(100% - 8px) calc(34% + 10px), calc(100% - 8px) 100%,
+      0 100%, 0 calc(50% + 81px), 23px calc(50% + 81px), 23px calc(50% - 78px), 0 calc(50% - 78px));
+  }
+  /* Séparateurs entre les chansons : trait plein bleu néon flash, comme le cadre (Hubert) */
+  #jb-public #jb-catalog-list .jb-song-item { border-bottom: 1px solid #5af4f0; }
   #jb-public .jb-catalog-frame, #jb-public .jb-myreq-frame, #jb-public .jb-palm-frame {
     --fb: 12px; --ft: 28px; --tabw: 150px;
     border: none; border-radius: 0; background: none; box-shadow: none;
@@ -1682,7 +1711,7 @@
       100% calc(100% - var(--fb)), calc(100% - var(--fb)) 100%, var(--fb) 100%, 0 calc(100% - var(--fb)));
   }
   #jb-public .jb-frame-deco {
-    position: absolute; inset: 0; pointer-events: none; z-index: 0;
+    position: absolute; inset: 0; pointer-events: none; z-index: 2; /* par-dessus le contenu (fonds de lignes) */
     filter: drop-shadow(0 0 5px var(--fglow));
   }
   #jb-public .jb-frame-deco > i { position: absolute; display: block; }
@@ -2431,15 +2460,13 @@
     <section class="jb-palmares">
       <div class="jb-palmares-heading">
         <h2 id="jb-palmares-title">Palmarès</h2>
-      </div>
-      <!-- Case rose néon (20 oct. 2026, Hubert) : même concept que la boîte rouge de "Tes demandes".
+      </div>      <!-- Case rose néon (20 oct. 2026, Hubert) : même concept que la boîte rouge de "Tes demandes".
            L'étiquette sur l'arête affiche le nombre de chansons au palmarès (voir renderPalmares()). -->
       <div class="jb-palm-frame">
         <div class="jb-frame-deco" aria-hidden="true"><i class="jb-fd-ring"></i><i class="jb-fd-tabfill"></i><i class="jb-fd-fillet"></i><i class="jb-fd-bodyline"></i><i class="jb-fd-rail"></i><i class="jb-fd-dots"></i><i class="jb-fd-notch"></i><i class="jb-fd-accent"></i></div>
         <div class="jb-palm-frame-label" id="jb-palm-frame-label" aria-hidden="true"></div>
         <div id="jb-palmares-list" class="jb-palmares-grid"></div>
-        <p id="jb-palmares-empty" class="jb-empty" hidden>Aucune demande pour l'instant — sois le premier à demander une chanson !</p>
-      </div>
+        <p id="jb-palmares-empty" class="jb-empty" hidden>Aucune demande pour l'instant — sois le premier à demander une chanson !</p>      </div>
     </section>
    </div>
 
@@ -2931,7 +2958,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-21.150";
+  const APP_BUILD = "2026-10-21.151";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -3010,8 +3037,7 @@
     fr: {
       page_title: "Mon Répertoire",
       palmares_title: "Palmarès",
-      palm_label: (n) => `${n} CHANSON${n > 1 ? "S" : ""}`,
-      palmares_empty: "Aucune demande pour l'instant — sois le premier à demander une chanson !",
+      palm_label: (n) => `${n} CHANSON${n > 1 ? "S" : ""}`,      palmares_empty: "Aucune demande pour l'instant — sois le premier à demander une chanson !",
       vote_used_up: "Tu as utilisé tes 6 votes. Attends qu'une chanson sur laquelle tu as voté soit jouée pour en récupérer !",
       vote_floor: "Cette chanson est déjà à 0 vote — impossible de descendre plus bas.",
       vote_added_up: "👍 Vote ajouté !",
@@ -3106,8 +3132,7 @@
     en: {
       page_title: "My Repertoire",
       palmares_title: "Billboard",
-      palm_label: (n) => `${n} SONG${n === 1 ? "" : "S"}`,
-      palmares_empty: "No requests yet — be the first to request a song!",
+      palm_label: (n) => `${n} SONG${n === 1 ? "" : "S"}`,      palmares_empty: "No requests yet — be the first to request a song!",
       vote_used_up: "You've used all 6 of your votes. Wait until a song you voted on gets played to get more!",
       vote_floor: "This song is already at 0 votes — it can't go any lower.",
       vote_added_up: "👍 Vote added!",
@@ -3221,8 +3246,7 @@
     // le tout premier appel.
     document.getElementById("jb-style-title").textContent = t("style_title");
     document.getElementById("jb-back-btn").textContent = t("back_btn");
-    document.getElementById("jb-search-input").placeholder = t("search_placeholder");
-    document.getElementById("jb-offline-title").textContent = t("offline_title");
+    document.getElementById("jb-search-input").placeholder = t("search_placeholder");    document.getElementById("jb-offline-title").textContent = t("offline_title");
     document.getElementById("jb-offline-text").textContent = t("offline_text");
     document.getElementById("jb-qr-gate-title").textContent = t("qr_gate_title");
     document.getElementById("jb-qr-gate-text").textContent = t("qr_gate_text");
@@ -6043,7 +6067,7 @@
         </div>
         <span class="jb-song-right jb-inpalm-right">
           <span class="jb-myreq-up-wrap"><button class="jb-slot-vote-btn jb-slot-vote-up jb-myreq-up${voteUpBtnIllumClass(song.id)}" data-vote-up="${escapeHtml(song.id)}" aria-label="${t("vote_up_aria")}" title="${t("vote_up_aria")}"><svg viewBox="0 0 12 12" width="14" height="14" aria-hidden="true"><path d="M6 1 11 5.5H1ZM6 6 11 10.5H1Z" fill="currentColor"/></svg></button></span>
-          <span class="jb-request-remaining jb-song-request-badge jb-inpalm-rank">${t("my_req_rank", rank)}</span>
+          <span class="jb-request-remaining jb-song-request-badge jb-inpalm-rank${rank <= 3 ? ` jb-inpalm-rank-${["first", "second", "third"][rank - 1]}` : ""}${t("my_req_rank", rank).length > 7 ? " jb-inpalm-rank-long" : ""}">${t("my_req_rank", rank)}</span>
         </span>`;
       return li;
     }
