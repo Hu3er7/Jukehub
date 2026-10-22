@@ -1943,6 +1943,20 @@
   #jb-app.jb-browse-only .jb-my-votes, #jb-app.jb-browse-only .jb-palmares,
   #jb-app.jb-browse-only #jb-catalog-list .jb-song-right { display: none; }
   #jb-app.jb-browse-only #jb-catalog-list li[data-req] { pointer-events: none; cursor: default; }
+  /* RETOUR posé dans l'onglet du cadre de la liste (à la place de « HU3ER7-N ») */
+  #jb-public #jb-catalog-results .jb-catalog-frame-caps-top { display: none; }
+  #jb-public #jb-catalog-results #jb-back-btn {
+    position: absolute; left: 0; top: 0; z-index: 3; width: calc(var(--tabw) + 6px); height: var(--ft);
+    min-height: 0; max-height: none; margin: 0; padding: 0; border: none; border-radius: 0; clip-path: none;
+    background: transparent; box-shadow: none; display: flex; align-items: center; justify-content: center;
+    color: #04121c; font-family: 'Share Tech Mono', monospace; font-size: 0.95rem; font-weight: 700; letter-spacing: 1.5px;
+    text-transform: uppercase; text-shadow: none; cursor: pointer;
+  }
+  #jb-public #jb-catalog-results #jb-back-btn[hidden] { display: none; }
+  /* tailles mesurées sur la maquette de Hubert : flèche 35 x 18px (tige 7px), 18px du bord, 9px avant
+     le texte ; RETOUR en 18px espacé de 4px */
+  #jb-public #jb-back-btn .jb-back-arrow { width: 35px; height: 18px; margin-right: 9px; flex-shrink: 0; display: block; }
+  #jb-public #jb-catalog-results #jb-back-btn { justify-content: flex-start; padding-left: 18px; font-size: 18px; letter-spacing: 4px; }
   /* RETOUR et barre de recherche : hauteur fixe identique (40px), alignés en haut et en bas — le
      bouton qui apparaît n'agrandit plus la rangée, donc le reste du menu ne bouge plus (Hubert) */
   #jb-public .jb-catalog-searchbar { align-items: stretch; }
@@ -2484,7 +2498,6 @@
     <div class="jb-cp-status" aria-hidden="true"><span class="jb-cp-live">LIVE</span><span>// signal ok</span></div>
     <section class="jb-catalog">
       <div id="jb-catalog-searchbar" class="jb-catalog-searchbar">
-        <button id="jb-back-btn" class="jb-back-btn" hidden>⬅ RETOUR</button>
         <input id="jb-search-input" type="text" placeholder="🔍 Cherche par mots clés" autocomplete="off" />
       </div>
 
@@ -2542,6 +2555,9 @@
             <span class="jb-catalog-frame-cap"></span>
             <span class="jb-catalog-frame-cap"></span>
           </div>
+          <!-- RETOUR dans l'onglet du cadre, à la place de « HU3ER7-670 » (Hubert, 22 oct. 2026) : la
+               barre de recherche garde toujours la même largeur -->
+          <button id="jb-back-btn" class="jb-back-btn" hidden>⬅ RETOUR</button>
           <ul id="jb-catalog-list" class="jb-catalog-list"></ul>
           <div class="jb-catalog-frame-caps jb-catalog-frame-caps-bottom" aria-hidden="true">
             <span class="jb-catalog-frame-cap jb-catalog-frame-cap-lg"></span>
@@ -3106,7 +3122,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-22.163";
+  const APP_BUILD = "2026-10-22.164";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -3238,7 +3254,7 @@
       mode_songs_btn: "Chansons",
       mode_artist_btn: "Artiste",
       mode_genre_btn: "Genre",
-      back_btn: "⬅ RETOUR",
+      back_btn: "RETOUR",
       search_placeholder: "🔍 Cherche par mots clés",
       catalog_empty: "Aucun résultat pour cette recherche.",
       genre_song_count_unit: "chansons",
@@ -3324,7 +3340,7 @@
       mode_songs_btn: "Songs",
       mode_artist_btn: "Artist",
       mode_genre_btn: "Genre",
-      back_btn: "⬅ BACK",
+      back_btn: "BACK",
       search_placeholder: "🔍 Search by keywords",
       catalog_empty: "No results for this search.",
       genre_song_count_unit: "songs",
@@ -3397,7 +3413,9 @@
     // "N Artistes"/"N Genres" juste après tout rendu) — évite juste un flash de texte vide avant
     // le tout premier appel.
     document.getElementById("jb-style-title").textContent = t("style_title");
-    document.getElementById("jb-back-btn").textContent = t("back_btn");
+    // flèche à part, bien plus grosse que le texte (Hubert : « il faut bien la voir »)
+    // flèche longue à tige épaisse dessinée (maquette de Hubert), bien plus visible que le caractère ⬅
+    document.getElementById("jb-back-btn").innerHTML = `<svg class="jb-back-arrow" viewBox="0 0 35 18" aria-hidden="true"><path d="M0 9 L8.5 0 L8.5 5.5 L35 5.5 L35 12.5 L8.5 12.5 L8.5 18 Z" fill="currentColor"/></svg>${escapeHtml(t("back_btn"))}`;
     document.getElementById("jb-search-input").placeholder = t("search_placeholder");    document.getElementById("jb-offline-title").textContent = t("offline_title");
     document.getElementById("jb-offline-text").textContent = t("offline_text");
     document.getElementById("jb-offline-browse").textContent = t("offline_browse");
