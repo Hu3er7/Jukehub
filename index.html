@@ -1684,17 +1684,19 @@
      la hauteur, voir .jb-fd-accent) — la liste y est découpée, lignes et fonds s'arrêtent avant. */
   #jb-public #jb-catalog-results #jb-catalog-list {
     clip-path: polygon(0 0, 100% 0, 100% calc(34% + 2px), calc(100% - 8px) calc(34% + 10px), calc(100% - 8px) 100%,
-      0 100%, 0 calc(50% + 4px + var(--lh, 151px) / 2), 13.2px calc(50% + 4px + var(--lh, 151px) / 2),
-      20px calc(50% - 0.8px + var(--lh, 151px) / 2), 20px calc(50% + 3.8px - var(--lh, 151px) / 2),
-      13.2px calc(50% - 1px - var(--lh, 151px) / 2), 0 calc(50% - 1px - var(--lh, 151px) / 2));
+      0 100%, 0 calc(50% + 6.5px + max(20px, 100% + 23px - 72px) / 2), 8px calc(50% + 6.5px + max(20px, 100% + 23px - 72px) / 2),
+      18px calc(50% - 3.5px + max(20px, 100% + 23px - 72px) / 2), 18px calc(50% + 6.5px - max(20px, 100% + 23px - 72px) / 2),
+      8px calc(50% - 3.5px - max(20px, 100% + 23px - 72px) / 2), 0 calc(50% - 3.5px - max(20px, 100% + 23px - 72px) / 2));
+    /* 22 oct. 2026 : la découpe suit maintenant le renfoncement du contour (voir .jb-fd-ring de la
+       liste), 2px de vide de son côté intérieur */
     /* (pendant l'animation du panneau, voir .jb-morphing juste en dessous, toute la colonne de
        l'échelle est vidée : l'échelle bouge avec le cadre, pas la liste) */
     /* zone de l'échelle serrée (Hubert) : le même vide de 3px partout autour, y compris le long des
        pentes des 2 pointes (la découpe suit leur diagonale) */
   }
-  #jb-public #jb-catalog-results .jb-catalog-frame.jb-morphing #jb-catalog-list {
-    clip-path: polygon(20px 0, 100% 0, 100% calc(34% + 2px), calc(100% - 8px) calc(34% + 10px), calc(100% - 8px) 100%, 20px 100%);
-  }
+  /* (plus de découpe spéciale pendant l'animation : le haut du renfoncement est à distance fixe du
+     haut du cadre, donc la découpe normale reste juste — les séparateurs touchent le cadre tout de
+     suite en entrant dans une liste, Hubert, 22 oct. 2026) */
   /* Séparateurs entre les chansons : trait plein bleu néon flash, comme le cadre (Hubert) */
   #jb-public #jb-catalog-list .jb-song-item { border-bottom: 1px solid #5af4f0; }
   #jb-public .jb-catalog-frame, #jb-public .jb-myreq-frame, #jb-public .jb-palm-frame {
@@ -1735,6 +1737,38 @@
       calc(100% - 3px) calc(100% - var(--fb) - 1.24px), calc(100% - var(--fb) - 1.24px) calc(100% - 3px),
       calc(var(--fb) + 1.24px) calc(100% - 3px), 3px calc(100% - var(--fb) - 1.24px), 3px var(--ft));
   }
+  /* Cadre de la liste : le côté gauche « s'ouvre » autour de l'échelle (maquette de Hubert, 22 oct.
+     2026) — le contour rentre dans le cadre (renfoncement de 24px, coins à 45°) sur la hauteur de
+     l'échelle + 18px de chaque côté, et l'échelle loge dans ce renfoncement. --nopen (0 -> 1) ouvre
+     le renfoncement depuis son centre (voir renderCatalog(), en même temps que l'échelle). */
+  @property --nopen { syntax: "<number>"; inherits: true; initial-value: 1; }
+  /* 22 oct. 2026 (Hubert) : renfoncement TOUJOURS ouvert, sur l'accueil comme sur la liste. Sa hauteur
+     = celle du corps moins 72px : ses bords restent à distance fixe du haut et du bas du cadre, donc
+     il ne fait que suivre le cadre (aucun aller-retour). Moins profond quand l'échelle est repliée. */
+  #jb-public .jb-catalog-frame {
+    --nopen: 1;
+    /* bords à 36px fixes du haut et du bas du corps : le renfoncement suit le cadre sans aller-retour */
+    --nh: calc(max(20px, 100% - var(--ft) - 72px) / 2);
+    --nc: calc(var(--ft) + (100% - var(--ft)) / 2);
+    --nT: calc(var(--nc) - var(--nh));
+    --nB: calc(var(--nc) + var(--nh));
+    /* profondeur : 11px quand le renfoncement est réduit (accueil), 16px une fois l'échelle déployée (Hubert) */
+    --nN: calc(var(--nopen) * (11px + 5px * var(--lreveal)));
+    --nd: calc(var(--nopen) * (6px + 2px * var(--lreveal)));
+  }
+  #jb-public .jb-catalog-frame .jb-fd-ring {
+    clip-path: polygon(
+      0 var(--ft), 0 var(--nT), calc(var(--nN) - var(--nd)) var(--nT), var(--nN) calc(var(--nT) + var(--nd)),
+      var(--nN) calc(var(--nB) - var(--nd)), calc(var(--nN) - var(--nd)) var(--nB), 0 var(--nB),
+      0 calc(100% - var(--fb)), var(--fb) 100%, calc(100% - var(--fb)) 100%, 100% calc(100% - var(--fb)),
+      100% calc(var(--ft) + 8px), calc(100% - 8px) var(--ft),
+      calc(100% - 9.24px) calc(var(--ft) + 3px), calc(100% - 3px) calc(var(--ft) + 9.24px),
+      calc(100% - 3px) calc(100% - var(--fb) - 1.24px), calc(100% - var(--fb) - 1.24px) calc(100% - 3px),
+      calc(var(--fb) + 1.24px) calc(100% - 3px), 3px calc(100% - var(--fb) - 1.24px),
+      3px calc(var(--nB) + 3px), calc(var(--nN) - var(--nd) + 1.24px) calc(var(--nB) + 3px),
+      calc(var(--nN) + 3px) calc(var(--nB) - var(--nd) + 1.24px), calc(var(--nN) + 3px) calc(var(--nT) + var(--nd) - 1.24px),
+      calc(var(--nN) - var(--nd) + 1.24px) calc(var(--nT) - 3px), 3px calc(var(--nT) - 3px), 3px var(--ft));
+  }
   /* Onglet plein, collé au coin haut-gauche, pente à droite */
   #jb-public .jb-fd-tabfill {
     inset: 0; background: var(--fc);
@@ -1774,10 +1808,24 @@
   #jb-public .jb-fd-ladder {
     /* --lh (hauteur de l'échelle) suit la hauteur du cadre : posée par fitFrameLadders() en multiple
        exact de 7px (barreau 3px + vide 4px), pour garder le même espacement partout (Hubert) */
-    left: 9px; width: 11px; height: var(--lh, 151px); top: calc(var(--ft) + (100% - var(--ft) - var(--lh, 151px)) / 2);
+    /* left 0 : le bord gauche de l'échelle est aligné sur le bord extérieur du cadre (mesure de Hubert),
+       5px de vide jusqu'au trait du renfoncement (16–19px) */
+    left: 0; width: 11px; height: var(--lh, 151px); top: calc(var(--ft) + (100% - var(--ft) - var(--lh, 151px)) / 2);
     background: repeating-linear-gradient(to bottom, var(--fc) 0 3px, transparent 3px 7px) 0 11px / 100% calc(var(--lh, 151px) - 22px) no-repeat;
   }
   #jb-public #jb-catalog-browse .jb-fd-ladder { display: none; } /* pas d'échelle sur le panneau d'accueil (Hubert) */
+  #jb-public #jb-catalog-browse .jb-pocket .jb-fd-ladder { display: block; } /* …sauf le temps de la replier (RETOUR) */
+  /* Échelle de la liste : --lreveal (0 -> 1) la déploie depuis son centre, et sa partie droite est
+     toujours coupée 1px avant le trait du renfoncement (--nN) : pendant que le côté s'ouvre ou se
+     referme, ses barreaux ne traversent jamais le bord du cadre (Hubert, 22 oct. 2026). */
+  @property --lreveal { syntax: "<number>"; inherits: true; initial-value: 1; }
+  /* --lreveal vit sur le CADRE (hérité par l'échelle et la découpe) : 0 = échelle repliée et
+     renfoncement réduit (accueil), 1 = échelle déployée et renfoncement à sa taille (liste) */
+  #jb-public #jb-catalog-browse .jb-catalog-frame { --lreveal: 0; }
+  #jb-public #jb-catalog-browse .jb-catalog-frame.jb-pocket { --lreveal: 1; }
+  #jb-public #jb-catalog-results .jb-fd-ladder, #jb-public .jb-pocket .jb-fd-ladder {
+    clip-path: inset(calc(50% * (1 - var(--lreveal))) max(0px, calc(12px - var(--nN, 16px))) calc(50% * (1 - var(--lreveal))) 0);
+  }
   #jb-public .jb-fd-ladder::before, #jb-public .jb-fd-ladder::after {
     content: ""; position: absolute; left: 0; width: 100%; height: 7px; background: var(--fc);
   }
@@ -1824,6 +1872,38 @@
     background-image:
       linear-gradient(to bottom left, transparent 50%, currentColor 50%, currentColor calc(50% + 3px), transparent calc(50% + 3px)),
       linear-gradient(to top right, transparent 50%, currentColor 50%, currentColor calc(50% + 3px), transparent calc(50% + 3px));
+    background-size: 8px 8px, 8px 8px;
+    background-position: right top, left bottom;
+    background-repeat: no-repeat;
+    background-origin: border-box;
+  }
+  /* Compteurs de clients du panneau admin */
+  #jb-admin .jb-admin-presence .jb-presence-row {
+    display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 4px 0;
+  }
+  #jb-admin .jb-admin-presence .jb-presence-row b { font-size: 1.5rem; color: var(--accent2); }
+  /* Fenêtres qui s'ouvrent par-dessus (prénom, « Il te reste… », paiement) : contour plus épais (3px,
+     jaune néon plein) et coins biseautés FERMÉS — la découpe des 2 coins coupait la bordure, on y
+     trace la diagonale de la même couleur (Hubert, 22 oct. 2026). */
+  #jb-public .jb-vote-modal-card, #jb-public .jb-name-prompt-card {
+    border: 3px solid #fff200;
+    clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 12px 100%, 0 calc(100% - 12px));
+    background-image:
+      linear-gradient(to bottom left, transparent 50%, #fff200 50%, #fff200 calc(50% + 3px), transparent calc(50% + 3px)),
+      linear-gradient(to top right, transparent 50%, #fff200 50%, #fff200 calc(50% + 3px), transparent calc(50% + 3px));
+    background-size: 12px 12px, 12px 12px;
+    background-position: right top, left bottom;
+    background-repeat: no-repeat;
+    background-origin: border-box;
+  }
+  /* Boutons de montant (2 $, 5 $, 10 $, 20 $) : même traitement — contour 3px jaune néon, coins
+     biseautés fermés par leur diagonale (Hubert) */
+  #jb-public .jb-pay-chip {
+    border: 3px solid #fff200;
+    clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px));
+    background-image:
+      linear-gradient(to bottom left, transparent 50%, #fff200 50%, #fff200 calc(50% + 3px), transparent calc(50% + 3px)),
+      linear-gradient(to top right, transparent 50%, #fff200 50%, #fff200 calc(50% + 3px), transparent calc(50% + 3px));
     background-size: 8px 8px, 8px 8px;
     background-position: right top, left bottom;
     background-repeat: no-repeat;
@@ -2595,6 +2675,14 @@
         <button id="jb-logout-btn" class="jb-btn-ghost">Déconnexion</button>
       </div>
 
+      <!-- Compteurs de clients (21 oct. 2026, Hubert) : au-dessus du bouton « Nouvelle soirée ».
+           Voir sendPresence() (côté client) et setPresenceListener() (ici). -->
+      <section class="jb-admin-section jb-admin-presence">
+        <div class="jb-presence-row"><span>🟢 Clients en ligne</span><b id="jb-presence-online">0</b></div>
+        <div class="jb-presence-row"><span>🆕 Nouveaux clients depuis ta connexion</span><b id="jb-presence-new">0</b></div>
+        <p class="jb-hint">« En ligne » = site ouvert à l'écran dans la dernière minute. Un client qui ferme puis rouvre en navigation privée compte comme un nouveau client.</p>
+      </section>
+
       <section class="jb-admin-section">
         <button id="jb-newnight-btn" class="jb-btn-danger">🌙 Nouvelle soirée (reset palmarès)</button>
         <p class="jb-hint">Efface le palmarès et les chansons "déjà jouées". Le répertoire complet et la boîte de suggestions restent intacts.</p>
@@ -2733,7 +2821,7 @@
   let bridgeReceivedKeys = 0;         // pour l'écran de diagnostic (#diag)
   let bridgeReceivedNames = [];
   function isDurableKey(key) {
-    return /^jb_(votes|requested|req_order|dons)_/.test(key) || key === "jb_first_vote_msg_seen" || key === "jb_pay_pending";
+    return /^jb_(votes|requested|req_order|dons)_/.test(key) || key === "jb_first_vote_msg_seen" || key === "jb_pay_pending" || key === "jb_client_id";
   }
   function bridgeSend(msg) {
     if (!inFrame) return;
@@ -2746,6 +2834,7 @@
     if (localRaw == null) return parentRaw;
     if (parentRaw == null) return localRaw;
     if (key === "jb_first_vote_msg_seen") return "1";
+    if (key === "jb_client_id") return parentRaw; // identifiant du téléphone : la copie Carrd gagne
     let a, b;
     try { a = JSON.parse(localRaw) || {}; b = JSON.parse(parentRaw) || {}; } catch (e) { return parentRaw; }
     // Paiement en cours (voir startPayment()) : on garde le plus récent des deux
@@ -2978,7 +3067,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-21.158";
+  const APP_BUILD = "2026-10-22.159";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -3605,7 +3694,7 @@
 
   const FB_VERSION = "12.18.0";
   let initializeApp, getFirestore, doc, setDoc, updateDoc, deleteDoc, onSnapshot,
-    collection, runTransaction, increment, serverTimestamp, writeBatch,
+    collection, runTransaction, increment, serverTimestamp, writeBatch, query, where, Timestamp,
     enableNetwork, disableNetwork, getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut,
     initializeFirestore, persistentLocalCache, persistentMultipleTabManager,
     getFunctions, httpsCallable;
@@ -3613,7 +3702,7 @@
     ({ initializeApp } = await importWithRetry(`https://www.gstatic.com/firebasejs/${FB_VERSION}/firebase-app.js`));
     ({
       getFirestore, doc, setDoc, updateDoc, deleteDoc, onSnapshot,
-      collection, runTransaction, increment, serverTimestamp, writeBatch,
+      collection, runTransaction, increment, serverTimestamp, writeBatch, query, where, Timestamp,
       enableNetwork, disableNetwork,
       initializeFirestore, persistentLocalCache, persistentMultipleTabManager,
     } = await importWithRetry(`https://www.gstatic.com/firebasejs/${FB_VERSION}/firebase-firestore.js`));
@@ -5886,9 +5975,13 @@
       [{ height: `${prevH}px` }, { height: `${newH}px` }],
       // Mouvement continu et fluide (Hubert : « le plus fluide possible ») au lieu des paliers :
       // départ rapide puis ralentissement en douceur jusqu'à la taille finale.
-      { duration: CATALOG_MORPH_MS, easing: "cubic-bezier(0.22, 1, 0.36, 1)" }
+      // nextCatalogMorphDelay : posé par RETOUR pour que le cadre attende que l'échelle soit repliée,
+      // et rapetisse ainsi EN MÊME TEMPS que le côté se referme (Hubert : « synchro »)
+      { duration: CATALOG_MORPH_MS, delay: nextCatalogMorphDelay, easing: "cubic-bezier(0.22, 1, 0.36, 1)", fill: "backwards" }
     );
+    nextCatalogMorphDelay = 0;
     f._jbMorph = anim;
+    f._jbTarget = newH; // taille finale (lue pour retenir celle de l'accueil, voir lastHomeFrameH)
     const done = () => {
       if (f._jbMorph !== anim) return;
       f._jbMorph = null;
@@ -5914,7 +6007,8 @@
     const body = (finalHeight !== undefined ? finalHeight : frame.clientHeight) - 28; // --ft
     // Grandit moins vite que le cadre (Hubert : « elle s'étire un peu trop ») : ~144px pour le
     // panneau d'accueil, puis seulement 40 % de chaque pixel de hauteur en plus
-    const target = Math.min(body * 0.75, 144 + Math.max(0, body - 197) * 0.4);
+    // …et jamais plus haute que le renfoncement moins 2 x 18px (renfoncement = corps - 72px, voir --nh)
+    const target = Math.min(body * 0.75, 144 + Math.max(0, body - 197) * 0.4, body - 108);
     const bars = Math.max(5, Math.floor((target - 18) / 7));
     const lh = 18 + bars * 7;
     if (frame._jbLh !== lh) { frame._jbLh = lh; frame.style.setProperty("--lh", `${lh}px`); }
@@ -5927,11 +6021,19 @@
       frames.forEach((f) => ro.observe(f));
     }
   })();
+  var lastHomeFrameH = 0; // var : lue avant cette ligne possible (voir la note plus haut)
+  var nextCatalogMorphDelay = 0; // délai (ms) de la PROCHAINE animation de taille du panneau (RETOUR)
   function renderCatalog() {
     const prevFrame = visibleCatalogFrame();
     const prevH = prevFrame ? prevFrame.getBoundingClientRect().height : 0;
     renderCatalogNow();
     animateCatalogFrame(prevH);
+    // Taille du panneau d'accueil, retenue pour l'animation de RETOUR (voir jb-back-btn)
+    const shown = visibleCatalogFrame();
+    if (shown && shown.closest("#jb-catalog-browse")) {
+      const h = shown._jbMorph ? shown._jbTarget : shown.getBoundingClientRect().height;
+      if (h) lastHomeFrameH = h;
+    }
     // Échelle (Hubert, 21 oct. 2026) : absente du panneau d'accueil (Chansons/Artiste/Genre) ;
     // en ouvrant une liste, elle se déploie depuis son centre jusqu'à ses 2 pointes.
     const newFrame = visibleCatalogFrame();
@@ -5939,10 +6041,15 @@
     if (newFrame && newFrame !== prevFrame && newFrame.closest("#jb-catalog-results") && !reduceMotion) {
       const ladder = newFrame.querySelector(".jb-fd-ladder");
       if (ladder && ladder.animate) {
-        ladder.animate(
-          [{ clipPath: "inset(50% 0 50% 0)" }, { clipPath: "inset(0% 0 0% 0)" }],
-          // plus lent que le cadre (840ms) : l'échelle finit de se déployer après lui (Hubert)
-          { duration: 1000, delay: 120, easing: "cubic-bezier(0.45, 0, 0.25, 1)", fill: "backwards" } // accélérée (1,5 s -> 1 s, Hubert)
+        // (le côté est maintenant toujours ouvert et s'allonge avec le cadre — voir --nh en CSS)
+        // L'échelle se déploie depuis son centre
+        // (1 s, plus lente que le cadre — Hubert, 22 oct. 2026)
+        newFrame.animate( // sur le cadre : l'échelle ET le renfoncement suivent --lreveal
+          [{ "--lreveal": 0 }, { "--lreveal": 1 }],
+          // délai raccourci (le côté est déjà presque ouvert à ~0,4 s) et déploiement plus rapide (Hubert)
+          // démarre quand le cadre/le côté ont fait ~80 % de leur mouvement (≈ 230 ms avec leur
+          // courbe rapide au début) — moins d'attente (Hubert, 22 oct. 2026)
+          { duration: 600, delay: 80, easing: "cubic-bezier(0.45, 0, 0.25, 1)", fill: "backwards" } // encore moins d'attente (Hubert)
         );
       }
     }
@@ -6103,6 +6210,9 @@
     `;
     list.querySelectorAll("[data-mode]").forEach((btn) => {
       btn.addEventListener("click", () => {
+        // retient la taille du panneau d'accueil au moment de le quitter (animation de RETOUR)
+        const homeFrame = document.querySelector("#jb-catalog-browse .jb-catalog-frame");
+        if (homeFrame && homeFrame.offsetParent && !homeFrame._jbMorph) lastHomeFrameH = homeFrame.getBoundingClientRect().height;
         catalogView = { type: btn.dataset.mode };
         renderCatalog();
       });
@@ -6147,8 +6257,17 @@
   // maintenant que ces listes ont deux niveaux de profondeur. Une recherche texte en cours est
   // juste effacée, sans toucher à catalogView : on retombe alors exactement sur la vue où on
   // était avant de taper.
+  // RETOUR vers l'écran d'accueil (22 oct. 2026, Hubert) : Chansons/Artiste/Genre apparaissent DÈS
+  // l'appui. Le panneau d'accueil part de la taille de la liste et rapetisse (animateCatalogFrame),
+  // et pendant ce temps il garde le côté ouvert avec l'échelle (classe .jb-pocket), qui se replient
+  // aussitôt : l'échelle vers son centre, puis le côté se referme en même temps que le cadre.
   document.getElementById("jb-back-btn").addEventListener("click", () => {
     const hadSearch = !!document.getElementById("jb-search-input").value;
+    const goingHome = hadSearch ? !catalogView
+      : !(catalogView && (catalogView.type === "artist" || catalogView.type === "genre-songs"));
+    const wasList = !!document.querySelector("#jb-catalog-results .jb-catalog-frame")?.offsetParent;
+    const FOLD_MS = 250; // repli de l'échelle, PENDANT que le cadre rapetisse déjà (plus d'attente, Hubert)
+    const listLh = document.querySelector("#jb-catalog-results .jb-catalog-frame")?.style.getPropertyValue("--lh");
     document.getElementById("jb-search-input").value = "";
     if (!hadSearch) {
       if (catalogView && catalogView.type === "artist") {
@@ -6160,7 +6279,27 @@
       }
     }
     renderCatalog();
+    nextCatalogMorphDelay = 0; // au cas où aucune animation de taille n'a eu lieu
     document.querySelector(".jb-catalog").scrollIntoView({ behavior: "smooth", block: "nearest" });
+
+    const home = document.querySelector("#jb-catalog-browse .jb-catalog-frame");
+    const ladder = home && home.querySelector(".jb-fd-ladder");
+    const reduceMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (!goingHome || !wasList || !home || !home.offsetParent || !ladder || !ladder.animate || reduceMotion) return;
+    if (home._jbPocket) home._jbPocket.forEach((a) => a.cancel());
+    home.classList.add("jb-pocket");
+    // l'échelle garde sa taille de la liste pendant qu'elle se replie (pas de saut de taille)
+    if (listLh) home.style.setProperty("--lh", listLh);
+    // L'échelle disparaît vite (0,25 s) pendant que le cadre rapetisse et que le côté — toujours
+    // ouvert — raccourcit avec lui, le tout dès l'appui (Hubert, 22 oct. 2026).
+    const fold = home.animate([{ "--lreveal": 1 }, { "--lreveal": 0 }],
+      { duration: FOLD_MS, easing: "cubic-bezier(0.45, 0, 0.25, 1)", fill: "forwards" });
+    home._jbPocket = [fold];
+    fold.onfinish = () => {
+      home.classList.remove("jb-pocket");
+      fold.cancel();
+      home._jbPocket = null;
+    };
   });
 
   // Construit une ligne de chanson (titre + bouton demande / refroidissement / brûlée).
@@ -6510,9 +6649,79 @@
   // ============================================================
   //  MODE SPECTACLE (ADMIN)
   // ============================================================
+  // ---------- Présence des clients (21 oct. 2026, Hubert) ----------
+  // Chaque téléphone qui a le site ouvert à l'écran écrit presence/{son identifiant} toutes les
+  // 30 secondes (firstSeen à la toute première fois, puis seulement lastSeen). Le panneau admin
+  // compte ceux vus dans la dernière minute (« en ligne ») et ceux apparus depuis la connexion admin
+  // (loginAtMs). Navigation privée = nouvel identifiant à chaque réouverture -> nouveau client.
+  function presenceClientId() {
+    let id = safeStorageGet("jb_client_id");
+    if (!id || !/^[a-z0-9]{8,32}$/.test(id)) {
+      id = Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
+      safeStorageSet("jb_client_id", id);
+    }
+    return id;
+  }
+  let presenceKnown = false; // ce document existe déjà côté serveur (on ne fait plus que lastSeen)
+  async function sendPresence() {
+    if (location.hash === "#admin" || isAdmin || document.visibilityState !== "visible") return;
+    const ref = doc(db, "presence", presenceClientId());
+    try {
+      if (presenceKnown) {
+        await updateDoc(ref, { lastSeen: serverTimestamp() });
+        return;
+      }
+      try {
+        await updateDoc(ref, { lastSeen: serverTimestamp() });
+      } catch (e) {
+        if (e && e.code !== "not-found") throw e;
+        await setDoc(ref, { firstSeen: serverTimestamp(), lastSeen: serverTimestamp() });
+      }
+      presenceKnown = true;
+    } catch (e) {
+      console.warn("présence", e && e.code);
+    }
+  }
+  // 1re présence après 3 s : laisse le temps à la copie de la page Carrd (même identifiant
+  // qu'avant, voir le pont de stockage) d'arriver, pour ne pas compter le client en double.
+  setTimeout(sendPresence, 3000);
+  setInterval(sendPresence, 30000);
+  document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") sendPresence(); });
+
+  let presenceUnsub = null;
+  let presenceDocs = [];
+  function renderPresenceCounters() {
+    const onlineEl = document.getElementById("jb-presence-online");
+    const newEl = document.getElementById("jb-presence-new");
+    if (!onlineEl || !newEl) return;
+    const now = Date.now();
+    const ms = (ts) => (ts && ts.toMillis ? ts.toMillis() : 0);
+    onlineEl.textContent = presenceDocs.filter((d) => now - ms(d.lastSeen) < 75000).length;
+    newEl.textContent = loginAtMs ? presenceDocs.filter((d) => ms(d.firstSeen) >= loginAtMs).length : 0;
+  }
+  function setPresenceListener(on) {
+    if (on && !presenceUnsub) {
+      const since = Timestamp.fromMillis(Date.now() - 12 * 3600 * 1000);
+      presenceUnsub = onSnapshot(
+        query(collection(db, "presence"), where("lastSeen", ">=", since)),
+        (snap) => {
+          presenceDocs = snap.docs.map((d) => d.data({ serverTimestamps: "estimate" }));
+          renderPresenceCounters();
+        },
+        (err) => console.error("presence onSnapshot", err)
+      );
+    } else if (!on && presenceUnsub) {
+      presenceUnsub();
+      presenceUnsub = null;
+      presenceDocs = [];
+    }
+  }
+  setInterval(renderPresenceCounters, 10000); // « en ligne » change avec le temps, même sans nouvelle donnée
+
   onAuthStateChanged(auth, (user) => {
     isAdmin = !!user;
     setSpecialRequestsListener(isAdmin);
+    setPresenceListener(isAdmin);
     document.getElementById("jb-login").hidden = isAdmin;
     document.getElementById("jb-dashboard").hidden = !isAdmin;
     if (isAdmin) {

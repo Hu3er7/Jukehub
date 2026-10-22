@@ -76,6 +76,20 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+    // Présence des clients (21 oct. 2026) : chaque téléphone écrit SON document (identifiant au hasard)
+    // pour les compteurs du panneau admin. Création = les 2 heures du serveur ; ensuite seulement
+    // "lastSeen", toujours l'heure du serveur (impossible de tricher sur les dates). Lecture : admin.
+    match /presence/{clientId} {
+      allow read: if isAdmin();
+      allow create: if clientId.size() <= 40 &&
+        request.resource.data.keys().hasOnly(['firstSeen', 'lastSeen']) &&
+        request.resource.data.firstSeen == request.time &&
+        request.resource.data.lastSeen == request.time;
+      allow update: if request.resource.data.diff(resource.data).affectedKeys().hasOnly(['lastSeen']) &&
+        request.resource.data.lastSeen == request.time;
+      allow delete: if isAdmin();
+    }
+
     // Compteur cumulatif de demandes par artiste (mis à jour par chaque client à chaque demande)
     match /stats/{docId} {
       allow read: if true;
