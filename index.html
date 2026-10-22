@@ -1928,6 +1928,15 @@
     -webkit-backdrop-filter: blur(2px); backdrop-filter: blur(2px);
   }
   #jb-public .jb-offline-lang-bar { margin-bottom: 8px; }
+  /* Plage de texte élargie (Hubert, 22 oct.) : moins de marges sur les côtés, et chaque spectacle
+     (« Les Voûtes Grande Allée 21h30 - 2h30 ») tient sur UNE ligne — la police rapetisse un peu
+     seulement sur les écrans très étroits. */
+  #jb-public .jb-offline-page { max-width: 560px; padding-left: 0; padding-right: 0;
+    /* téléphone : déborde de 12px de chaque côté sur la marge de la page ; grand écran : reste centré */
+    margin-left: max(-12px, calc((100% - 560px) / 2)); margin-right: max(-12px, calc((100% - 560px) / 2)); }
+  #jb-public .jb-offline-card { padding-left: 12px; padding-right: 12px; }
+  #jb-public .jb-cal-row { padding-left: 0; padding-right: 0; }
+  #jb-public .jb-cal-event { white-space: nowrap; font-size: min(0.85rem, 3.55vw); }
   /* Lien « Voir mes chansons » (page hors spectacle) et mode consultation (Hubert, 22 oct. 2026) */
   #jb-public .jb-offline-browse-link, #jb-public .jb-browse-back {
     display: inline-block; margin: 2px auto 14px; padding: 8px 16px; cursor: pointer;
@@ -3122,7 +3131,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-22.165";
+  const APP_BUILD = "2026-10-22.166";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
