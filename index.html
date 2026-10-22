@@ -1755,9 +1755,9 @@
     --nc: calc(var(--ft) + (100% - var(--ft)) / 2);
     --nT: calc(var(--nc) - var(--nh));
     --nB: calc(var(--nc) + var(--nh));
-    /* profondeur : 11px quand le renfoncement est réduit (accueil), 16px une fois l'échelle déployée (Hubert) */
-    --nN: calc(var(--nopen) * (11px + 5px * var(--lreveal)));
-    --nd: calc(var(--nopen) * (6px + 2px * var(--lreveal)));
+    /* profondeur : toujours 16px, même renfoncement réduit (accueil) que déployé (Hubert) */
+    --nN: calc(var(--nopen) * 16px);
+    --nd: calc(var(--nopen) * 8px);
   }
   #jb-public .jb-catalog-frame .jb-fd-ring {
     clip-path: polygon(
@@ -1964,7 +1964,8 @@
   #jb-public #jb-catalog-results #jb-back-btn[hidden] { display: none; }
   /* tailles mesurées sur la maquette de Hubert : flèche 35 x 18px (tige 7px), 18px du bord, 9px avant
      le texte ; RETOUR en 18px espacé de 4px */
-  #jb-public #jb-back-btn .jb-back-arrow { width: 22px; height: 18px; margin-right: 7px; flex-shrink: 0; display: block; }
+  /* un peu plus petite, pour ne plus toucher le cadre (Hubert) */
+  #jb-public #jb-back-btn .jb-back-arrow { width: 16px; height: 13px; margin-right: 7px; flex-shrink: 0; display: block; }
   #jb-public #jb-catalog-results #jb-back-btn { justify-content: center; padding-left: 0; font-size: 16px; letter-spacing: 3px; }
   /* cadre foncé autour de la flèche + RETOUR, à l'intérieur de l'onglet néon : se lit comme un bouton */
   #jb-public #jb-back-btn .jb-back-inner {
@@ -3141,7 +3142,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-22.167";
+  const APP_BUILD = "2026-10-22.168";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -6149,7 +6150,8 @@
           // délai raccourci (le côté est déjà presque ouvert à ~0,4 s) et déploiement plus rapide (Hubert)
           // démarre quand le cadre/le côté ont fait ~80 % de leur mouvement (≈ 230 ms avec leur
           // courbe rapide au début) — moins d'attente (Hubert, 22 oct. 2026)
-          { duration: 600, delay: 80, easing: "cubic-bezier(0.45, 0, 0.25, 1)", fill: "backwards" } // encore moins d'attente (Hubert)
+          // même vitesse que la rétraction (FOLD_MS, 0,25 s — Hubert, 22 oct. 2026)
+          { duration: 250, delay: 80, easing: "cubic-bezier(0.45, 0, 0.25, 1)", fill: "backwards" }
         );
       }
     }
