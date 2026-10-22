@@ -1964,8 +1964,18 @@
   #jb-public #jb-catalog-results #jb-back-btn[hidden] { display: none; }
   /* tailles mesurées sur la maquette de Hubert : flèche 35 x 18px (tige 7px), 18px du bord, 9px avant
      le texte ; RETOUR en 18px espacé de 4px */
-  #jb-public #jb-back-btn .jb-back-arrow { width: 35px; height: 18px; margin-right: 9px; flex-shrink: 0; display: block; }
-  #jb-public #jb-catalog-results #jb-back-btn { justify-content: flex-start; padding-left: 18px; font-size: 18px; letter-spacing: 4px; }
+  #jb-public #jb-back-btn .jb-back-arrow { width: 22px; height: 18px; margin-right: 7px; flex-shrink: 0; display: block; }
+  #jb-public #jb-catalog-results #jb-back-btn { justify-content: center; padding-left: 0; font-size: 16px; letter-spacing: 3px; }
+  /* cadre foncé autour de la flèche + RETOUR, à l'intérieur de l'onglet néon : se lit comme un bouton */
+  #jb-public #jb-back-btn .jb-back-inner {
+    display: inline-flex; align-items: center; height: calc(var(--ft) - 7px); padding: 0 8px 0 7px;
+    border: 2px solid #04121c; box-sizing: border-box; margin-top: 2px;
+    clip-path: polygon(0 0, calc(100% - 5px) 0, 100% 5px, 100% 100%, 5px 100%, 0 calc(100% - 5px));
+    background:
+      linear-gradient(to bottom left, transparent 50%, #04121c 50%, #04121c calc(50% + 2px), transparent calc(50% + 2px)) right top / 5px 5px no-repeat border-box,
+      linear-gradient(to top right, transparent 50%, #04121c 50%, #04121c calc(50% + 2px), transparent calc(50% + 2px)) left bottom / 5px 5px no-repeat border-box;
+  }
+  #jb-public #jb-back-btn:active .jb-back-inner { background-color: #04121c; color: #5af4f0; }
   /* RETOUR et barre de recherche : hauteur fixe identique (40px), alignés en haut et en bas — le
      bouton qui apparaît n'agrandit plus la rangée, donc le reste du menu ne bouge plus (Hubert) */
   #jb-public .jb-catalog-searchbar { align-items: stretch; }
@@ -3131,7 +3141,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-22.166";
+  const APP_BUILD = "2026-10-22.167";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -3424,7 +3434,8 @@
     document.getElementById("jb-style-title").textContent = t("style_title");
     // flèche à part, bien plus grosse que le texte (Hubert : « il faut bien la voir »)
     // flèche longue à tige épaisse dessinée (maquette de Hubert), bien plus visible que le caractère ⬅
-    document.getElementById("jb-back-btn").innerHTML = `<svg class="jb-back-arrow" viewBox="0 0 35 18" aria-hidden="true"><path d="M0 9 L8.5 0 L8.5 5.5 L35 5.5 L35 12.5 L8.5 12.5 L8.5 18 Z" fill="currentColor"/></svg>${escapeHtml(t("back_btn"))}`;
+    // flèche raccourcie + flèche et mot encadrés, pour que ça se lise comme un bouton (Hubert, 22 oct.)
+    document.getElementById("jb-back-btn").innerHTML = `<span class="jb-back-inner"><svg class="jb-back-arrow" viewBox="0 0 22 18" aria-hidden="true"><path d="M0 9 L8.5 0 L8.5 5.5 L22 5.5 L22 12.5 L8.5 12.5 L8.5 18 Z" fill="currentColor"/></svg>${escapeHtml(t("back_btn"))}</span>`;
     document.getElementById("jb-search-input").placeholder = t("search_placeholder");    document.getElementById("jb-offline-title").textContent = t("offline_title");
     document.getElementById("jb-offline-text").textContent = t("offline_text");
     document.getElementById("jb-offline-browse").textContent = t("offline_browse");
