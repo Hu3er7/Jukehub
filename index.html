@@ -1684,7 +1684,8 @@
      la hauteur, voir .jb-fd-accent) — la liste y est découpée, lignes et fonds s'arrêtent avant. */
   #jb-public #jb-catalog-results #jb-catalog-list {
     clip-path: polygon(0 0, 100% 0, 100% calc(34% + 2px), calc(100% - 8px) calc(34% + 10px), calc(100% - 8px) 100%,
-      0 100%, 0 calc(50% + 81px), 23px calc(50% + 81px), 23px calc(50% - 78px), 0 calc(50% - 78px));
+      0 100%, 0 calc(50% + 77px), 20px calc(50% + 77px), 20px calc(50% - 74px), 0 calc(50% - 74px));
+    /* zone de l'échelle serrée (Hubert) : exactement sa hauteur (pointe à pointe), 3px de vide à sa droite */
   }
   /* Séparateurs entre les chansons : trait plein bleu néon flash, comme le cadre (Hubert) */
   #jb-public #jb-catalog-list .jb-song-item { border-bottom: 1px solid #5af4f0; }
@@ -2958,7 +2959,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-21.151";
+  const APP_BUILD = "2026-10-21.152";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -5880,6 +5881,14 @@
 
     ensureCatalogListMinHeight();
     list.innerHTML = "";
+    // Étiquette « HU3ER7-N » du cadre de la liste (Hubert, 21 oct. 2026) : nombre d'artistes dans la
+    // liste des artistes, nombre de genres dans celle des genres, sinon nombre de chansons.
+    const resultsCap = document.querySelector("#jb-catalog-results .jb-catalog-frame-caps-top");
+    if (resultsCap) {
+      resultsCap.dataset.count = !search && catalogView.type === "artist-list" ? buildArtistList().length
+        : !search && catalogView.type === "genre-list" ? buildGenreList().length
+        : catalogSongs.length;
+    }
 
     if (!search && catalogView.type === "artist-list") {
       const artists = buildArtistList();
