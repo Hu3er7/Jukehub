@@ -1829,6 +1829,16 @@
   #jb-public #jb-catalog-results .jb-fd-ladder, #jb-public .jb-pocket .jb-fd-ladder {
     clip-path: inset(calc(50% * (1 - var(--lreveal))) max(0px, calc(12px - var(--nN, 16px))) calc(50% * (1 - var(--lreveal))) 0);
   }
+  /* Zone tactile invisible sur l'échelle de la liste : toucher/glisser le doigt dessus fait défiler la
+     liste comme une barre de défilement (Hubert, 22 oct. 2026). Plus large que l'échelle (11px) pour
+     le doigt, mais s'arrête avant le texte des chansons. */
+  #jb-public .jb-ladder-hit {
+    position: absolute; z-index: 3; left: 0; width: 26px; touch-action: none; cursor: ns-resize;
+    top: calc(var(--ft) + (100% - var(--ft) - var(--lh, 151px)) / 2 - 8px); height: calc(var(--lh, 151px) + 16px);
+  }
+  #jb-public .jb-catalog-frame.jb-morphing .jb-ladder-hit { display: none; }
+  /* pendant le glissement, l'échelle s'illumine un peu plus */
+  #jb-public .jb-catalog-frame.jb-ladder-drag .jb-fd-ladder { filter: brightness(1.35) drop-shadow(0 0 4px var(--fglow)); }
   #jb-public .jb-fd-ladder::before, #jb-public .jb-fd-ladder::after {
     content: ""; position: absolute; left: 0; width: 100%; height: 7px; background: var(--fc);
   }
@@ -2569,6 +2579,7 @@
              et posées par-dessus le contour de #jb-catalog-list, en haut et en bas. -->
         <div class="jb-catalog-frame">
           <div class="jb-frame-deco" aria-hidden="true"><i class="jb-fd-ring"></i><i class="jb-fd-tabfill"></i><i class="jb-fd-fillet"></i><i class="jb-fd-bodyline"></i><i class="jb-fd-rail"></i><i class="jb-fd-dots"></i><i class="jb-fd-notch"></i><i class="jb-fd-ladder"></i><i class="jb-fd-accent"></i></div>
+          <div class="jb-ladder-hit" aria-hidden="true"></div>
           <div class="jb-catalog-frame-caps jb-catalog-frame-caps-top" aria-hidden="true">
             <span class="jb-catalog-frame-cap jb-catalog-frame-cap-lg"></span>
             <span class="jb-catalog-frame-cap"></span>
@@ -3142,7 +3153,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-22.168";
+  const APP_BUILD = "2026-10-22.169";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -6121,6 +6132,34 @@
       const ro = new ResizeObserver((entries) => entries.forEach((e) => fitFrameLadders(e.target)));
       frames.forEach((f) => ro.observe(f));
     }
+  })();
+  // Échelle = barre de défilement (Hubert : « si le client touche à la flèche, il va pouvoir aussi
+  // scroller avec celle-ci ») : la position du doigt sur les barreaux (entre les 2 pointes) donne la
+  // position dans la liste, du haut (pointe du haut) jusqu'en bas (pointe du bas).
+  (() => {
+    const hit = document.querySelector("#jb-catalog-results .jb-ladder-hit");
+    const list = document.getElementById("jb-catalog-list");
+    if (!hit || !list) return;
+    const frame = hit.closest(".jb-catalog-frame");
+    const ladder = frame.querySelector(".jb-fd-ladder");
+    let dragId = null;
+    const scrollTo = (clientY) => {
+      const r = ladder.getBoundingClientRect();
+      const track = r.height - 22; // barreaux seulement (pointes de 11px en haut et en bas)
+      const ratio = Math.min(1, Math.max(0, (clientY - r.top - 11) / track));
+      list.scrollTop = ratio * (list.scrollHeight - list.clientHeight);
+    };
+    hit.addEventListener("pointerdown", (e) => {
+      dragId = e.pointerId;
+      try { hit.setPointerCapture(e.pointerId); } catch (_) {}
+      frame.classList.add("jb-ladder-drag");
+      scrollTo(e.clientY);
+      e.preventDefault();
+    });
+    hit.addEventListener("pointermove", (e) => { if (e.pointerId === dragId) scrollTo(e.clientY); });
+    const end = (e) => { if (e.pointerId !== dragId) return; dragId = null; frame.classList.remove("jb-ladder-drag"); };
+    hit.addEventListener("pointerup", end);
+    hit.addEventListener("pointercancel", end);
   })();
   var lastHomeFrameH = 0; // var : lue avant cette ligne possible (voir la note plus haut)
   var nextCatalogMorphDelay = 0; // délai (ms) de la PROCHAINE animation de taille du panneau (RETOUR)
