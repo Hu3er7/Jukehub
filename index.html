@@ -2970,7 +2970,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-21.155";
+  const APP_BUILD = "2026-10-21.156";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -5873,6 +5873,7 @@
     // pendant l'animation. Plus de clignotement du contour non plus (Hubert : « que ça ne fasse pas ça »).
     f.style.clipPath = "inset(-14px -14px 0 -14px)";
     f.classList.add("jb-morphing"); // colonne de l'échelle vidée pendant l'animation (voir CSS)
+    fitFrameLadders(f, newH); // échelle directement à sa taille finale (pas de sauts en cours de route)
     const anim = f.animate(
       [{ height: `${prevH}px` }, { height: `${newH}px` }],
       // Mouvement continu et fluide (Hubert : « le plus fluide possible ») au lieu des paliers :
@@ -5884,6 +5885,7 @@
       if (f._jbMorph !== anim) return;
       f._jbMorph = null;
       f.style.clipPath = "";
+      fitFrameLadders(f);
       // 2 images plus tard : laisse le temps à fitFrameLadders() (ResizeObserver) de poser la taille
       // finale de l'échelle avant de rouvrir la découpe serrée autour d'elle
       requestAnimationFrame(() => requestAnimationFrame(() => { if (!f._jbMorph) f.classList.remove("jb-morphing"); }));
@@ -5895,9 +5897,13 @@
   // scroll s'agrandit aussi ») : grandit avec le corps du cadre (voir le calcul), arrondie à un nombre entier de
   // barreaux (7px chacun) pour que l'espacement reste identique. Suivi en direct (ResizeObserver),
   // donc elle grandit/rétrécit aussi pendant l'animation du panneau.
-  function fitFrameLadders(frame) {
+  function fitFrameLadders(frame, finalHeight) {
     if (!frame.querySelector(".jb-fd-ladder")) return;
-    const body = frame.clientHeight - 28; // --ft
+    // Pendant l'animation du panneau, l'échelle garde directement sa taille FINALE (posée au départ
+    // par animateCatalogFrame()) : sinon elle gagnait des barreaux par sauts de 7px à chaque image
+    // pendant qu'elle se déployait — d'où l'effet saccadé signalé par Hubert.
+    if (finalHeight === undefined && frame._jbMorph) return;
+    const body = (finalHeight !== undefined ? finalHeight : frame.clientHeight) - 28; // --ft
     // Grandit moins vite que le cadre (Hubert : « elle s'étire un peu trop ») : ~144px pour le
     // panneau d'accueil, puis seulement 40 % de chaque pixel de hauteur en plus
     const target = Math.min(body * 0.75, 144 + Math.max(0, body - 197) * 0.4);
