@@ -3221,7 +3221,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-22.170";
+  const APP_BUILD = "2026-10-22.171";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -6895,8 +6895,10 @@
     return id;
   }
   let presenceKnown = false; // ce document existe déjà côté serveur (on ne fait plus que lastSeen)
+  // Aperçu local (localhost) : ne compte pas comme un client, sauf si on teste exprès (?presence)
+  const presenceOff = /^(localhost|127\.0\.0\.1)$/.test(location.hostname) && !/[?&]presence\b/.test(location.search);
   async function sendPresence() {
-    if (location.hash === "#admin" || isAdmin || document.visibilityState !== "visible") return;
+    if (presenceOff || location.hash === "#admin" || isAdmin || document.visibilityState !== "visible") return;
     const ref = doc(db, "presence", presenceClientId());
     try {
       if (presenceKnown) {
@@ -6921,7 +6923,17 @@
   // qu'avant, voir le pont de stockage) d'arriver, pour ne pas compter le client en double.
   setTimeout(sendPresence, 3000);
   setInterval(sendPresence, 30000);
-  document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") sendPresence(); });
+  // Page fermée, onglet changé ou téléphone verrouillé : on note tout de suite l'heure du départ
+  // (leftAt), pour que le client disparaisse aussitôt du compteur « en ligne » au lieu d'attendre
+  // ~1 minute (Hubert, 22 oct. 2026). Au retour sur la page, sendPresence() le remet en ligne.
+  function sendPresenceLeft() {
+    if (presenceOff || !presenceKnown || location.hash === "#admin" || isAdmin) return;
+    updateDoc(doc(db, "presence", presenceClientId()), { leftAt: serverTimestamp() }).catch(() => {});
+  }
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible") sendPresence(); else sendPresenceLeft();
+  });
+  window.addEventListener("pagehide", sendPresenceLeft);
 
   let presenceUnsub = null;
   let presenceDocs = [];
@@ -6931,7 +6943,8 @@
     if (!onlineEl || !newEl) return;
     const now = Date.now();
     const ms = (ts) => (ts && ts.toMillis ? ts.toMillis() : 0);
-    onlineEl.textContent = presenceDocs.filter((d) => now - ms(d.lastSeen) < 75000).length;
+    // en ligne = vu dans les 75 dernières secondes ET pas reparti depuis (leftAt après lastSeen)
+    onlineEl.textContent = presenceDocs.filter((d) => now - ms(d.lastSeen) < 75000 && !(ms(d.leftAt) >= ms(d.lastSeen))).length;
     newEl.textContent = loginAtMs ? presenceDocs.filter((d) => ms(d.firstSeen) >= loginAtMs).length : 0;
   }
   function setPresenceListener(on) {

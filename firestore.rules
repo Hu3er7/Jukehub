@@ -85,8 +85,11 @@ service cloud.firestore {
         request.resource.data.keys().hasOnly(['firstSeen', 'lastSeen']) &&
         request.resource.data.firstSeen == request.time &&
         request.resource.data.lastSeen == request.time;
-      allow update: if request.resource.data.diff(resource.data).affectedKeys().hasOnly(['lastSeen']) &&
-        request.resource.data.lastSeen == request.time;
+      // …ou seulement "leftAt" (page fermée/quittée, 22 oct. 2026), lui aussi à l'heure du serveur
+      allow update: if (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['lastSeen']) &&
+          request.resource.data.lastSeen == request.time) ||
+        (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['leftAt']) &&
+          request.resource.data.leftAt == request.time);
       allow delete: if isAdmin();
     }
 
