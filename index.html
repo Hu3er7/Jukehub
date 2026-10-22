@@ -2833,6 +2833,7 @@
            Voir sendPresence() (côté client) et setPresenceListener() (ici). -->
       <section class="jb-admin-section jb-admin-presence">
         <div class="jb-presence-row"><span>🟢 Clients en ligne</span><b id="jb-presence-online">0</b></div>
+        <p id="jb-presence-detail" class="jb-hint" hidden></p>
         <div class="jb-presence-row"><span>🆕 Nouveaux clients depuis ta connexion</span><b id="jb-presence-new">0</b></div>
         <p class="jb-hint">« En ligne » = site ouvert à l'écran dans la dernière minute. Un client qui ferme puis rouvre en navigation privée compte comme un nouveau client.</p>
       </section>
@@ -3221,7 +3222,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-22.171";
+  const APP_BUILD = "2026-10-22.172";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -6922,7 +6923,7 @@
   // 1re présence après 3 s : laisse le temps à la copie de la page Carrd (même identifiant
   // qu'avant, voir le pont de stockage) d'arriver, pour ne pas compter le client en double.
   setTimeout(sendPresence, 3000);
-  setInterval(sendPresence, 30000);
+  setInterval(sendPresence, 20000);
   // Page fermée, onglet changé ou téléphone verrouillé : on note tout de suite l'heure du départ
   // (leftAt), pour que le client disparaisse aussitôt du compteur « en ligne » au lieu d'attendre
   // ~1 minute (Hubert, 22 oct. 2026). Au retour sur la page, sendPresence() le remet en ligne.
@@ -6943,8 +6944,18 @@
     if (!onlineEl || !newEl) return;
     const now = Date.now();
     const ms = (ts) => (ts && ts.toMillis ? ts.toMillis() : 0);
-    // en ligne = vu dans les 75 dernières secondes ET pas reparti depuis (leftAt après lastSeen)
-    onlineEl.textContent = presenceDocs.filter((d) => now - ms(d.lastSeen) < 75000 && !(ms(d.leftAt) >= ms(d.lastSeen))).length;
+    // en ligne = vu dans les 50 dernières secondes (signal aux 20 s) ET pas reparti depuis (leftAt
+    // après lastSeen)
+    const online = presenceDocs.filter((d) => now - ms(d.lastSeen) < 50000 && !(ms(d.leftAt) >= ms(d.lastSeen)));
+    onlineEl.textContent = online.length;
+    // Âge du dernier signal de chaque client en ligne : permet de voir si un client « fantôme »
+    // envoie encore des signaux (le chiffre retombe sans cesse) ou s'il est simplement en train
+    // d'expirer (le chiffre monte jusqu'à 50 s puis il disparaît) — Hubert, 22 oct. 2026
+    const detailEl = document.getElementById("jb-presence-detail");
+    if (detailEl) {
+      detailEl.hidden = !online.length;
+      detailEl.textContent = "Dernier signal : " + online.map((d) => `il y a ${Math.max(0, Math.round((now - ms(d.lastSeen)) / 1000))} s`).join(" · ");
+    }
     newEl.textContent = loginAtMs ? presenceDocs.filter((d) => ms(d.firstSeen) >= loginAtMs).length : 0;
   }
   function setPresenceListener(on) {
@@ -6964,7 +6975,7 @@
       presenceDocs = [];
     }
   }
-  setInterval(renderPresenceCounters, 10000); // « en ligne » change avec le temps, même sans nouvelle donnée
+  setInterval(renderPresenceCounters, 5000); // « en ligne » change avec le temps, même sans nouvelle donnée
 
   onAuthStateChanged(auth, (user) => {
     isAdmin = !!user;
