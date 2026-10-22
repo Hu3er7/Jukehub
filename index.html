@@ -1668,7 +1668,9 @@
      haut à droite, « échelle » à gauche et équerre intérieure en bas à droite — couleur cyan
      inchangée. Dessiné par .jb-frame-deco (le trait lumineux) et ::before (le fond sombre) : des
      découpes clip-path aux biseaux de taille FIXE, qui suivent la hauteur variable du cadre. */
-  #jb-public .jb-catalog-frame { --fc: #5af4f0; --fbg: #04121c; --fglow: rgba(0, 230, 220, 0.6); }
+  /* --fbg : fond « vitre teintée » semi-transparent de la couleur de la section (Hubert, 22 oct.) ;
+     --fbg-solid : la même teinte opaque, pour le texte posé sur l'onglet plein */
+  #jb-public .jb-catalog-frame { --fc: #5af4f0; --fbg: rgba(8, 52, 62, 0.22); --fbg-solid: #04121c; --fglow: rgba(0, 230, 220, 0.6); }
   /* Le contenu commence SOUS le trait du haut et l'encoche : sinon le fond d'une ligne de chanson
      (ex. chanson déjà au palmarès) passait par-dessus en faisant défiler la liste (Hubert) */
   #jb-public .jb-catalog-frame { padding-top: calc(var(--ft) + 10px) !important; padding-right: 14px !important; padding-bottom: 13px !important; }
@@ -1707,6 +1709,7 @@
   #jb-public .jb-catalog-frame::before, #jb-public .jb-myreq-frame::before, #jb-public .jb-palm-frame::before {
     /* fond sombre du corps (sous le trait), sans le 2e contour d'avant */
     content: ""; position: absolute; pointer-events: none; inset: 0; border: none; background: var(--fbg);
+    -webkit-backdrop-filter: blur(2px); backdrop-filter: blur(2px); /* le fond de circuits reste visible, adouci */
     clip-path: polygon(0 calc(var(--ft) + var(--fb)), var(--fb) var(--ft), calc(100% - var(--fb)) var(--ft),
       100% calc(var(--ft) + var(--fb)), 100% calc(100% - var(--fb)), calc(100% - var(--fb)) 100%,
       var(--fb) 100%, 0 calc(100% - var(--fb)));
@@ -1852,15 +1855,15 @@
   /* ===== "// Tes demandes" (rouge) et "// Palmarès" (rose) : même cadre HUD que la sélection
      (21 oct. 2026, Hubert), sans l'échelle ni le trait vertical de gauche. L'étiquette (nombre de
      demandes / de chansons) devient le texte de l'onglet. ===== */
-  #jb-public .jb-myreq-frame { --fc: #ff2d55; --fbg: #1a0409; --fglow: rgba(255, 45, 85, 0.6); }
-  #jb-public .jb-palm-frame { --fc: #ff3bd4; --fbg: #1f0519; --fglow: rgba(255, 59, 212, 0.55); }
+  #jb-public .jb-myreq-frame { --fc: #ff2d55; --fbg: rgba(70, 8, 22, 0.22); --fbg-solid: #1a0409; --fglow: rgba(255, 45, 85, 0.6); }
+  #jb-public .jb-palm-frame { --fc: #ff3bd4; --fbg: rgba(72, 10, 58, 0.22); --fbg-solid: #1f0519; --fglow: rgba(255, 59, 212, 0.55); }
   #jb-public .jb-myreq-frame, #jb-public .jb-palm-frame { position: relative; padding: calc(var(--ft) + 6px) 14px 10px 16px; }
   #jb-public .jb-myreq-frame > :not(.jb-frame-deco),
   #jb-public .jb-palm-frame > :not(.jb-frame-deco) { position: relative; z-index: 1; }
   #jb-public .jb-myreq-frame-label, #jb-public .jb-palm-frame-label {
     position: absolute !important; left: 0; top: 0; width: calc(var(--tabw) + 6px); height: var(--ft); z-index: 2 !important;
     display: flex; align-items: center; justify-content: center; pointer-events: none; white-space: nowrap;
-    color: var(--fbg); font-family: 'Share Tech Mono', monospace; font-size: 0.95rem; font-weight: 700; letter-spacing: 1.5px;
+    color: var(--fbg-solid); font-family: 'Share Tech Mono', monospace; font-size: 0.95rem; font-weight: 700; letter-spacing: 1.5px;
   }
   #jb-public .jb-myreq-frame .jb-empty, #jb-public .jb-palm-frame .jb-empty { margin: 4px 0 10px; }
 
@@ -1909,6 +1912,13 @@
     background-repeat: no-repeat;
     background-origin: border-box;
   }
+  /* Titre d'un artiste / d'un genre ouvert (« // ELVIS PRESLEY ») : plus de bande noire derrière
+     (fond transparent, le fond de circuits reste visible) et même taille que « // 670 CHANSONS » (Hubert) */
+  #jb-public #jb-folder-title-wrap { background: transparent; }
+  #jb-public .jb-folder-title { font-size: 1.15rem; line-height: 1.4; }
+  /* …et exactement les mêmes dimensions que la rangée « // 356 ARTISTES » (hauteur 26px, 14px
+     dessous), sinon tout le menu descendait de 10px en ouvrant un artiste ou un genre (Hubert) */
+  #jb-public #jb-folder-title-wrap { margin: 0 0 14px; padding: 0; }
   /* RETOUR et barre de recherche : hauteur fixe identique (40px), alignés en haut et en bas — le
      bouton qui apparaît n'agrandit plus la rangée, donc le reste du menu ne bouge plus (Hubert) */
   #jb-public .jb-catalog-searchbar { align-items: stretch; }
@@ -3067,7 +3077,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-22.160";
+  const APP_BUILD = "2026-10-22.161";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
