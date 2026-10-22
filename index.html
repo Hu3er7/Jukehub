@@ -1684,8 +1684,10 @@
      la hauteur, voir .jb-fd-accent) — la liste y est découpée, lignes et fonds s'arrêtent avant. */
   #jb-public #jb-catalog-results #jb-catalog-list {
     clip-path: polygon(0 0, 100% 0, 100% calc(34% + 2px), calc(100% - 8px) calc(34% + 10px), calc(100% - 8px) 100%,
-      0 100%, 0 calc(50% + 77px), 20px calc(50% + 77px), 20px calc(50% - 74px), 0 calc(50% - 74px));
-    /* zone de l'échelle serrée (Hubert) : exactement sa hauteur (pointe à pointe), 3px de vide à sa droite */
+      0 100%, 0 calc(50% + 79.5px), 13.2px calc(50% + 79.5px), 20px calc(50% + 74.7px),
+      20px calc(50% - 71.7px), 13.2px calc(50% - 76.5px), 0 calc(50% - 76.5px));
+    /* zone de l'échelle serrée (Hubert) : le même vide de 3px partout autour, y compris le long des
+       pentes des 2 pointes (la découpe suit leur diagonale) */
   }
   /* Séparateurs entre les chansons : trait plein bleu néon flash, comme le cadre (Hubert) */
   #jb-public #jb-catalog-list .jb-song-item { border-bottom: 1px solid #5af4f0; }
@@ -2959,7 +2961,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-21.152";
+  const APP_BUILD = "2026-10-21.153";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
