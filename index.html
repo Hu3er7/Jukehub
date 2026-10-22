@@ -2978,7 +2978,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-21.157";
+  const APP_BUILD = "2026-10-21.158";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -5942,7 +5942,7 @@
         ladder.animate(
           [{ clipPath: "inset(50% 0 50% 0)" }, { clipPath: "inset(0% 0 0% 0)" }],
           // plus lent que le cadre (840ms) : l'échelle finit de se déployer après lui (Hubert)
-          { duration: 1500, delay: 120, easing: "cubic-bezier(0.45, 0, 0.25, 1)", fill: "backwards" }
+          { duration: 1000, delay: 120, easing: "cubic-bezier(0.45, 0, 0.25, 1)", fill: "backwards" } // accélérée (1,5 s -> 1 s, Hubert)
         );
       }
     }
