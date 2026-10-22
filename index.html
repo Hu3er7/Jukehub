@@ -1919,6 +1919,15 @@
   /* …et exactement les mêmes dimensions que la rangée « // 356 ARTISTES » (hauteur 26px, 14px
      dessous), sinon tout le menu descendait de 10px en ouvrant un artiste ou un genre (Hubert) */
   #jb-public #jb-folder-title-wrap { margin: 0 0 14px; padding: 0; }
+  /* Page « pas en spectacle » (et page « accès expiré ») : plus de cadre, contenu monté tout en haut,
+     fond en vitre teintée jaune semi-transparente comme les sections (Hubert, 22 oct. 2026) */
+  #jb-public .jb-offline-page { padding-top: 0; margin-top: -14px; } /* compense le padding de #jb-public */
+  #jb-public .jb-offline-card {
+    border: none; clip-path: none; margin-top: 0; padding-top: 10px;
+    background: rgba(14, 12, 1, 0.4); /* même teinte foncée, plus transparente (Hubert) */
+    -webkit-backdrop-filter: blur(2px); backdrop-filter: blur(2px);
+  }
+  #jb-public .jb-offline-lang-bar { margin-bottom: 8px; }
   /* RETOUR et barre de recherche : hauteur fixe identique (40px), alignés en haut et en bas — le
      bouton qui apparaît n'agrandit plus la rangée, donc le reste du menu ne bouge plus (Hubert) */
   #jb-public .jb-catalog-searchbar { align-items: stretch; }
@@ -3077,7 +3086,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-22.161";
+  const APP_BUILD = "2026-10-22.162";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
