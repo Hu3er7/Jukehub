@@ -1777,6 +1777,7 @@
     left: 9px; width: 11px; height: var(--lh, 151px); top: calc(var(--ft) + (100% - var(--ft) - var(--lh, 151px)) / 2);
     background: repeating-linear-gradient(to bottom, var(--fc) 0 3px, transparent 3px 7px) 0 11px / 100% calc(var(--lh, 151px) - 22px) no-repeat;
   }
+  #jb-public #jb-catalog-browse .jb-fd-ladder { display: none; } /* pas d'échelle sur le panneau d'accueil (Hubert) */
   #jb-public .jb-fd-ladder::before, #jb-public .jb-fd-ladder::after {
     content: ""; position: absolute; left: 0; width: 100%; height: 7px; background: var(--fc);
   }
@@ -2969,7 +2970,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-21.154";
+  const APP_BUILD = "2026-10-21.155";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -5913,9 +5914,24 @@
     }
   })();
   function renderCatalog() {
-    const prevH = catalogFrameHeight();
+    const prevFrame = visibleCatalogFrame();
+    const prevH = prevFrame ? prevFrame.getBoundingClientRect().height : 0;
     renderCatalogNow();
     animateCatalogFrame(prevH);
+    // Échelle (Hubert, 21 oct. 2026) : absente du panneau d'accueil (Chansons/Artiste/Genre) ;
+    // en ouvrant une liste, elle se déploie depuis son centre jusqu'à ses 2 pointes.
+    const newFrame = visibleCatalogFrame();
+    const reduceMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (newFrame && newFrame !== prevFrame && newFrame.closest("#jb-catalog-results") && !reduceMotion) {
+      const ladder = newFrame.querySelector(".jb-fd-ladder");
+      if (ladder && ladder.animate) {
+        ladder.animate(
+          [{ clipPath: "inset(50% 0 50% 0)" }, { clipPath: "inset(0% 0 0% 0)" }],
+          // plus lent que le cadre (840ms) : l'échelle finit de se déployer après lui (Hubert)
+          { duration: 1500, delay: 120, easing: "cubic-bezier(0.45, 0, 0.25, 1)", fill: "backwards" }
+        );
+      }
+    }
   }
 
   function renderCatalogNow() {
