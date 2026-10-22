@@ -3067,7 +3067,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-22.159";
+  const APP_BUILD = "2026-10-22.160";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -6671,11 +6671,14 @@
         await updateDoc(ref, { lastSeen: serverTimestamp() });
         return;
       }
+      // Création d'abord : un updateDoc sur un document qui n'existe pas encore est REFUSÉ par les
+      // règles (« permission-denied », pas « not-found ») — c'est ce qui bloquait les compteurs à 0.
+      // Si le document existe déjà (téléphone déjà vu), cette création est refusée à son tour
+      // (elle changerait firstSeen) : on se rabat alors sur la simple mise à jour de lastSeen.
       try {
-        await updateDoc(ref, { lastSeen: serverTimestamp() });
-      } catch (e) {
-        if (e && e.code !== "not-found") throw e;
         await setDoc(ref, { firstSeen: serverTimestamp(), lastSeen: serverTimestamp() });
+      } catch (e) {
+        await updateDoc(ref, { lastSeen: serverTimestamp() });
       }
       presenceKnown = true;
     } catch (e) {
