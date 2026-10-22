@@ -1829,6 +1829,14 @@
     background-repeat: no-repeat;
     background-origin: border-box;
   }
+  /* RETOUR et barre de recherche : hauteur fixe identique (40px), alignés en haut et en bas — le
+     bouton qui apparaît n'agrandit plus la rangée, donc le reste du menu ne bouge plus (Hubert) */
+  #jb-public .jb-catalog-searchbar { align-items: stretch; }
+  #jb-public #jb-back-btn, #jb-public #jb-search-input {
+    box-sizing: border-box; height: 40px; min-height: 40px; max-height: 40px; margin-top: 0; margin-bottom: 0;
+  }
+  #jb-public #jb-back-btn { display: inline-flex; align-items: center; padding-top: 0; padding-bottom: 0; line-height: 1; }
+  #jb-public #jb-back-btn[hidden] { display: none; }
   /* Barre de recherche : contour jaune néon (plein + lueur) au lieu du jaune pâle à 45 % (Hubert) */
   #jb-public #jb-search-input {
     border-color: #fff200;
@@ -2970,7 +2978,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-21.156";
+  const APP_BUILD = "2026-10-21.157";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
