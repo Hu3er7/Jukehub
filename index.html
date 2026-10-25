@@ -1913,6 +1913,36 @@
     background-repeat: no-repeat;
     background-origin: border-box;
   }
+  /* Onglets du cadre de la liste, façon Chrome (maquette de Hubert, 25 oct. 2026) : l'onglet rouge
+     « DEMANDES n/5 » est rangé derrière l'onglet bleu (RETOUR), son bord gauche suit la pente de
+     l'onglet bleu avec un mince trait sombre entre les deux. Appuyé, il passe devant : le cadre
+     devient rouge et affiche « Tes demandes » (l'onglet bleu reste bleu, derrière). */
+  #jb-public #jb-catalog-results .jb-myreq-tab {
+    position: absolute; z-index: 3; top: 0; left: calc(var(--tabw) + 3px);
+    height: var(--ft); padding: 0 22px 0 24px; border: none; border-radius: 0; cursor: pointer;
+    display: flex; align-items: center; white-space: nowrap;
+    background: #ff2d55; color: #1a0409;
+    font-family: 'Share Tech Mono', monospace; font-size: 0.95rem; font-weight: 700; letter-spacing: 1.5px;
+    clip-path: polygon(0 0, calc(100% - 13px) 0, 100% 100%, 13px 100%);
+    filter: brightness(0.82);
+  }
+  #jb-public #jb-catalog-results .jb-myreq-tab[hidden], #jb-app.jb-browse-only #jb-catalog-results .jb-myreq-tab { display: none; }
+  #jb-public #jb-catalog-results .jb-catalog-frame.jb-tab-on-myreq .jb-myreq-tab {
+    left: calc(var(--tabw) - 9px); height: calc(var(--ft) + 3px); padding-left: 36px; filter: none;
+    clip-path: polygon(0 0, calc(100% - 13px) 0, 100% 100%, 15px 100%);
+  }
+  #jb-public #jb-catalog-results .jb-catalog-frame.jb-tab-on-myreq {
+    --fc: #ff2d55; --fbg: rgba(70, 8, 22, 0.22); --fbg-solid: #1a0409; --fglow: rgba(255, 45, 85, 0.6);
+  }
+  #jb-public #jb-catalog-results .jb-catalog-frame.jb-tab-on-myreq .jb-fd-tabfill { background: #5af4f0; }
+  #jb-public #jb-catalog-results .jb-catalog-frame.jb-tab-on-myreq .jb-fd-ladder,
+  #jb-public #jb-catalog-results .jb-catalog-frame.jb-tab-on-myreq .jb-ladder-hit { display: none; }
+  #jb-public #jb-catalog-results .jb-tab-myreq { position: relative; padding: 2px 15px 4px 29px; }
+  #jb-public #jb-catalog-results .jb-tab-myreq[hidden], #jb-public #jb-catalog-results #jb-catalog-list[hidden] { display: none !important; }
+  #jb-public .jb-tab-myreq .jb-empty { margin: 8px 0 12px; }
+  #jb-public .jb-tab-myreq .jb-myreq-up { width: 31px; height: 31px; }
+  #jb-public .jb-tab-myreq .jb-myreq-up svg { width: 14px; height: 14px; }
+  #jb-public .jb-tab-myreq .jb-myreq-row:last-child { border-bottom: none; }
   /* Compteurs de clients du panneau admin */
   #jb-admin .jb-admin-presence .jb-presence-row {
     display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 4px 0;
@@ -2656,8 +2686,15 @@
           </div>
           <!-- RETOUR dans l'onglet du cadre, à la place de « HU3ER7-670 » (Hubert, 22 oct. 2026) : la
                barre de recherche garde toujours la même largeur -->
+          <!-- Onglet rouge « DEMANDES n/5 » derrière RETOUR, comme les onglets de Chrome (maquette de
+               Hubert, 25 oct. 2026) : il bascule le cadre sur « Tes demandes » ; RETOUR ramène la liste -->
+          <button id="jb-myreq-tab" class="jb-myreq-tab" type="button" hidden></button>
           <button id="jb-back-btn" class="jb-back-btn" hidden>⬅ RETOUR</button>
           <ul id="jb-catalog-list" class="jb-catalog-list"></ul>
+          <div id="jb-tab-myreq" class="jb-tab-myreq" hidden>
+            <p id="jb-tab-myreq-empty" class="jb-empty"></p>
+            <div id="jb-tab-myreq-list" class="jb-myreq-list"></div>
+          </div>
           <div class="jb-catalog-frame-caps jb-catalog-frame-caps-bottom" aria-hidden="true">
             <span class="jb-catalog-frame-cap jb-catalog-frame-cap-lg"></span>
             <span class="jb-catalog-frame-cap"></span>
@@ -3222,7 +3259,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-22.173";
+  const APP_BUILD = "2026-10-22.174";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -5266,9 +5303,34 @@
         </div>`;
       })
       .join("");
-    listEl.querySelectorAll("[data-myreq-up]").forEach((btn) => {
+    // Même contenu dans l'onglet rouge du cadre de la liste (voir setCatalogTab())
+    const tabList = document.getElementById("jb-tab-myreq-list");
+    const tabEmpty = document.getElementById("jb-tab-myreq-empty");
+    const tabBtn = document.getElementById("jb-myreq-tab");
+    if (tabList) tabList.innerHTML = listEl.innerHTML;
+    if (tabEmpty) { tabEmpty.textContent = t("my_votes_empty"); tabEmpty.hidden = rows.length > 0; }
+    if (tabBtn) tabBtn.textContent = t("myreq_label", rows.length, MAX_REQUESTS);
+    [listEl, tabList].forEach((el) => el && el.querySelectorAll("[data-myreq-up]").forEach((btn) => {
       btn.addEventListener("click", () => castVote(btn.dataset.myreqUp, 1));
-    });
+    }));
+  }
+  // Onglets du cadre de la liste (Hubert, 25 oct. 2026) : "list" = la liste de chansons,
+  // "myreq" = « Tes demandes ». Revient sur la liste dès qu'on change de liste ou de recherche.
+  var catalogTab = "list"; // var : renderCatalog() peut tourner avant cette ligne
+  var catalogTabSig = "";
+  function setCatalogTab(tab) {
+    const frame = document.querySelector("#jb-catalog-results .jb-catalog-frame");
+    const prevH = frame && frame.offsetParent ? frame.getBoundingClientRect().height : 0;
+    catalogTab = tab;
+    applyCatalogTab();
+    if (prevH) animateCatalogFrame(prevH);
+  }
+  function applyCatalogTab() {
+    const frame = document.querySelector("#jb-catalog-results .jb-catalog-frame");
+    const onMyReq = catalogTab === "myreq";
+    if (frame) frame.classList.toggle("jb-tab-on-myreq", onMyReq);
+    document.getElementById("jb-catalog-list").hidden = onMyReq;
+    document.getElementById("jb-tab-myreq").hidden = !onMyReq;
   }
 
   // Fenêtre d'information (maquette de Hubert) : écran assombri, message, bouton "Continuer" — le
@@ -6259,7 +6321,13 @@
   function renderCatalog() {
     const prevFrame = visibleCatalogFrame();
     const prevH = prevFrame ? prevFrame.getBoundingClientRect().height : 0;
+    // Nouvelle liste ou nouvelle recherche : on revient sur l'onglet de la liste
+    const sig = JSON.stringify(catalogView) + "|" + document.getElementById("jb-search-input").value;
+    if (sig !== catalogTabSig) { catalogTabSig = sig; catalogTab = "list"; }
     renderCatalogNow();
+    applyCatalogTab();
+    // onglet rouge seulement quand une liste est ouverte (et pas en simple consultation)
+    document.getElementById("jb-myreq-tab").hidden = document.getElementById("jb-back-btn").hidden || browseOnly;
     animateCatalogFrame(prevH);
     // Taille du panneau d'accueil, retenue pour l'animation de RETOUR (voir jb-back-btn)
     const shown = visibleCatalogFrame();
@@ -6495,7 +6563,13 @@
   // l'appui. Le panneau d'accueil part de la taille de la liste et rapetisse (animateCatalogFrame),
   // et pendant ce temps il garde le côté ouvert avec l'échelle (classe .jb-pocket), qui se replient
   // aussitôt : l'échelle vers son centre, puis le côté se referme en même temps que le cadre.
+  // Onglet rouge « DEMANDES » : bascule le cadre sur « Tes demandes »
+  document.getElementById("jb-myreq-tab").addEventListener("click", () => {
+    if (catalogTab !== "myreq") setCatalogTab("myreq");
+  });
   document.getElementById("jb-back-btn").addEventListener("click", () => {
+    // Sur l'onglet « Tes demandes », RETOUR ramène d'abord la liste (comme l'onglet bleu de Chrome)
+    if (catalogTab === "myreq") { setCatalogTab("list"); return; }
     const hadSearch = !!document.getElementById("jb-search-input").value;
     const goingHome = hadSearch ? !catalogView
       : !(catalogView && (catalogView.type === "artist" || catalogView.type === "genre-songs"));
