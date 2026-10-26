@@ -2877,7 +2877,7 @@
       <!-- Paiements (19 oct. 2026) : Hubert choisit si les clients voient les montants payés -->
       <section class="jb-admin-section">
         <label class="jb-admin-toggle"><input type="checkbox" id="jb-show-amounts-toggle" /> 💲 Afficher les montants sur le site</label>
-        <p class="jb-hint">Coché : les clients voient combien chaque chanson a reçu (ex. « 25 $ »). Décoché : seulement le rang. Toi, tu vois toujours les montants ici.</p>
+        <p class="jb-hint">Coché : les clients voient combien chaque chanson a reçu (ex. « 25 $ »). Décoché : seulement les chansons et les noms. Toi, tu vois toujours les montants ici.</p>
       </section>
 
       <section class="jb-admin-section jb-admin-columns">
@@ -3258,7 +3258,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-22.177";
+  const APP_BUILD = "2026-10-22.178";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -3367,6 +3367,7 @@
       tab_myreq_title: "Tes suggestions",
       tab_public_title: "Choix du public",
       my_req_rank: (n) => `${n}${n === 1 ? "ER" : "E"} RANG`,
+      inpalm_badge: "DEMANDÉE", // chanson déjà au « Choix du public » (plus de rangs, 26 oct. 2026)
       my_req_up_aria: "Faire monter cette chanson",
       vote_modal_left: (n) => (n > 0 ? `Il te reste ${n} vote${n > 1 ? "s" : ""}` : "Tu as utilisé tes 6 votes"),
       vote_modal_back: "Tu les récupères quand ta chanson est jouée",
@@ -3459,6 +3460,7 @@
       tab_myreq_title: "Your suggestions",
       tab_public_title: "Crowd picks",
       my_req_rank: (n) => `RANK ${n}`,
+      inpalm_badge: "REQUESTED",
       my_req_up_aria: "Push this song up",
       vote_modal_left: (n) => (n > 0 ? `You have ${n} vote${n > 1 ? "s" : ""} left` : "You've used all 6 votes"),
       vote_modal_back: "You get them back when your song is played",
@@ -4254,10 +4256,13 @@
   // d'atterrir en bas de son groupe de chansons à égalité comme il se doit. Utilisé PARTOUT où le
   // palmarès est classé (renderPalmares(), getSongRank(), renderAdminPalmares()) pour que l'ordre
   // soit toujours le même, prévisible, peu importe la vue.
+  // 26 oct. 2026 (Hubert, plus de rangs) : les chansons avec de l'argent d'abord, la plus payée en
+  // haut — indélogeables par une simple demande ; puis les chansons à 0 $, la PLUS RÉCENTE en haut
+  // (une nouvelle demande arrive en tête des chansons à 0 $ et pousse les autres d'un cran).
   function compareVoteEntries(a, b) {
     const diff = (b[1].requests || 0) - (a[1].requests || 0);
     if (diff !== 0) return diff;
-    return createdAtMillis(a[1]) - createdAtMillis(b[1]);
+    return createdAtMillis(b[1]) - createdAtMillis(a[1]);
   }
   // Position actuelle de "id" dans le palmarès (1 = premier), ou null si elle n'y figure pas
   // (aucune demande active, brûlée ou en refroidissement — même filtre que le classement réel de
@@ -5304,7 +5309,6 @@
         <div class="jb-myreq-row">
           <span class="jb-myreq-up-wrap"><button class="jb-slot-vote-btn jb-slot-vote-up jb-myreq-up" data-myreq-up="${escapeHtml(id)}" aria-label="${t("my_req_up_aria")}" title="${t("my_req_up_aria")}"><svg viewBox="0 0 12 12" width="16" height="16" aria-hidden="true"><path d="M6 1 11 5.5H1ZM6 6 11 10.5H1Z" fill="currentColor"/></svg></button></span>
           <span class="jb-myreq-info">
-            <span class="jb-myreq-rank${glow}">${t("my_req_rank", rank)}</span>
             <span class="jb-slot-title">${escapeHtml(v.title)}</span>
             ${v.artist ? `<span class="jb-slot-artist">${escapeHtml(v.artist)}</span>` : ""}
           </span>
@@ -6112,7 +6116,6 @@
       el.innerHTML = `
         <span class="jb-myreq-up-wrap"><button class="jb-slot-vote-btn jb-slot-vote-up jb-myreq-up${voteUpBtnIllumClass(id)}" data-vote-up="${escapeHtml(id)}" aria-label="${t("vote_up_aria")}" title="${t("vote_up_aria")}"><svg viewBox="0 0 12 12" width="14" height="14" aria-hidden="true"><path d="M6 1 11 5.5H1ZM6 6 11 10.5H1Z" fill="currentColor"/></svg></button></span>
         <span class="jb-slot-mid">
-          <span class="jb-myreq-rank">${t("my_req_rank", i + 1)}</span>
           <span class="jb-slot-info jb-slot-head">
             <span class="jb-slot-title"${flyingTitleKeys.has(id) ? ' style="visibility:hidden"' : ""}>${escapeHtml(v.title)}</span>
             ${v.artist ? `<span class="jb-slot-artist">${escapeHtml(v.artist)}</span>` : ""}
@@ -6676,7 +6679,7 @@
         </div>
         <span class="jb-song-right jb-inpalm-right">
           <span class="jb-myreq-up-wrap"><button class="jb-slot-vote-btn jb-slot-vote-up jb-myreq-up${voteUpBtnIllumClass(song.id)}" data-vote-up="${escapeHtml(song.id)}" aria-label="${t("vote_up_aria")}" title="${t("vote_up_aria")}"><svg viewBox="0 0 12 12" width="14" height="14" aria-hidden="true"><path d="M6 1 11 5.5H1ZM6 6 11 10.5H1Z" fill="currentColor"/></svg></button></span>
-          <span class="jb-request-remaining jb-song-request-badge jb-inpalm-rank${rank <= 3 ? ` jb-inpalm-rank-${["first", "second", "third"][rank - 1]}` : ""}${t("my_req_rank", rank).length > 7 ? " jb-inpalm-rank-long" : ""}">${t("my_req_rank", rank)}</span>
+          <span class="jb-request-remaining jb-song-request-badge jb-inpalm-rank">${t("inpalm_badge")}</span>
         </span>`;
       return li;
     }
@@ -7139,7 +7142,6 @@
       // d'onsongSlug().
       li.innerHTML = `
         <a class="jb-slot-onsong-wrap jb-onsong-link" href="${onsongHref(id, v.title)}" title="Ouvrir la partition dans OnSong">
-          <span class="jb-slot-rank">${i + 1}</span>
           <span class="jb-slot-votes jb-admin-amount">${escapeHtml(formatMoney(v.requests))}</span>
           <span class="jb-slot-info">
             <span class="jb-slot-title">📄 ${escapeHtml(v.title)}</span>
