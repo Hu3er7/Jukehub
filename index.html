@@ -1561,6 +1561,52 @@
   #jb-admin .jb-admin-topbar h2::before,
   #jb-admin .jb-login h2::before { content: "// "; color: var(--accent2); }
   #jb-admin .jb-admin-section { border-top: 1px dashed var(--border); }
+  /* Chaque section du panneau admin dans son cadre néon jaune, coins biseautés fermés par leur
+     diagonale (Hubert, 26 oct. 2026). La rangée Palmarès / Boîte de suggestions : un cadre par colonne. */
+  #jb-admin .jb-admin-section:not(.jb-admin-columns),
+  #jb-admin .jb-admin-columns > .jb-admin-column {
+    position: relative; box-sizing: border-box; padding: 12px 14px 14px;
+    border: 2px solid #fff200; border-top: 2px solid #fff200;
+    background-color: rgba(40, 36, 2, 0.28);
+    -webkit-backdrop-filter: blur(2px); backdrop-filter: blur(2px);
+    box-shadow: 0 0 12px rgba(255, 242, 0, 0.25), inset 0 0 10px rgba(255, 242, 0, 0.06);
+    clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 12px 100%, 0 calc(100% - 12px));
+    background-image:
+      linear-gradient(to bottom left, transparent 50%, #fff200 50%, #fff200 calc(50% + 2px), transparent calc(50% + 2px)),
+      linear-gradient(to top right, transparent 50%, #fff200 50%, #fff200 calc(50% + 2px), transparent calc(50% + 2px));
+    background-size: 12px 12px, 12px 12px; background-position: right top, left bottom;
+    background-repeat: no-repeat; background-origin: border-box;
+  }
+  #jb-admin .jb-admin-section:not(.jb-admin-columns) { margin-top: 16px; }
+  #jb-admin .jb-admin-columns { border-top: none; padding-top: 0; margin-top: 16px; gap: 16px; }
+  #jb-admin :is(.jb-admin-section, .jb-admin-column) h3 { margin-top: 0; }
+  /* « Choix du public » en rose néon, comme chez les clients (Hubert, 26 oct. 2026) */
+  #jb-admin .jb-admin-columns > .jb-admin-column.jb-admin-public {
+    border-color: #ff3bd4; background-color: rgba(72, 10, 58, 0.28);
+    box-shadow: 0 0 12px rgba(255, 59, 212, 0.35), inset 0 0 10px rgba(255, 59, 212, 0.08);
+    background-image:
+      linear-gradient(to bottom left, transparent 50%, #ff3bd4 50%, #ff3bd4 calc(50% + 2px), transparent calc(50% + 2px)),
+      linear-gradient(to top right, transparent 50%, #ff3bd4 50%, #ff3bd4 calc(50% + 2px), transparent calc(50% + 2px));
+  }
+  #jb-admin .jb-admin-public h3 { color: #ff3bd4; text-shadow: 0 0 8px rgba(255, 59, 212, 0.6); }
+  /* « Ajouter chansons » et « Répertoire complet » en bleu néon, comme Mon répertoire chez les clients (Hubert) */
+  #jb-admin .jb-admin-section.jb-admin-blue {
+    border-color: #5af4f0; background-color: rgba(8, 52, 62, 0.28);
+    box-shadow: 0 0 12px rgba(90, 244, 240, 0.35), inset 0 0 10px rgba(90, 244, 240, 0.08);
+    background-image:
+      linear-gradient(to bottom left, transparent 50%, #5af4f0 50%, #5af4f0 calc(50% + 2px), transparent calc(50% + 2px)),
+      linear-gradient(to top right, transparent 50%, #5af4f0 50%, #5af4f0 calc(50% + 2px), transparent calc(50% + 2px));
+  }
+  #jb-admin .jb-admin-blue h3 { color: #5af4f0; text-shadow: 0 0 8px rgba(90, 244, 240, 0.6); }
+  /* « Boîte de suggestions » et « Refroidissement & Brûlées » en vert néon (Hubert) */
+  #jb-admin .jb-admin-section.jb-admin-green, #jb-admin .jb-admin-columns > .jb-admin-column.jb-admin-green {
+    border-color: #39ff7a; background-color: rgba(6, 50, 22, 0.28);
+    box-shadow: 0 0 12px rgba(57, 255, 122, 0.35), inset 0 0 10px rgba(57, 255, 122, 0.08);
+    background-image:
+      linear-gradient(to bottom left, transparent 50%, #39ff7a 50%, #39ff7a calc(50% + 2px), transparent calc(50% + 2px)),
+      linear-gradient(to top right, transparent 50%, #39ff7a 50%, #39ff7a calc(50% + 2px), transparent calc(50% + 2px));
+  }
+  #jb-admin .jb-admin-green h3, #jb-admin .jb-admin-green summary { color: #39ff7a; text-shadow: 0 0 8px rgba(57, 255, 122, 0.6); }
   #jb-admin .jb-hint, #jb-admin .jb-empty { color: var(--text-dim); font-family: 'Share Tech Mono', monospace; }
   #jb-admin input[type="text"], #jb-admin input[type="email"], #jb-admin input[type="password"], #jb-admin textarea {
     background: #121003; color: var(--accent); border: 1px solid rgba(255, 242, 0, 0.4);
@@ -3092,15 +3138,15 @@
       </section>
 
       <section class="jb-admin-section jb-admin-columns">
-        <div class="jb-admin-column">
-          <h3>🏆 Palmarès en direct</h3>
+        <div class="jb-admin-column jb-admin-public">
+          <h3>👥 Choix du public</h3>
           <ol id="jb-admin-palmares" class="jb-admin-palmares"></ol>
           <p id="jb-admin-palmares-empty" class="jb-empty" hidden>Rien pour l'instant.</p>
         </div>
         <!-- 18 oct. 2026 (Hubert) : liste repliable, et GARDÉE d'une soirée à l'autre ("Nouvelle
              soirée" n'efface que le palmarès) — Hubert y revient chez lui pour apprendre les
              suggestions au chant et à la guitare. -->
-        <details id="jb-admin-special-wrap" class="jb-admin-column jb-admin-special-wrap">
+        <details id="jb-admin-special-wrap" class="jb-admin-column jb-admin-special-wrap jb-admin-green">
           <summary><h3>💡 Boîte de suggestions <span id="jb-admin-special-count" class="jb-admin-special-count"></span></h3></summary>
           <p class="jb-hint">Recherches de clients restées sans résultat dans le répertoire. Gardées d'une soirée à l'autre — « Nouvelle soirée » ne les efface pas.</p>
           <ol id="jb-admin-special" class="jb-admin-palmares"></ol>
@@ -3109,7 +3155,7 @@
       </section>
 
       <!-- Repliée par défaut, comme la boîte de suggestions (Hubert, 26 oct. 2026) -->
-      <section class="jb-admin-section">
+      <section class="jb-admin-section jb-admin-green">
         <details class="jb-admin-special-wrap">
           <summary><h3>⏳ Refroidissement &amp; 🔥 Brûlées</h3></summary>
           <div id="jb-cooldown-list" class="jb-cooldown-list"></div>
@@ -3117,7 +3163,7 @@
         </details>
       </section>
 
-      <section class="jb-admin-section">
+      <section class="jb-admin-section jb-admin-blue">
         <h3>➕ Ajouter chansons</h3>
         <textarea id="jb-bulk-input" rows="3"></textarea>
         <div id="jb-bulk-genre-row" class="jb-genre-chip-row"></div>
@@ -3125,7 +3171,7 @@
         <p id="jb-bulk-status" class="jb-hint"></p>
       </section>
 
-      <section class="jb-admin-section">
+      <section class="jb-admin-section jb-admin-blue">
         <h3>📚 Répertoire complet (<span id="jb-admin-count">0</span>)</h3>
         <input id="jb-admin-search" type="text" placeholder="🔍 Chercher pour modifier / supprimer…" />
         <div id="jb-admin-catalog" class="jb-admin-catalog"></div>
@@ -3469,7 +3515,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-22.193";
+  const APP_BUILD = "2026-10-22.194";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
