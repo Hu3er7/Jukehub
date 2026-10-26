@@ -2053,6 +2053,21 @@
   }
   #jb-app:not(.jb-browse-only) #jb-public #jb-catalog-results #jb-back-btn:active .jb-back-inner { background-color: #5af4f0; color: #04121c; }
   #jb-app:not(.jb-browse-only) #jb-public #jb-catalog-results #jb-back-btn[hidden] { display: none; }
+  /* RETOUR sur la ligne du titre, à droite (Hubert, 26 oct. 2026) */
+  #jb-public #jb-back-btn.jb-back-in-title {
+    position: static; flex: 0 0 auto; width: auto; height: 30px; min-height: 30px; max-height: 30px; margin: 0; padding: 0;
+    border: none; border-radius: 0; clip-path: none; box-shadow: none; background: transparent;
+    display: inline-flex; align-items: center; color: #5af4f0; font-family: 'Share Tech Mono', monospace;
+    font-size: 13px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; text-shadow: none; cursor: pointer;
+  }
+  #jb-public #jb-back-btn.jb-back-in-title[hidden] { display: none; }
+  #jb-public #jb-back-btn.jb-back-in-title .jb-back-inner {
+    height: 26px; margin-top: 0; border-color: #5af4f0;
+    background:
+      linear-gradient(to bottom left, transparent 50%, #5af4f0 50%, #5af4f0 calc(50% + 2px), transparent calc(50% + 2px)) right top / 5px 5px no-repeat border-box,
+      linear-gradient(to top right, transparent 50%, #5af4f0 50%, #5af4f0 calc(50% + 2px), transparent calc(50% + 2px)) left bottom / 5px 5px no-repeat border-box;
+  }
+  #jb-public #jb-back-btn.jb-back-in-title:active .jb-back-inner { background-color: #5af4f0; color: #04121c; }
   /* Fenêtres qui s'ouvrent par-dessus (prénom, « Il te reste… », paiement) : contour plus épais (3px,
      jaune néon plein) et coins biseautés FERMÉS — la découpe des 2 coins coupait la bordure, on y
      trace la diagonale de la même couleur (Hubert, 22 oct. 2026). */
@@ -3428,7 +3443,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-22.190";
+  const APP_BUILD = "2026-10-22.191";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -5582,6 +5597,27 @@
   }
   // Ouverture du trait du haut du cadre sous l'onglet choisi (voir --gapL/--gapR en CSS) : entre les
   // 2 côtés de 3px de l'onglet, mesurés en px dans le cadre affiché
+  // RETOUR à droite, sur la ligne du titre (« // 670 CHANSONS », ou le nom de l'artiste / du genre
+  // choisi) pendant le spectacle — ça libère de la place dans le cadre (Hubert, 26 oct. 2026). En
+  // simple consultation, il reste dans l'onglet du cadre comme avant.
+  function placeBackBtn() {
+    const btn = document.getElementById("jb-back-btn");
+    if (!btn) return;
+    const titleRow = document.getElementById("jb-section-title-row");
+    const folderRow = document.querySelector("#jb-folder-title-wrap .jb-folder-title-row");
+    const list = document.getElementById("jb-catalog-list");
+    let target;
+    if (browseOnly) target = null;
+    else if (titleRow && !titleRow.hidden) target = titleRow;
+    else target = folderRow;
+    if (target) {
+      if (btn.parentElement !== target) target.appendChild(btn);
+      btn.classList.add("jb-back-in-title");
+    } else {
+      if (list && btn.nextElementSibling !== list) list.parentElement.insertBefore(btn, list);
+      btn.classList.remove("jb-back-in-title");
+    }
+  }
   function fitTabGaps() {
     document.querySelectorAll(".jb-catalog .jb-catalog-frame").forEach((fr) => {
       const tab = fr.offsetParent && fr.querySelector(".jb-tab.jb-tab-active");
@@ -6649,6 +6685,7 @@
     if (browseOnly) catalogTab = "repertoire"; // pas d'onglets en simple consultation
     renderCatalogNow();
     applyCatalogTab();
+    placeBackBtn();
     fitListsToScreen();
     animateCatalogFrame(prevH);
     // Taille du panneau d'accueil, retenue pour l'animation de RETOUR (voir jb-back-btn)
