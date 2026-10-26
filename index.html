@@ -1842,7 +1842,7 @@
        5px de vide jusqu'au trait du renfoncement (16–19px) */
     /* 26 oct. 2026 (Hubert) : l'échelle ne disparaît plus, elle se RÉDUIT à un minimum (--lmin : 2 pointes
        + 2 barreaux) quand le cadre est réduit — --lreveal 0 = minimum, 1 = taille pleine (--lh) */
-    --lmin: 32px;
+    --lmin: 74px; /* 2 pointes + 8 barreaux (agrandie 2 fois, Hubert : « trop petite ») */
     --lcur: calc(var(--lmin) + (var(--lh, 151px) - var(--lmin)) * var(--lreveal, 1));
     left: 0; width: 11px; height: var(--lcur); top: calc(var(--ft) + (100% - var(--ft) - var(--lcur)) / 2);
     background: repeating-linear-gradient(to bottom, var(--fc) 0 3px, transparent 3px 7px) 0 11px / 100% calc(var(--lcur) - 22px) no-repeat;
@@ -1860,7 +1860,8 @@
   }
   /* onglets « Tes suggestions » / « Choix du public » : échelle réduite au minimum, en douceur */
   #jb-public #jb-catalog-results .jb-catalog-frame { transition: --lreveal 0.25s cubic-bezier(0.45, 0, 0.25, 1); }
-  #jb-public #jb-catalog-results .jb-catalog-frame:is(.jb-tab-on-myreq, .jb-tab-on-public) { --lreveal: 0; }
+  /* (seulement quand l'onglet est petit : un Choix du public bien rempli, déployé, a sa flèche pleine — Hubert) */
+  #jb-public #jb-catalog-results .jb-catalog-frame:is(.jb-tab-on-myreq, .jb-tab-on-public).jb-tab-short { --lreveal: 0; }
   /* Zone tactile invisible sur l'échelle de la liste : toucher/glisser le doigt dessus fait défiler la
      liste comme une barre de défilement (Hubert, 22 oct. 2026). Plus large que l'échelle (11px) pour
      le doigt, mais s'arrête avant le texte des chansons. */
@@ -1963,7 +1964,7 @@
   #jb-public .jb-tab-ico svg { width: 10px; height: 10px; display: block; }
   #jb-public .jb-tab-label { flex: 1 1 auto; min-width: 0; white-space: pre-line; }
   #jb-public .jb-tab-num { flex: 0 0 auto; font-size: 0.72rem; opacity: 0.9; }
-  #jb-public .jb-tab-num:empty { display: none; }
+  #jb-public .jb-tab-num { display: none; } /* pas de chiffres dans les onglets (Hubert, 26 oct. 2026) */
   /* onglet choisi SOUDÉ au cadre, comme un onglet de dossier (maquette de Hubert, 26 oct. 2026) : le
      contour du cadre (3px) monte sur sa gauche, passe par-dessus (coin haut-droit biseauté) et
      redescend sur sa droite ; le trait du haut du cadre est ouvert sous lui (voir --gapL/--gapR) */
@@ -3313,7 +3314,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-22.181";
+  const APP_BUILD = "2026-10-22.182";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -5441,6 +5442,8 @@
     });
     if (resultsWasHidden && resultsFrameEl) { void resultsFrameEl.offsetWidth; resultsFrameEl.style.transition = ""; }
     fitTabGaps();
+    fitListClip();
+    fitTabShort();
   }
   // Ouverture du trait du haut du cadre sous l'onglet choisi (voir --gapL/--gapR en CSS) : entre les
   // 2 côtés de 3px de l'onglet, mesurés en px dans le cadre affiché
@@ -5453,6 +5456,32 @@
     });
   }
   window.addEventListener("resize", () => requestAnimationFrame(fitTabGaps));
+  // Découpe de la liste autour du renfoncement de l'échelle, calculée en px à partir de la vraie
+  // position du renfoncement dans le cadre : avec les onglets (haut du cadre plus haut) et RETOUR
+  // dans la liste, l'ancienne découpe en % était décalée et les traits entre les chansons
+  // dépassaient dans le renfoncement (Hubert, 26 oct. 2026).
+  // Onglet Tes suggestions / Choix du public « petit » (pas plus haut que l'accueil) : flèche au minimum ;
+  // déployé par son contenu : flèche pleine (classe .jb-tab-short, voir CSS)
+  function fitTabShort() {
+    const fr = document.querySelector("#jb-catalog-results .jb-catalog-frame");
+    if (!fr || !fr.offsetParent) return;
+    const short = catalogTab !== "repertoire" && fr.getBoundingClientRect().height <= (lastHomeFrameH || 0) + 6;
+    fr.classList.toggle("jb-tab-short", short);
+  }
+  function fitListClip() {
+    const list = document.getElementById("jb-catalog-list");
+    const frame = list && list.closest(".jb-catalog-frame");
+    if (!frame || !list.offsetParent) return;
+    const H = frame.getBoundingClientRect().height;
+    const ft = parseFloat(getComputedStyle(frame).getPropertyValue("--ft")) || 28;
+    const nh = Math.max(20, H - ft - 72) / 2;
+    const nc = ft + (H - ft) / 2;
+    const listTop = list.getBoundingClientRect().top - frame.getBoundingClientRect().top;
+    const yt = Math.round(nc - nh - 5 - listTop);  // 2px sous le trait (3px) du haut du renfoncement
+    const yb = Math.round(nc + nh + 5 - listTop);  // 2px sous le trait du bas
+    list.style.clipPath = `polygon(0 0, 100% 0, 100% calc(34% + 2px), calc(100% - 8px) calc(34% + 10px), calc(100% - 8px) 100%, ` +
+      `0 100%, 0 ${yb}px, 8px ${yb}px, 18px ${yb - 10}px, 18px ${yt + 10}px, 8px ${yt}px, 0 ${yt}px)`;
+  }
   document.querySelectorAll(".jb-tab").forEach((b) => b.addEventListener("click", () => setCatalogTab(b.dataset.tab)));
   // Compteurs des onglets : nombre de tes suggestions / de chansons au Choix du public (rien à 0)
   function updateTabCounts() {
@@ -6432,7 +6461,7 @@
     // panneau d'accueil, puis seulement 40 % de chaque pixel de hauteur en plus
     // …et jamais plus haute que le renfoncement moins 2 x 18px (renfoncement = corps - 72px, voir --nh)
     const target = Math.min(body * 0.75, 144 + Math.max(0, body - 197) * 0.4, body - 108);
-    const bars = Math.max(5, Math.floor((target - 18) / 7));
+    const bars = Math.max(8, Math.floor((target - 18) / 7)); // jamais plus petite que le minimum (--lmin : 8 barreaux)
     const lh = 18 + bars * 7;
     if (frame._jbLh !== lh) { frame._jbLh = lh; frame.style.setProperty("--lh", `${lh}px`); }
   }
@@ -6440,7 +6469,7 @@
     const frames = document.querySelectorAll("#jb-catalog-browse .jb-catalog-frame, #jb-catalog-results .jb-catalog-frame");
     frames.forEach(fitFrameLadders);
     if (window.ResizeObserver) {
-      const ro = new ResizeObserver((entries) => { entries.forEach((e) => fitFrameLadders(e.target)); fitTabGaps(); });
+      const ro = new ResizeObserver((entries) => { entries.forEach((e) => fitFrameLadders(e.target)); fitTabGaps(); fitListClip(); fitTabShort(); });
       frames.forEach((f) => ro.observe(f));
     }
   })();
