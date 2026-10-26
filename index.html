@@ -1840,11 +1840,13 @@
        exact de 7px (barreau 3px + vide 4px), pour garder le même espacement partout (Hubert) */
     /* left 0 : le bord gauche de l'échelle est aligné sur le bord extérieur du cadre (mesure de Hubert),
        5px de vide jusqu'au trait du renfoncement (16–19px) */
-    left: 0; width: 11px; height: var(--lh, 151px); top: calc(var(--ft) + (100% - var(--ft) - var(--lh, 151px)) / 2);
-    background: repeating-linear-gradient(to bottom, var(--fc) 0 3px, transparent 3px 7px) 0 11px / 100% calc(var(--lh, 151px) - 22px) no-repeat;
+    /* 26 oct. 2026 (Hubert) : l'échelle ne disparaît plus, elle se RÉDUIT à un minimum (--lmin : 2 pointes
+       + 2 barreaux) quand le cadre est réduit — --lreveal 0 = minimum, 1 = taille pleine (--lh) */
+    --lmin: 32px;
+    --lcur: calc(var(--lmin) + (var(--lh, 151px) - var(--lmin)) * var(--lreveal, 1));
+    left: 0; width: 11px; height: var(--lcur); top: calc(var(--ft) + (100% - var(--ft) - var(--lcur)) / 2);
+    background: repeating-linear-gradient(to bottom, var(--fc) 0 3px, transparent 3px 7px) 0 11px / 100% calc(var(--lcur) - 22px) no-repeat;
   }
-  #jb-public #jb-catalog-browse .jb-fd-ladder { display: none; } /* pas d'échelle sur le panneau d'accueil (Hubert) */
-  #jb-public #jb-catalog-browse .jb-pocket .jb-fd-ladder { display: block; } /* …sauf le temps de la replier (RETOUR) */
   /* Échelle de la liste : --lreveal (0 -> 1) la déploie depuis son centre, et sa partie droite est
      toujours coupée 1px avant le trait du renfoncement (--nN) : pendant que le côté s'ouvre ou se
      referme, ses barreaux ne traversent jamais le bord du cadre (Hubert, 22 oct. 2026). */
@@ -1853,9 +1855,12 @@
      renfoncement réduit (accueil), 1 = échelle déployée et renfoncement à sa taille (liste) */
   #jb-public #jb-catalog-browse .jb-catalog-frame { --lreveal: 0; }
   #jb-public #jb-catalog-browse .jb-catalog-frame.jb-pocket { --lreveal: 1; }
-  #jb-public #jb-catalog-results .jb-fd-ladder, #jb-public .jb-pocket .jb-fd-ladder {
-    clip-path: inset(calc(50% * (1 - var(--lreveal))) max(0px, calc(12px - var(--nN, 16px))) calc(50% * (1 - var(--lreveal))) 0);
+  #jb-public .jb-catalog .jb-fd-ladder {
+    clip-path: inset(0 max(0px, calc(12px - var(--nN, 16px))) 0 0);
   }
+  /* onglets « Tes suggestions » / « Choix du public » : échelle réduite au minimum, en douceur */
+  #jb-public #jb-catalog-results .jb-catalog-frame { transition: --lreveal 0.25s cubic-bezier(0.45, 0, 0.25, 1); }
+  #jb-public #jb-catalog-results .jb-catalog-frame:is(.jb-tab-on-myreq, .jb-tab-on-public) { --lreveal: 0; }
   /* Zone tactile invisible sur l'échelle de la liste : toucher/glisser le doigt dessus fait défiler la
      liste comme une barre de défilement (Hubert, 22 oct. 2026). Plus large que l'échelle (11px) pour
      le doigt, mais s'arrête avant le texte des chansons. */
@@ -1917,40 +1922,77 @@
     background-repeat: no-repeat;
     background-origin: border-box;
   }
-  /* ===== 3 onglets façon Chrome en haut du cadre du catalogue (maquette de Hubert, 26 oct. 2026) =====
-     MON RÉPERTOIRE (bleu) / TES SUGGESTIONS (rouge) / CHOIX DU PUBLIC (rose), séparés par un mince
-     trait sombre en biais. L'onglet choisi descend jusqu'au trait du haut et le cadre prend sa couleur.
+  /* ===== 3 onglets en haut du cadre du catalogue (26 oct. 2026) =====
+     MON RÉPERTOIRE (bleu) / TES SUGGESTIONS (rouge) / CHOIX DU PUBLIC (rose). Visuel « interface de
+     téléphone » (capture de Hubert) : boîtes séparées à contour fin et fond teinté, petite case
+     d'icône à gauche, texte, compteur à droite ; l'onglet choisi a un contour plein et lumineux,
+     des équerres aux coins et touche le trait du haut du cadre, qui prend sa couleur.
      Seulement pendant le spectacle : en simple consultation, l'ancien onglet (RETOUR) reste. */
   #jb-public .jb-tabbar { display: none; }
+  /* onglets moins hauts (Hubert : « squizzer un peu plus ») ; --tabcw = largeur d'un onglet, --tabi = onglet choisi */
+  #jb-app:not(.jb-browse-only) #jb-public .jb-catalog .jb-catalog-frame { --ft: 38px; --tabcw: calc((100% - 10px - 12px) / 3); --tabi: 0; }
+  #jb-app:not(.jb-browse-only) #jb-public .jb-catalog .jb-catalog-frame.jb-tab-on-myreq { --tabi: 1; }
+  #jb-app:not(.jb-browse-only) #jb-public .jb-catalog .jb-catalog-frame.jb-tab-on-public { --tabi: 2; }
+  /* la barre sous le trait du haut se place sous l'onglet choisi (Hubert) */
+  #jb-app:not(.jb-browse-only) #jb-public .jb-catalog .jb-fd-notch {
+    left: calc(var(--tabi) * (var(--tabcw) + 6px) + var(--tabcw) * 0.15); width: calc(var(--tabcw) * 0.7);
+  }
   #jb-app:not(.jb-browse-only) #jb-public .jb-catalog .jb-tabbar {
-    display: flex; position: absolute; left: 0; right: 14px; top: 0; height: calc(var(--ft) + 3px);
+    display: flex; gap: 6px; position: absolute; left: 0; right: 10px; top: 0; height: calc(var(--ft) - 6px); /* s'arrête avant le coin biseauté du cadre */
     z-index: 3; pointer-events: none;
   }
   #jb-public .jb-tab {
-    pointer-events: auto; position: relative; flex: 1 1 0; min-width: 0; height: var(--ft);
-    margin: 0 -10px 0 0; padding: 0 12px 0 17px; border: none; border-radius: 0; cursor: pointer;
-    display: flex; align-items: center; text-align: left; white-space: pre-line; overflow: hidden;
-    font-family: 'Orbitron', sans-serif; font-weight: 700; font-size: min(0.62rem, 2.6vw); line-height: 1.08; letter-spacing: 0.5px;
-    clip-path: polygon(0 0, calc(100% - 13px) 0, 100% 100%, 13px 100%);
+    --tc: #5af4f0; --tc-rgb: 90, 244, 240;
+    pointer-events: auto; position: relative; flex: 1 1 0; min-width: 0; height: 100%;
+    margin: 0; padding: 0 6px 0 5px; border: 1px solid rgba(var(--tc-rgb), 0.5); border-radius: 0; cursor: pointer;
+    display: flex; align-items: center; gap: 6px; text-align: left; overflow: hidden;
+    background-color: rgba(var(--tc-rgb), 0.07); color: var(--tc);
+    font-family: 'Share Tech Mono', monospace; font-weight: 700; font-size: min(0.68rem, 2.75vw); line-height: 1.1; letter-spacing: 0.4px;
+    text-shadow: 0 0 6px rgba(var(--tc-rgb), 0.45);
+    /* coin haut-droit coupé, fermé par sa diagonale (même couleur que le contour) */
+    clip-path: polygon(0 0, calc(100% - 9px) 0, 100% 9px, 100% 100%, 0 100%);
+    background-image: linear-gradient(to bottom left, transparent 50%, rgba(var(--tc-rgb), 0.5) 50%, rgba(var(--tc-rgb), 0.5) calc(50% + 1px), transparent calc(50% + 1px));
+    background-size: 9px 9px; background-position: right top; background-repeat: no-repeat; background-origin: border-box;
   }
-  #jb-public .jb-tab:first-child { padding-left: 9px; clip-path: polygon(0 0, calc(100% - 13px) 0, 100% 100%, 0 100%); }
-  #jb-public .jb-tab:last-child { margin-right: 0; }
-  /* couleurs pleines et vives, onglets choisis ou non (Hubert : « plus vive ») */
-  /* (mêmes teintes que le contour de chaque cadre, pour que l'onglet choisi s'y fonde sans couture) */
-  #jb-public .jb-tab-rep { background: #5af4f0; color: #021014; }
-  #jb-public .jb-tab-req { background: #ff2d55; color: #160206; }
-  #jb-public .jb-tab-pub { background: #ff3bd4; color: #1a0218; }
-  #jb-public .jb-tab.jb-tab-active { height: calc(var(--ft) + 3px); }
+  #jb-public .jb-tab-req { --tc: #ff2d55; --tc-rgb: 255, 45, 85; }
+  #jb-public .jb-tab-pub { --tc: #ff3bd4; --tc-rgb: 255, 59, 212; }
+  #jb-public .jb-tab-ico {
+    flex: 0 0 auto; width: 15px; height: 19px; display: flex; align-items: center; justify-content: center;
+    background: rgba(var(--tc-rgb), 0.22); border: 1px solid rgba(var(--tc-rgb), 0.65);
+  }
+  #jb-public .jb-tab-ico svg { width: 10px; height: 10px; display: block; }
+  #jb-public .jb-tab-label { flex: 1 1 auto; min-width: 0; white-space: pre-line; }
+  #jb-public .jb-tab-num { flex: 0 0 auto; font-size: 0.72rem; opacity: 0.9; }
+  #jb-public .jb-tab-num:empty { display: none; }
+  /* onglet choisi : contour plein, fond plus lumineux, équerres aux coins, touche le trait du cadre */
+  #jb-public .jb-tab.jb-tab-active {
+    height: calc(100% + 6px); border-color: var(--tc); border-bottom-color: transparent;
+    background-color: rgba(var(--tc-rgb), 0.16);
+    box-shadow: inset 0 0 12px rgba(var(--tc-rgb), 0.3);
+    background-image: linear-gradient(to bottom left, transparent 50%, var(--tc) 50%, var(--tc) calc(50% + 1px), transparent calc(50% + 1px));
+  }
+  #jb-public .jb-tab.jb-tab-active::before, #jb-public .jb-tab.jb-tab-active::after {
+    content: ""; position: absolute; width: 7px; height: 7px; pointer-events: none;
+    border-color: var(--tc); border-style: solid; border-width: 0;
+  }
+  #jb-public .jb-tab.jb-tab-active::before { left: 1px; top: 1px; border-left-width: 2px; border-top-width: 2px; }
+  #jb-public .jb-tab.jb-tab-active::after { right: 1px; bottom: 7px; border-right-width: 2px; border-bottom-width: 2px; }
+  #jb-public .jb-tab.jb-tab-active .jb-tab-ico { background: rgba(var(--tc-rgb), 0.4); border-color: var(--tc); }
   /* le cadre perd son ancien onglet, son rail et son étiquette ; le trait du haut part du coin */
   #jb-app:not(.jb-browse-only) #jb-public .jb-catalog .jb-fd-tabfill,
+  #jb-app:not(.jb-browse-only) #jb-public .jb-catalog .jb-fd-fillet,
   #jb-app:not(.jb-browse-only) #jb-public .jb-catalog .jb-fd-rail,
   #jb-app:not(.jb-browse-only) #jb-public .jb-catalog .jb-fd-dots,
   #jb-app:not(.jb-browse-only) #jb-public .jb-catalog .jb-catalog-frame-caps-top { display: none; }
   #jb-app:not(.jb-browse-only) #jb-public .jb-catalog .jb-fd-bodyline { left: 0; }
-  /* couleur du cadre = couleur de l'onglet choisi */
+  /* fond vitre teintée seulement sous le trait du haut (plus d'ancien onglet plein derrière les onglets) */
+  #jb-app:not(.jb-browse-only) #jb-public .jb-catalog .jb-catalog-frame::before {
+    clip-path: polygon(0 var(--ft), calc(100% - 8px) var(--ft), 100% calc(var(--ft) + 8px),
+      100% calc(100% - var(--fb)), calc(100% - var(--fb)) 100%, var(--fb) 100%, 0 calc(100% - var(--fb)));
+  }  /* couleur du cadre = couleur de l'onglet choisi */
   #jb-public .jb-catalog-frame.jb-tab-on-myreq { --fc: #ff2d55; --fbg: rgba(70, 8, 22, 0.22); --fbg-solid: #1a0409; --fglow: rgba(255, 45, 85, 0.6); }
   #jb-public .jb-catalog-frame.jb-tab-on-public { --fc: #ff3bd4; --fbg: rgba(72, 10, 58, 0.22); --fbg-solid: #1f0519; --fglow: rgba(255, 59, 212, 0.55); }
-  #jb-public .jb-catalog-frame:is(.jb-tab-on-myreq, .jb-tab-on-public) :is(.jb-fd-ladder, .jb-ladder-hit) { display: none; }
+  #jb-public .jb-catalog-frame:is(.jb-tab-on-myreq, .jb-tab-on-public) .jb-ladder-hit { display: none; }
   /* contenu des 2 autres onglets */
   #jb-public .jb-tab-panel { position: relative; padding: 2px 14px 4px 16px; }
   #jb-public .jb-tab-panel[hidden], #jb-public #jb-catalog-results #jb-catalog-list[hidden] { display: none !important; }
@@ -3258,7 +3300,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-22.179";
+  const APP_BUILD = "2026-10-22.180";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -3555,7 +3597,18 @@
     document.getElementById("jb-artist-name").textContent = t("page_title");
     document.getElementById("jb-my-votes-empty").textContent = t("my_votes_empty");
     // onglets du cadre du catalogue (2 lignes chacun, voir .jb-tab)
-    document.querySelectorAll(".jb-tab").forEach((b) => { b.textContent = t("tab_" + b.dataset.tab); });
+    // case d'icône + texte + compteur (visuel « interface de téléphone », Hubert, 26 oct. 2026)
+    const TAB_ICONS = {
+      repertoire: '<path d="M10.5 1 4 2.6v6.1a1.9 1.9 0 1 0 1.3 1.8V5l4-1v3.7a1.9 1.9 0 1 0 1.2 1.8Z"/>',
+      myreq: '<path d="M6 11 1.3 6.4A2.8 2.8 0 0 1 6 2.6a2.8 2.8 0 0 1 4.7 3.8Z"/>',
+      public: '<circle cx="4" cy="3.6" r="1.9"/><circle cx="8.6" cy="4.3" r="1.6"/><path d="M0.6 11c0-2.4 1.5-4 3.4-4s3.4 1.6 3.4 4ZM8.2 11c0-1.4-.4-2.6-1.1-3.4a2.6 2.6 0 0 1 4.3 2.4V11Z"/>',
+    };
+    document.querySelectorAll(".jb-tab").forEach((b) => {
+      const tab = b.dataset.tab;
+      b.innerHTML = `<span class="jb-tab-ico" aria-hidden="true"><svg viewBox="0 0 12 12" fill="currentColor">${TAB_ICONS[tab]}</svg></span>` +
+        `<span class="jb-tab-label">${escapeHtml(t("tab_" + tab))}</span><span class="jb-tab-num"></span>`;
+    });
+    updateTabCounts();
     document.getElementById("jb-vote-modal-btn").textContent = t("vote_modal_btn");
     // Texte de repli (voir renderCatalog(), qui pose le vrai texte dynamique "N Chansons"/
     // "N Artistes"/"N Genres" juste après tout rendu) — évite juste un flash de texte vide avant
@@ -4117,8 +4170,12 @@
   // Hubert (voir plus haut) : un "live: false" écrit manuellement par performLogout() suffit
   // maintenant, qu'il soit déclenché à la fin d'un premier spectacle ou d'un second la même
   // journée.
+  // Aperçu local seulement (localhost + « ?spectacle ») : affiche l'appli comme en spectacle pour
+  // tester les onglets, sans que Hubert soit connecté — jamais sur le vrai site (Hubert, 26 oct. 2026).
+  // Attention : les demandes faites dans cet aperçu vont quand même dans le vrai Choix du public.
+  var LOCAL_LIVE_PREVIEW = /^(localhost|127\.0\.0\.1)$/.test(location.hostname) && /[?&]spectacle\b/.test(location.search);
   function isLiveNow() {
-    return liveFlag;
+    return liveFlag || LOCAL_LIVE_PREVIEW;
   }
   // requestedRounds : songId -> le "jeton de tour" (playedAtMillis) au moment de la demande.
   // Comparé au jeton ACTUEL de la chanson : si la chanson a été rejouée depuis (nouveau jeton),
@@ -5319,6 +5376,7 @@
     listEl.querySelectorAll("[data-myreq-up]").forEach((btn) => {
       btn.addEventListener("click", () => castVote(btn.dataset.myreqUp, 1));
     });
+    updateTabCounts();
   }
   // Onglets du cadre du catalogue (maquette de Hubert, 26 oct. 2026) : "repertoire" = accueil ou
   // liste de chansons, "myreq" = Tes suggestions, "public" = Choix du public. On revient sur
@@ -5327,6 +5385,9 @@
   var catalogTabSig = "";
   function setCatalogTab(tab) {
     if (tab === catalogTab) return;
+    // hauteur actuelle du cadre Chansons/Artiste/Genre (s'il est affiché) : les onglets vides la reprennent
+    const home = document.querySelector("#jb-catalog-browse .jb-catalog-frame");
+    if (home && home.offsetParent && !home._jbMorph) lastHomeFrameH = home.getBoundingClientRect().height;
     catalogTab = tab;
     renderCatalog();
     document.querySelector(".jb-catalog").scrollIntoView({ behavior: "smooth", block: "nearest" });
@@ -5334,6 +5395,11 @@
   function applyCatalogTab() {
     const other = catalogTab !== "repertoire";
     const $ = (id) => document.getElementById(id);
+    // cadre de la liste qui réapparaît directement sur un autre onglet : l'échelle y est tout de suite
+    // à son minimum (pas de transition depuis sa taille de liste)
+    const resultsWasHidden = $("jb-catalog-results").hidden;
+    const resultsFrameEl = document.querySelector("#jb-catalog-results .jb-catalog-frame");
+    if (resultsWasHidden && resultsFrameEl) resultsFrameEl.style.transition = "none";
     if (other) {
       // les 2 autres onglets s'affichent dans le cadre de la liste
       $("jb-catalog-browse").hidden = true;
@@ -5342,6 +5408,12 @@
       $("jb-section-title-row").hidden = false;
       $("jb-style-title").textContent = t(catalogTab === "myreq" ? "tab_myreq_title" : "tab_public_title");
     }
+    // Tes suggestions / Choix du public : jamais plus petits que le cadre Chansons/Artiste/Genre
+    // (même grandeur quand ils sont vides, Hubert, 26 oct. 2026)
+    const resultsFrame = document.querySelector("#jb-catalog-results .jb-catalog-frame");
+    const homeFrame = document.querySelector("#jb-catalog-browse .jb-catalog-frame");
+    if (homeFrame && homeFrame.offsetParent && !homeFrame._jbMorph) lastHomeFrameH = homeFrame.getBoundingClientRect().height;
+    if (resultsFrame) resultsFrame.style.minHeight = other && lastHomeFrameH ? `${Math.round(lastHomeFrameH)}px` : "";
     $("jb-catalog-list").hidden = other;
     $("jb-tab-myreq").hidden = catalogTab !== "myreq";
     $("jb-tab-public").hidden = catalogTab !== "public";
@@ -5354,8 +5426,21 @@
       b.classList.toggle("jb-tab-active", on);
       b.setAttribute("aria-selected", on ? "true" : "false");
     });
+    if (resultsWasHidden && resultsFrameEl) { void resultsFrameEl.offsetWidth; resultsFrameEl.style.transition = ""; }
   }
   document.querySelectorAll(".jb-tab").forEach((b) => b.addEventListener("click", () => setCatalogTab(b.dataset.tab)));
+  // Compteurs des onglets : nombre de tes suggestions / de chansons au Choix du public (rien à 0)
+  function updateTabCounts() {
+    const counts = { myreq: 0, public: 0 };
+    try {
+      counts.myreq = myActiveRequests().length;
+      counts.public = Object.values(votes).filter((v) => !isHiddenFromPalmares(v)).length;
+    } catch (e) { /* données pas encore prêtes */ }
+    document.querySelectorAll(".jb-tab").forEach((b) => {
+      const num = b.querySelector(".jb-tab-num");
+      if (num) num.textContent = counts[b.dataset.tab] ? String(counts[b.dataset.tab]) : "";
+    });
+  }
   // Plus rien sous le cadre (26 oct. 2026) : une longue liste (Chansons, Artiste, un long Genre,
   // Choix du public) s'allonge jusqu'au bas de l'écran ; une courte garde sa taille (Hubert).
   var LIST_BOTTOM_GAP = 44; // var : renderCatalog() peut tourner avant cette ligne — bas du cadre (bordure + marge) jusqu'au bord de l'écran
@@ -5655,7 +5740,7 @@
     // site [même si je suis connecté]", puis "quand je me reconnecte, seulement les personnes qui
     // vont scanner le code qr APRÈS ma reconnexion auront accès au site". #jb-qr-gate-page reste
     // dans le DOM (cachée en permanence) plutôt que supprimée, au cas où ce choix change à nouveau.
-    const granted = live && hasQrAccess();
+    const granted = (live && hasQrAccess()) || LOCAL_LIVE_PREVIEW; // (aperçu local « ?spectacle » : toujours ouvert)
     // Consultation seulement (lien « Voir mes chansons » de la page hors spectacle) : le répertoire
     // s'affiche, mais sans demandes, sans « Tes demandes » ni palmarès (voir .jb-browse-only en CSS)
     const browsing = !granted && browseOnly;
@@ -6063,6 +6148,7 @@
     empty.hidden = ranked.length > 0;
     // Étiquette de la case vert néon : nombre de chansons au palmarès (ex. « 3 CHANSONS »)
     if (palmLabel) palmLabel.textContent = t("palm_label", ranked.length);
+    updateTabCounts();
 
     if (ranked.length === 0) {
       palmaresElByKey.forEach((el) => el.remove());
@@ -6315,7 +6401,8 @@
     // par animateCatalogFrame()) : sinon elle gagnait des barreaux par sauts de 7px à chaque image
     // pendant qu'elle se déployait — d'où l'effet saccadé signalé par Hubert.
     if (finalHeight === undefined && frame._jbMorph) return;
-    const body = (finalHeight !== undefined ? finalHeight : frame.clientHeight) - 28; // --ft
+    const ft = parseFloat(getComputedStyle(frame).getPropertyValue("--ft")) || 28;
+    const body = (finalHeight !== undefined ? finalHeight : frame.clientHeight) - ft; // --ft
     // Grandit moins vite que le cadre (Hubert : « elle s'étire un peu trop ») : ~144px pour le
     // panneau d'accueil, puis seulement 40 % de chaque pixel de hauteur en plus
     // …et jamais plus haute que le renfoncement moins 2 x 18px (renfoncement = corps - 72px, voir --nh)
@@ -6383,7 +6470,9 @@
     // en ouvrant une liste, elle se déploie depuis son centre jusqu'à ses 2 pointes.
     const newFrame = visibleCatalogFrame();
     const reduceMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (newFrame && newFrame !== prevFrame && newFrame.closest("#jb-catalog-results") && !reduceMotion) {
+    // (seulement pour une liste de « Mon répertoire » : dans Tes suggestions / Choix du public, l'échelle
+    // reste à son minimum — sinon elle grandissait puis revenait d'un coup à sa petite taille, Hubert)
+    if (newFrame && newFrame !== prevFrame && newFrame.closest("#jb-catalog-results") && catalogTab === "repertoire" && !reduceMotion) {
       const ladder = newFrame.querySelector(".jb-fd-ladder");
       if (ladder && ladder.animate) {
         // (le côté est maintenant toujours ouvert et s'allonge avec le cadre — voir --nh en CSS)
