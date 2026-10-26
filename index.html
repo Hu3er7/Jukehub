@@ -1580,7 +1580,21 @@
   /* "Nouvelle soirée" efface le palmarès : plein vert vif + lueur pour rester le plus visible */
   #jb-admin .jb-btn-danger { background: #fff200; color: #080701; box-shadow: 0 0 14px rgba(255, 242, 0, 0.45); }
   /* « Nouvelle soirée » en petit, en haut à gauche à la place du titre (Hubert, 26 oct. 2026) */
-  #jb-admin .jb-btn-danger.jb-newnight-small { width: auto; padding: 8px 14px; font-size: 0.85rem; margin: 0; }
+  /* même grosseur que « Déconnexion » (140 x 44px), et décollé de lui (Hubert) */
+  #jb-admin .jb-btn-danger.jb-newnight-small { width: 140px; min-height: 44px; padding: 12px 16px; font-size: 16px; border: 1px solid transparent; margin: 0; }
+  #jb-admin .jb-admin-topbar { gap: 16px; align-items: center; }
+  /* Reset et Déconnexion : même format (140 x 44px, contour 2px, coins biseautés FERMÉS par leur
+     diagonale — le contour fait tout le tour) et à la même hauteur (Hubert, 26 oct. 2026) */
+  #jb-admin .jb-admin-topbar > button {
+    box-sizing: border-box; width: 140px; height: 44px; min-height: 44px; margin: 0; padding: 0 12px;
+    font-size: 16px; border: 2px solid #fff200;
+    clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px));
+    background-image:
+      linear-gradient(to bottom left, transparent 50%, #fff200 50%, #fff200 calc(50% + 2px), transparent calc(50% + 2px)),
+      linear-gradient(to top right, transparent 50%, #fff200 50%, #fff200 calc(50% + 2px), transparent calc(50% + 2px));
+    background-size: 8px 8px, 8px 8px; background-position: right top, left bottom;
+    background-repeat: no-repeat; background-origin: border-box;
+  }
   #jb-admin .jb-btn-ghost { background: transparent; color: var(--accent); border: 1px solid var(--accent); }
   #jb-admin .jb-mark-played-btn { background: var(--accent); color: #080701; }
   #jb-admin .jb-mark-played-btn.jb-mark-played-armed { background: #fffaa8; color: #080701; }
@@ -2931,7 +2945,7 @@
       <!-- 26 oct. 2026 (Hubert, fenêtre admin étroite sur iPad) : plus de titre « Panneau admin » ;
            « Nouvelle soirée », en plus petit, prend sa place en haut à gauche -->
       <div class="jb-admin-topbar">
-        <button id="jb-newnight-btn" class="jb-btn-danger jb-newnight-small">🌙 Nouvelle soirée</button>
+        <button id="jb-newnight-btn" class="jb-btn-danger jb-newnight-small">Reset</button>
         <button id="jb-logout-btn" class="jb-btn-ghost">Déconnexion</button>
       </div>
 
@@ -3318,7 +3332,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-22.186";
+  const APP_BUILD = "2026-10-22.187";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
