@@ -1842,10 +1842,16 @@
        5px de vide jusqu'au trait du renfoncement (16–19px) */
     /* 26 oct. 2026 (Hubert) : l'échelle ne disparaît plus, elle se RÉDUIT à un minimum (--lmin : 2 pointes
        + 2 barreaux) quand le cadre est réduit — --lreveal 0 = minimum, 1 = taille pleine (--lh) */
-    --lmin: 74px; /* 2 pointes + 8 barreaux (agrandie 2 fois, Hubert : « trop petite ») */
-    --lcur: calc(var(--lmin) + (var(--lh, 151px) - var(--lmin)) * var(--lreveal, 1));
-    left: 0; width: 11px; height: var(--lcur); top: calc(var(--ft) + (100% - var(--ft) - var(--lcur)) / 2);
-    background: repeating-linear-gradient(to bottom, var(--fc) 0 3px, transparent 3px 7px) 0 11px / 100% calc(var(--lcur) - 22px) no-repeat;
+    /* 26 oct. 2026 (Hubert) : l'échelle REMPLIT toujours le renfoncement, à la même distance (18px) de
+       son haut et de son bas — haut ancré à --ft + 54px (le renfoncement commence à --ft + 36px) et bas à
+       54px du bas du cadre. Elle suit le cadre en continu (aussi pendant son animation) : quand il se
+       rétracte, elle reste accrochée en haut et raccourcit par le bas. Centrée dans le creux (16px) :
+       2.5px de chaque côté. Barreaux : un nombre entier, centré entre les 2 pointes (round()). */
+    left: 2.5px; width: 11px; top: calc(var(--ft) + 54px); height: max(40px, calc(100% - var(--ft) - 108px));
+    /* (repli pour les vieux navigateurs sans round()) */
+    background: repeating-linear-gradient(to bottom, var(--fc) 0 3px, transparent 3px 7px) 0 11px / 100% calc(100% - 22px) no-repeat;
+    background: repeating-linear-gradient(to bottom, var(--fc) 0 3px, transparent 3px 7px)
+      0 50% / 100% calc(round(down, calc(100% - 18px), 7px) - 4px) no-repeat;
   }
   /* Échelle de la liste : --lreveal (0 -> 1) la déploie depuis son centre, et sa partie droite est
      toujours coupée 1px avant le trait du renfoncement (--nN) : pendant que le côté s'ouvre ou se
@@ -1867,7 +1873,7 @@
      le doigt, mais s'arrête avant le texte des chansons. */
   #jb-public .jb-ladder-hit {
     position: absolute; z-index: 3; left: 0; width: 26px; touch-action: none; cursor: ns-resize;
-    top: calc(var(--ft) + (100% - var(--ft) - var(--lh, 151px)) / 2 - 8px); height: calc(var(--lh, 151px) + 16px);
+    top: calc(var(--ft) + 46px); height: max(56px, calc(100% - var(--ft) - 92px)); /* suit l'échelle (+8px en haut et en bas) */
   }
   #jb-public .jb-catalog-frame.jb-morphing .jb-ladder-hit { display: none; }
   /* pendant le glissement, l'échelle s'illumine un peu plus */
@@ -3314,7 +3320,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-22.182";
+  const APP_BUILD = "2026-10-22.183";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -6460,6 +6466,7 @@
     // Grandit moins vite que le cadre (Hubert : « elle s'étire un peu trop ») : ~144px pour le
     // panneau d'accueil, puis seulement 40 % de chaque pixel de hauteur en plus
     // …et jamais plus haute que le renfoncement moins 2 x 18px (renfoncement = corps - 72px, voir --nh)
+    // (bas : au moins 18px au-dessus du bas du renfoncement, puisque le haut est ancré 18px sous son haut)
     const target = Math.min(body * 0.75, 144 + Math.max(0, body - 197) * 0.4, body - 108);
     const bars = Math.max(8, Math.floor((target - 18) / 7)); // jamais plus petite que le minimum (--lmin : 8 barreaux)
     const lh = 18 + bars * 7;
