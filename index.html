@@ -2158,7 +2158,16 @@
   #jb-public .jb-cp-status { display: none !important; }
   #jb-public .jb-top-bar { margin-bottom: 10px; }
   /* les 3 onglets un peu plus grands (accueil Chansons/Artiste/Genre, onglets vides) */
-  #jb-app:not(.jb-browse-only) #jb-public #jb-catalog-browse .jb-catalog-frame { min-height: 285px; }
+  /* Les 3 sections ne descendent jamais plus bas que cette hauteur (Hubert, 26 oct. 2026) : cadre de
+     285px fixe, et ce qui dépasse (longue liste, Choix du public, Tes suggestions) défile À L'INTÉRIEUR */
+  #jb-app:not(.jb-browse-only) #jb-public .jb-catalog .jb-catalog-frame {
+    box-sizing: border-box; height: 285px; min-height: 285px !important; display: flex; flex-direction: column;
+  }
+  #jb-app:not(.jb-browse-only) #jb-public #jb-catalog-list { flex: 1 1 auto; min-height: 0; max-height: none; }
+  #jb-app:not(.jb-browse-only) #jb-public .jb-tab-panel:not([hidden]) { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+  #jb-app:not(.jb-browse-only) #jb-public .jb-tab-panel :is(#jb-palmares-list, #jb-my-votes-list) {
+    flex: 1 1 auto; min-height: 0; max-height: none; overflow-y: auto; -webkit-overflow-scrolling: touch;
+  }
   #jb-app:not(.jb-browse-only) #jb-public #jb-catalog-browse .jb-mode-list { padding-top: 14px; }
 
   /* ===== Chat room (maquette de Hubert, 26 oct. 2026) : boîte jaune néon sous les onglets ===== */
@@ -3419,7 +3428,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-22.188";
+  const APP_BUILD = "2026-10-22.189";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
