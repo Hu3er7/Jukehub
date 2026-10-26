@@ -1983,7 +1983,8 @@
     background-color: var(--fbg);
     background-image:
       linear-gradient(to bottom left, transparent 50%, var(--tc) 50%, var(--tc) calc(50% + 3px), transparent calc(50% + 3px)),
-      linear-gradient(to bottom, rgba(var(--tc-rgb), 0.24) 70%, rgba(var(--tc-rgb), 0.05)); /* fondu plus bas, près de la jonction (Hubert) */
+      linear-gradient(transparent, transparent);
+    /* même vitre que l'intérieur du cadre (--fbg), sans teinte de plus (Hubert, 26 oct. 2026) */
     background-size: 12px 12px, 100% 100%;
     background-position: right top, 0 0;
     -webkit-backdrop-filter: blur(2px); backdrop-filter: blur(2px);
@@ -1991,7 +1992,7 @@
   }
   #jb-public .jb-tab.jb-tab-active::after {
     content: ""; position: absolute; left: -3px; right: -3px; top: 100%; height: 6px; pointer-events: none;
-    background: linear-gradient(to bottom, rgba(var(--tc-rgb), 0.05), rgba(var(--tc-rgb), 0));
+    background: none; /* (plus de fondu : l'onglet a la même transparence que le cadre) */
   }  #jb-public .jb-tab.jb-tab-active .jb-tab-ico { background: rgba(var(--tc-rgb), 0.4); border-color: var(--tc); }
   /* trait du haut ouvert sous l'onglet choisi (bornes posées en px par applyCatalogTab()) */
   #jb-app:not(.jb-browse-only) #jb-public .jb-catalog .jb-fd-bodyline {
@@ -3320,7 +3321,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-22.183";
+  const APP_BUILD = "2026-10-22.184";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
