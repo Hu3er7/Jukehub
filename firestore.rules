@@ -23,23 +23,39 @@ service cloud.firestore {
     match /votes/{songId} {
       allow read: if true;
 
-      // Première demande de la soirée : création à 0 $, sans prénoms, rien d'autre.
+      // 26 oct. 2026 : "askedBy" = noms d'utilisateur des clients qui ont demandé la chanson (affichés
+      // dans « Choix du public »). Un nom = texte de 1 à 15 caractères.
+      function oneName(list) {
+        return list is list && list.size() == 1 && list[0] is string && list[0].size() > 0 && list[0].size() <= 15;
+      }
+
+      // Première demande de la soirée : création à 0 $, avec le nom de qui la demande.
       allow create: if isAdmin() || (
-        request.resource.data.keys().hasOnly(['requests', 'burned', 'title', 'artist', 'createdAt']) &&
+        request.resource.data.keys().hasOnly(['requests', 'burned', 'title', 'artist', 'createdAt', 'askedBy']) &&
         request.resource.data.requests == 0 &&
         request.resource.data.burned == false &&
         request.resource.data.title is string &&
-        request.resource.data.title.size() <= 200
+        request.resource.data.title.size() <= 200 &&
+        (!('askedBy' in request.resource.data) || oneName(request.resource.data.askedBy))
       );
 
-      // Réactivation d'une chanson « éteinte » (déjà jouée, revenue à 0 $) par une nouvelle demande :
-      // seulement "createdAt" et "playedAt" (effacé), jamais le montant ni les prénoms.
       allow update: if isAdmin() || (
+        // Réactivation d'une chanson « éteinte » (déjà jouée, revenue à 0 $) par une nouvelle demande :
+        // "createdAt", "playedAt" (effacé) et "askedBy" (repart avec ce seul nom), jamais le montant.
         resource.data.get('burned', false) == false &&
         resource.data.requests == 0 &&
         resource.data.get('playedAt', null) != null &&
-        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['createdAt', 'playedAt']) &&
-        request.resource.data.playedAt == null
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['createdAt', 'playedAt', 'askedBy']) &&
+        request.resource.data.playedAt == null &&
+        (!('askedBy' in request.resource.data) || oneName(request.resource.data.askedBy))
+      ) || (
+        // Une autre personne demande une chanson déjà là : on AJOUTE seulement son nom à la liste.
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['askedBy']) &&
+        request.resource.data.askedBy is list &&
+        request.resource.data.askedBy.size() <= 40 &&
+        request.resource.data.askedBy.size() == resource.data.get('askedBy', []).size() + 1 &&
+        request.resource.data.askedBy.hasAll(resource.data.get('askedBy', [])) &&
+        oneName(request.resource.data.askedBy.removeAll(resource.data.get('askedBy', [])))
       );
 
       allow delete: if isAdmin();

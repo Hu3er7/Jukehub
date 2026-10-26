@@ -576,6 +576,9 @@
   #jb-app .jb-name-prompt-lang { position: absolute; top: 14px; right: 14px; display: flex; gap: 6px; }
   #jb-app .jb-name-prompt-lang .jb-lang-btn { padding: 4px 9px; font-size: 0.68rem; }
   #jb-app .jb-name-prompt-card input[type="text"] { width: 100%; box-sizing: border-box; margin: 0; }
+  /* nom vide : le champ tremble (le nom est obligatoire, 26 oct. 2026) */
+  #jb-app .jb-input-shake { animation: jb-input-shake 0.35s; border-color: #ff2d55 !important; }
+  @keyframes jb-input-shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
   #jb-app .jb-name-prompt-actions { display: flex; gap: 10px; margin-top: 12px; }
   #jb-app .jb-name-prompt-actions button { flex: 1; width: auto; }
   /* Bouton "Passer" de la fenêtre "donne-toi un nom" (voir ensureClientName()). */
@@ -3203,11 +3206,12 @@
   function getClientName() {
     return (safeSessionStorageGet("jb_client_name") || "").trim().slice(0, 15);
   }
+  // 26 oct. 2026 (Hubert) : le nom d'utilisateur devient OBLIGATOIRE pour demander une chanson ou
+  // donner — « Annuler » annule l'action (ensureClientName() rend alors ""), un nom vide ne passe pas.
   let clientNamePromptPromise = null;
   function ensureClientName() {
     const existing = getClientName();
     if (existing) return Promise.resolve(existing);
-    if (safeSessionStorageGet("jb_client_name_asked")) return Promise.resolve("");
     if (clientNamePromptPromise) return clientNamePromptPromise;
     clientNamePromptPromise = new Promise((resolve) => {
       const wrap = document.getElementById("jb-name-prompt");
@@ -3233,7 +3237,11 @@
         resolve(name);
       }
       function onSkip() { finish(""); }
-      function onConfirm() { finish(input.value.trim().slice(0, 15)); }
+      function onConfirm() {
+        const name = input.value.trim().slice(0, 15);
+        if (!name) { input.focus(); input.classList.remove("jb-input-shake"); void input.offsetWidth; input.classList.add("jb-input-shake"); return; }
+        finish(name);
+      }
       function onKeydown(e) { if (e.key === "Enter") onConfirm(); }
       skipBtn.addEventListener("click", onSkip);
       confirmBtn.addEventListener("click", onConfirm);
@@ -3250,7 +3258,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-22.176";
+  const APP_BUILD = "2026-10-22.177";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -3398,9 +3406,9 @@
       special_request_btn: "💡 Suggérer cette chanson",
       special_request_sent_toast: "💡 Merci pour la suggestion !",
       name_prompt_title: "Nom d'utilisateur",
-      name_prompt_text: "Ça l'apparaitra dans le palmarès (Facultatif).",
+      name_prompt_text: "Obligatoire : il apparaîtra à côté de ta chanson dans « Choix du public ».",
       name_prompt_placeholder: "Nom",
-      name_prompt_skip: "Passer",
+      name_prompt_skip: "Annuler",
       name_prompt_confirm: "Confirmer",
       burned_badge: "🔥❌ Brûlée",
       cooldown_played_label: "Déjà Jouée",
@@ -3487,9 +3495,9 @@
       special_request_btn: "💡 Suggest this song",
       special_request_sent_toast: "💡 Thanks for the suggestion!",
       name_prompt_title: "Username",
-      name_prompt_text: "It'll show up on the leaderboard (Optional).",
+      name_prompt_text: "Required: it will show next to your song in Crowd picks.",
       name_prompt_placeholder: "Name",
-      name_prompt_skip: "Skip",
+      name_prompt_skip: "Cancel",
       name_prompt_confirm: "Confirm",
       burned_badge: "🔥❌ Unavailable",
       cooldown_played_label: "Already Played",
@@ -5591,7 +5599,7 @@
     if (delta < 0) return;
     // Prénom facultatif (affiché sous la chanson dans le palmarès) : demandé AVANT d'ouvrir la
     // fenêtre de paiement, qui passerait sinon par-dessus la fenêtre du prénom.
-    await ensureClientName();
+    if (!(await ensureClientName())) return; // nom obligatoire (Annuler = pas de paiement)
     showPayModal(id);
   }
 
@@ -5988,21 +5996,27 @@
   // les prénoms des 3 clients ayant mis le plus de votes (boosts + demande initiale confondus)
   // sur cette chanson, du plus contributeur au moins. Rien du tout si personne n'a laissé son
   // prénom (voters vide ou absent — champ resté facultatif).
-  function renderVotersLine(voters, forceAmounts = false) {
-    if (!voters || typeof voters !== "object") return "";
-    // 19 oct. 2026 (paiements) : "voters" = montant payé par chaque prénom, en cents. Les 3 plus gros
-    // contributeurs en premier ; leur montant seulement si Hubert affiche les montants (ou dans
-    // son admin, forceAmounts).
-    const names = Object.keys(voters)
-      .filter((k) => (voters[k] || 0) > 0)
-      .sort((a, b) => (voters[b] || 0) - (voters[a] || 0))
-      .slice(0, 3);
-    if (!names.length) return "";
+  function renderVotersLine(voters, forceAmounts = false, askedBy = []) {
+    // 26 oct. 2026 (Hubert) : le nom d'utilisateur de chaque client qui a demandé la chanson
+    // apparaît TOUJOURS (askedBy, dans l'ordre des demandes), même à 0 $ ; puis les autres donateurs.
+    // 19 oct. 2026 (paiements) : "voters" = montant payé par chaque prénom, en cents ; le montant
+    // seulement si Hubert affiche les montants (ou dans son admin, forceAmounts).
+    const paid = voters && typeof voters === "object" ? voters : {};
+    const asked = (Array.isArray(askedBy) ? askedBy : []).filter((n) => typeof n === "string" && n.trim());
+    const askedKeys = new Set(asked.map(sanitizeVoterKey));
+    const donors = Object.keys(paid)
+      .filter((k) => (paid[k] || 0) > 0 && !askedKeys.has(k))
+      .sort((a, b) => (paid[b] || 0) - (paid[a] || 0));
+    const all = [...asked.map((n) => [n, paid[sanitizeVoterKey(n)] || 0]), ...donors.map((k) => [k, paid[k]])];
+    if (!all.length) return "";
+    const MAX_NAMES = 4;
+    const shown = all.slice(0, MAX_NAMES);
+    const more = all.length - shown.length;
     const withAmounts = forceAmounts || showAmounts;
-    return `<span class="jb-slot-voters">${names.map((n) => {
-      const amount = withAmounts ? ` <span class="jb-voter-delta jb-voter-delta-up">${formatMoney(voters[n])}</span>` : "";
+    return `<span class="jb-slot-voters">${shown.map(([n, cents]) => {
+      const amount = withAmounts && cents > 0 ? ` <span class="jb-voter-delta jb-voter-delta-up">${formatMoney(cents)}</span>` : "";
       return `${escapeHtml(n)}${amount}`;
-    }).join(" · ")}</span>`;
+    }).join(" · ")}${more > 0 ? ` · +${more}` : ""}</span>`;
   }
 
   // ---------- Montants (paiements Stripe, 19 oct. 2026) ----------
@@ -6103,7 +6117,7 @@
             <span class="jb-slot-title"${flyingTitleKeys.has(id) ? ' style="visibility:hidden"' : ""}>${escapeHtml(v.title)}</span>
             ${v.artist ? `<span class="jb-slot-artist">${escapeHtml(v.artist)}</span>` : ""}
           </span>
-          ${renderVotersLine(v.voters)}
+          ${renderVotersLine(v.voters, false, v.askedBy)}
         </span>
         ${amountHtml(id, v.requests)}`;
       // 21 oct. 2026 (Hubert) : plus de barre de popularité ; le montant (s'il y en a un) passe au
@@ -6777,7 +6791,8 @@
       showInfoModal("req_limit_title", "req_limit_back");
       return;
     }
-    await ensureClientName();
+    const myName = await ensureClientName();
+    if (!myName) return; // nom obligatoire (Annuler = pas de demande)
     const staySameList = currentResultsCount() > 1;
     // Si la chanson est actuellement "éteinte" (voir isDormant() plus haut), cette demande va la
     // réactiver plus bas (optimiste ET côté serveur) en effaçant son "playedAt" — son "jeton de
@@ -6836,6 +6851,7 @@
         title: song.title,
         artist: song.artist || "",
         createdAt: { seconds: Math.floor(Date.now() / 1000) },
+        askedBy: [myName],
       };
       renderPalmares();
     } else if (wasDormant) {
@@ -6844,7 +6860,11 @@
       // sans ça, elle resterait invisible du palmarès de CE client jusqu'à ce que l'écouteur
       // onSnapshot(collection(db, "votes")) relivre un nouvel instantané confirmé par le serveur —
       // même raison que le correctif précédent plus haut (listener parfois lent, Safari).
-      votes[song.id] = { ...votes[song.id], requests: 0, playedAt: null, createdAt: { seconds: Math.floor(Date.now() / 1000) } };
+      votes[song.id] = { ...votes[song.id], requests: 0, playedAt: null, createdAt: { seconds: Math.floor(Date.now() / 1000) }, askedBy: [myName] };
+      renderPalmares();
+    } else if (!(votes[song.id].askedBy || []).includes(myName)) {
+      // déjà au « Choix du public » : on ajoute ce nom à ceux qui l'ont demandée
+      votes[song.id] = { ...votes[song.id], askedBy: [...(votes[song.id].askedBy || []), myName] };
       renderPalmares();
     }
     renderMyVotes(); // la chanson apparaît tout de suite dans "// Tes demandes", sans attendre Firestore
@@ -6918,11 +6938,16 @@
             title: song.title,
             artist: song.artist || "",
             createdAt: serverTimestamp(),
+            askedBy: [myName], // nom d'utilisateur de qui l'a demandée (26 oct. 2026, Hubert)
           });
         } else if (isDormant(snap.data())) {
           // Chanson "éteinte" (voir le commentaire ci-dessus) : cette nouvelle demande la relance
-          // comme une toute nouvelle entrée du palmarès, à 0 vote.
-          tx.update(ref, { createdAt: serverTimestamp(), playedAt: null });
+          // comme une toute nouvelle entrée du palmarès, à 0 vote — et repart avec ce seul nom.
+          tx.update(ref, { createdAt: serverTimestamp(), playedAt: null, askedBy: [myName] });
+        } else {
+          // Déjà au « Choix du public » : on ajoute ce nom à ceux qui l'ont demandée (s'il n'y est pas)
+          const askedBy = snap.data().askedBy || [];
+          if (!askedBy.includes(myName) && askedBy.length < 40) tx.update(ref, { askedBy: [...askedBy, myName] });
         }
         // Sinon (déjà activement au palmarès ce soir, demandée par ce client ou par un autre avant
         // lui, ou encore en refroidissement/brûlée) : rien à faire ici, voir le commentaire
@@ -7119,7 +7144,7 @@
           <span class="jb-slot-info">
             <span class="jb-slot-title">📄 ${escapeHtml(v.title)}</span>
             ${v.artist ? `<span class="jb-slot-artist">${escapeHtml(v.artist)}</span>` : ""}
-            ${renderVotersLine(v.voters, true)}
+            ${renderVotersLine(v.voters, true, v.askedBy)}
           </span>
         </a>
         <button class="jb-mark-played-btn${isMarkPlayedArmed(id) ? " jb-mark-played-armed" : ""}" data-played="${id}">${isMarkPlayedArmed(id) ? "❓ Confirmer ?" : "✅ Jouée"}</button>`;
