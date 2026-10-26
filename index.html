@@ -3258,7 +3258,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-22.178";
+  const APP_BUILD = "2026-10-22.179";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -6035,7 +6035,7 @@
   function amountHtml(id, cents, force = false, showZero = false) {
     if (!force && !showAmounts) return "";
     // Rien du tout à 0 $ (20 oct. 2026, Hubert : "si il y a 0 $, affiche rien") — sauf dans
-    // « Tes demandes », où le client voit « 0 $ » à côté de sa demande (Hubert, 25 oct. 2026)
+    // « Tes demandes » et « Choix du public », où le client voit « 0 $ » (Hubert, 25-26 oct. 2026)
     if (!(cents > 0) && !showZero) return "";
     return `<span class="jb-slot-votes-wrap"><span class="jb-slot-votes${voteIllumClass(id)}">${escapeHtml(formatMoney(cents))}</span></span>`;
   }
@@ -6122,7 +6122,7 @@
           </span>
           ${renderVotersLine(v.voters, false, v.askedBy)}
         </span>
-        ${amountHtml(id, v.requests)}`;
+        ${amountHtml(id, v.requests, false, true)}`; /* « 0 $ » affiché aussi (Hubert, 26 oct. 2026) */
       // 21 oct. 2026 (Hubert) : plus de barre de popularité ; le montant (s'il y en a un) passe au
       // bout de la ligne, centré comme le bouton ▲ (barPct n'est plus affiché).
     });
