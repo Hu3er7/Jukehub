@@ -843,7 +843,8 @@
       0 2px 16px 2px rgba(255, 45, 77, 0.55);
   }
   #jb-public #jb-catalog-list {
-    max-height: 48vh;
+    /* longue liste : jusqu'au bas de l'écran (--jb-list-max, voir fitListsToScreen()) ; courte : sa taille */
+    max-height: var(--jb-list-max, 48vh);
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
     /* Rouge flash demandé par Hubert (var(--danger), déjà utilisé ailleurs dans le thème pour
@@ -1898,7 +1899,7 @@
     display: flex; align-items: center; justify-content: center; pointer-events: none; white-space: nowrap;
     color: var(--fbg-solid); font-family: 'Share Tech Mono', monospace; font-size: 0.95rem; font-weight: 700; letter-spacing: 1.5px;
   }
-  #jb-public .jb-myreq-frame .jb-empty, #jb-public .jb-palm-frame .jb-empty { margin: 4px 0 10px; }
+  #jb-public :is(.jb-myreq-frame, .jb-tab-myreq) .jb-empty, #jb-public :is(.jb-palm-frame, .jb-tab-public) .jb-empty { margin: 4px 0 10px; }
 
   /* Bouton « RETOUR » : les 2 coins biseautés n'avaient pas de trait (la découpe coupait la bordure).
      On trace la diagonale de chaque coin coupé, de la même couleur que la bordure (Hubert). */
@@ -1913,36 +1914,63 @@
     background-repeat: no-repeat;
     background-origin: border-box;
   }
-  /* Onglets du cadre de la liste, façon Chrome (maquette de Hubert, 25 oct. 2026) : l'onglet rouge
-     « DEMANDES n/5 » est rangé derrière l'onglet bleu (RETOUR), son bord gauche suit la pente de
-     l'onglet bleu avec un mince trait sombre entre les deux. Appuyé, il passe devant : le cadre
-     devient rouge et affiche « Tes demandes » (l'onglet bleu reste bleu, derrière). */
-  #jb-public #jb-catalog-results .jb-myreq-tab {
-    position: absolute; z-index: 3; top: 0; left: calc(var(--tabw) + 3px);
-    height: var(--ft); padding: 0 22px 0 24px; border: none; border-radius: 0; cursor: pointer;
-    display: flex; align-items: center; white-space: nowrap;
-    background: #ff2d55; color: #1a0409;
-    font-family: 'Share Tech Mono', monospace; font-size: 0.95rem; font-weight: 700; letter-spacing: 1.5px;
+  /* ===== 3 onglets façon Chrome en haut du cadre du catalogue (maquette de Hubert, 26 oct. 2026) =====
+     MON RÉPERTOIRE (bleu) / TES SUGGESTIONS (rouge) / CHOIX DU PUBLIC (rose), séparés par un mince
+     trait sombre en biais. L'onglet choisi descend jusqu'au trait du haut et le cadre prend sa couleur.
+     Seulement pendant le spectacle : en simple consultation, l'ancien onglet (RETOUR) reste. */
+  #jb-public .jb-tabbar { display: none; }
+  #jb-app:not(.jb-browse-only) #jb-public .jb-catalog .jb-tabbar {
+    display: flex; position: absolute; left: 0; right: 14px; top: 0; height: calc(var(--ft) + 3px);
+    z-index: 3; pointer-events: none;
+  }
+  #jb-public .jb-tab {
+    pointer-events: auto; position: relative; flex: 1 1 0; min-width: 0; height: var(--ft);
+    margin: 0 -10px 0 0; padding: 0 12px 0 17px; border: none; border-radius: 0; cursor: pointer;
+    display: flex; align-items: center; text-align: left; white-space: pre-line; overflow: hidden;
+    font-family: 'Orbitron', sans-serif; font-weight: 700; font-size: min(0.62rem, 2.6vw); line-height: 1.08; letter-spacing: 0.5px;
     clip-path: polygon(0 0, calc(100% - 13px) 0, 100% 100%, 13px 100%);
-    filter: brightness(0.82);
   }
-  #jb-public #jb-catalog-results .jb-myreq-tab[hidden], #jb-app.jb-browse-only #jb-catalog-results .jb-myreq-tab { display: none; }
-  #jb-public #jb-catalog-results .jb-catalog-frame.jb-tab-on-myreq .jb-myreq-tab {
-    left: calc(var(--tabw) - 9px); height: calc(var(--ft) + 3px); padding-left: 36px; filter: none;
-    clip-path: polygon(0 0, calc(100% - 13px) 0, 100% 100%, 15px 100%);
+  #jb-public .jb-tab:first-child { padding-left: 9px; clip-path: polygon(0 0, calc(100% - 13px) 0, 100% 100%, 0 100%); }
+  #jb-public .jb-tab:last-child { margin-right: 0; }
+  /* couleurs pleines et vives, onglets choisis ou non (Hubert : « plus vive ») */
+  /* (mêmes teintes que le contour de chaque cadre, pour que l'onglet choisi s'y fonde sans couture) */
+  #jb-public .jb-tab-rep { background: #5af4f0; color: #021014; }
+  #jb-public .jb-tab-req { background: #ff2d55; color: #160206; }
+  #jb-public .jb-tab-pub { background: #ff3bd4; color: #1a0218; }
+  #jb-public .jb-tab.jb-tab-active { height: calc(var(--ft) + 3px); }
+  /* le cadre perd son ancien onglet, son rail et son étiquette ; le trait du haut part du coin */
+  #jb-app:not(.jb-browse-only) #jb-public .jb-catalog .jb-fd-tabfill,
+  #jb-app:not(.jb-browse-only) #jb-public .jb-catalog .jb-fd-rail,
+  #jb-app:not(.jb-browse-only) #jb-public .jb-catalog .jb-fd-dots,
+  #jb-app:not(.jb-browse-only) #jb-public .jb-catalog .jb-catalog-frame-caps-top { display: none; }
+  #jb-app:not(.jb-browse-only) #jb-public .jb-catalog .jb-fd-bodyline { left: 0; }
+  /* couleur du cadre = couleur de l'onglet choisi */
+  #jb-public .jb-catalog-frame.jb-tab-on-myreq { --fc: #ff2d55; --fbg: rgba(70, 8, 22, 0.22); --fbg-solid: #1a0409; --fglow: rgba(255, 45, 85, 0.6); }
+  #jb-public .jb-catalog-frame.jb-tab-on-public { --fc: #ff3bd4; --fbg: rgba(72, 10, 58, 0.22); --fbg-solid: #1f0519; --fglow: rgba(255, 59, 212, 0.55); }
+  #jb-public .jb-catalog-frame:is(.jb-tab-on-myreq, .jb-tab-on-public) :is(.jb-fd-ladder, .jb-ladder-hit) { display: none; }
+  /* contenu des 2 autres onglets */
+  #jb-public .jb-tab-panel { position: relative; padding: 2px 14px 4px 16px; }
+  #jb-public .jb-tab-panel[hidden], #jb-public #jb-catalog-results #jb-catalog-list[hidden] { display: none !important; }
+  #jb-public .jb-tab-panel-head {
+    display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 4px 10px; margin: 2px 0 6px;
   }
-  #jb-public #jb-catalog-results .jb-catalog-frame.jb-tab-on-myreq {
-    --fc: #ff2d55; --fbg: rgba(70, 8, 22, 0.22); --fbg-solid: #1a0409; --fglow: rgba(255, 45, 85, 0.6);
+  #jb-public .jb-tab-count { font-family: 'Share Tech Mono', monospace; font-weight: 700; font-size: 0.8rem; letter-spacing: 1.5px; color: var(--fc); }
+  #jb-public .jb-tab-panel .jb-empty { margin: 6px 0 10px; }
+  /* « Choix du public » : défile dans le cadre, qui s'allonge au plus jusqu'au bas de l'écran */
+  #jb-public .jb-tab-public #jb-palmares-list { max-height: var(--jb-public-max, 60vh); overflow-y: auto; -webkit-overflow-scrolling: touch; }
+  /* RETOUR pendant le spectacle : petit bouton en haut de la liste, sous les onglets */
+  #jb-app:not(.jb-browse-only) #jb-public #jb-catalog-results #jb-back-btn {
+    position: relative; left: auto; top: auto; width: auto; height: 30px; min-height: 30px; max-height: 30px;
+    margin: 0 0 6px 26px; color: #5af4f0; font-size: 13px; letter-spacing: 2px; justify-content: flex-start;
   }
-  #jb-public #jb-catalog-results .jb-catalog-frame.jb-tab-on-myreq .jb-fd-tabfill { background: #5af4f0; }
-  #jb-public #jb-catalog-results .jb-catalog-frame.jb-tab-on-myreq .jb-fd-ladder,
-  #jb-public #jb-catalog-results .jb-catalog-frame.jb-tab-on-myreq .jb-ladder-hit { display: none; }
-  #jb-public #jb-catalog-results .jb-tab-myreq { position: relative; padding: 2px 15px 4px 29px; }
-  #jb-public #jb-catalog-results .jb-tab-myreq[hidden], #jb-public #jb-catalog-results #jb-catalog-list[hidden] { display: none !important; }
-  #jb-public .jb-tab-myreq .jb-empty { margin: 8px 0 12px; }
-  #jb-public .jb-tab-myreq .jb-myreq-up { width: 31px; height: 31px; }
-  #jb-public .jb-tab-myreq .jb-myreq-up svg { width: 14px; height: 14px; }
-  #jb-public .jb-tab-myreq .jb-myreq-row:last-child { border-bottom: none; }
+  #jb-app:not(.jb-browse-only) #jb-public #jb-catalog-results #jb-back-btn .jb-back-inner {
+    height: 26px; margin-top: 0; border-color: #5af4f0;
+    background:
+      linear-gradient(to bottom left, transparent 50%, #5af4f0 50%, #5af4f0 calc(50% + 2px), transparent calc(50% + 2px)) right top / 5px 5px no-repeat border-box,
+      linear-gradient(to top right, transparent 50%, #5af4f0 50%, #5af4f0 calc(50% + 2px), transparent calc(50% + 2px)) left bottom / 5px 5px no-repeat border-box;
+  }
+  #jb-app:not(.jb-browse-only) #jb-public #jb-catalog-results #jb-back-btn:active .jb-back-inner { background-color: #5af4f0; color: #04121c; }
+  #jb-app:not(.jb-browse-only) #jb-public #jb-catalog-results #jb-back-btn[hidden] { display: none; }
   /* Fenêtres qui s'ouvrent par-dessus (prénom, « Il te reste… », paiement) : contour plus épais (3px,
      jaune néon plein) et coins biseautés FERMÉS — la découpe des 2 coins coupait la bordure, on y
      trace la diagonale de la même couleur (Hubert, 22 oct. 2026). */
@@ -2056,14 +2084,14 @@
   }
   /* Palmarès : bouton ▲ centré sur les 3 lignes (rang, titre, artiste) — marges égales en haut et
      en bas (avant, seule la marge du haut le décalait vers le bas) */
-  #jb-public .jb-palm-frame .jb-slot { align-items: center; }
-  #jb-public .jb-palm-frame .jb-myreq-up-wrap { margin: 5px 8px 5px 6px; align-self: center; }
-  #jb-public .jb-palm-frame .jb-slot > .jb-slot-votes-wrap { min-width: 0; margin-left: 8px; }
+  #jb-public :is(.jb-palm-frame, .jb-tab-public) .jb-slot { align-items: center; }
+  #jb-public :is(.jb-palm-frame, .jb-tab-public) .jb-myreq-up-wrap { margin: 5px 8px 5px 6px; align-self: center; }
+  #jb-public :is(.jb-palm-frame, .jb-tab-public) .jb-slot > .jb-slot-votes-wrap { min-width: 0; margin-left: 8px; }
   /* Boutons ▲ un peu plus grands dans ces 2 sections que dans la sélection (Hubert) */
-  #jb-public .jb-myreq-frame .jb-myreq-up, #jb-public .jb-palm-frame .jb-myreq-up { width: 31px; height: 31px; }
-  #jb-public .jb-myreq-frame .jb-myreq-up svg, #jb-public .jb-palm-frame .jb-myreq-up svg { width: 14px; height: 14px; }
+  #jb-public :is(.jb-myreq-frame, .jb-tab-myreq) .jb-myreq-up, #jb-public :is(.jb-palm-frame, .jb-tab-public) .jb-myreq-up { width: 31px; height: 31px; }
+  #jb-public :is(.jb-myreq-frame, .jb-tab-myreq) .jb-myreq-up svg, #jb-public :is(.jb-palm-frame, .jb-tab-public) .jb-myreq-up svg { width: 14px; height: 14px; }
   /* Dernière ligne sans trait pointillé (le bas de la boîte sert de séparateur) */
-  #jb-public .jb-myreq-frame .jb-myreq-row:last-child { border-bottom: none; }  #jb-public .jb-palm-frame .jb-slot:last-child { border-bottom: none; }
+  #jb-public :is(.jb-myreq-frame, .jb-tab-myreq) .jb-myreq-row:last-child { border-bottom: none; }  #jb-public :is(.jb-palm-frame, .jb-tab-public) .jb-slot:last-child { border-bottom: none; }
 </style>
 
 <div id="jb-app">
@@ -2643,6 +2671,14 @@
              néon rouges — voir .jb-catalog-frame, réutilisé tel quel ici). -->
         <div class="jb-catalog-frame">
           <div class="jb-frame-deco" aria-hidden="true"><i class="jb-fd-ring"></i><i class="jb-fd-tabfill"></i><i class="jb-fd-fillet"></i><i class="jb-fd-bodyline"></i><i class="jb-fd-rail"></i><i class="jb-fd-dots"></i><i class="jb-fd-notch"></i><i class="jb-fd-ladder"></i><i class="jb-fd-accent"></i></div>
+          <!-- 3 onglets façon Chrome (maquette de Hubert, 26 oct. 2026) : Mon répertoire / Tes suggestions /
+               Choix du public — remplacent les sections « Tes demandes » et « Palmarès » plus bas (voir
+               setCatalogTab()). Cachés en simple consultation (page hors spectacle). -->
+          <div class="jb-tabbar" role="tablist">
+            <button type="button" class="jb-tab jb-tab-rep" data-tab="repertoire" role="tab"></button>
+            <button type="button" class="jb-tab jb-tab-req" data-tab="myreq" role="tab"></button>
+            <button type="button" class="jb-tab jb-tab-pub" data-tab="public" role="tab"></button>
+          </div>
           <div class="jb-catalog-frame-caps jb-catalog-frame-caps-top" aria-hidden="true">
             <span class="jb-catalog-frame-cap jb-catalog-frame-cap-lg"></span>
             <span class="jb-catalog-frame-cap"></span>
@@ -2672,6 +2708,14 @@
              et posées par-dessus le contour de #jb-catalog-list, en haut et en bas. -->
         <div class="jb-catalog-frame">
           <div class="jb-frame-deco" aria-hidden="true"><i class="jb-fd-ring"></i><i class="jb-fd-tabfill"></i><i class="jb-fd-fillet"></i><i class="jb-fd-bodyline"></i><i class="jb-fd-rail"></i><i class="jb-fd-dots"></i><i class="jb-fd-notch"></i><i class="jb-fd-ladder"></i><i class="jb-fd-accent"></i></div>
+          <!-- 3 onglets façon Chrome (maquette de Hubert, 26 oct. 2026) : Mon répertoire / Tes suggestions /
+               Choix du public — remplacent les sections « Tes demandes » et « Palmarès » plus bas (voir
+               setCatalogTab()). Cachés en simple consultation (page hors spectacle). -->
+          <div class="jb-tabbar" role="tablist">
+            <button type="button" class="jb-tab jb-tab-rep" data-tab="repertoire" role="tab"></button>
+            <button type="button" class="jb-tab jb-tab-req" data-tab="myreq" role="tab"></button>
+            <button type="button" class="jb-tab jb-tab-pub" data-tab="public" role="tab"></button>
+          </div>
           <div class="jb-ladder-hit" aria-hidden="true"></div>
           <div class="jb-catalog-frame-caps jb-catalog-frame-caps-top" aria-hidden="true">
             <span class="jb-catalog-frame-cap jb-catalog-frame-cap-lg"></span>
@@ -2679,16 +2723,21 @@
             <span class="jb-catalog-frame-cap"></span>
             <span class="jb-catalog-frame-cap"></span>
           </div>
-          <!-- RETOUR dans l'onglet du cadre, à la place de « HU3ER7-670 » (Hubert, 22 oct. 2026) : la
-               barre de recherche garde toujours la même largeur -->
-          <!-- Onglet rouge « DEMANDES n/5 » derrière RETOUR, comme les onglets de Chrome (maquette de
-               Hubert, 25 oct. 2026) : il bascule le cadre sur « Tes demandes » ; RETOUR ramène la liste -->
-          <button id="jb-myreq-tab" class="jb-myreq-tab" type="button" hidden></button>
+          <!-- RETOUR : dans l'onglet du cadre en simple consultation (22 oct. 2026) ; pendant le spectacle,
+               petit bouton en haut de la liste, sous les onglets (Hubert, 26 oct. 2026) -->
           <button id="jb-back-btn" class="jb-back-btn" hidden>⬅ RETOUR</button>
           <ul id="jb-catalog-list" class="jb-catalog-list"></ul>
-          <div id="jb-tab-myreq" class="jb-tab-myreq" hidden>
-            <p id="jb-tab-myreq-empty" class="jb-empty"></p>
-            <div id="jb-tab-myreq-list" class="jb-myreq-list"></div>
+          <!-- Onglet « Tes suggestions » (ex-section « Tes demandes ») -->
+          <div id="jb-tab-myreq" class="jb-tab-panel jb-tab-myreq" hidden>
+            <div class="jb-tab-panel-head"><span id="jb-myreq-frame-label" class="jb-tab-count"></span><span id="jb-my-dons" class="jb-my-dons"></span></div>
+            <p id="jb-my-votes-empty" class="jb-empty">Tu n'as pas encore fait de demande ce soir.</p>
+            <div id="jb-my-votes-list" class="jb-myreq-list"></div>
+          </div>
+          <!-- Onglet « Choix du public » (ex-section « Palmarès ») -->
+          <div id="jb-tab-public" class="jb-tab-panel jb-tab-public" hidden>
+            <div class="jb-tab-panel-head"><span id="jb-palm-frame-label" class="jb-tab-count"></span></div>
+            <div id="jb-palmares-list" class="jb-palmares-grid"></div>
+            <p id="jb-palmares-empty" class="jb-empty" hidden>Aucune demande pour l'instant — sois le premier à demander une chanson !</p>
           </div>
           <div class="jb-catalog-frame-caps jb-catalog-frame-caps-bottom" aria-hidden="true">
             <span class="jb-catalog-frame-cap jb-catalog-frame-cap-lg"></span>
@@ -2706,51 +2755,6 @@
       </div>
     </section>
 
-    <!-- Nouvelle section demandée par Hubert : entre le catalogue (bandes néon rouges) et le
-         palmarès, pour que le client visualise et garde "track" des chansons sur lesquelles il a
-         lui-même voté à la hausse ou à la baisse (voir renderMyVotes()/castVote() plus bas). Vide
-         (texte #jb-my-votes-empty) tant qu'il n'a voté sur aucune chanson ce soir. -->
-    <section class="jb-my-votes">
-      <!-- 3e demande de Hubert (capture à l'appui) : plus de titre "Mes votes" séparé à côté d'un
-           badge "N VOTES RESTANTS" — juste UN SEUL titre qui EST le compteur, format "// N VOTES"
-           (comme "// Palmarès" juste en dessous), le chiffre en jaune/gras (.jb-vote-remaining-num,
-           inchangé) et "VOTES" dans la même couleur/police que les autres titres de section (hérité
-           de #jb-public h2, pas de classe à part). Mis à jour en direct à chaque vote (voir
-           updateVoteBadge(), appelée après CHAQUE castVote() et à chaque instantané Firestore du
-           palmarès) — "le décompte se fasse au fur et à mesure que les votes s'ajoute ou
-           s'enlève". -->
-      <!-- 17 oct. 2026 (maquette de Hubert, après des tests en soirée) : "// TES DEMANDES" remplace
-           "// N VOTES UTILISÉS". Le client retrouve ici SES chansons (demandées ou votées) avec leur
-           rang actuel et un bouton pour les faire monter directement, sans chercher dans le
-           palmarès — voir renderMyVotes(). Le nombre de votes restants s'affiche maintenant dans la
-           fenêtre qui suit chaque vote (voir showVoteModal()). -->
-      <div class="jb-my-votes-heading">
-        <h2 id="jb-my-requests-title">Tes demandes</h2>
-        <!-- "N/6 votes restants" retiré le 19 oct. 2026 (plus de votes gratuits, votes payants à venir) -->
-        <!-- « TES DONS : N $ » (maquette de Hubert, 20 oct. 2026) : total donné ce soir sur CE téléphone -->
-        <span id="jb-my-dons" class="jb-my-dons"></span>
-      </div>
-      <!-- Boîte rouge néon (20 oct. 2026, Hubert) : même concept que le panneau de sélection
-           (.jb-catalog-frame), en rouge. L'étiquette sur l'arête affiche le nombre de demandes (N/5). -->
-      <div class="jb-myreq-frame">
-        <div class="jb-frame-deco" aria-hidden="true"><i class="jb-fd-ring"></i><i class="jb-fd-tabfill"></i><i class="jb-fd-fillet"></i><i class="jb-fd-bodyline"></i><i class="jb-fd-rail"></i><i class="jb-fd-dots"></i><i class="jb-fd-notch"></i><i class="jb-fd-accent"></i></div>
-        <div class="jb-myreq-frame-label" id="jb-myreq-frame-label" aria-hidden="true"></div>
-        <p id="jb-my-votes-empty" class="jb-empty">Tu n'as pas encore fait de demande ce soir.</p>
-        <div id="jb-my-votes-list" class="jb-myreq-list"></div>
-      </div>
-    </section>
-
-    <section class="jb-palmares">
-      <div class="jb-palmares-heading">
-        <h2 id="jb-palmares-title">Palmarès</h2>
-      </div>      <!-- Case rose néon (20 oct. 2026, Hubert) : même concept que la boîte rouge de "Tes demandes".
-           L'étiquette sur l'arête affiche le nombre de chansons au palmarès (voir renderPalmares()). -->
-      <div class="jb-palm-frame">
-        <div class="jb-frame-deco" aria-hidden="true"><i class="jb-fd-ring"></i><i class="jb-fd-tabfill"></i><i class="jb-fd-fillet"></i><i class="jb-fd-bodyline"></i><i class="jb-fd-rail"></i><i class="jb-fd-dots"></i><i class="jb-fd-notch"></i><i class="jb-fd-accent"></i></div>
-        <div class="jb-palm-frame-label" id="jb-palm-frame-label" aria-hidden="true"></div>
-        <div id="jb-palmares-list" class="jb-palmares-grid"></div>
-        <p id="jb-palmares-empty" class="jb-empty" hidden>Aucune demande pour l'instant — sois le premier à demander une chanson !</p>      </div>
-    </section>
    </div>
 
     <!-- Page "hors ligne" : affichée à la place de l'appli quand Hubert n'est PAS connecté à
@@ -3246,7 +3250,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-22.175";
+  const APP_BUILD = "2026-10-22.176";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -3349,6 +3353,11 @@
       my_requests_title: "Tes demandes",
       my_dons: (amount) => `Tes dons (facturés) : ${amount}`,
       myreq_label: (n, max) => `DEMANDES ${n}/${max}`,
+      tab_repertoire: "MON\nRÉPERTOIRE",
+      tab_myreq: "TES\nSUGGESTIONS",
+      tab_public: "CHOIX\nDU PUBLIC",
+      tab_myreq_title: "Tes suggestions",
+      tab_public_title: "Choix du public",
       my_req_rank: (n) => `${n}${n === 1 ? "ER" : "E"} RANG`,
       my_req_up_aria: "Faire monter cette chanson",
       vote_modal_left: (n) => (n > 0 ? `Il te reste ${n} vote${n > 1 ? "s" : ""}` : "Tu as utilisé tes 6 votes"),
@@ -3436,6 +3445,11 @@
       my_requests_title: "Your requests",
       my_dons: (amount) => `Your tips (billed): ${amount}`,
       myreq_label: (n, max) => `REQUESTS ${n}/${max}`,
+      tab_repertoire: "MON\nRÉPERTOIRE",
+      tab_myreq: "YOUR\nSUGGESTIONS",
+      tab_public: "CROWD\nPICKS",
+      tab_myreq_title: "Your suggestions",
+      tab_public_title: "Crowd picks",
       my_req_rank: (n) => `RANK ${n}`,
       my_req_up_aria: "Push this song up",
       vote_modal_left: (n) => (n > 0 ? `You have ${n} vote${n > 1 ? "s" : ""} left` : "You've used all 6 votes"),
@@ -3529,9 +3543,9 @@
     const npConfirm = document.getElementById("jb-name-prompt-confirm");
     if (npConfirm) npConfirm.textContent = t("name_prompt_confirm");
     document.getElementById("jb-artist-name").textContent = t("page_title");
-    document.getElementById("jb-palmares-title").textContent = t("palmares_title");
     document.getElementById("jb-my-votes-empty").textContent = t("my_votes_empty");
-    document.getElementById("jb-my-requests-title").textContent = t("my_requests_title");
+    // onglets du cadre du catalogue (2 lignes chacun, voir .jb-tab)
+    document.querySelectorAll(".jb-tab").forEach((b) => { b.textContent = t("tab_" + b.dataset.tab); });
     document.getElementById("jb-vote-modal-btn").textContent = t("vote_modal_btn");
     // Texte de repli (voir renderCatalog(), qui pose le vrai texte dynamique "N Chansons"/
     // "N Artistes"/"N Genres" juste après tout rendu) — évite juste un flash de texte vide avant
@@ -5290,35 +5304,61 @@
         </div>`;
       })
       .join("");
-    // Même contenu dans l'onglet rouge du cadre de la liste (voir setCatalogTab())
-    const tabList = document.getElementById("jb-tab-myreq-list");
-    const tabEmpty = document.getElementById("jb-tab-myreq-empty");
-    const tabBtn = document.getElementById("jb-myreq-tab");
-    if (tabList) tabList.innerHTML = listEl.innerHTML;
-    if (tabEmpty) { tabEmpty.textContent = t("my_votes_empty"); tabEmpty.hidden = rows.length > 0; }
-    if (tabBtn) tabBtn.textContent = t("myreq_label", rows.length, MAX_REQUESTS);
-    [listEl, tabList].forEach((el) => el && el.querySelectorAll("[data-myreq-up]").forEach((btn) => {
+    listEl.querySelectorAll("[data-myreq-up]").forEach((btn) => {
       btn.addEventListener("click", () => castVote(btn.dataset.myreqUp, 1));
-    }));
+    });
   }
-  // Onglets du cadre de la liste (Hubert, 25 oct. 2026) : "list" = la liste de chansons,
-  // "myreq" = « Tes demandes ». Revient sur la liste dès qu'on change de liste ou de recherche.
-  var catalogTab = "list"; // var : renderCatalog() peut tourner avant cette ligne
+  // Onglets du cadre du catalogue (maquette de Hubert, 26 oct. 2026) : "repertoire" = accueil ou
+  // liste de chansons, "myreq" = Tes suggestions, "public" = Choix du public. On revient sur
+  // « Mon répertoire » dès qu'on change de liste ou de recherche.
+  var catalogTab = "repertoire"; // var : renderCatalog() peut tourner avant cette ligne
   var catalogTabSig = "";
   function setCatalogTab(tab) {
-    const frame = document.querySelector("#jb-catalog-results .jb-catalog-frame");
-    const prevH = frame && frame.offsetParent ? frame.getBoundingClientRect().height : 0;
+    if (tab === catalogTab) return;
     catalogTab = tab;
-    applyCatalogTab();
-    if (prevH) animateCatalogFrame(prevH);
+    renderCatalog();
+    document.querySelector(".jb-catalog").scrollIntoView({ behavior: "smooth", block: "nearest" });
   }
   function applyCatalogTab() {
-    const frame = document.querySelector("#jb-catalog-results .jb-catalog-frame");
-    const onMyReq = catalogTab === "myreq";
-    if (frame) frame.classList.toggle("jb-tab-on-myreq", onMyReq);
-    document.getElementById("jb-catalog-list").hidden = onMyReq;
-    document.getElementById("jb-tab-myreq").hidden = !onMyReq;
+    const other = catalogTab !== "repertoire";
+    const $ = (id) => document.getElementById(id);
+    if (other) {
+      // les 2 autres onglets s'affichent dans le cadre de la liste
+      $("jb-catalog-browse").hidden = true;
+      $("jb-catalog-results").hidden = false;
+      ["jb-folder-title-wrap", "jb-catalog-empty", "jb-special-request-block", "jb-back-btn"].forEach((id) => { $(id).hidden = true; });
+      $("jb-section-title-row").hidden = false;
+      $("jb-style-title").textContent = t(catalogTab === "myreq" ? "tab_myreq_title" : "tab_public_title");
+    }
+    $("jb-catalog-list").hidden = other;
+    $("jb-tab-myreq").hidden = catalogTab !== "myreq";
+    $("jb-tab-public").hidden = catalogTab !== "public";
+    document.querySelectorAll(".jb-catalog .jb-catalog-frame").forEach((fr) => {
+      fr.classList.toggle("jb-tab-on-myreq", catalogTab === "myreq");
+      fr.classList.toggle("jb-tab-on-public", catalogTab === "public");
+    });
+    document.querySelectorAll(".jb-tab").forEach((b) => {
+      const on = b.dataset.tab === catalogTab;
+      b.classList.toggle("jb-tab-active", on);
+      b.setAttribute("aria-selected", on ? "true" : "false");
+    });
   }
+  document.querySelectorAll(".jb-tab").forEach((b) => b.addEventListener("click", () => setCatalogTab(b.dataset.tab)));
+  // Plus rien sous le cadre (26 oct. 2026) : une longue liste (Chansons, Artiste, un long Genre,
+  // Choix du public) s'allonge jusqu'au bas de l'écran ; une courte garde sa taille (Hubert).
+  var LIST_BOTTOM_GAP = 44; // var : renderCatalog() peut tourner avant cette ligne — bas du cadre (bordure + marge) jusqu'au bord de l'écran
+  function fitListsToScreen() {
+    const root = document.documentElement;
+    [["jb-catalog-list", "--jb-list-max"], ["jb-palmares-list", "--jb-public-max"]].forEach(([id, prop]) => {
+      const el = document.getElementById(id);
+      if (!el || !el.offsetParent) return;
+      const top = el.getBoundingClientRect().top + window.scrollY;
+      // (au moins ~3 chansons sur un très petit écran)
+      root.style.setProperty(prop, `${Math.max(170, Math.round(window.innerHeight - top - LIST_BOTTOM_GAP))}px`);
+    });
+  }
+  var fitListsTimer = null;
+  window.addEventListener("resize", () => { clearTimeout(fitListsTimer); fitListsTimer = setTimeout(fitListsToScreen, 150); });
 
   // Fenêtre d'information (maquette de Hubert) : écran assombri, message, bouton "Continuer" — le
   // seul élément cliquable tant qu'elle est ouverte. 2e avis de Hubert ("un peu intense" à chaque
@@ -6310,11 +6350,11 @@
     const prevH = prevFrame ? prevFrame.getBoundingClientRect().height : 0;
     // Nouvelle liste ou nouvelle recherche : on revient sur l'onglet de la liste
     const sig = JSON.stringify(catalogView) + "|" + document.getElementById("jb-search-input").value;
-    if (sig !== catalogTabSig) { catalogTabSig = sig; catalogTab = "list"; }
+    if (sig !== catalogTabSig) { catalogTabSig = sig; catalogTab = "repertoire"; }
+    if (browseOnly) catalogTab = "repertoire"; // pas d'onglets en simple consultation
     renderCatalogNow();
     applyCatalogTab();
-    // onglet rouge seulement quand une liste est ouverte (et pas en simple consultation)
-    document.getElementById("jb-myreq-tab").hidden = document.getElementById("jb-back-btn").hidden || browseOnly;
+    fitListsToScreen();
     animateCatalogFrame(prevH);
     // Taille du panneau d'accueil, retenue pour l'animation de RETOUR (voir jb-back-btn)
     const shown = visibleCatalogFrame();
@@ -6550,13 +6590,7 @@
   // l'appui. Le panneau d'accueil part de la taille de la liste et rapetisse (animateCatalogFrame),
   // et pendant ce temps il garde le côté ouvert avec l'échelle (classe .jb-pocket), qui se replient
   // aussitôt : l'échelle vers son centre, puis le côté se referme en même temps que le cadre.
-  // Onglet rouge « DEMANDES » : bascule le cadre sur « Tes demandes »
-  document.getElementById("jb-myreq-tab").addEventListener("click", () => {
-    if (catalogTab !== "myreq") setCatalogTab("myreq");
-  });
   document.getElementById("jb-back-btn").addEventListener("click", () => {
-    // Sur l'onglet « Tes demandes », RETOUR ramène d'abord la liste (comme l'onglet bleu de Chrome)
-    if (catalogTab === "myreq") { setCatalogTab("list"); return; }
     const hadSearch = !!document.getElementById("jb-search-input").value;
     const goingHome = hadSearch ? !catalogView
       : !(catalogView && (catalogView.type === "artist" || catalogView.type === "genre-songs"));
