@@ -109,6 +109,28 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+    // Chat room (26 oct. 2026) : tout le monde lit ; un client écrit un message court (200 caractères
+    // max, sans lien), à l'heure du serveur, sous son nom d'utilisateur — sauf s'il a été expulsé
+    // (chatBans/{son identifiant}). Personne ne modifie un message ; seul Hubert efface.
+    match /chat/{msgId} {
+      allow read: if true;
+      allow create: if
+        request.resource.data.keys().hasOnly(['name', 'text', 'createdAt', 'clientId']) &&
+        request.resource.data.name is string && request.resource.data.name.size() > 0 && request.resource.data.name.size() <= 15 &&
+        request.resource.data.text is string && request.resource.data.text.size() > 0 && request.resource.data.text.size() <= 200 &&
+        !request.resource.data.text.matches('(?i).*(https?://|www[.]).*') &&
+        request.resource.data.createdAt == request.time &&
+        request.resource.data.clientId is string && request.resource.data.clientId.size() >= 8 && request.resource.data.clientId.size() <= 40 &&
+        !exists(/databases/$(database)/documents/chatBans/$(request.resource.data.clientId));
+      allow update: if false;
+      allow delete: if isAdmin();
+    }
+    // Expulsés du chat (Hubert seulement) ; un client peut seulement lire SON propre document
+    match /chatBans/{clientId} {
+      allow get: if true;
+      allow list, write: if isAdmin();
+    }
+
     // Compteur cumulatif de demandes par artiste (mis à jour par chaque client à chaque demande)
     match /stats/{docId} {
       allow read: if true;
