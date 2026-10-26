@@ -2054,8 +2054,13 @@
   #jb-app:not(.jb-browse-only) #jb-public #jb-catalog-results #jb-back-btn:active .jb-back-inner { background-color: #5af4f0; color: #04121c; }
   #jb-app:not(.jb-browse-only) #jb-public #jb-catalog-results #jb-back-btn[hidden] { display: none; }
   /* RETOUR sur la ligne du titre, à droite (Hubert, 26 oct. 2026) */
+  /* posé PAR-DESSUS la ligne du titre (centré verticalement, à droite) : il n'en change jamais la
+     hauteur, donc la section ne bouge plus quand il apparaît ou disparaît (Hubert) */
+  #jb-public #jb-section-title-row, #jb-public #jb-folder-title-wrap .jb-folder-title-row { position: relative; }
+  /* un long nom d'artiste ne passe pas sous le bouton */
+  #jb-public .jb-folder-title-row:has(.jb-back-in-title) .jb-folder-title { padding-right: 115px; }
   #jb-public #jb-back-btn.jb-back-in-title {
-    position: static; flex: 0 0 auto; width: auto; height: 30px; min-height: 30px; max-height: 30px; margin: 0; padding: 0;
+    position: absolute; right: 0; top: 50%; transform: translateY(-50%); flex: 0 0 auto; width: auto; height: 30px; min-height: 30px; max-height: 30px; margin: 0; padding: 0;
     border: none; border-radius: 0; clip-path: none; box-shadow: none; background: transparent;
     display: inline-flex; align-items: center; color: #5af4f0; font-family: 'Share Tech Mono', monospace;
     font-size: 13px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; text-shadow: none; cursor: pointer;
@@ -2183,7 +2188,14 @@
   #jb-app:not(.jb-browse-only) #jb-public .jb-tab-panel :is(#jb-palmares-list, #jb-my-votes-list) {
     flex: 1 1 auto; min-height: 0; max-height: none; overflow-y: auto; -webkit-overflow-scrolling: touch;
   }
-  #jb-app:not(.jb-browse-only) #jb-public #jb-catalog-browse .jb-mode-list { padding-top: 14px; }
+  /* les 3 boutons répartis également dans le cadre : même espace au-dessus, entre et en dessous (Hubert) */
+  #jb-app:not(.jb-browse-only) #jb-public #jb-catalog-browse .jb-mode-list {
+    flex: 1 1 auto; min-height: 0; margin: 0; padding-top: 0; padding-bottom: 0;
+    display: flex; flex-direction: column; justify-content: space-evenly; gap: 0;
+  }
+  #jb-app:not(.jb-browse-only) #jb-public #jb-catalog-browse .jb-mode-list .jb-mode-btn { margin-top: 0; margin-bottom: 0; }
+  /* intérieur mesuré du trait du haut au contour du bas : les 4 espaces sont alors identiques */
+  #jb-app:not(.jb-browse-only) #jb-public #jb-catalog-browse .jb-catalog-frame { padding-top: calc(var(--ft) + 3px) !important; padding-bottom: 3px !important; }
 
   /* ===== Chat room (maquette de Hubert, 26 oct. 2026) : boîte jaune néon sous les onglets ===== */
   #jb-public .jb-chat { margin-top: 18px; }
@@ -3443,7 +3455,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-22.191";
+  const APP_BUILD = "2026-10-22.192";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
