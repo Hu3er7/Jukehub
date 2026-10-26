@@ -1964,26 +1964,39 @@
   #jb-public .jb-tab-label { flex: 1 1 auto; min-width: 0; white-space: pre-line; }
   #jb-public .jb-tab-num { flex: 0 0 auto; font-size: 0.72rem; opacity: 0.9; }
   #jb-public .jb-tab-num:empty { display: none; }
-  /* onglet choisi : contour plein, fond plus lumineux, équerres aux coins, touche le trait du cadre */
+  /* onglet choisi SOUDÉ au cadre, comme un onglet de dossier (maquette de Hubert, 26 oct. 2026) : le
+     contour du cadre (3px) monte sur sa gauche, passe par-dessus (coin haut-droit biseauté) et
+     redescend sur sa droite ; le trait du haut du cadre est ouvert sous lui (voir --gapL/--gapR) */
   #jb-public .jb-tab.jb-tab-active {
-    height: calc(100% + 6px); border-color: var(--tc); border-bottom-color: transparent;
-    background-color: rgba(var(--tc-rgb), 0.16);
-    box-shadow: inset 0 0 12px rgba(var(--tc-rgb), 0.3);
-    background-image: linear-gradient(to bottom left, transparent 50%, var(--tc) 50%, var(--tc) calc(50% + 1px), transparent calc(50% + 1px));
+    /* s'arrête pile sur le haut de la vitre du cadre (pas de bande où les 2 fonds se superposent) */
+    height: calc(100% + 6px); border: 3px solid var(--tc); border-bottom: none; overflow: visible;
+    /* un peu moins transparent que l'intérieur du cadre en haut ; le fondu se fait À LA JONCTION
+       seulement (Hubert) : la teinte baisse sur le bas de l'onglet jusqu'à presque celle de la vitre
+       du cadre, puis s'éteint en 10px juste sous la jonction — elle ne s'étale plus dans la section */
+    background-color: var(--fbg);
+    background-image:
+      linear-gradient(to bottom left, transparent 50%, var(--tc) 50%, var(--tc) calc(50% + 3px), transparent calc(50% + 3px)),
+      linear-gradient(to bottom, rgba(var(--tc-rgb), 0.24) 70%, rgba(var(--tc-rgb), 0.05)); /* fondu plus bas, près de la jonction (Hubert) */
+    background-size: 12px 12px, 100% 100%;
+    background-position: right top, 0 0;
+    -webkit-backdrop-filter: blur(2px); backdrop-filter: blur(2px);
+    clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% calc(100% + 6px), 0 calc(100% + 6px));
   }
-  #jb-public .jb-tab.jb-tab-active::before, #jb-public .jb-tab.jb-tab-active::after {
-    content: ""; position: absolute; width: 7px; height: 7px; pointer-events: none;
-    border-color: var(--tc); border-style: solid; border-width: 0;
-  }
-  #jb-public .jb-tab.jb-tab-active::before { left: 1px; top: 1px; border-left-width: 2px; border-top-width: 2px; }
-  #jb-public .jb-tab.jb-tab-active::after { right: 1px; bottom: 7px; border-right-width: 2px; border-bottom-width: 2px; }
-  #jb-public .jb-tab.jb-tab-active .jb-tab-ico { background: rgba(var(--tc-rgb), 0.4); border-color: var(--tc); }
-  /* le cadre perd son ancien onglet, son rail et son étiquette ; le trait du haut part du coin */
+  #jb-public .jb-tab.jb-tab-active::after {
+    content: ""; position: absolute; left: -3px; right: -3px; top: 100%; height: 6px; pointer-events: none;
+    background: linear-gradient(to bottom, rgba(var(--tc-rgb), 0.05), rgba(var(--tc-rgb), 0));
+  }  #jb-public .jb-tab.jb-tab-active .jb-tab-ico { background: rgba(var(--tc-rgb), 0.4); border-color: var(--tc); }
+  /* trait du haut ouvert sous l'onglet choisi (bornes posées en px par applyCatalogTab()) */
+  #jb-app:not(.jb-browse-only) #jb-public .jb-catalog .jb-fd-bodyline {
+    -webkit-mask-image: linear-gradient(to right, #000 var(--gapL, 0px), transparent var(--gapL, 0px), transparent var(--gapR, 0px), #000 var(--gapR, 0px));
+    mask-image: linear-gradient(to right, #000 var(--gapL, 0px), transparent var(--gapL, 0px), transparent var(--gapR, 0px), #000 var(--gapR, 0px));
+  }  /* le cadre perd son ancien onglet, son rail et son étiquette ; le trait du haut part du coin */
   #jb-app:not(.jb-browse-only) #jb-public .jb-catalog .jb-fd-tabfill,
   #jb-app:not(.jb-browse-only) #jb-public .jb-catalog .jb-fd-fillet,
   #jb-app:not(.jb-browse-only) #jb-public .jb-catalog .jb-fd-rail,
   #jb-app:not(.jb-browse-only) #jb-public .jb-catalog .jb-fd-dots,
-  #jb-app:not(.jb-browse-only) #jb-public .jb-catalog .jb-catalog-frame-caps-top { display: none; }
+  #jb-app:not(.jb-browse-only) #jb-public .jb-catalog .jb-catalog-frame-caps-top,
+  #jb-app:not(.jb-browse-only) #jb-public .jb-catalog .jb-fd-notch { display: none; } /* plus de barre sous le trait du haut (Hubert) */
   #jb-app:not(.jb-browse-only) #jb-public .jb-catalog .jb-fd-bodyline { left: 0; }
   /* fond vitre teintée seulement sous le trait du haut (plus d'ancien onglet plein derrière les onglets) */
   #jb-app:not(.jb-browse-only) #jb-public .jb-catalog .jb-catalog-frame::before {
@@ -3300,7 +3313,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-22.180";
+  const APP_BUILD = "2026-10-22.181";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -5427,7 +5440,19 @@
       b.setAttribute("aria-selected", on ? "true" : "false");
     });
     if (resultsWasHidden && resultsFrameEl) { void resultsFrameEl.offsetWidth; resultsFrameEl.style.transition = ""; }
+    fitTabGaps();
   }
+  // Ouverture du trait du haut du cadre sous l'onglet choisi (voir --gapL/--gapR en CSS) : entre les
+  // 2 côtés de 3px de l'onglet, mesurés en px dans le cadre affiché
+  function fitTabGaps() {
+    document.querySelectorAll(".jb-catalog .jb-catalog-frame").forEach((fr) => {
+      const tab = fr.offsetParent && fr.querySelector(".jb-tab.jb-tab-active");
+      if (!tab || !tab.offsetWidth) return;
+      fr.style.setProperty("--gapL", `${tab.offsetLeft + 3}px`);
+      fr.style.setProperty("--gapR", `${tab.offsetLeft + tab.offsetWidth - 3}px`);
+    });
+  }
+  window.addEventListener("resize", () => requestAnimationFrame(fitTabGaps));
   document.querySelectorAll(".jb-tab").forEach((b) => b.addEventListener("click", () => setCatalogTab(b.dataset.tab)));
   // Compteurs des onglets : nombre de tes suggestions / de chansons au Choix du public (rien à 0)
   function updateTabCounts() {
@@ -6415,7 +6440,7 @@
     const frames = document.querySelectorAll("#jb-catalog-browse .jb-catalog-frame, #jb-catalog-results .jb-catalog-frame");
     frames.forEach(fitFrameLadders);
     if (window.ResizeObserver) {
-      const ro = new ResizeObserver((entries) => entries.forEach((e) => fitFrameLadders(e.target)));
+      const ro = new ResizeObserver((entries) => { entries.forEach((e) => fitFrameLadders(e.target)); fitTabGaps(); });
       frames.forEach((f) => ro.observe(f));
     }
   })();
