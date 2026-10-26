@@ -1579,6 +1579,8 @@
   #jb-admin .jb-btn-primary { background: var(--accent); color: #080701; }
   /* "Nouvelle soirée" efface le palmarès : plein vert vif + lueur pour rester le plus visible */
   #jb-admin .jb-btn-danger { background: #fff200; color: #080701; box-shadow: 0 0 14px rgba(255, 242, 0, 0.45); }
+  /* « Nouvelle soirée » en petit, en haut à gauche à la place du titre (Hubert, 26 oct. 2026) */
+  #jb-admin .jb-btn-danger.jb-newnight-small { width: auto; padding: 8px 14px; font-size: 0.85rem; margin: 0; }
   #jb-admin .jb-btn-ghost { background: transparent; color: var(--accent); border: 1px solid var(--accent); }
   #jb-admin .jb-mark-played-btn { background: var(--accent); color: #080701; }
   #jb-admin .jb-mark-played-btn.jb-mark-played-armed { background: #fffaa8; color: #080701; }
@@ -2926,19 +2928,17 @@
     </form>
 
     <div id="jb-dashboard" class="jb-dashboard" hidden>
+      <!-- 26 oct. 2026 (Hubert, fenêtre admin étroite sur iPad) : plus de titre « Panneau admin » ;
+           « Nouvelle soirée », en plus petit, prend sa place en haut à gauche -->
       <div class="jb-admin-topbar">
-        <h2>🎛️ Panneau admin</h2>
+        <button id="jb-newnight-btn" class="jb-btn-danger jb-newnight-small">🌙 Nouvelle soirée</button>
         <button id="jb-logout-btn" class="jb-btn-ghost">Déconnexion</button>
       </div>
 
-
-      <section class="jb-admin-section">
-        <button id="jb-newnight-btn" class="jb-btn-danger">🌙 Nouvelle soirée (reset palmarès)</button>
-        <p class="jb-hint">Efface le palmarès et les chansons "déjà jouées". Le répertoire complet et la boîte de suggestions restent intacts.</p>
-      </section>
-
-      <!-- Paiements (19 oct. 2026) : Hubert choisit si les clients voient les montants payés -->
-      <section class="jb-admin-section">
+      <!-- Paiements (19 oct. 2026) : Hubert choisit si les clients voient les montants payés.
+           Retiré de l'écran le 26 oct. 2026 (Hubert) — caché, mais gardé pour le code : le réglage
+           reste tel qu'il est en ce moment (montants affichés). -->
+      <section class="jb-admin-section" hidden style="display:none">
         <label class="jb-admin-toggle"><input type="checkbox" id="jb-show-amounts-toggle" /> 💲 Afficher les montants sur le site</label>
         <p class="jb-hint">Coché : les clients voient combien chaque chanson a reçu (ex. « 25 $ »). Décoché : seulement les chansons et les noms. Toi, tu vois toujours les montants ici.</p>
       </section>
@@ -2962,16 +2962,13 @@
 
       <section class="jb-admin-section">
         <h3>⏳ Refroidissement &amp; 🔥 Brûlées</h3>
-        <p class="jb-hint">Chansons temporairement indisponibles (30 sec après avoir été jouées) ou retirées volontairement.</p>
         <div id="jb-cooldown-list" class="jb-cooldown-list"></div>
         <p id="jb-cooldown-empty" class="jb-empty" hidden>Aucune chanson en attente pour l'instant.</p>
       </section>
 
       <section class="jb-admin-section">
-        <h3>➕ Ajouter des chansons au répertoire</h3>
-        <p class="jb-hint">Une chanson par ligne. Format : Titre - Artiste</p>
-        <textarea id="jb-bulk-input" rows="6" placeholder="Ex:&#10;Bohemian Rhapsody - Queen&#10;Hotel California - Eagles"></textarea>
-        <p class="jb-hint">Style(s) à appliquer à tout ce lot (optionnel — modifiable après coup dans le répertoire complet) :</p>
+        <h3>➕ Ajouter chansons</h3>
+        <textarea id="jb-bulk-input" rows="3"></textarea>
         <div id="jb-bulk-genre-row" class="jb-genre-chip-row"></div>
         <button id="jb-bulk-add-btn" class="jb-btn-primary">Ajouter au répertoire</button>
         <p id="jb-bulk-status" class="jb-hint"></p>
@@ -3321,7 +3318,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-22.185";
+  const APP_BUILD = "2026-10-22.186";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
