@@ -2053,7 +2053,19 @@
   }
   #jb-app:not(.jb-browse-only) #jb-public #jb-catalog-results #jb-back-btn:active .jb-back-inner { background-color: #5af4f0; color: #04121c; }
   #jb-app:not(.jb-browse-only) #jb-public #jb-catalog-results #jb-back-btn[hidden] { display: none; }
-  /* RETOUR sur la ligne du titre, à droite (Hubert, 26 oct. 2026) */
+  /* Pendant le spectacle, RETOUR = l'onglet bleu lui-même (« ⬅ RETOUR », voir updateRepTabLabel()) :
+     le bouton séparé est caché (Hubert, 26 oct. 2026) */
+  #jb-app:not(.jb-browse-only) #jb-public #jb-back-btn { display: none !important; }
+  /* « ⬅ RETOUR » bien apparent : sans l'icône de note, plus gros, centré et lumineux (Hubert) */
+  #jb-public .jb-tab-rep.jb-tab-back .jb-tab-ico { display: none; }
+  #jb-public .jb-tab-rep.jb-tab-back .jb-tab-label { display: inline-flex; align-items: center; }
+  #jb-public .jb-tab-back-arrow { width: 17px; height: 16px; margin-right: 7px; flex-shrink: 0; display: block; filter: drop-shadow(0 0 4px rgba(90, 244, 240, 0.7)); }
+  #jb-public .jb-tab-rep.jb-tab-back { justify-content: center; }
+  #jb-public .jb-tab-rep.jb-tab-back .jb-tab-label {
+    flex: 0 1 auto; min-width: 0; white-space: nowrap; font-size: min(0.92rem, 3.6vw); letter-spacing: 2px;
+    text-shadow: 0 0 8px rgba(90, 244, 240, 0.85), 0 0 16px rgba(90, 244, 240, 0.45);
+  }
+  /* (ancien : RETOUR sur la ligne du titre, à droite) */
   /* posé PAR-DESSUS la ligne du titre (centré verticalement, à droite) : il n'en change jamais la
      hauteur, donc la section ne bouge plus quand il apparaît ou disparaît (Hubert) */
   #jb-public #jb-section-title-row, #jb-public #jb-folder-title-wrap .jb-folder-title-row { position: relative; }
@@ -2186,7 +2198,9 @@
   #jb-app:not(.jb-browse-only) #jb-public #jb-catalog-list { flex: 1 1 auto; min-height: 0; max-height: none; }
   #jb-app:not(.jb-browse-only) #jb-public .jb-tab-panel:not([hidden]) { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
   #jb-app:not(.jb-browse-only) #jb-public .jb-tab-panel :is(#jb-palmares-list, #jb-my-votes-list) {
-    flex: 1 1 auto; min-height: 0; max-height: none; overflow-y: auto; -webkit-overflow-scrolling: touch;
+    /* ne grandit pas (sinon le texte « Aucune demande… », placé après la liste, tombait au bas du
+       cadre) ; rapetisse et défile seulement quand il y a trop de chansons */
+    flex: 0 1 auto; min-height: 0; max-height: none; overflow-y: auto; -webkit-overflow-scrolling: touch;
   }
   /* les 3 boutons répartis également dans le cadre : même espace au-dessus, entre et en dessous (Hubert) */
   #jb-app:not(.jb-browse-only) #jb-public #jb-catalog-browse .jb-mode-list {
@@ -3455,7 +3469,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-22.192";
+  const APP_BUILD = "2026-10-22.193";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -5619,9 +5633,10 @@
     const folderRow = document.querySelector("#jb-folder-title-wrap .jb-folder-title-row");
     const list = document.getElementById("jb-catalog-list");
     let target;
-    if (browseOnly) target = null;
-    else if (titleRow && !titleRow.hidden) target = titleRow;
-    else target = folderRow;
+    // (26 oct. 2026 : RETOUR est maintenant l'onglet bleu lui-même pendant le spectacle — le bouton
+    // reste à sa place d'origine, caché en CSS hors simple consultation)
+    target = null;
+    updateRepTabLabel();
     if (target) {
       if (btn.parentElement !== target) target.appendChild(btn);
       btn.classList.add("jb-back-in-title");
@@ -5665,7 +5680,32 @@
     list.style.clipPath = `polygon(0 0, 100% 0, 100% calc(34% + 2px), calc(100% - 8px) calc(34% + 10px), calc(100% - 8px) 100%, ` +
       `0 100%, 0 ${yb}px, 8px ${yb}px, 18px ${yb - 10}px, 18px ${yt + 10}px, 8px ${yt}px, 0 ${yt}px)`;
   }
-  document.querySelectorAll(".jb-tab").forEach((b) => b.addEventListener("click", () => setCatalogTab(b.dataset.tab)));
+  // Onglet bleu (Hubert, 26 oct. 2026) : dans une liste de « Mon répertoire », il devient « ⬅ RETOUR » et
+  // fait reculer d'un niveau ; depuis Tes suggestions / Choix du public, il ramène TOUJOURS à
+  // l'accueil Chansons / Artiste / Genre.
+  document.querySelectorAll(".jb-tab").forEach((b) => b.addEventListener("click", () => {
+    if (b.dataset.tab !== "repertoire") { setCatalogTab(b.dataset.tab); return; }
+    if (catalogTab === "repertoire") {
+      if (!document.getElementById("jb-catalog-results").hidden) document.getElementById("jb-back-btn").click();
+      return;
+    }
+    catalogView = null;
+    document.getElementById("jb-search-input").value = "";
+    setCatalogTab("repertoire");
+  }));
+  // Texte de l'onglet bleu : « ⬅ RETOUR » quand une liste de Mon répertoire est ouverte, sinon « MON RÉPERTOIRE »
+  function updateRepTabLabel() {
+    const listOpen = catalogTab === "repertoire" && !document.getElementById("jb-catalog-results").hidden && !browseOnly;
+    document.querySelectorAll(".jb-tab-rep").forEach((b) => {
+      const label = b.querySelector(".jb-tab-label");
+      // flèche dessinée (plus haute que le caractère ⬅, Hubert) + RETOUR
+      if (label) {
+        if (listOpen) label.innerHTML = `<svg class="jb-tab-back-arrow" viewBox="0 0 22 18" aria-hidden="true"><path d="M0 9 L8.5 0 L8.5 5.5 L22 5.5 L22 12.5 L8.5 12.5 L8.5 18 Z" fill="currentColor"/></svg>${escapeHtml(t("back_btn"))}`;
+        else label.textContent = t("tab_repertoire");
+      }
+      b.classList.toggle("jb-tab-back", listOpen);
+    });
+  }
   // Compteurs des onglets : nombre de tes suggestions / de chansons au Choix du public (rien à 0)
   function updateTabCounts() {
     const counts = { myreq: 0, public: 0 };
