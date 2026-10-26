@@ -3428,7 +3428,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-22.189";
+  const APP_BUILD = "2026-10-22.190";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -7764,7 +7764,8 @@
     const ae = document.getElementById("jb-admin-chat-empty");
     if (al && ae && isAdmin) {
       ae.hidden = (chatMessages || []).length > 0;
-      al.innerHTML = (chatMessages || []).slice().reverse().map((m) => {
+      // seulement les 5 derniers messages (le plus récent en haut) : le panneau admin reste compact (Hubert)
+      al.innerHTML = (chatMessages || []).slice(-5).reverse().map((m) => {
         const ms = m.createdAt && m.createdAt.toMillis ? m.createdAt.toMillis() : Date.now();
         const hhmm = new Date(ms).toLocaleTimeString("fr-CA", { hour: "2-digit", minute: "2-digit" });
         return `<div class="jb-admin-chat-msg">
