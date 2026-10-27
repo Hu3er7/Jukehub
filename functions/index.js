@@ -33,7 +33,8 @@ const ADMIN_EMAIL = defineString("ADMIN_EMAIL");
 
 const MIN_CENTS = 200;    // 2 $
 const MAX_CENTS = 10000;  // 100 $
-const SITE_URL = "https://myrepertoire.carrd.co/";
+// 27 oct. 2026 : le site est maintenant directement sur son propre domaine (plus de cadre Carrd)
+const SITE_URL = "https://monrepertoire.ca/";
 
 function stripeClient() {
   return new Stripe(STRIPE_SECRET_KEY.value());

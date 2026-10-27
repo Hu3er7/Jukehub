@@ -3255,6 +3255,9 @@
   // demandes, ordre des demandes) par postMessage, et on la relit à l'ouverture. Le script qui répond
   // de l'autre côté est dans carrd-embed.html (à coller dans Carrd). Sans page parente (adresse
   // github.io ouverte directement), rien ne change : le stockage local suffit.
+  // 27 oct. 2026 : le site est maintenant directement sur https://monrepertoire.ca (CNAME) et la page
+  // Carrd ne fait plus que rediriger (carrd-redirect.html) — ce pont ne sert donc plus, mais reste
+  // inoffensif hors cadre ; à retirer une fois Carrd abandonné pour de bon.
   const BRIDGE_PARENT_ORIGINS = ["https://myrepertoire.carrd.co"];
   const inFrame = (() => { try { return window.parent && window.parent !== window; } catch (e) { return false; } })();
   let bridgeOrigin = null;            // origine de la page Carrd, connue à sa 1re réponse
@@ -3264,7 +3267,10 @@
   let bridgeReceivedKeys = 0;         // pour l'écran de diagnostic (#diag)
   let bridgeReceivedNames = [];
   function isDurableKey(key) {
-    return /^jb_(votes|requested|req_order|dons)_/.test(key) || key === "jb_first_vote_msg_seen" || key === "jb_pay_pending" || key === "jb_client_id";
+    // 27 oct. 2026 : "jb_qr_access_at" (heure du scan du code QR) aussi — sinon, dans le cadre Carrd où
+    // Safari refuse souvent de garder le stockage, le moindre rechargement (mise à jour automatique,
+    // Safari qui recharge l'onglet…) perdait le scan et renvoyait le client sur la page hors spectacle.
+    return /^jb_(votes|requested|req_order|dons)_/.test(key) || key === "jb_first_vote_msg_seen" || key === "jb_pay_pending" || key === "jb_client_id" || key === "jb_qr_access_at";
   }
   function bridgeSend(msg) {
     if (!inFrame) return;
@@ -3278,6 +3284,7 @@
     if (parentRaw == null) return localRaw;
     if (key === "jb_first_vote_msg_seen") return "1";
     if (key === "jb_client_id") return parentRaw; // identifiant du téléphone : la copie Carrd gagne
+    if (key === "jb_qr_access_at") return String(Math.max(parseInt(localRaw, 10) || 0, parseInt(parentRaw, 10) || 0)); // le scan le plus récent
     let a, b;
     try { a = JSON.parse(localRaw) || {}; b = JSON.parse(parentRaw) || {}; } catch (e) { return parentRaw; }
     // Paiement en cours (voir startPayment()) : on garde le plus récent des deux
@@ -3515,7 +3522,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-22.194";
+  const APP_BUILD = "2026-10-22.195";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -5902,7 +5909,7 @@
       refreshPayButton();
     }
   }
-  // Retour de la page de paiement Stripe ("#paid", transmis par la page Carrd) : merci !
+  // Retour de la page de paiement Stripe ("#paid", voir SITE_URL dans functions/index.js) : merci !
   const paidReturn = location.hash === "#paid";
   if (paidReturn) {
     history.replaceState(null, "", location.pathname + location.search);
@@ -7453,7 +7460,11 @@
     errEl.hidden = true;
     try {
       await signInWithEmailAndPassword(auth, email, pass);
-      await setDoc(doc(db, "config", "settings"), { live: true, loginAt: serverTimestamp() }, { merge: true });
+      // 27 oct. 2026 : si le spectacle est DÉJÀ en cours (Hubert se reconnecte sur un autre appareil,
+      // ou après une session perdue), on ne remet PAS "loginAt" à zéro — sinon tous les clients déjà
+      // présents perdaient l'accès et tombaient sur la page hors spectacle en pleine soirée.
+      const alreadyLive = liveFlag;
+      await setDoc(doc(db, "config", "settings"), alreadyLive ? { live: true } : { live: true, loginAt: serverTimestamp() }, { merge: true });
       // Pas de location.reload() ici (il y en a déjà eu un, retiré à la demande de Hubert : même si
       // la raison d'être de ce rechargement était légitime — inciter Safari/iOS à proposer
       // d'enregistrer le mot de passe — le flash d'écran noir que ça causait pendant le rechargement
@@ -8179,6 +8190,7 @@
   // demandes de la soirée en cours. Posé ici, tout à la fin, pour que tout le reste soit prêt.
   onBridgeData = () => {
     applyPaidReturn(); // le paiement en cours a pu n'être gardé que par la page Carrd
+    renderLiveGate(); // le scan du code QR a pu n'être gardé que par la page Carrd (accès au site)
     if (!nightId) return; // la soirée n'est pas encore connue : la 1re lecture se fera à son arrivée
     loadRequestedFromStorage();
     loadVotesFromStorage();
