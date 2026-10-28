@@ -2354,6 +2354,33 @@
     font-family: 'Orbitron', sans-serif; font-weight: 700; font-size: 0.78rem; letter-spacing: 0.5px; text-transform: uppercase; color: #fff200;
   }
   #jb-public .jb-chat-text { color: #fffaa8; font-size: 0.95rem; line-height: 1.3; word-break: break-word; }
+  /* Avatar néon devant le nom dans le chat (Hubert, 27 oct. 2026) — --av = couleur de l'avatar */
+  #jb-public .jb-chat-name, #jb-admin .jb-chat-name { display: inline-flex; align-items: center; gap: 7px; }
+  #jb-app .jb-avatar {
+    flex: 0 0 auto; width: 26px; height: 26px; display: inline-flex; align-items: center; justify-content: center;
+    color: var(--av); border: 1.5px solid var(--av); background: rgba(255, 255, 255, 0.04);
+    clip-path: polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 6px 100%, 0 calc(100% - 6px));
+  }
+  #jb-app .jb-avatar svg, #jb-app .jb-avatar-opt svg {
+    width: 20px; height: 20px; display: block; fill: none; stroke: currentColor; stroke-width: 2;
+    stroke-linecap: round; stroke-linejoin: round; filter: drop-shadow(0 0 2px currentColor);
+  }
+  /* Grille de choix dans la fenêtre du nom : les 5 sur une rangée, celui choisi est plein et lumineux */
+  #jb-app .jb-avatar-pick-label { margin: 12px 0 8px; padding-right: 0; }
+  #jb-app .jb-avatar-picker { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-top: 12px; }
+  #jb-app #jb-name-prompt-skip { display: none; } /* plus de « Annuler » : nom + avatar obligatoires */
+  #jb-app #jb-name-prompt-input { margin-top: 4px; }
+  #jb-app .jb-avatar-opt {
+    width: 100%; aspect-ratio: 1; min-height: 0; margin: 0; padding: 0; cursor: pointer; border-radius: 0;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--av); border: 1.5px solid color-mix(in srgb, var(--av) 45%, transparent); background: rgba(255, 255, 255, 0.03);
+    clip-path: polygon(0 0, calc(100% - 7px) 0, 100% 7px, 100% 100%, 7px 100%, 0 calc(100% - 7px));
+  }
+  #jb-app .jb-avatar-opt svg { width: 68%; height: 68%; }
+  #jb-app .jb-avatar-opt.jb-avatar-on {
+    border: 2.5px solid var(--av); background: color-mix(in srgb, var(--av) 22%, transparent);
+    box-shadow: inset 0 0 10px color-mix(in srgb, var(--av) 50%, transparent);
+  }
   #jb-public .jb-chat-empty { margin: 4px 0 6px; }
   #jb-public .jb-chat-banned { color: #ff2d55; margin: 0 0 10px; font-size: 0.9rem; }
   /* Panneau admin : messages + bouton « Expulser » */
@@ -3126,8 +3153,12 @@
           <button class="jb-lang-btn" data-lang="en">EN</button>
         </div>
         <h3 id="jb-name-prompt-title"></h3>
-        <p id="jb-name-prompt-text"></p>
+        <p id="jb-name-prompt-text" hidden></p>
         <input id="jb-name-prompt-input" type="text" autocomplete="off" maxlength="15" />
+        <!-- Avatar obligatoire (Hubert, 27 oct. 2026) : affiché à côté du nom dans le chat (voir CHAT_AVATARS).
+             Texte d'explication, libellé et « Annuler » retirés de l'écran (cachés, gardés pour le code). -->
+        <p id="jb-avatar-pick-label" class="jb-avatar-pick-label" hidden></p>
+        <div id="jb-avatar-picker" class="jb-avatar-picker" role="radiogroup"></div>
         <div class="jb-name-prompt-actions">
           <button id="jb-name-prompt-skip" class="jb-name-prompt-skip-btn"></button>
           <button id="jb-name-prompt-confirm" class="jb-btn-primary"></button>
@@ -3537,12 +3568,31 @@ répertoire</button>
   function getClientName() {
     return (safeSessionStorageGet("jb_client_name") || "").trim().slice(0, 15);
   }
+  // Avatars néon du chat (Hubert, 27 oct. 2026) : choisi (facultatif) avec le nom d'utilisateur, affiché à
+  // côté du nom dans le chat. Dessins SVG 32x32 en trait (currentColor = couleur de l'avatar). Les
+  // identifiants sont aussi listés dans firestore.rules (match /chat) : à garder pareils.
+  const CHAT_AVATARS = [
+    { id: "bear", fr: "Ours", en: "Bear", c: "#ff9f1a", d: '<path d="M7.3 13.1A4 4 0 1 1 12 8.8M24.7 13.1A4 4 0 1 0 20 8.8"/><circle cx="16" cy="18" r="10"/><ellipse cx="16" cy="22.5" rx="4.5" ry="3.5"/><path d="M14.6 21.2h2.8l-1.4 1.6z" fill="currentColor"/><circle cx="12" cy="16" r="1.3" fill="currentColor"/><circle cx="20" cy="16" r="1.3" fill="currentColor"/>' },
+    { id: "robot", fr: "Robot", en: "Robot", c: "#5af4f0", d: '<rect x="7" y="10" width="18" height="15" rx="2"/><path d="M16 10V6.5M7 15H4.5v5H7M25 15h2.5v5H25M12 21.5h8M14 21.5v-1.6M16 21.5v-1.6M18 21.5v-1.6"/><circle cx="16" cy="5" r="1.6"/><rect x="10.5" y="13.5" width="4" height="3.5" fill="currentColor"/><rect x="17.5" y="13.5" width="4" height="3.5" fill="currentColor"/>' },
+    { id: "alien", fr: "Extraterrestre", en: "Alien", c: "#39ff7a", d: '<path d="M16 3.5c7.5 0 11 5.5 11 11 0 7-6.5 14-11 14S5 21.5 5 14.5c0-5.5 3.5-11 11-11zM14.8 23.5h2.4"/><path d="M8.5 13.5q5 0 5.8 5.5-5 .2-5.8-5.5zM23.5 13.5q-5 0-5.8 5.5 5 .2 5.8-5.5z" fill="currentColor"/>' },
+    { id: "ghost", fr: "Fantôme", en: "Ghost", c: "#c9d4ff", d: '<path d="M7 28V14a9 9 0 0 1 18 0v14l-3-2.5-3 2.5-3-2.5-3 2.5-3-2.5z"/><ellipse cx="12.8" cy="14.5" rx="1.6" ry="2.3" fill="currentColor"/><ellipse cx="19.2" cy="14.5" rx="1.6" ry="2.3" fill="currentColor"/><ellipse cx="16" cy="20.5" rx="1.4" ry="1.8"/>' },
+    { id: "skull", fr: "Crâne", en: "Skull", c: "#ff2d55", d: '<path d="M16 3.5a10 10 0 0 0-10 10c0 4 2 6.5 4 7.5v5.5h12V21c2-1 4-3.5 4-7.5a10 10 0 0 0-10-10zM13 26.5v-3M16 26.5v-3M19 26.5v-3"/><circle cx="12" cy="14" r="2.6" fill="currentColor"/><circle cx="20" cy="14" r="2.6" fill="currentColor"/><path d="M16 17.2l-1.6 2.8h3.2z" fill="currentColor"/>' },
+  ];
+  function chatAvatarById(id) { return CHAT_AVATARS.find((a) => a.id === id) || null; }
+  function getClientAvatar() { const a = chatAvatarById(safeSessionStorageGet("jb_client_avatar") || ""); return a ? a.id : ""; }
+  // petite icône néon à mettre devant un nom ("" si pas d'avatar)
+  function chatAvatarHtml(id) {
+    const a = chatAvatarById(id);
+    return a ? `<span class="jb-avatar" style="--av:${a.c}" title="${escapeHtml(a[lang] || a.fr)}"><svg viewBox="0 0 32 32" aria-hidden="true">${a.d}</svg></span>` : "";
+  }
   // 26 oct. 2026 (Hubert) : le nom d'utilisateur devient OBLIGATOIRE pour demander une chanson ou
   // donner — « Annuler » annule l'action (ensureClientName() rend alors ""), un nom vide ne passe pas.
   let clientNamePromptPromise = null;
   function ensureClientName() {
+    // 27 oct. 2026 (Hubert) : l'avatar est obligatoire aussi — un nom déjà donné sans avatar (ex. par la
+    // boîte de suggestions) rouvre la fenêtre, avec le nom déjà rempli
     const existing = getClientName();
-    if (existing) return Promise.resolve(existing);
+    if (existing && getClientAvatar()) return Promise.resolve(existing);
     if (clientNamePromptPromise) return clientNamePromptPromise;
     clientNamePromptPromise = new Promise((resolve) => {
       const wrap = document.getElementById("jb-name-prompt");
@@ -3553,13 +3603,35 @@ répertoire</button>
       document.getElementById("jb-name-prompt-title").textContent = t("name_prompt_title");
       document.getElementById("jb-name-prompt-text").textContent = t("name_prompt_text");
       input.placeholder = t("name_prompt_placeholder");
-      input.value = "";
+      input.value = existing || "";
       skipBtn.textContent = t("name_prompt_skip");
       confirmBtn.textContent = t("name_prompt_confirm");
+      // grille d'avatars : un toucher choisit (obligatoire — plus de texte d'explication ni de bouton
+      // « Annuler » dans la fenêtre, Hubert 27 oct. 2026)
+      let pickedAvatar = getClientAvatar();
+      const picker = document.getElementById("jb-avatar-picker");
+      const pickLabel = document.getElementById("jb-avatar-pick-label");
+      if (pickLabel) pickLabel.textContent = t("avatar_pick");
+      function drawPicker() {
+        if (!picker) return;
+        picker.innerHTML = CHAT_AVATARS.map((a) =>
+          `<button type="button" class="jb-avatar-opt${a.id === pickedAvatar ? " jb-avatar-on" : ""}" data-avatar="${a.id}" style="--av:${a.c}" role="radio" aria-checked="${a.id === pickedAvatar}" aria-label="${escapeHtml(a[lang] || a.fr)}"><svg viewBox="0 0 32 32" aria-hidden="true">${a.d}</svg></button>`
+        ).join("");
+      }
+      function onPick(e) {
+        const b = e.target.closest("[data-avatar]");
+        if (!b) return;
+        pickedAvatar = b.dataset.avatar;
+        drawPicker();
+      }
+      drawPicker();
+      if (picker) picker.addEventListener("click", onPick);
       wrap.hidden = false;
       function finish(name) {
         safeSessionStorageSet("jb_client_name_asked", "1");
         if (name) safeSessionStorageSet("jb_client_name", name);
+        if (name) safeSessionStorageSet("jb_client_avatar", pickedAvatar);
+        if (picker) picker.removeEventListener("click", onPick);
         wrap.hidden = true;
         skipBtn.removeEventListener("click", onSkip);
         confirmBtn.removeEventListener("click", onConfirm);
@@ -3571,6 +3643,7 @@ répertoire</button>
       function onConfirm() {
         const name = input.value.trim().slice(0, 15);
         if (!name) { input.focus(); input.classList.remove("jb-input-shake"); void input.offsetWidth; input.classList.add("jb-input-shake"); return; }
+        if (!pickedAvatar) { if (picker) { picker.classList.remove("jb-input-shake"); void picker.offsetWidth; picker.classList.add("jb-input-shake"); } return; }
         finish(name);
       }
       function onKeydown(e) { if (e.key === "Enter") onConfirm(); }
@@ -3589,7 +3662,7 @@ répertoire</button>
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-22.197";
+  const APP_BUILD = "2026-10-22.198";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -3750,6 +3823,7 @@ répertoire</button>
       name_prompt_placeholder: "Nom",
       name_prompt_skip: "Annuler",
       name_prompt_confirm: "Confirmer",
+      avatar_pick: "Choisis ton avatar pour le chat (facultatif) :",
       burned_badge: "🔥❌ Brûlée",
       cooldown_played_label: "Déjà Jouée",
       cooldown_available_label: "Disponible",
@@ -3848,6 +3922,7 @@ répertoire</button>
       name_prompt_placeholder: "Name",
       name_prompt_skip: "Cancel",
       name_prompt_confirm: "Confirm",
+      avatar_pick: "Pick your chat avatar (optional):",
       burned_badge: "🔥❌ Unavailable",
       cooldown_played_label: "Already Played",
       cooldown_available_label: "Available",
@@ -3899,6 +3974,8 @@ répertoire</button>
     if (npSkip) npSkip.textContent = t("name_prompt_skip");
     const npConfirm = document.getElementById("jb-name-prompt-confirm");
     if (npConfirm) npConfirm.textContent = t("name_prompt_confirm");
+    const npAvatar = document.getElementById("jb-avatar-pick-label");
+    if (npAvatar) npAvatar.textContent = t("avatar_pick");
     document.getElementById("jb-artist-name").textContent = t("page_title");
     document.getElementById("jb-my-votes-empty").textContent = t("my_votes_empty");
     // onglets du cadre du catalogue (2 lignes chacun, voir .jb-tab)
@@ -7974,7 +8051,7 @@ répertoire</button>
         ? [...(chatMessages || []).filter((m) => m.clientId !== myId), ...(myChatLocal || [])].sort((a, b) => chatMs(a) - chatMs(b)).slice(-CHAT_MAX)
         : (chatMessages || []);
       list.innerHTML = shown.map((m) =>
-        `<div class="jb-chat-msg"><span class="jb-chat-name">${escapeHtml(m.name || "")}</span><span class="jb-chat-text">${escapeHtml(m.text || "")}</span></div>`
+        `<div class="jb-chat-msg"><span class="jb-chat-name">${chatAvatarHtml(m.avatar)}${escapeHtml(m.name || "")}</span><span class="jb-chat-text">${escapeHtml(m.text || "")}</span></div>`
       ).join("");
       if (atBottom || !list._jbInit) { list.scrollTop = list.scrollHeight; list._jbInit = true; }
       empty.textContent = t("chat_empty");
@@ -7993,7 +8070,7 @@ répertoire</button>
         const ms = m.createdAt && m.createdAt.toMillis ? m.createdAt.toMillis() : Date.now();
         const hhmm = new Date(ms).toLocaleTimeString("fr-CA", { hour: "2-digit", minute: "2-digit" });
         return `<div class="jb-admin-chat-msg">
-          <div class="jb-admin-chat-body"><span class="jb-chat-name">${escapeHtml(m.name || "")}</span> <span class="jb-admin-chat-time">${hhmm}</span>
+          <div class="jb-admin-chat-body"><span class="jb-chat-name">${chatAvatarHtml(m.avatar)}${escapeHtml(m.name || "")}</span> <span class="jb-admin-chat-time">${hhmm}</span>
             <div class="jb-chat-text">${escapeHtml(m.text || "")}</div></div>
           <button type="button" class="jb-admin-kick" data-kick="${escapeHtml(m.clientId || "")}" data-kick-name="${escapeHtml(m.name || "")}">Expulser</button>
         </div>`;
@@ -8013,22 +8090,25 @@ répertoire</button>
     if (!name) return;
     lastChatSentAt = Date.now();
     input.value = "";
+    const avatar = getClientAvatar(); // "" = pas d'avatar (le champ n'est alors pas envoyé)
     if (chatBanned) {
       // expulsé : le message ne part pas, il s'affiche seulement ici (il ne s'en rend pas compte)
-      myChatLocal.push({ id: "local-" + Date.now(), name, text, ms: Date.now() });
+      myChatLocal.push({ id: "local-" + Date.now(), name, avatar, text, ms: Date.now() });
       saveMyChatLocal();
       renderChat();
       return;
     }
     try {
-      const ref = await addDoc(collection(db, "chat"), { name, text, createdAt: serverTimestamp(), clientId: chatClientId() });
-      myChatLocal.push({ id: ref.id, name, text, ms: Date.now() });
+      const msg = { name, text, createdAt: serverTimestamp(), clientId: chatClientId() };
+      if (avatar) msg.avatar = avatar;
+      const ref = await addDoc(collection(db, "chat"), msg);
+      myChatLocal.push({ id: ref.id, name, avatar, text, ms: Date.now() });
       saveMyChatLocal();
     } catch (err) {
       console.warn("chat send", err && err.code);
       if (err && err.code === "permission-denied") {
         // refusé par les règles (expulsé) : on fait comme si c'était parti
-        myChatLocal.push({ id: "local-" + Date.now(), name, text, ms: Date.now() });
+        myChatLocal.push({ id: "local-" + Date.now(), name, avatar, text, ms: Date.now() });
         saveMyChatLocal();
         chatBanned = true;
         renderChat();
