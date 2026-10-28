@@ -2364,6 +2364,13 @@
   #jb-public .jb-kbd-key.jb-kbd-wide { flex: 1.5 1 0; max-width: 60px; font-size: 0.8rem; color: #fff200; border-color: rgba(255, 242, 0, 0.55); background: rgba(255, 242, 0, 0.07); text-shadow: 0 0 6px rgba(255, 242, 0, 0.5); }
   #jb-public .jb-kbd-key.jb-kbd-space { flex: 5 1 0; max-width: none; font-size: 0.75rem; letter-spacing: 2px; }
   #jb-public .jb-kbd-key.jb-kbd-emo { font-size: 1.15rem; }
+  /* Majuscule : grosse flèche ; active = jaune flash plein et lumineux (Hubert, 27 oct. 2026) */
+  #jb-public .jb-kbd-key.jb-kbd-shift svg { width: 24px; height: 24px; display: block; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linejoin: round; filter: drop-shadow(0 0 3px rgba(255, 242, 0, 0.6)); }
+  #jb-public .jb-kbd-key.jb-kbd-shift.jb-kbd-shift-on {
+    background: #fff200; color: #080701; border-color: #fff200;
+    box-shadow: 0 0 14px #fff200, 0 0 4px #fff200 inset;
+  }
+  #jb-public .jb-kbd-key.jb-kbd-shift.jb-kbd-shift-on svg { fill: #080701; filter: none; }
   #jb-public .jb-kbd-key.jb-kbd-emoji { font-size: 1.35rem; text-shadow: none; }
   #jb-public .jb-kbd-key.jb-kbd-on { background: rgba(255, 242, 0, 0.35); color: #080701; }
   #jb-public .jb-kbd-key.jb-kbd-down { background: #5af4f0; color: #04121c; text-shadow: none; }
@@ -3724,7 +3731,7 @@ répertoire</button>
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-22.206";
+  const APP_BUILD = "2026-10-22.207";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -8229,6 +8236,9 @@ répertoire</button>
     const WIDE = { shift: "⇧", back: "⌫", num: "123", acc: "ÉÀ", abc: "ABC", emo: "😀", "#": "#" };
     let layout = "abc";
     let shift = true;
+    let downKey = null, repeatT = null; // touche tenue enfoncée, minuterie de répétition
+    // flèche de la touche majuscule : grosse flèche dessinée (Hubert, 27 oct. 2026)
+    const SHIFT_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3L3 13h5v8h8v-8h5z"/></svg>';
     function label(k) {
       if (k === "space") return lang === "en" ? "space" : "espace";
       if (WIDE[k] && k !== "#") return WIDE[k];
@@ -8237,14 +8247,17 @@ répertoire</button>
     function cls(k) {
       if (k === "space") return " jb-kbd-space";
       if (k === "emo") return " jb-kbd-wide jb-kbd-emo" + (layout === "emo" ? " jb-kbd-on" : "");
-      if (WIDE[k] && k !== "#") return " jb-kbd-wide" + (k === "shift" && shift ? " jb-kbd-on" : "");
+      if (k === "shift") return " jb-kbd-wide jb-kbd-shift" + (shift ? " jb-kbd-shift-on" : "");
+      if (WIDE[k] && k !== "#") return " jb-kbd-wide";
       if (layout === "emo") return " jb-kbd-emoji";
       return "";
     }
     function render() {
       kbd.innerHTML = LAYOUTS[layout].map((row) =>
-        `<div class="jb-kbd-row">${row.map((k) => `<button type="button" class="jb-kbd-key${cls(k)}" data-k="${escapeHtml(k)}">${escapeHtml(label(k))}</button>`).join("")}</div>`
+        `<div class="jb-kbd-row">${row.map((k) => `<button type="button" class="jb-kbd-key${cls(k)}" data-k="${escapeHtml(k)}"${k === "shift" ? ` aria-label="Majuscule"` : ""}>${k === "shift" ? SHIFT_SVG : escapeHtml(label(k))}</button>`).join("")}</div>`
       ).join("");
+      // touche encore tenue (le clavier vient d'être redessiné sous le doigt) : elle reste bleue
+      if (downKey) kbd.querySelectorAll("[data-k]").forEach((b) => { if (b.dataset.k === downKey) b.classList.add("jb-kbd-down"); });
     }
     function autoShift() { shift = /(^\s*$)|([.!?]\s$)/.test(input.value); }
     function insert(ch) {
@@ -8261,42 +8274,55 @@ répertoire</button>
       const parts = window.Intl && Intl.Segmenter ? [...new Intl.Segmenter().segment(before)].map((x) => x.segment) : Array.from(before);
       input.setRangeText("", s - parts[parts.length - 1].length, s, "end");
     }
+    // touches qui changent de mode (agissent au relâchement) ; toutes les autres écrivent dès le toucher
+    // et se répètent si on les garde enfoncées (sssss…), comme un vrai clavier (Hubert, 27 oct. 2026)
+    const MODE_KEYS = ["shift", "num", "acc", "abc", "emo"];
     function press(k) {
       if (k === "shift") { shift = !shift; render(); return; }
-      if (k === "num" || k === "acc" || k === "abc" || k === "emo") { layout = k; render(); return; }
-      if (k === "back") { backspace(); autoShift(); render(); return; }
-      if (layout === "emo" && k !== "space") { insert(k); render(); return; } // émoticône : telle quelle
-      insert(k === "space" ? " " : (shift ? k.toUpperCase() : k));
-      if (k === "space" || k === "." || k === "!" || k === "?") autoShift(); else shift = false;
-      render();
+      if (MODE_KEYS.includes(k)) { layout = k; render(); return; }
+      const wasShift = shift;
+      if (k === "back") backspace();
+      else if (layout === "emo" && k !== "space") insert(k); // émoticône : telle quelle
+      else insert(k === "space" ? " " : (shift ? k.toUpperCase() : k));
+      if (k === "back" || k === "space" || k === "." || k === "!" || k === "?") autoShift();
+      else if (layout !== "emo") shift = false;
+      if (shift !== wasShift) render(); // on ne redessine que si la majuscule change
     }
     // Toujours affiché (Hubert, 27 oct. 2026) : plus besoin de toucher la barre, il ne se replie jamais.
     autoShift(); render();
     kbd.hidden = false;
     // message parti (la barre se vide) : majuscule pour le prochain
     form.addEventListener("submit", () => setTimeout(() => { autoShift(); render(); }, 400));
-    // touche enfoncée : on garde la barre active (pas de perte de focus) ; ⌫ maintenu efface en rafale
-    let downKey = null, repeatT = null;
+    // Touche enfoncée : bleue tant que le doigt reste dessus ; gardée enfoncée, elle se répète (après 0,45 s,
+    // 14 fois par seconde). Le relâchement est écouté sur TOUTE la page (doigt qui glisse hors du clavier,
+    // geste annulé par le téléphone…) — avant, une touche pouvait rester bleue, ou ⌫ continuer d'effacer.
     function stopRepeat() { clearTimeout(repeatT); clearInterval(repeatT); repeatT = null; }
+    function release() {
+      stopRepeat();
+      downKey = null;
+      kbd.querySelectorAll(".jb-kbd-down").forEach((x) => x.classList.remove("jb-kbd-down"));
+    }
     kbd.addEventListener("pointerdown", (e) => {
       const b = e.target.closest("[data-k]");
       e.preventDefault();
+      release();
       if (!b) return;
-      downKey = b.dataset.k;
+      const k = b.dataset.k;
+      downKey = k;
       b.classList.add("jb-kbd-down");
-      if (downKey === "back") {
-        press("back");
-        repeatT = setTimeout(() => { repeatT = setInterval(() => press("back"), 70); }, 450);
-      }
+      if (MODE_KEYS.includes(k)) return; // agit au relâchement
+      press(k);
+      repeatT = setTimeout(() => { repeatT = setInterval(() => press(k), 70); }, 450);
     });
-    kbd.addEventListener("pointerup", (e) => {
-      const b = e.target.closest("[data-k]");
-      stopRepeat();
-      if (b && downKey && b.dataset.k === downKey && downKey !== "back") press(downKey);
-      downKey = null;
-      kbd.querySelectorAll(".jb-kbd-down").forEach((x) => x.classList.remove("jb-kbd-down"));
+    document.addEventListener("pointerup", (e) => {
+      if (!downKey) return;
+      const b = e.target.closest && e.target.closest("[data-k]");
+      const k = downKey;
+      release();
+      if (MODE_KEYS.includes(k) && b && b.dataset.k === k) press(k);
     });
-    kbd.addEventListener("pointercancel", () => { stopRepeat(); downKey = null; });
+    document.addEventListener("pointercancel", release);
+    window.addEventListener("blur", release);
   })();
   renderChat();
   async function kickChatUser(clientId, name) {
