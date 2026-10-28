@@ -2346,7 +2346,7 @@
   #jb-public .jb-chat-name, #jb-admin .jb-chat-name {
     font-family: 'Orbitron', sans-serif; font-weight: 700; font-size: 0.78rem; letter-spacing: 0.5px; text-transform: uppercase; color: #fff200;
   }
-  #jb-public .jb-chat-text { color: #fffaa8; font-size: 0.95rem; line-height: 1.3; word-break: break-word; }
+  #jb-public .jb-chat-text { color: #fffaa8; font-size: 0.48rem; line-height: 1.3; word-break: break-word; } /* moitié de l'ancien 0.95rem (Hubert, 27 oct. 2026) */
   /* Avatar néon devant le nom dans le chat (Hubert, 27 oct. 2026) — --av = couleur de l'avatar */
   #jb-public .jb-chat-name, #jb-admin .jb-chat-name { display: inline-flex; align-items: center; gap: 7px; }
   #jb-app .jb-avatar {
@@ -3655,7 +3655,7 @@ répertoire</button>
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-22.199";
+  const APP_BUILD = "2026-10-22.200";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -8000,7 +8000,8 @@ répertoire</button>
   // admin et peut expulser quelqu'un (« chatBans/{identifiant du téléphone} » : il ne peut plus écrire
   // ce soir, et ses messages sont effacés). « Nouvelle soirée » vide le chat et les expulsions.
   // Règles Firestore : 200 caractères max, pas de liens, interdit aux expulsés.
-  var CHAT_MAX = 60;           // derniers messages affichés
+  var CHAT_MAX = 60;           // derniers messages lus dans Firestore
+  var CHAT_SHOWN = 10;         // messages affichés chez les clients (le plus récent en haut)
   var chatMessages = [];       // [{id, name, text, createdAt, clientId}], du plus ancien au plus récent
   var chatBanned = false;      // CE téléphone a été expulsé
   var chatStarted = false;
@@ -8037,12 +8038,13 @@ répertoire</button>
     const input = document.getElementById("jb-chat-input");
     const banned = document.getElementById("jb-chat-banned");
     if (list && empty && input) {
-      const atBottom = list.scrollHeight - list.scrollTop - list.clientHeight < 40;
       // expulsé : les messages des autres + SES messages gardés localement (personne d'autre ne les voit)
       const myId = chatClientId();
-      const shown = chatBanned
-        ? [...(chatMessages || []).filter((m) => m.clientId !== myId), ...(myChatLocal || [])].sort((a, b) => chatMs(a) - chatMs(b)).slice(-CHAT_MAX)
+      const all = chatBanned
+        ? [...(chatMessages || []).filter((m) => m.clientId !== myId), ...(myChatLocal || [])].sort((a, b) => chatMs(a) - chatMs(b))
         : (chatMessages || []);
+      // rotation de 10 messages, le plus récent EN HAUT de la liste (Hubert, 27 oct. 2026)
+      const shown = all.slice(-CHAT_SHOWN).reverse();
       // les miens (même téléphone, ou copie locale) à gauche, ceux des autres à droite
       const mineIds = new Set((myChatLocal || []).map((x) => x.id));
       list.innerHTML = shown.map((m) => {
@@ -8050,7 +8052,7 @@ répertoire</button>
         return `<div class="jb-chat-msg ${mine ? "jb-chat-me" : "jb-chat-other"}"><span class="jb-chat-name">${escapeHtml(m.name || "")}</span>` +
           `<div class="jb-chat-row">${chatAvatarHtml(m.avatar)}<span class="jb-chat-text">${escapeHtml(m.text || "")}</span></div></div>`;
       }).join("");
-      if (atBottom || !list._jbInit) { list.scrollTop = list.scrollHeight; list._jbInit = true; }
+      list.scrollTop = 0; // le nouveau message est en haut : on le montre
       empty.textContent = t("chat_empty");
       empty.hidden = shown.length > 0;
       const name = getClientName();
