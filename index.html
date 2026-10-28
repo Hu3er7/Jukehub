@@ -3739,7 +3739,7 @@ répertoire</button>
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-22.210";
+  const APP_BUILD = "2026-10-22.211";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -3877,6 +3877,8 @@ répertoire</button>
       req_first_back: "",
       req_limit_title: "Tu as atteint ta limite de 5 demandes",
       req_limit_back: "Tu pourras en faire d'autres quand une de tes chansons sera jouée",
+      public_full_title: "Le Choix du public est plein (100 chansons)",
+      public_full_back: "Tu pourras demander une nouvelle chanson dès qu'une chanson de la liste sera jouée",
       style_title: "Chansons",
       style_title_count: (n) => `${n} Chansons`,
       artist_title_count: (n) => `${n} Artistes`,
@@ -3978,6 +3980,8 @@ répertoire</button>
       req_first_back: "",
       req_limit_title: "You've reached your limit of 5 requests",
       req_limit_back: "You can make more once one of your songs is played",
+      public_full_title: "Crowd's Picks is full (100 songs)",
+      public_full_back: "You can request a new song as soon as one on the list is played",
       style_title: "Songs",
       style_title_count: (n) => `${n} Songs`,
       artist_title_count: (n) => `${n} Artists`,
@@ -4664,6 +4668,7 @@ répertoire</button>
   // palmarès, pas encore jouées) — au-delà, la liste "// Tes demandes" devenait trop longue et le
   // client s'y perdait. Une chanson jouée libère sa place. Voir activeRequestCount().
   const MAX_REQUESTS = 5;
+  const PUBLIC_MAX_SONGS = 100; // plafond de « Choix du public » pour toute la salle (voir requestSong())
   // songId -> moment de la demande : fixe l'ordre de la liste "// Tes demandes" (l'ordre où le client
   // a choisi ses chansons, jamais leur rang — si les lignes bougeaient, il se perdrait).
   let requestOrder = {};
@@ -7435,6 +7440,14 @@ répertoire</button>
     if (voteModalBusy()) return;
     if (activeRequestCount() >= MAX_REQUESTS) {
       showInfoModal("req_limit_title", "req_limit_back");
+      return;
+    }
+    // Plafond de la salle (Hubert, 28 oct. 2026) : au plus PUBLIC_MAX_SONGS chansons en même temps dans
+    // « Choix du public » — un client en navigation privée qui revient sans cesse avec 5 nouvelles
+    // demandes ne peut pas noyer la liste. Ajouter son nom à une chanson DÉJÀ dans la liste reste permis.
+    const inPublicAlready = votes[song.id] && !isHiddenFromPalmares(votes[song.id]);
+    if (!inPublicAlready && Object.values(votes).filter((v) => !isHiddenFromPalmares(v)).length >= PUBLIC_MAX_SONGS) {
+      showInfoModal("public_full_title", "public_full_back");
       return;
     }
     const myName = await ensureClientName();
