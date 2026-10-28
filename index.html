@@ -2345,10 +2345,12 @@
   #jb-public .jb-chat-row .jb-avatar svg { width: 34px; height: 34px; }
   /* Nouveau message « pondu » par la barre de texte (Hubert, 27 oct. 2026) : il sort de sous la barre en
      s'ouvrant (les autres glissent vers le bas), gonfle un peu trop puis se pose ; l'avatar fait un flash */
-  #jb-public .jb-chat-msg.jb-chat-new { animation: jb-chat-lay 1.12s cubic-bezier(0.25, 0.9, 0.3, 1.2) both; transform-origin: 50% 0; overflow: hidden; }
+  /* durées : ralenties de 60 % puis encore de 80 % (Hubert, 27 oct. 2026) ; --lag = temps déjà écoulé
+     si le chat est redessiné en pleine animation */
+  #jb-public .jb-chat-msg.jb-chat-new { animation: jb-chat-lay 2s cubic-bezier(0.25, 0.9, 0.3, 1.2) calc(-1 * var(--lag, 0ms)) both; transform-origin: 50% 0; overflow: hidden; }
   #jb-public .jb-chat-me.jb-chat-new { transform-origin: 0 0; }
   #jb-public .jb-chat-other.jb-chat-new { transform-origin: 100% 0; }
-  #jb-public .jb-chat-new .jb-avatar { animation: jb-chat-flash 1.44s ease-out 0.4s both; } /* 60 % plus lent (Hubert) */
+  #jb-public .jb-chat-new .jb-avatar { animation: jb-chat-flash 2.6s ease-out calc(0.72s - var(--lag, 0ms)) both; }
   @keyframes jb-chat-lay {
     0% { max-height: 0; opacity: 0; transform: translateY(-18px) scale(0.3, 0.2); padding-top: 0; padding-bottom: 0; }
     45% { max-height: 140px; opacity: 1; transform: translateY(0) scale(1.08, 1.12); padding-top: 7px; padding-bottom: 7px; }
@@ -3673,7 +3675,7 @@ répertoire</button>
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-22.201";
+  const APP_BUILD = "2026-10-22.202";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -8022,6 +8024,8 @@ répertoire</button>
   var CHAT_SHOWN = 10;         // messages affichés chez les clients (le plus récent en haut)
   var chatRenderedIds = null;  // messages déjà affichés (null = rien encore : pas d'animation au 1er affichage)
   var chatSnapLoaded = false;  // 1re réponse de Firestore reçue
+  var chatNewAt = {};          // id → heure d'arrivée du message (pour l'animation « pondu »)
+  var CHAT_LAY_MS = 3400;     // durée totale de l'animation (message + flash de l'avatar), voir CSS .jb-chat-new
   var chatMessages = [];       // [{id, name, text, createdAt, clientId}], du plus ancien au plus récent
   var chatBanned = false;      // CE téléphone a été expulsé
   var chatStarted = false;
@@ -8070,10 +8074,17 @@ répertoire</button>
       const mineIds = new Set((myChatLocal || []).map((x) => x.id));
       // message arrivé depuis le dernier affichage : il est « pondu » sous la barre de texte (animation,
       // voir .jb-chat-new) — pas au tout premier affichage, où tout est déjà là
-      const fresh = (m) => chatRenderedIds && !chatRenderedIds.has(m.id);
+      // Un nouvel affichage (2e réponse de Firestore, langue…) pendant l'animation la reprend où elle était
+      // (--lag) au lieu de la couper — sinon elle avait l'air beaucoup trop rapide.
+      const nowMs = Date.now();
+      const anim = (m) => {
+        if (chatRenderedIds && !chatRenderedIds.has(m.id) && !chatNewAt[m.id]) chatNewAt[m.id] = nowMs;
+        const lag = chatNewAt[m.id] ? nowMs - chatNewAt[m.id] : Infinity;
+        return lag < CHAT_LAY_MS ? ` jb-chat-new" style="--lag:${lag}ms` : "";
+      };
       list.innerHTML = shown.map((m) => {
         const mine = m.clientId ? m.clientId === myId : mineIds.has(m.id);
-        return `<div class="jb-chat-msg ${mine ? "jb-chat-me" : "jb-chat-other"}${fresh(m) ? " jb-chat-new" : ""}"><span class="jb-chat-name">${escapeHtml(m.name || "")}</span>` +
+        return `<div class="jb-chat-msg ${mine ? "jb-chat-me" : "jb-chat-other"}${anim(m)}"><span class="jb-chat-name">${escapeHtml(m.name || "")}</span>` +
           `<div class="jb-chat-row">${chatAvatarHtml(m.avatar)}<span class="jb-chat-text">${escapeHtml(m.text || "")}</span></div></div>`;
       }).join("");
       if (chatSnapLoaded) chatRenderedIds = new Set(all.map((m) => m.id));
