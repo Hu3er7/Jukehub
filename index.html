@@ -1607,6 +1607,63 @@
       linear-gradient(to top right, transparent 50%, #39ff7a 50%, #39ff7a calc(50% + 2px), transparent calc(50% + 2px));
   }
   #jb-admin .jb-admin-green h3, #jb-admin .jb-admin-green summary { color: #39ff7a; text-shadow: 0 0 8px rgba(57, 255, 122, 0.6); }
+  /* Sections sous « Choix du public » en onglets, comme les 3 onglets des clients (Hubert, 27 oct. 2026) :
+     vert = Boîte de suggestions / Refroidissement, bleu = Ajouter / Répertoire. L'onglet choisi est
+     soudé au cadre (le trait du haut s'ouvre sous lui) et le cadre prend sa couleur.
+     --ai = onglet choisi (posé par setAdminTab()), --atw = largeur d'un onglet (4 onglets, 3 espaces de 6px) */
+  #jb-admin .jb-admin-tabs {
+    --ac: #39ff7a; --ac-rgb: 57, 255, 122; --abg: rgba(6, 50, 22, 0.28); --ai: 0;
+    --atw: calc((100% - 10px - 18px) / 4);
+    margin-top: 16px;
+  }
+  #jb-admin .jb-admin-tabs.jb-admin-on-blue { --ac: #5af4f0; --ac-rgb: 90, 244, 240; --abg: rgba(8, 52, 62, 0.28); }
+  #jb-admin .jb-admin-tabbar { display: flex; gap: 6px; height: 42px; margin-right: 10px; align-items: flex-end; }
+  #jb-admin .jb-admin-tab {
+    --tc: #39ff7a; --tc-rgb: 57, 255, 122;
+    box-sizing: border-box; flex: 1 1 0; min-width: 0; height: 36px; min-height: 0; margin: 0; padding: 0 6px 0 7px;
+    border: 1px solid rgba(var(--tc-rgb), 0.5); border-bottom: none; border-radius: 0; cursor: pointer;
+    display: flex; align-items: center; text-align: left; overflow: hidden; white-space: pre-line;
+    background-color: rgba(var(--tc-rgb), 0.07); color: var(--tc);
+    font-family: 'Share Tech Mono', monospace; font-weight: 700; font-size: min(0.72rem, 2.5vw); line-height: 1.15;
+    letter-spacing: 0; text-transform: uppercase; text-shadow: 0 0 6px rgba(var(--tc-rgb), 0.45);
+    clip-path: polygon(0 0, calc(100% - 9px) 0, 100% 9px, 100% 100%, 0 100%);
+    background-image: linear-gradient(to bottom left, transparent 50%, rgba(var(--tc-rgb), 0.5) 50%, rgba(var(--tc-rgb), 0.5) calc(50% + 1px), transparent calc(50% + 1px));
+    background-size: 9px 9px; background-position: right top; background-repeat: no-repeat; background-origin: border-box;
+  }
+  #jb-admin .jb-admin-tab-blue { --tc: #5af4f0; --tc-rgb: 90, 244, 240; }
+  /* titre de l'onglet ouvert, en haut du cadre (les compteurs y sont, pas dans les onglets — comme chez les clients) */
+  #jb-admin .jb-admin-panel-head {
+    margin: 0 0 8px; font-family: 'Share Tech Mono', monospace; font-weight: 700; font-size: 0.8rem;
+    letter-spacing: 1.5px; text-transform: uppercase; color: var(--ac);
+  }
+  #jb-admin .jb-admin-tab.jb-admin-tab-active {
+    height: 42px; border: 2px solid var(--tc); border-bottom: none; background-color: var(--abg);
+    -webkit-backdrop-filter: blur(2px); backdrop-filter: blur(2px);
+    clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 0 100%);
+    background-image: linear-gradient(to bottom left, transparent 50%, var(--tc) 50%, var(--tc) calc(50% + 2px), transparent calc(50% + 2px));
+    background-size: 12px 12px;
+  }
+  #jb-admin .jb-admin-tabbody {
+    position: relative; box-sizing: border-box; padding: 12px 14px 14px;
+    border: 2px solid var(--ac); border-top: none; background-color: var(--abg);
+    -webkit-backdrop-filter: blur(2px); backdrop-filter: blur(2px);
+    box-shadow: inset 0 0 10px rgba(var(--ac-rgb), 0.08);
+    clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 12px 100%, 0 calc(100% - 12px));
+    background-image:
+      linear-gradient(to bottom left, transparent 50%, var(--ac) 50%, var(--ac) calc(50% + 2px), transparent calc(50% + 2px)),
+      linear-gradient(to top right, transparent 50%, var(--ac) 50%, var(--ac) calc(50% + 2px), transparent calc(50% + 2px));
+    background-size: 12px 12px, 12px 12px; background-position: right top, left bottom;
+    background-repeat: no-repeat; background-origin: border-box;
+  }
+  /* trait du haut du cadre, ouvert sous l'onglet choisi */
+  #jb-admin .jb-admin-tabbody::before {
+    content: ""; position: absolute; left: -2px; right: -2px; top: 0; height: 2px; background: var(--ac); pointer-events: none;
+    --gl: calc(var(--ai) * (var(--atw) + 6px) + 2px); --gr: calc(var(--gl) + var(--atw) - 4px);
+    -webkit-mask-image: linear-gradient(to right, #000 var(--gl), transparent var(--gl), transparent var(--gr), #000 var(--gr));
+    mask-image: linear-gradient(to right, #000 var(--gl), transparent var(--gl), transparent var(--gr), #000 var(--gr));
+  }
+  #jb-admin .jb-admin-tabpanel[hidden] { display: none; }
+  #jb-admin .jb-admin-tabpanel > .jb-hint:first-child { margin-top: 0; }
   #jb-admin .jb-hint, #jb-admin .jb-empty { color: var(--text-dim); font-family: 'Share Tech Mono', monospace; }
   #jb-admin input[type="text"], #jb-admin input[type="email"], #jb-admin input[type="password"], #jb-admin textarea {
     background: #121003; color: var(--accent); border: 1px solid rgba(255, 242, 0, 0.4);
@@ -3143,38 +3200,48 @@
           <ol id="jb-admin-palmares" class="jb-admin-palmares"></ol>
           <p id="jb-admin-palmares-empty" class="jb-empty" hidden>Rien pour l'instant.</p>
         </div>
-        <!-- 18 oct. 2026 (Hubert) : liste repliable, et GARDÉE d'une soirée à l'autre ("Nouvelle
-             soirée" n'efface que le palmarès) — Hubert y revient chez lui pour apprendre les
-             suggestions au chant et à la guitare. -->
-        <details id="jb-admin-special-wrap" class="jb-admin-column jb-admin-special-wrap jb-admin-green">
-          <summary><h3>💡 Boîte de suggestions <span id="jb-admin-special-count" class="jb-admin-special-count"></span></h3></summary>
-          <p class="jb-hint">Recherches de clients restées sans résultat dans le répertoire. Gardées d'une soirée à l'autre — « Nouvelle soirée » ne les efface pas.</p>
-          <ol id="jb-admin-special" class="jb-admin-palmares"></ol>
-          <p id="jb-admin-special-empty" class="jb-empty" hidden>Rien pour l'instant.</p>
-        </details>
       </section>
 
-      <!-- Repliée par défaut, comme la boîte de suggestions (Hubert, 26 oct. 2026) -->
-      <section class="jb-admin-section jb-admin-green">
-        <details class="jb-admin-special-wrap">
-          <summary><h3>⏳ Refroidissement &amp; 🔥 Brûlées</h3></summary>
-          <div id="jb-cooldown-list" class="jb-cooldown-list"></div>
-          <p id="jb-cooldown-empty" class="jb-empty" hidden>Aucune chanson en attente pour l'instant.</p>
-        </details>
-      </section>
-
-      <section class="jb-admin-section jb-admin-blue">
-        <h3>➕ Ajouter chansons</h3>
-        <textarea id="jb-bulk-input" rows="3"></textarea>
-        <div id="jb-bulk-genre-row" class="jb-genre-chip-row"></div>
-        <button id="jb-bulk-add-btn" class="jb-btn-primary">Ajouter au répertoire</button>
-        <p id="jb-bulk-status" class="jb-hint"></p>
-      </section>
-
-      <section class="jb-admin-section jb-admin-blue">
-        <h3>📚 Répertoire complet (<span id="jb-admin-count">0</span>)</h3>
-        <input id="jb-admin-search" type="text" placeholder="🔍 Chercher pour modifier / supprimer…" />
-        <div id="jb-admin-catalog" class="jb-admin-catalog"></div>
+      <!-- 27 oct. 2026 (Hubert) : les sections sous « Choix du public » regroupées dans un seul cadre à
+           onglets, comme les 3 onglets des clients (voir setAdminTab()) : l'onglet choisi est soudé au
+           cadre, qui prend sa couleur. La boîte de suggestions reste GARDÉE d'une soirée à l'autre
+           (« Reset » n'efface que le palmarès) — Hubert y revient chez lui pour pratiquer. -->
+      <section id="jb-admin-tabs" class="jb-admin-tabs">
+        <div class="jb-admin-tabbar" role="tablist">
+          <button type="button" class="jb-admin-tab jb-admin-tab-green" data-atab="sugg" role="tab">💡 Boîte de
+suggestions</button>
+          <button type="button" class="jb-admin-tab jb-admin-tab-green" data-atab="cool" role="tab">⏳ Refroid.
+🔥 Brûlées</button>
+          <button type="button" class="jb-admin-tab jb-admin-tab-blue" data-atab="add" role="tab">➕ Ajouter
+chansons</button>
+          <button type="button" class="jb-admin-tab jb-admin-tab-blue" data-atab="rep" role="tab">📚 Mon
+répertoire</button>
+        </div>
+        <div class="jb-admin-tabbody">
+          <div class="jb-admin-tabpanel" data-apanel="sugg" role="tabpanel">
+            <div class="jb-admin-panel-head">Boîte de suggestions <span id="jb-admin-special-count" class="jb-admin-special-count"></span></div>
+            <p class="jb-hint">Recherches de clients restées sans résultat dans le répertoire. Gardées d'une soirée à l'autre — « Reset » ne les efface pas.</p>
+            <ol id="jb-admin-special" class="jb-admin-palmares"></ol>
+            <p id="jb-admin-special-empty" class="jb-empty" hidden>Rien pour l'instant.</p>
+          </div>
+          <div class="jb-admin-tabpanel" data-apanel="cool" role="tabpanel" hidden>
+            <div class="jb-admin-panel-head">Refroidissement &amp; brûlées</div>
+            <div id="jb-cooldown-list" class="jb-cooldown-list"></div>
+            <p id="jb-cooldown-empty" class="jb-empty" hidden>Aucune chanson en attente pour l'instant.</p>
+          </div>
+          <div class="jb-admin-tabpanel" data-apanel="add" role="tabpanel" hidden>
+            <div class="jb-admin-panel-head">Ajouter des chansons</div>
+            <textarea id="jb-bulk-input" rows="3"></textarea>
+            <div id="jb-bulk-genre-row" class="jb-genre-chip-row"></div>
+            <button id="jb-bulk-add-btn" class="jb-btn-primary">Ajouter au répertoire</button>
+            <p id="jb-bulk-status" class="jb-hint"></p>
+          </div>
+          <div class="jb-admin-tabpanel" data-apanel="rep" role="tabpanel" hidden>
+            <div class="jb-admin-panel-head">Répertoire complet (<span id="jb-admin-count">0</span>)</div>
+            <input id="jb-admin-search" type="text" placeholder="🔍 Chercher pour modifier / supprimer…" />
+            <div id="jb-admin-catalog" class="jb-admin-catalog"></div>
+          </div>
+        </div>
       </section>
 
     </div>
@@ -3522,7 +3589,7 @@
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-22.195";
+  const APP_BUILD = "2026-10-22.196";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -7665,13 +7732,24 @@
       });
     });
   }
-  // Liste repliable : se souvient si elle était ouverte ou fermée (sur cet appareil)
-  (() => {
-    const wrap = document.getElementById("jb-admin-special-wrap");
-    if (!wrap) return;
-    wrap.open = safeStorageGet("jb_admin_special_open") === "1";
-    wrap.addEventListener("toggle", () => safeStorageSet("jb_admin_special_open", wrap.open ? "1" : "0"));
-  })();
+  // Onglets du panneau admin (27 oct. 2026) : se souvient de l'onglet choisi (sur cet appareil)
+  function setAdminTab(name) {
+    const box = document.getElementById("jb-admin-tabs");
+    if (!box) return;
+    const tabs = [...box.querySelectorAll(".jb-admin-tab")];
+    if (!tabs.some((b) => b.dataset.atab === name)) name = "sugg";
+    tabs.forEach((b, i) => {
+      const on = b.dataset.atab === name;
+      b.classList.toggle("jb-admin-tab-active", on);
+      b.setAttribute("aria-selected", on ? "true" : "false");
+      if (on) box.style.setProperty("--ai", i);
+    });
+    box.classList.toggle("jb-admin-on-blue", name === "add" || name === "rep");
+    box.querySelectorAll(".jb-admin-tabpanel").forEach((p) => { p.hidden = p.dataset.apanel !== name; });
+    safeStorageSet("jb_admin_tab", name);
+  }
+  document.querySelectorAll(".jb-admin-tab").forEach((b) => b.addEventListener("click", () => setAdminTab(b.dataset.atab)));
+  setAdminTab(safeStorageGet("jb_admin_tab") || "sugg");
 
   async function dismissSpecialRequest(id) {
     try {
