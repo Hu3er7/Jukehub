@@ -2320,7 +2320,9 @@
   #jb-public .jb-chat .jb-style-heading-row h2::before { content: "// "; }
   /* plus de cadre jaune autour du chat : seulement la barre de texte et les messages (Hubert, 27 oct. 2026) */
   #jb-public .jb-chat-frame { position: relative; padding: 0; margin: 0 0 20px; box-sizing: border-box; }
-  #jb-public .jb-chat-form { display: flex; gap: 8px; margin: 0 0 10px; }
+  /* ligne jaune néon sous le titre « Chat room » (Hubert, 27 oct. 2026) */
+  #jb-public .jb-chat .jb-style-heading-row { border-bottom: 2px solid #fff200; box-shadow: 0 6px 8px -6px rgba(255, 242, 0, 0.7); padding-bottom: 6px; margin-bottom: 8px; }
+  #jb-public .jb-chat-form { display: flex; gap: 8px; margin: 8px 0 10px; }
   #jb-public .jb-chat-form[hidden] { display: none; }
   #jb-public #jb-chat-input {
     flex: 1; min-width: 0; height: 40px; box-sizing: border-box; margin: 0; padding: 0 12px;
@@ -2333,7 +2335,31 @@
     background: #fff200; color: #080701; font-size: 1.1rem;
     clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px));
   }
-  #jb-public .jb-chat-list { max-height: 280px; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+  /* Clavier QWERTY néon sous la barre de commentaire (Hubert, 27 oct. 2026) — écrans tactiles seulement */
+  #jb-public .jb-kbd {
+    margin: -2px 0 12px; padding: 8px 5px 6px; display: flex; flex-direction: column; gap: 7px;
+    border: 2px solid rgba(255, 242, 0, 0.55); background: rgba(20, 18, 2, 0.75);
+    -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px);
+    clip-path: polygon(0 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%);
+    -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; touch-action: manipulation;
+  }
+  #jb-public .jb-kbd[hidden] { display: none; }
+  #jb-public .jb-kbd-row { display: flex; gap: 4px; justify-content: center; }
+  #jb-public .jb-kbd-key {
+    flex: 1 1 0; min-width: 0; max-width: 40px; height: 42px; margin: 0; padding: 0; border-radius: 0; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    border: 1px solid rgba(90, 244, 240, 0.55); background: rgba(90, 244, 240, 0.07); color: #bdfcf9;
+    font-family: 'Share Tech Mono', monospace; font-size: 1.05rem; text-shadow: 0 0 6px rgba(90, 244, 240, 0.5);
+    clip-path: polygon(0 0, calc(100% - 5px) 0, 100% 5px, 100% 100%, 5px 100%, 0 calc(100% - 5px));
+  }
+  #jb-public .jb-kbd-key.jb-kbd-wide { flex: 1.5 1 0; max-width: 60px; font-size: 0.8rem; color: #fff200; border-color: rgba(255, 242, 0, 0.55); background: rgba(255, 242, 0, 0.07); text-shadow: 0 0 6px rgba(255, 242, 0, 0.5); }
+  #jb-public .jb-kbd-key.jb-kbd-space { flex: 5 1 0; max-width: none; font-size: 0.75rem; letter-spacing: 2px; }
+  #jb-public .jb-kbd-key.jb-kbd-emo { font-size: 1.15rem; }
+  #jb-public .jb-kbd-key.jb-kbd-emoji { font-size: 1.35rem; text-shadow: none; }
+  #jb-public .jb-kbd-key.jb-kbd-on { background: rgba(255, 242, 0, 0.35); color: #080701; }
+  #jb-public .jb-kbd-key.jb-kbd-down { background: #5af4f0; color: #04121c; text-shadow: none; }
+  #jb-public .jb-kbd-key.jb-kbd-wide.jb-kbd-down, #jb-public .jb-kbd-key.jb-kbd-send.jb-kbd-down { background: #fffaa8; color: #080701; }
+  #jb-public .jb-chat-list { overflow: hidden; } /* 5 messages au plus : pas de défilement */
   /* Messages façon messagerie (maquette de Hubert, 27 oct. 2026) : nom au-dessus, gros avatar à côté du
      texte ; SES messages à gauche, ceux des autres à droite (avatar côté extérieur). Plus de trait sous
      chaque message. */
@@ -2347,12 +2373,13 @@
      s'ouvrant (les autres glissent vers le bas), gonfle un peu trop puis se pose ; l'avatar fait un flash */
   /* durées : ralenties de 60 % puis encore de 80 % (Hubert, 27 oct. 2026) ; --lag = temps déjà écoulé
      si le chat est redessiné en pleine animation */
-  #jb-public .jb-chat-msg.jb-chat-new { animation: jb-chat-lay 2s cubic-bezier(0.25, 0.9, 0.3, 1.2) calc(-1 * var(--lag, 0ms)) both; transform-origin: 50% 0; overflow: hidden; }
-  #jb-public .jb-chat-me.jb-chat-new { transform-origin: 0 0; }
-  #jb-public .jb-chat-other.jb-chat-new { transform-origin: 100% 0; }
+  /* (27 oct. : les messages sont maintenant AU-DESSUS de la barre — le nouveau monte de la barre) */
+  #jb-public .jb-chat-msg.jb-chat-new { animation: jb-chat-lay 2s cubic-bezier(0.25, 0.9, 0.3, 1.2) calc(-1 * var(--lag, 0ms)) both; transform-origin: 50% 100%; overflow: hidden; }
+  #jb-public .jb-chat-me.jb-chat-new { transform-origin: 0 100%; }
+  #jb-public .jb-chat-other.jb-chat-new { transform-origin: 100% 100%; }
   #jb-public .jb-chat-new .jb-avatar { animation: jb-chat-flash 2.6s ease-out calc(0.72s - var(--lag, 0ms)) both; }
   @keyframes jb-chat-lay {
-    0% { max-height: 0; opacity: 0; transform: translateY(-18px) scale(0.3, 0.2); padding-top: 0; padding-bottom: 0; }
+    0% { max-height: 0; opacity: 0; transform: translateY(18px) scale(0.3, 0.2); padding-top: 0; padding-bottom: 0; }
     45% { max-height: 140px; opacity: 1; transform: translateY(0) scale(1.08, 1.12); padding-top: 7px; padding-bottom: 7px; }
     70% { transform: scale(0.97, 0.95); }
     100% { max-height: 140px; transform: none; }
@@ -3094,14 +3121,18 @@
          son panneau admin (voir setChatListener()/sendChatMessage()). -->
     <section class="jb-chat">
       <div class="jb-style-heading-row"><h2 id="jb-chat-title">Chat room</h2></div>
+      <!-- 27 oct. 2026 (Hubert) : titre, ligne jaune, 5 derniers messages (le plus récent juste au-dessus
+           de la barre), barre de texte + ➤, puis le clavier de l'app -->
       <div class="jb-chat-frame">
+        <p id="jb-chat-banned" class="jb-chat-banned" hidden></p>
+        <p id="jb-chat-empty" class="jb-empty jb-chat-empty"></p>
+        <div id="jb-chat-list" class="jb-chat-list"></div>
         <form id="jb-chat-form" class="jb-chat-form" autocomplete="off">
           <input id="jb-chat-input" type="text" maxlength="200" />
           <button id="jb-chat-send" type="submit" class="jb-chat-send" aria-label="Envoyer">➤</button>
         </form>
-        <p id="jb-chat-banned" class="jb-chat-banned" hidden></p>
-        <div id="jb-chat-list" class="jb-chat-list"></div>
-        <p id="jb-chat-empty" class="jb-empty jb-chat-empty"></p>
+        <!-- Clavier QWERTY néon de l'app (Hubert, 27 oct. 2026), à la place de celui du téléphone : voir setupChatKeyboard() -->
+        <div id="jb-kbd" class="jb-kbd" hidden></div>
       </div>
     </section>
 
@@ -3675,7 +3706,7 @@ répertoire</button>
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-22.202";
+  const APP_BUILD = "2026-10-22.203";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -8021,7 +8052,7 @@ répertoire</button>
   // ce soir, et ses messages sont effacés). « Nouvelle soirée » vide le chat et les expulsions.
   // Règles Firestore : 200 caractères max, pas de liens, interdit aux expulsés.
   var CHAT_MAX = 60;           // derniers messages lus dans Firestore
-  var CHAT_SHOWN = 10;         // messages affichés chez les clients (le plus récent en haut)
+  var CHAT_SHOWN = 5;          // messages affichés chez les clients (le plus récent en bas, au-dessus de la barre)
   var chatRenderedIds = null;  // messages déjà affichés (null = rien encore : pas d'animation au 1er affichage)
   var chatSnapLoaded = false;  // 1re réponse de Firestore reçue
   var chatNewAt = {};          // id → heure d'arrivée du message (pour l'animation « pondu »)
@@ -8068,8 +8099,8 @@ répertoire</button>
       const all = chatBanned
         ? [...(chatMessages || []).filter((m) => m.clientId !== myId), ...(myChatLocal || [])].sort((a, b) => chatMs(a) - chatMs(b))
         : (chatMessages || []);
-      // rotation de 10 messages, le plus récent EN HAUT de la liste (Hubert, 27 oct. 2026)
-      const shown = all.slice(-CHAT_SHOWN).reverse();
+      // rotation des 5 derniers messages, le plus récent EN BAS, juste au-dessus de la barre (Hubert, 27 oct. 2026)
+      const shown = all.slice(-CHAT_SHOWN);
       // les miens (même téléphone, ou copie locale) à gauche, ceux des autres à droite
       const mineIds = new Set((myChatLocal || []).map((x) => x.id));
       // message arrivé depuis le dernier affichage : il est « pondu » sous la barre de texte (animation,
@@ -8088,11 +8119,9 @@ répertoire</button>
           `<div class="jb-chat-row">${chatAvatarHtml(m.avatar)}<span class="jb-chat-text">${escapeHtml(m.text || "")}</span></div></div>`;
       }).join("");
       if (chatSnapLoaded) chatRenderedIds = new Set(all.map((m) => m.id));
-      list.scrollTop = 0; // le nouveau message est en haut : on le montre
       empty.textContent = t("chat_empty");
       empty.hidden = shown.length > 0;
-      const name = getClientName();
-      input.placeholder = name ? t("chat_placeholder", name) : t("chat_placeholder_noname");
+      input.placeholder = ""; // barre de texte vide, sans texte d'aide (Hubert, 27 oct. 2026)
       if (banned) banned.hidden = true; // jamais de message « tu as été retiré » : l'expulsion reste invisible
     }
     // Panneau admin : le plus récent en haut, avec « Expulser »
@@ -8153,6 +8182,112 @@ répertoire</button>
     }
   }
   document.getElementById("jb-chat-form").addEventListener("submit", sendChatMessage);
+
+  // ---------- Clavier QWERTY de l'app (Hubert, 27 oct. 2026) ----------
+  // Sur écran tactile, toucher la barre de commentaire ouvre CE clavier néon, juste sous la barre, au lieu de
+  // celui du téléphone qui montait par-dessus la page (inputmode="none" le garde fermé). « ÉÀ » = accents,
+  // « 123 » = chiffres et ponctuation ; ⇧ = majuscule pour une lettre (automatique au début du message).
+  // Se replie quand on touche ailleurs. Sur ordinateur, rien ne change (vrai clavier).
+  (function setupChatKeyboard() {
+    const input = document.getElementById("jb-chat-input");
+    const kbd = document.getElementById("jb-kbd");
+    const form = document.getElementById("jb-chat-form");
+    if (!input || !kbd || !form) return;
+    if (!(window.matchMedia && window.matchMedia("(pointer: coarse)").matches)) return;
+    input.setAttribute("inputmode", "none");
+    // 27 oct. 2026 (Hubert) : plus de touche jaune d'envoi (le ➤ à côté de la barre suffit) ; touche 😀 = émoticônes
+    const LAYOUTS = {
+      abc: [[..."qwertyuiop"], [..."asdfghjkl"], ["shift", ..."zxcvbnm", "back"], ["num", "acc", "emo", "space", "."]],
+      acc: [[..."éèêëàâçùûô"], [..."îïœ'-!?,:"], ["shift", ..."ÿüö\"();", "back"], ["num", "abc", "emo", "space", "."]],
+      num: [[..."1234567890"], [..."-/:;()$&@"], ["#", ..."%+=?!'", "back"], ["abc", "acc", "emo", "space", ","]],
+      emo: [
+        ["🎸", "🎤", "🎶", "🎹", "🥁", "🔥", "❤️", "👏", "🙌", "🤘"],
+        ["😂", "😍", "🥳", "😎", "😮", "😢", "🥹", "😜", "🤩", "😴"],
+        ["🍺", "🍻", "🍷", "🥃", "🎉", "💃", "🕺", "👍", "back"],
+        ["abc", "num", "acc", "space", "!"],
+      ],
+    };
+    const WIDE = { shift: "⇧", back: "⌫", num: "123", acc: "ÉÀ", abc: "ABC", emo: "😀", "#": "#" };
+    let layout = "abc";
+    let shift = true;
+    function label(k) {
+      if (k === "space") return lang === "en" ? "space" : "espace";
+      if (WIDE[k] && k !== "#") return WIDE[k];
+      return shift ? k.toUpperCase() : k;
+    }
+    function cls(k) {
+      if (k === "space") return " jb-kbd-space";
+      if (k === "emo") return " jb-kbd-wide jb-kbd-emo" + (layout === "emo" ? " jb-kbd-on" : "");
+      if (WIDE[k] && k !== "#") return " jb-kbd-wide" + (k === "shift" && shift ? " jb-kbd-on" : "");
+      if (layout === "emo") return " jb-kbd-emoji";
+      return "";
+    }
+    function render() {
+      kbd.innerHTML = LAYOUTS[layout].map((row) =>
+        `<div class="jb-kbd-row">${row.map((k) => `<button type="button" class="jb-kbd-key${cls(k)}" data-k="${escapeHtml(k)}">${escapeHtml(label(k))}</button>`).join("")}</div>`
+      ).join("");
+    }
+    function autoShift() { shift = /(^\s*$)|([.!?]\s$)/.test(input.value); }
+    function insert(ch) {
+      if (input.value.length >= 200) return;
+      const s = input.selectionStart ?? input.value.length, e = input.selectionEnd ?? s;
+      input.setRangeText(ch, s, e, "end");
+    }
+    function backspace() {
+      const s = input.selectionStart ?? input.value.length, e = input.selectionEnd ?? s;
+      if (s !== e) { input.setRangeText("", s, e, "end"); return; }
+      if (s <= 0) return;
+      // efface le dernier caractère ENTIER (une émoticône peut compter pour plusieurs)
+      const before = input.value.slice(0, s);
+      const parts = window.Intl && Intl.Segmenter ? [...new Intl.Segmenter().segment(before)].map((x) => x.segment) : Array.from(before);
+      input.setRangeText("", s - parts[parts.length - 1].length, s, "end");
+    }
+    function press(k) {
+      if (k === "shift") { shift = !shift; render(); return; }
+      if (k === "num" || k === "acc" || k === "abc" || k === "emo") { layout = k; render(); return; }
+      if (k === "back") { backspace(); autoShift(); render(); return; }
+      if (layout === "emo" && k !== "space") { insert(k); render(); return; } // émoticône : telle quelle
+      insert(k === "space" ? " " : (shift ? k.toUpperCase() : k));
+      if (k === "space" || k === "." || k === "!" || k === "?") autoShift(); else shift = false;
+      render();
+    }
+    function show() {
+      if (!kbd.hidden) return;
+      layout = "abc"; autoShift(); render();
+      kbd.hidden = false;
+      setTimeout(() => kbd.scrollIntoView({ block: "nearest", behavior: "smooth" }), 30);
+    }
+    function hide() { kbd.hidden = true; input.blur(); }
+    input.addEventListener("focus", show);
+    input.addEventListener("click", show);
+    // touche enfoncée : on garde la barre active (pas de perte de focus) ; ⌫ maintenu efface en rafale
+    let downKey = null, repeatT = null;
+    function stopRepeat() { clearTimeout(repeatT); clearInterval(repeatT); repeatT = null; }
+    kbd.addEventListener("pointerdown", (e) => {
+      const b = e.target.closest("[data-k]");
+      e.preventDefault();
+      if (!b) return;
+      downKey = b.dataset.k;
+      b.classList.add("jb-kbd-down");
+      if (downKey === "back") {
+        press("back");
+        repeatT = setTimeout(() => { repeatT = setInterval(() => press("back"), 70); }, 450);
+      }
+    });
+    kbd.addEventListener("pointerup", (e) => {
+      const b = e.target.closest("[data-k]");
+      stopRepeat();
+      if (b && downKey && b.dataset.k === downKey && downKey !== "back") press(downKey);
+      downKey = null;
+      kbd.querySelectorAll(".jb-kbd-down").forEach((x) => x.classList.remove("jb-kbd-down"));
+    });
+    kbd.addEventListener("pointercancel", () => { stopRepeat(); downKey = null; });
+    document.addEventListener("pointerdown", (e) => {
+      // composedPath() : chemin au moment du toucher (⌫ redessine le clavier, la touche n'y est déjà plus)
+      const path = e.composedPath ? e.composedPath() : [e.target];
+      if (!kbd.hidden && !path.includes(kbd) && !path.includes(form)) hide();
+    });
+  })();
   renderChat();
   async function kickChatUser(clientId, name) {
     if (!clientId || !isAdmin) return;
