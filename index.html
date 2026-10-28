@@ -3739,7 +3739,7 @@ répertoire</button>
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-22.209";
+  const APP_BUILD = "2026-10-22.210";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -8084,7 +8084,8 @@ répertoire</button>
   // admin et peut expulser quelqu'un (« chatBans/{identifiant du téléphone} » : il ne peut plus écrire
   // ce soir, et ses messages sont effacés). « Nouvelle soirée » vide le chat et les expulsions.
   // Règles Firestore : 200 caractères max, pas de liens, interdit aux expulsés.
-  var CHAT_MAX = 60;           // derniers messages lus dans Firestore
+  var CHAT_MAX = 10;           // derniers messages lus dans Firestore (60 → 10 le 28 oct. 2026 : on n'en montre que 6,
+                               // et chaque message chargé à l'ouverture compte pour une lecture facturée)
   var CHAT_SHOWN = 5;          // messages affichés chez les clients (le plus récent en bas, au-dessus de la barre)
   var chatRenderedIds = null;  // messages déjà affichés (null = rien encore : pas d'animation au 1er affichage)
   var chatSnapLoaded = false;  // 1re réponse de Firestore reçue
