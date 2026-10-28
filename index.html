@@ -2333,6 +2333,13 @@
   #jb-public .jb-chat .jb-style-heading-row { border-bottom: 2px solid #fff200; box-shadow: 0 6px 8px -6px rgba(255, 242, 0, 0.7); padding-bottom: 6px; margin-bottom: 8px; }
   #jb-public .jb-chat-form { display: flex; gap: 8px; margin: 8px 0 10px; }
   #jb-public .jb-chat-form[hidden] { display: none; }
+  /* curseur « _ » jaune fixe (pas clignotant, Hubert) au bout du texte (posé par placeCaret(), écrans tactiles) */
+  #jb-public .jb-chat-form { position: relative; }
+  #jb-public .jb-kbd-caret {
+    position: absolute; top: 50%; transform: translateY(-50%); pointer-events: none;
+    font-family: 'Share Tech Mono', monospace; font-size: 0.95rem; font-weight: 700; color: #fff200;
+    text-shadow: 0 0 6px rgba(255, 242, 0, 0.8);
+  }
   #jb-public #jb-chat-input {
     flex: 1; min-width: 0; height: 40px; box-sizing: border-box; margin: 0; padding: 0 12px;
     background: rgba(0, 0, 0, 0.35); color: #fffaa8; border: 2px solid #fff200; border-left-width: 5px; border-radius: 0;
@@ -3732,7 +3739,7 @@ répertoire</button>
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-22.208";
+  const APP_BUILD = "2026-10-22.209";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -8290,12 +8297,34 @@ répertoire</button>
       if (k === "back" || k === "space" || k === "." || k === "!" || k === "?") autoShift();
       else if (layout !== "emo") shift = false;
       if (shift !== wasShift) render(); // on ne redessine que si la majuscule change
+      placeCaret();
     }
+    // Curseur « _ » (fixe) au bout du texte, pour que le client voie où il écrit (Hubert, 27 oct. 2026) :
+    // la barre n'est jamais « active » (le clavier de l'app écrit dedans), donc pas de curseur du téléphone.
+    const caret = document.createElement("span");
+    caret.className = "jb-kbd-caret";
+    caret.textContent = "_";
+    caret.setAttribute("aria-hidden", "true");
+    form.appendChild(caret);
+    const measure = document.createElement("canvas").getContext("2d");
+    function placeCaret() {
+      const cs = getComputedStyle(input);
+      measure.font = `${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;
+      input.scrollLeft = input.scrollWidth; // texte long : on montre la fin
+      const start = input.offsetLeft + parseFloat(cs.borderLeftWidth) + parseFloat(cs.paddingLeft);
+      const end = input.offsetLeft + input.offsetWidth - parseFloat(cs.borderRightWidth) - parseFloat(cs.paddingRight) - 8;
+      caret.style.left = Math.min(start + measure.measureText(input.value).width - input.scrollLeft, end) + "px";
+    }
+    placeCaret();
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(placeCaret);
+    window.addEventListener("resize", placeCaret);
+    // la barre est encore cachée au chargement (page hors spectacle, etc.) : on replace le curseur dès qu'elle apparaît
+    if (window.ResizeObserver) new ResizeObserver(placeCaret).observe(input);
     // Toujours affiché (Hubert, 27 oct. 2026) : plus besoin de toucher la barre, il ne se replie jamais.
     autoShift(); render();
     kbd.hidden = false;
     // message parti (la barre se vide) : majuscule pour le prochain
-    form.addEventListener("submit", () => setTimeout(() => { autoShift(); render(); }, 400));
+    form.addEventListener("submit", () => setTimeout(() => { autoShift(); render(); placeCaret(); }, 400));
     // Touche enfoncée : bleue tant que le doigt reste dessus ; gardée enfoncée, elle se répète (après 0,45 s,
     // 14 fois par seconde). Le relâchement est écouté sur TOUTE la page (doigt qui glisse hors du clavier,
     // geste annulé par le téléphone…) — avant, une touche pouvait rester bleue, ou ⌫ continuer d'effacer.
