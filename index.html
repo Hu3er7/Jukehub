@@ -2371,6 +2371,7 @@
     box-shadow: 0 0 14px #fff200, 0 0 4px #fff200 inset;
   }
   #jb-public .jb-kbd-key.jb-kbd-shift.jb-kbd-shift-on svg { fill: #080701; filter: none; }
+  #jb-public .jb-kbd-key[data-k="back"] svg { width: 30px; height: 26px; display: block; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linejoin: round; stroke-linecap: round; filter: drop-shadow(0 0 3px rgba(255, 242, 0, 0.6)); }
   #jb-public .jb-kbd-key.jb-kbd-emoji { font-size: 1.35rem; text-shadow: none; }
   #jb-public .jb-kbd-key.jb-kbd-on { background: rgba(255, 242, 0, 0.35); color: #080701; }
   #jb-public .jb-kbd-key.jb-kbd-down { background: #5af4f0; color: #04121c; text-shadow: none; }
@@ -3731,7 +3732,7 @@ répertoire</button>
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-22.207";
+  const APP_BUILD = "2026-10-22.208";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -8239,6 +8240,8 @@ répertoire</button>
     let downKey = null, repeatT = null; // touche tenue enfoncée, minuterie de répétition
     // flèche de la touche majuscule : grosse flèche dessinée (Hubert, 27 oct. 2026)
     const SHIFT_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3L3 13h5v8h8v-8h5z"/></svg>';
+    // ⌫ aussi en gros dessin (Hubert, 27 oct. 2026)
+    const BACK_SVG = '<svg viewBox="0 0 28 24" aria-hidden="true"><path d="M9 4h16v16H9L2 12z"/><path d="M13 8.5l7 7M20 8.5l-7 7"/></svg>';
     function label(k) {
       if (k === "space") return lang === "en" ? "space" : "espace";
       if (WIDE[k] && k !== "#") return WIDE[k];
@@ -8254,7 +8257,7 @@ répertoire</button>
     }
     function render() {
       kbd.innerHTML = LAYOUTS[layout].map((row) =>
-        `<div class="jb-kbd-row">${row.map((k) => `<button type="button" class="jb-kbd-key${cls(k)}" data-k="${escapeHtml(k)}"${k === "shift" ? ` aria-label="Majuscule"` : ""}>${k === "shift" ? SHIFT_SVG : escapeHtml(label(k))}</button>`).join("")}</div>`
+        `<div class="jb-kbd-row">${row.map((k) => `<button type="button" class="jb-kbd-key${cls(k)}" data-k="${escapeHtml(k)}"${k === "shift" ? ` aria-label="Majuscule"` : k === "back" ? ` aria-label="Effacer"` : ""}>${k === "shift" ? SHIFT_SVG : k === "back" ? BACK_SVG : escapeHtml(label(k))}</button>`).join("")}</div>`
       ).join("");
       // touche encore tenue (le clavier vient d'être redessiné sous le doigt) : elle reste bleue
       if (downKey) kbd.querySelectorAll("[data-k]").forEach((b) => { if (b.dataset.k === downKey) b.classList.add("jb-kbd-down"); });
