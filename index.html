@@ -2318,18 +2318,8 @@
   #jb-public .jb-chat { margin-top: 18px; }
   #jb-app.jb-browse-only .jb-chat { display: none; }
   #jb-public .jb-chat .jb-style-heading-row h2::before { content: "// "; }
-  #jb-public .jb-chat-frame {
-    position: relative; padding: 12px 14px 12px; margin: 0 -10px 20px; min-height: 240px; box-sizing: border-box;
-    border: 3px solid #fff200; background: rgba(40, 36, 2, 0.28);
-    -webkit-backdrop-filter: blur(2px); backdrop-filter: blur(2px);
-    box-shadow: 0 0 14px rgba(255, 242, 0, 0.35), inset 0 0 12px rgba(255, 242, 0, 0.08);
-    clip-path: polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 14px 100%, 0 calc(100% - 14px));
-    background-image:
-      linear-gradient(to bottom left, transparent 50%, #fff200 50%, #fff200 calc(50% + 3px), transparent calc(50% + 3px)),
-      linear-gradient(to top right, transparent 50%, #fff200 50%, #fff200 calc(50% + 3px), transparent calc(50% + 3px));
-    background-size: 14px 14px, 14px 14px; background-position: right top, left bottom;
-    background-repeat: no-repeat; background-origin: border-box;
-  }
+  /* plus de cadre jaune autour du chat : seulement la barre de texte et les messages (Hubert, 27 oct. 2026) */
+  #jb-public .jb-chat-frame { position: relative; padding: 0; margin: 0 0 20px; box-sizing: border-box; }
   #jb-public .jb-chat-form { display: flex; gap: 8px; margin: 0 0 10px; }
   #jb-public .jb-chat-form[hidden] { display: none; }
   #jb-public #jb-chat-input {
@@ -2344,12 +2334,15 @@
     clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px));
   }
   #jb-public .jb-chat-list { max-height: 280px; overflow-y: auto; -webkit-overflow-scrolling: touch; }
-  #jb-public .jb-chat-msg { position: relative; display: flex; flex-direction: column; gap: 2px; padding: 8px 2px 9px; }
-  /* trait bleu néon sous chaque message (comme la maquette) */
-  #jb-public .jb-chat-msg::after {
-    content: ""; position: absolute; left: 0; bottom: 0; width: 72%; height: 2px;
-    background: linear-gradient(to right, #3ff6ee, rgba(63, 246, 238, 0.4)); box-shadow: 0 0 6px rgba(63, 246, 238, 0.6);
-  }
+  /* Messages façon messagerie (maquette de Hubert, 27 oct. 2026) : nom au-dessus, gros avatar à côté du
+     texte ; SES messages à gauche, ceux des autres à droite (avatar côté extérieur). Plus de trait sous
+     chaque message. */
+  #jb-public .jb-chat-msg { display: flex; flex-direction: column; align-items: flex-start; gap: 3px; padding: 7px 2px; }
+  #jb-public .jb-chat-msg.jb-chat-other { align-items: flex-end; }
+  #jb-public .jb-chat-row { display: flex; align-items: center; gap: 10px; max-width: 88%; }
+  #jb-public .jb-chat-other .jb-chat-row { flex-direction: row-reverse; text-align: right; }
+  #jb-public .jb-chat-row .jb-avatar { width: 46px; height: 46px; border-width: 2px; }
+  #jb-public .jb-chat-row .jb-avatar svg { width: 34px; height: 34px; }
   #jb-public .jb-chat-name, #jb-admin .jb-chat-name {
     font-family: 'Orbitron', sans-serif; font-weight: 700; font-size: 0.78rem; letter-spacing: 0.5px; text-transform: uppercase; color: #fff200;
   }
@@ -3662,7 +3655,7 @@ répertoire</button>
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-22.198";
+  const APP_BUILD = "2026-10-22.199";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -8050,9 +8043,13 @@ répertoire</button>
       const shown = chatBanned
         ? [...(chatMessages || []).filter((m) => m.clientId !== myId), ...(myChatLocal || [])].sort((a, b) => chatMs(a) - chatMs(b)).slice(-CHAT_MAX)
         : (chatMessages || []);
-      list.innerHTML = shown.map((m) =>
-        `<div class="jb-chat-msg"><span class="jb-chat-name">${chatAvatarHtml(m.avatar)}${escapeHtml(m.name || "")}</span><span class="jb-chat-text">${escapeHtml(m.text || "")}</span></div>`
-      ).join("");
+      // les miens (même téléphone, ou copie locale) à gauche, ceux des autres à droite
+      const mineIds = new Set((myChatLocal || []).map((x) => x.id));
+      list.innerHTML = shown.map((m) => {
+        const mine = m.clientId ? m.clientId === myId : mineIds.has(m.id);
+        return `<div class="jb-chat-msg ${mine ? "jb-chat-me" : "jb-chat-other"}"><span class="jb-chat-name">${escapeHtml(m.name || "")}</span>` +
+          `<div class="jb-chat-row">${chatAvatarHtml(m.avatar)}<span class="jb-chat-text">${escapeHtml(m.text || "")}</span></div></div>`;
+      }).join("");
       if (atBottom || !list._jbInit) { list.scrollTop = list.scrollHeight; list._jbInit = true; }
       empty.textContent = t("chat_empty");
       empty.hidden = shown.length > 0;
