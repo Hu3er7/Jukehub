@@ -2343,6 +2343,24 @@
   #jb-public .jb-chat-other .jb-chat-row { flex-direction: row-reverse; text-align: right; }
   #jb-public .jb-chat-row .jb-avatar { width: 46px; height: 46px; border-width: 2px; }
   #jb-public .jb-chat-row .jb-avatar svg { width: 34px; height: 34px; }
+  /* Nouveau message « pondu » par la barre de texte (Hubert, 27 oct. 2026) : il sort de sous la barre en
+     s'ouvrant (les autres glissent vers le bas), gonfle un peu trop puis se pose ; l'avatar fait un flash */
+  #jb-public .jb-chat-msg.jb-chat-new { animation: jb-chat-lay 1.12s cubic-bezier(0.25, 0.9, 0.3, 1.2) both; transform-origin: 50% 0; overflow: hidden; }
+  #jb-public .jb-chat-me.jb-chat-new { transform-origin: 0 0; }
+  #jb-public .jb-chat-other.jb-chat-new { transform-origin: 100% 0; }
+  #jb-public .jb-chat-new .jb-avatar { animation: jb-chat-flash 1.44s ease-out 0.4s both; } /* 60 % plus lent (Hubert) */
+  @keyframes jb-chat-lay {
+    0% { max-height: 0; opacity: 0; transform: translateY(-18px) scale(0.3, 0.2); padding-top: 0; padding-bottom: 0; }
+    45% { max-height: 140px; opacity: 1; transform: translateY(0) scale(1.08, 1.12); padding-top: 7px; padding-bottom: 7px; }
+    70% { transform: scale(0.97, 0.95); }
+    100% { max-height: 140px; transform: none; }
+  }
+  @keyframes jb-chat-flash {
+    0% { box-shadow: 0 0 0 transparent; background: rgba(255, 255, 255, 0.04); }
+    30% { box-shadow: 0 0 18px var(--av); background: color-mix(in srgb, var(--av) 35%, transparent); }
+    100% { box-shadow: 0 0 0 transparent; background: rgba(255, 255, 255, 0.04); }
+  }
+  @media (prefers-reduced-motion: reduce) { #jb-public .jb-chat-new, #jb-public .jb-chat-new .jb-avatar { animation: none; } }
   #jb-public .jb-chat-name, #jb-admin .jb-chat-name {
     font-family: 'Orbitron', sans-serif; font-weight: 700; font-size: 0.78rem; letter-spacing: 0.5px; text-transform: uppercase; color: #fff200;
   }
@@ -3655,7 +3673,7 @@ répertoire</button>
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-22.200";
+  const APP_BUILD = "2026-10-22.201";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -8002,6 +8020,8 @@ répertoire</button>
   // Règles Firestore : 200 caractères max, pas de liens, interdit aux expulsés.
   var CHAT_MAX = 60;           // derniers messages lus dans Firestore
   var CHAT_SHOWN = 10;         // messages affichés chez les clients (le plus récent en haut)
+  var chatRenderedIds = null;  // messages déjà affichés (null = rien encore : pas d'animation au 1er affichage)
+  var chatSnapLoaded = false;  // 1re réponse de Firestore reçue
   var chatMessages = [];       // [{id, name, text, createdAt, clientId}], du plus ancien au plus récent
   var chatBanned = false;      // CE téléphone a été expulsé
   var chatStarted = false;
@@ -8025,6 +8045,7 @@ répertoire</button>
     chatStarted = true;
     onSnapshot(query(collection(db, "chat"), orderBy("createdAt", "desc"), limit(CHAT_MAX)), (snap) => {
       chatMessages = snap.docs.map((d) => ({ id: d.id, ...d.data({ serverTimestamps: "estimate" }) })).reverse();
+      chatSnapLoaded = true;
       renderChat();
     }, (err) => console.error("chat onSnapshot", err));
     if (!isAdmin) {
@@ -8047,11 +8068,15 @@ répertoire</button>
       const shown = all.slice(-CHAT_SHOWN).reverse();
       // les miens (même téléphone, ou copie locale) à gauche, ceux des autres à droite
       const mineIds = new Set((myChatLocal || []).map((x) => x.id));
+      // message arrivé depuis le dernier affichage : il est « pondu » sous la barre de texte (animation,
+      // voir .jb-chat-new) — pas au tout premier affichage, où tout est déjà là
+      const fresh = (m) => chatRenderedIds && !chatRenderedIds.has(m.id);
       list.innerHTML = shown.map((m) => {
         const mine = m.clientId ? m.clientId === myId : mineIds.has(m.id);
-        return `<div class="jb-chat-msg ${mine ? "jb-chat-me" : "jb-chat-other"}"><span class="jb-chat-name">${escapeHtml(m.name || "")}</span>` +
+        return `<div class="jb-chat-msg ${mine ? "jb-chat-me" : "jb-chat-other"}${fresh(m) ? " jb-chat-new" : ""}"><span class="jb-chat-name">${escapeHtml(m.name || "")}</span>` +
           `<div class="jb-chat-row">${chatAvatarHtml(m.avatar)}<span class="jb-chat-text">${escapeHtml(m.text || "")}</span></div></div>`;
       }).join("");
+      if (chatSnapLoaded) chatRenderedIds = new Set(all.map((m) => m.id));
       list.scrollTop = 0; // le nouveau message est en haut : on le montre
       empty.textContent = t("chat_empty");
       empty.hidden = shown.length > 0;
