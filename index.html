@@ -2367,8 +2367,10 @@
   #jb-public .jb-chat-msg.jb-chat-other { align-items: flex-end; }
   #jb-public .jb-chat-row { display: flex; align-items: center; gap: 10px; max-width: 88%; }
   #jb-public .jb-chat-other .jb-chat-row { flex-direction: row-reverse; text-align: right; }
-  #jb-public .jb-chat-row .jb-avatar { width: 46px; height: 46px; border-width: 2px; }
-  #jb-public .jb-chat-row .jb-avatar svg { width: 34px; height: 34px; }
+  /* avatar et nom 30 % plus petits (Hubert, 27 oct. 2026) */
+  #jb-public .jb-chat-row .jb-avatar { width: 32px; height: 32px; border-width: 1.5px; }
+  #jb-public .jb-chat-row .jb-avatar svg { width: 24px; height: 24px; }
+  #jb-public .jb-chat-msg .jb-chat-name { font-size: 0.55rem; }
   /* Nouveau message « pondu » par la barre de texte (Hubert, 27 oct. 2026) : il sort de sous la barre en
      s'ouvrant (les autres glissent vers le bas), gonfle un peu trop puis se pose ; l'avatar fait un flash */
   /* durées : ralenties de 60 % puis encore de 80 % (Hubert, 27 oct. 2026) ; --lag = temps déjà écoulé
@@ -2393,7 +2395,7 @@
   #jb-public .jb-chat-name, #jb-admin .jb-chat-name {
     font-family: 'Orbitron', sans-serif; font-weight: 700; font-size: 0.78rem; letter-spacing: 0.5px; text-transform: uppercase; color: #fff200;
   }
-  #jb-public .jb-chat-text { color: #fffaa8; font-size: 0.48rem; line-height: 1.3; word-break: break-word; } /* moitié de l'ancien 0.95rem (Hubert, 27 oct. 2026) */
+  #jb-public .jb-chat-text { color: #fffaa8; font-size: 0.77rem; line-height: 1.3; word-break: break-word; } /* 0.48rem + 60 % (Hubert, 27 oct. 2026) */
   /* Avatar néon devant le nom dans le chat (Hubert, 27 oct. 2026) — --av = couleur de l'avatar */
   #jb-public .jb-chat-name, #jb-admin .jb-chat-name { display: inline-flex; align-items: center; gap: 7px; }
   #jb-app .jb-avatar {
@@ -3706,7 +3708,7 @@ répertoire</button>
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-22.203";
+  const APP_BUILD = "2026-10-22.204";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
