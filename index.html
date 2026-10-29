@@ -5128,6 +5128,8 @@ html[data-jb-bg="matrix"] #jb-app > .jb-view { position: relative; z-index: 1; }
 html[data-jb-bg="matrix"] #jb-public .jb-chat-frame { background: rgba(0, 6, 2, 0.82); box-shadow: 0 0 0 8px rgba(0, 6, 2, 0.82); }
 /* titre et textes : légère lueur verte d'écran cathodique */
 html[data-jb-bg="matrix"] #jb-app #jb-public #jb-artist-name { text-shadow: 0 0 6px rgba(0, 255, 65, 0.8), 0 0 14px rgba(0, 255, 65, 0.4) !important; }
+/* titre de la même longueur que dans les autres thèmes (même réduction d'affichage que le Cyberpunk) */
+html[data-jb-bg="matrix"] #jb-app #jb-public #jb-artist-name { scale: 0.74; transform-origin: left center; }
 html[data-jb-bg="matrix"] #jb-public .jb-style-heading-row h2 { text-shadow: 0 0 6px rgba(0, 255, 65, 0.6) !important; }
 </style>
 
@@ -6456,7 +6458,7 @@ répertoire</button>
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-22.217";
+  const APP_BUILD = "2026-10-22.218";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
