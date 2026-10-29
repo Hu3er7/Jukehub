@@ -3856,6 +3856,597 @@ html[data-jb-bg="foret"] #jb-public .jb-kbd-key.jb-kbd-shift.jb-kbd-shift-on { b
 html[data-jb-bg="foret"] #jb-public .jb-kbd-key.jb-kbd-shift.jb-kbd-shift-on svg { fill: #102408 !important; }
 html[data-jb-bg="foret"] #jb-app .jb-chat-av { clip-path: none !important; border-radius: 8px; }
 </style>
+<!-- 4e thème « Tech blanc » (Hubert, 28 oct. 2026, image d'un cadre bleu d'interface à l'appui) : fond
+     blanc avec une fine grille, bandes bleues en biais dans les coins, cadres Cyberpunk (mêmes formes,
+     mêmes dimensions) recolorés en bleu et gris, texte bleu marine.
+     1re partie générée par tools/gen-themes.js, 2e partie faite à la main. -->
+<style id="jb-theme-tech">
+@import url('https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&display=swap');
+/* police maison du thème Tech (dessinée par tools/gen-font.js) */
+@font-face { font-family: 'Jukehub Tech'; src: url('fonts/jukehub-tech.otf') format('opentype'); font-weight: 100 900; font-display: swap; }
+/* ==== GÉNÉRÉ (tech) par tools/gen-themes.js — ne pas modifier à la main ==== */
+html[data-jb-bg="tech"] #jb-app { --accent: #6366f1; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: var(--bg); color: var(--text) }
+html[data-jb-bg="tech"] #jb-app h1, html[data-jb-bg="tech"] #jb-app h2, html[data-jb-bg="tech"] #jb-app h3, html[data-jb-bg="tech"] #jb-app p, html[data-jb-bg="tech"] #jb-app ul, html[data-jb-bg="tech"] #jb-app ol, html[data-jb-bg="tech"] #jb-app li, html[data-jb-bg="tech"] #jb-app input, html[data-jb-bg="tech"] #jb-app textarea, html[data-jb-bg="tech"] #jb-app button, html[data-jb-bg="tech"] #jb-app a { font-family: inherit; color: inherit; border: 0; background: none; text-decoration: none }
+html[data-jb-bg="tech"] #jb-app .jb-top-bar h1 { font-family: 'Anton', -apple-system, sans-serif; color: var(--accent2) }
+html[data-jb-bg="tech"] #jb-app .jb-lang-btn { background: var(--card); border: 1px solid var(--border); color: var(--text-dim); border-radius: 999px }
+html[data-jb-bg="tech"] #jb-app .jb-lang-btn.jb-lang-active { border-color: var(--accent); color: var(--accent2) }
+html[data-jb-bg="tech"] #jb-app h2 { font-family: 'Anton', -apple-system, sans-serif; color: var(--text) }
+html[data-jb-bg="tech"] #jb-app h3 { color: var(--text) }
+html[data-jb-bg="tech"] #jb-app input[type="text"], html[data-jb-bg="tech"] #jb-app input[type="email"], html[data-jb-bg="tech"] #jb-app input[type="password"], html[data-jb-bg="tech"] #jb-app textarea { background: var(--card); border: 1px solid var(--border); border-radius: 12px; color: var(--text) }
+html[data-jb-bg="tech"] #jb-app input::placeholder, html[data-jb-bg="tech"] #jb-app textarea::placeholder { color: var(--text-dim) }
+html[data-jb-bg="tech"] #jb-app input:focus, html[data-jb-bg="tech"] #jb-app textarea:focus { outline: 2px solid var(--accent) }
+html[data-jb-bg="tech"] #jb-app .jb-empty { color: var(--text-dim) }
+html[data-jb-bg="tech"] #jb-app .jb-special-request-text { color: var(--text-dim) }
+html[data-jb-bg="tech"] #jb-app .jb-rank-item { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius) }
+html[data-jb-bg="tech"] #jb-app .jb-rank-item.jb-top1 { border-color: #6366f1; background: linear-gradient(90deg, #e1e4fa, var(--card)) }
+html[data-jb-bg="tech"] #jb-app .jb-rank-item.jb-top2 { border-color: #c9c9d4 }
+html[data-jb-bg="tech"] #jb-app .jb-rank-item.jb-top3 { border-color: #b97a4e }
+html[data-jb-bg="tech"] #jb-app .jb-rank-num { color: var(--accent2) }
+html[data-jb-bg="tech"] #jb-app .jb-rank-artist { color: var(--text-dim) }
+html[data-jb-bg="tech"] #jb-app .jb-rank-count { color: var(--accent2) }
+html[data-jb-bg="tech"] #jb-app .jb-palmares-heading, html[data-jb-bg="tech"] #jb-app .jb-my-votes-heading { background: var(--bg) }
+html[data-jb-bg="tech"] #jb-app .jb-vote-remaining-num { color: var(--accent2) }
+@keyframes jb-pulse-attn-tech {
+  0%, 100% { transform: scale(1); background: var(--card); box-shadow: none }
+  50% { transform: scale(1.22); background: #1f2552; color: #e6ecf8; box-shadow: none }
+}
+html[data-jb-bg="tech"] #jb-app .jb-pulse-attn { animation: jb-pulse-attn-tech 0.5s ease-in-out 1 }
+html[data-jb-bg="tech"] #jb-app .jb-my-vote-delta-up { color: var(--accent2) }
+html[data-jb-bg="tech"] #jb-app .jb-my-vote-delta-down { color: #c82832 }
+html[data-jb-bg="tech"] #jb-app .jb-my-vote-line { border-bottom: 1px solid var(--border) }
+html[data-jb-bg="tech"] #jb-app .jb-my-vote-line:last-child { border-bottom: none }
+html[data-jb-bg="tech"] #jb-app .jb-my-vote-line .jb-my-vote-dash { color: var(--text-dim) }
+@keyframes jb-pulse-attn-row-tech {
+  0%, 100% { background: var(--card); box-shadow: none }
+  50% { background: #1f2552; color: #e6ecf8; box-shadow: none }
+}
+html[data-jb-bg="tech"] #jb-app .jb-pulse-attn-row { animation: jb-pulse-attn-row-tech 0.5s ease-in-out 1 }
+@keyframes jb-num-glow-tech {
+  0%, 100% { text-shadow: none }
+  50% { color: #1f2552; text-shadow: none }
+}
+html[data-jb-bg="tech"] #jb-app .jb-num-glow { animation: jb-num-glow-tech 0.5s ease-in-out 1 }
+html[data-jb-bg="tech"] #jb-app .jb-slot { border-bottom: 1px solid var(--border); background: var(--bg) }
+html[data-jb-bg="tech"] #jb-app .jb-slot.jb-slot-moving { box-shadow: none }
+html[data-jb-bg="tech"] #jb-app .jb-slot-rank { color: var(--text-dim) }
+html[data-jb-bg="tech"] #jb-app .jb-slot-votes { color: var(--accent2) }
+html[data-jb-bg="tech"] #jb-app .jb-slot-onsong-wrap { text-decoration: none; color: inherit }
+html[data-jb-bg="tech"] #jb-app .jb-slot-artist { color: var(--text-dim) }
+html[data-jb-bg="tech"] #jb-app .jb-slot-voters { color: var(--accent2) }
+html[data-jb-bg="tech"] #jb-app .jb-slot-placeholder { color: var(--text-dim) }
+html[data-jb-bg="tech"] #jb-app .jb-slot-vote-btn { border-radius: 999px; border: none; color: #fff }
+html[data-jb-bg="tech"] #jb-app .jb-slot-vote-up { background: #c82832 }
+html[data-jb-bg="tech"] #jb-app .jb-slot-vote-down { background: #3c78c8 }
+html[data-jb-bg="tech"] #jb-app .jb-song-item { background: var(--card); border: 1px solid var(--border); border-radius: 12px }
+html[data-jb-bg="tech"] #jb-app .jb-song-item-clickable:active { background: var(--card2) }
+html[data-jb-bg="tech"] #jb-app .jb-song-artist { color: var(--text-dim) }
+html[data-jb-bg="tech"] #jb-app .jb-song-votes { color: var(--accent2) }
+html[data-jb-bg="tech"] #jb-app .jb-catalog-searchbar { background: var(--bg) }
+html[data-jb-bg="tech"] #jb-app .jb-back-btn { background: var(--card); border: 1px solid var(--accent); color: var(--accent2); border-radius: 999px }
+html[data-jb-bg="tech"] #jb-app .jb-request-remaining { color: var(--accent2); background: var(--card); border: 1px solid var(--border); border-radius: 999px }
+html[data-jb-bg="tech"] #jb-app .jb-folder-title-wrap { background: var(--bg) }
+html[data-jb-bg="tech"] #jb-app .jb-mode-btn { background: var(--card); border: 1px solid var(--success); color: var(--accent2); border-radius: 12px }
+html[data-jb-bg="tech"] #jb-app .jb-mode-btn:active { background: var(--card2); border-color: var(--accent) }
+html[data-jb-bg="tech"] #jb-app .jb-folder-title { font-family: 'Anton', -apple-system, sans-serif; color: var(--text); background: none; border-radius: 0 }
+html[data-jb-bg="tech"] #jb-app .jb-song-badge { color: var(--success) }
+html[data-jb-bg="tech"] #jb-app .jb-btn-request { background: none; border: none; color: var(--accent2) }
+html[data-jb-bg="tech"] #jb-app .jb-btn-request[disabled] { color: var(--text-dim) }
+html[data-jb-bg="tech"] #jb-app .jb-btn-request.jb-played-btn { color: var(--text-dim) }
+html[data-jb-bg="tech"] #jb-app .jb-cooldown-badge { background: #e1e4fa; border: 1px solid var(--accent); color: var(--accent2); border-radius: 10px }
+html[data-jb-bg="tech"] #jb-app .jb-cooldown-explicit { border-radius: 10px; border: 1px solid var(--accent) }
+html[data-jb-bg="tech"] #jb-app .jb-cooldown-played-seg { background: var(--accent); color: #f0f1fe }
+html[data-jb-bg="tech"] #jb-app .jb-cooldown-wait-seg { background: #e1e4fa; color: var(--text) }
+html[data-jb-bg="tech"] #jb-app .jb-cooldown-wait-seg .jb-cooldown-num { color: var(--accent2) }
+html[data-jb-bg="tech"] #jb-app .jb-burned-badge { background: #fae1e4; border: 1px solid var(--danger); color: #c83c3c; border-radius: 10px }
+html[data-jb-bg="tech"] #jb-app .jb-back-link { color: var(--text-dim) }
+html[data-jb-bg="tech"] #jb-app .jb-error { color: var(--danger) }
+html[data-jb-bg="tech"] #jb-app .jb-admin-section { border-top: 1px solid var(--border) }
+html[data-jb-bg="tech"] #jb-app .jb-dismiss-special-btn { background: var(--card2); border: 1px solid var(--border); color: var(--text-dim); border-radius: 999px }
+html[data-jb-bg="tech"] #jb-app .jb-hint { color: var(--text-dim) }
+html[data-jb-bg="tech"] #jb-app button.jb-btn-primary, html[data-jb-bg="tech"] #jb-app button.jb-btn-danger, html[data-jb-bg="tech"] #jb-app button.jb-btn-ghost { border-radius: 12px }
+html[data-jb-bg="tech"] #jb-app .jb-btn-primary { background: var(--accent); color: #f0f1fe }
+html[data-jb-bg="tech"] #jb-app .jb-btn-danger { background: var(--danger); color: #fff }
+html[data-jb-bg="tech"] #jb-app .jb-btn-ghost { background: var(--card2); color: var(--text) }
+html[data-jb-bg="tech"] #jb-app .jb-mark-played-btn { background: var(--success); color: #e8f0fa; border-radius: 999px }
+html[data-jb-bg="tech"] #jb-app .jb-mark-played-btn.jb-mark-played-armed { background: var(--danger); color: #fff; animation: jb-mark-played-pulse-tech 0.9s ease-in-out infinite }
+@keyframes jb-mark-played-pulse-tech {
+  0%, 100% { box-shadow: none }
+  50% { box-shadow: none }
+}
+html[data-jb-bg="tech"] #jb-app .jb-unmark-btn { background: var(--card2); color: var(--text-dim); border-radius: 8px }
+html[data-jb-bg="tech"] #jb-app .jb-cooldown-row { background: var(--card); border: 1px solid var(--border); border-radius: 12px }
+html[data-jb-bg="tech"] #jb-app .jb-bypass-btn { background: var(--accent); color: #f0f1fe; border-radius: 9px }
+html[data-jb-bg="tech"] #jb-app .jb-burn-btn { background: #fae1e4; color: #c83c3c; border: 1px solid var(--danger); border-radius: 9px }
+html[data-jb-bg="tech"] #jb-app .jb-unburn-btn { background: var(--success); color: #e8f0fa; border-radius: 9px }
+html[data-jb-bg="tech"] #jb-app .jb-admin-catalog-item { background: var(--card); border-radius: 10px }
+html[data-jb-bg="tech"] #jb-app .jb-genre-chip { background: var(--card2); border: 1px solid var(--border); color: var(--text-dim); border-radius: 999px }
+html[data-jb-bg="tech"] #jb-app .jb-genre-chip.jb-genre-chip-active { border-color: var(--accent); color: var(--accent2); background: #e1e4fa }
+html[data-jb-bg="tech"] #jb-app .jb-icon-btn { border-radius: 8px }
+html[data-jb-bg="tech"] #jb-app .jb-icon-btn.jb-del { background: var(--card2); color: var(--danger) }
+html[data-jb-bg="tech"] #jb-app .jb-icon-btn.jb-plus { background: var(--card2); color: var(--accent2) }
+html[data-jb-bg="tech"] #jb-app .jb-icon-btn.jb-fire { background: var(--card2); color: #c83c3c }
+html[data-jb-bg="tech"] #jb-app .jb-icon-btn.jb-fire.jb-active { background: #fae1e4; border: 1px solid var(--danger) }
+html[data-jb-bg="tech"] #jb-app .jb-toast { background: var(--card2); color: var(--text); border-radius: 12px; border: 1px solid var(--border) }
+html[data-jb-bg="tech"] #jb-app .jb-update-banner { border-color: var(--success) }
+html[data-jb-bg="tech"] #jb-app .jb-warn-banner { background: #fae1e4; border: 1px solid var(--danger); color: #ffd9d2; border-radius: 12px }
+html[data-jb-bg="tech"] #jb-app .jb-name-prompt-backdrop { background: rgba(0, 0, 0, 0.6) }
+html[data-jb-bg="tech"] #jb-app .jb-name-prompt-card { background: var(--card); border: 1px solid var(--accent); border-radius: var(--radius); box-shadow: none }
+html[data-jb-bg="tech"] #jb-app .jb-name-prompt-card h3 { color: var(--accent2) }
+html[data-jb-bg="tech"] #jb-app .jb-name-prompt-card p { color: var(--text-dim) }
+html[data-jb-bg="tech"] #jb-app .jb-input-shake { border-color: #dc323c !important }
+html[data-jb-bg="tech"] #jb-app .jb-name-prompt-skip-btn { background: var(--card2); border: 1px solid var(--border); color: var(--text); border-radius: 999px }
+html[data-jb-bg="tech"] #jb-app .jb-offline-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius) }
+html[data-jb-bg="tech"] #jb-app .jb-offline-card h1 { color: var(--accent2) }
+html[data-jb-bg="tech"] #jb-app .jb-offline-card p { color: var(--text-dim) }
+html[data-jb-bg="tech"] #jb-app .jb-cal-nav-btn { background: none; border: none; color: var(--accent); border-radius: 8px }
+html[data-jb-bg="tech"] #jb-app .jb-cal-month-label { color: var(--accent2) }
+html[data-jb-bg="tech"] #jb-app .jb-cal-row { border-bottom: 1px solid var(--border) }
+html[data-jb-bg="tech"] #jb-app .jb-cal-row:last-child { border-bottom: none }
+html[data-jb-bg="tech"] #jb-app .jb-cal-day { color: var(--accent2) }
+html[data-jb-bg="tech"] #jb-app .jb-cal-event { color: var(--text) }
+html[data-jb-bg="tech"] #jb-public { --bg: #f4f7fc; --bg2: #f0f5fc; --card: #f0f5fc; --card2: #e8f0fa; --text: #6366f1; --accent: #79a0fa; --accent2: #6a6ffc; --danger: #dc323c; color: var(--text); text-shadow: none; background-color: var(--bg); background-image: radial-gradient(circle, rgba(121, 160, 250, 0.12) 1px, transparent 1.4px); background-size: 24px 24px }
+html[data-jb-bg="tech"] #jb-app #jb-public { background-image: none; background-color: transparent }
+html[data-jb-bg="tech"] #jb-app .jb-catalog-searchbar, html[data-jb-bg="tech"] #jb-app .jb-catalog-searchbar input[type="text"], html[data-jb-bg="tech"] #jb-app .jb-palmares-heading, html[data-jb-bg="tech"] #jb-app .jb-slot { background: transparent }
+html[data-jb-bg="tech"] #jb-public .jb-top-bar h1 { font-family: 'Jukehub Tech', sans-serif; text-shadow: none }
+html[data-jb-bg="tech"] #jb-public .jb-top-bar::before { background: var(--danger); filter: none }
+html[data-jb-bg="tech"] #jb-public h2 { font-family: 'Chakra Petch', monospace; color: var(--accent) }
+html[data-jb-bg="tech"] #jb-public h2::before { color: var(--accent2) }
+html[data-jb-bg="tech"] #jb-public .jb-folder-title { font-family: 'Chakra Petch', monospace; color: var(--accent) }
+html[data-jb-bg="tech"] #jb-public .jb-folder-title::before { color: var(--accent2) }
+html[data-jb-bg="tech"] #jb-public .jb-song-artist, html[data-jb-bg="tech"] #jb-public .jb-slot-artist, html[data-jb-bg="tech"] #jb-public .jb-slot-voters, html[data-jb-bg="tech"] #jb-public .jb-empty, html[data-jb-bg="tech"] #jb-public .jb-cooldown-explicit, html[data-jb-bg="tech"] #jb-public .jb-burned-badge { font-family: 'Chakra Petch', monospace }
+html[data-jb-bg="tech"] #jb-public input[type="text"] { font-family: 'Chakra Petch', monospace; border-radius: 4px }
+html[data-jb-bg="tech"] #jb-public input:focus { outline: 2px solid var(--accent); box-shadow: none }
+html[data-jb-bg="tech"] #jb-public .jb-btn-primary, html[data-jb-bg="tech"] #jb-public .jb-special-request-btn { font-family: 'Chakra Petch', monospace; box-shadow: none }
+html[data-jb-bg="tech"] #jb-public .jb-slot-vote-btn, html[data-jb-bg="tech"] #jb-public .jb-btn-request, html[data-jb-bg="tech"] #jb-public .jb-request-remaining, html[data-jb-bg="tech"] #jb-public .jb-vote-remaining, html[data-jb-bg="tech"] #jb-public .jb-my-vote-delta, html[data-jb-bg="tech"] #jb-public .jb-mode-btn, html[data-jb-bg="tech"] #jb-public .jb-back-btn, html[data-jb-bg="tech"] #jb-public .jb-name-prompt-skip-btn { font-family: 'Chakra Petch', monospace }
+html[data-jb-bg="tech"] #jb-public .jb-catalog-frame { box-shadow: none }
+html[data-jb-bg="tech"] #jb-public #jb-catalog-list { border: none; border-top: 2px solid rgba(220, 50, 60, 0.65); border-bottom: 2px solid rgba(220, 50, 60, 0.65); border-radius: 0 }
+html[data-jb-bg="tech"] #jb-public .jb-catalog-frame-cap { border-radius: 999px; background: var(--danger); box-shadow: none }
+html[data-jb-bg="tech"] #jb-public #jb-catalog-list .jb-song-item { background: none; border: none; border-radius: 0; border-bottom: 1px solid var(--border); box-shadow: none }
+html[data-jb-bg="tech"] #jb-public #jb-catalog-list .jb-song-item-clickable:active { background: var(--card2) }
+html[data-jb-bg="tech"] #jb-public .jb-song-item, html[data-jb-bg="tech"] #jb-public .jb-mode-btn, html[data-jb-bg="tech"] #jb-public .jb-admin-catalog-item { box-shadow: none }
+html[data-jb-bg="tech"] #jb-public .jb-song-item-clickable:active, html[data-jb-bg="tech"] #jb-public .jb-mode-btn:active { border-color: var(--accent) }
+html[data-jb-bg="tech"] #jb-public .jb-song-item-requested .jb-song-title { color: var(--text-dim) }
+html[data-jb-bg="tech"] #jb-public .jb-song-item-requested .jb-slot-rank { color: var(--accent) }
+html[data-jb-bg="tech"] #jb-public .jb-offline-card h1, html[data-jb-bg="tech"] #jb-public .jb-name-prompt-card h3 { font-family: 'Jukehub Tech', sans-serif }
+html[data-jb-bg="tech"] #jb-public .jb-cal-day, html[data-jb-bg="tech"] #jb-public .jb-cal-event, html[data-jb-bg="tech"] #jb-public .jb-cal-month-label { font-family: 'Chakra Petch', monospace }
+html[data-jb-bg="tech"] #jb-public .jb-top-bar h1 { text-shadow: none }
+html[data-jb-bg="tech"] #jb-app .jb-city-bg { background-image: linear-gradient(rgba(248, 250, 253, 0.78), rgba(248, 250, 253, 0.78)), var(--jb-tour-bg-image); background-size: cover; background-position: center }
+html[data-jb-bg="tech"], html[data-jb-bg="tech"] body { background: #f8fafd }
+html[data-jb-bg="tech"] #jb-app .jb-boot-spinner { border-radius: 50%; border: 3px solid var(--border); border-top-color: var(--accent2) }
+html[data-jb-bg="tech"] #jb-app .jb-boot-loading-text { color: var(--text) }
+html[data-jb-bg="tech"] #jb-app .jb-boot-loading-slow p { color: var(--text) }
+html[data-jb-bg="tech"] #jb-app .jb-boot-retry-btn { background: var(--accent2); color: #f0f1fe; border: none; border-radius: 10px }
+html[data-jb-bg="tech"], html[data-jb-bg="tech"] body { background: #f8fafd }
+html[data-jb-bg="tech"] #jb-app { background: #f8fafd }
+html[data-jb-bg="tech"] #jb-public { --bg: #f8fafd; --bg2: #f4f7fc; --card: #f4f7fc; --accent: #79a0fa; --accent2: #5b62f0; --danger: #dc323c; --success: #79a0fa }
+html[data-jb-bg="tech"] #jb-app #jb-public { background-color: #f8fafd }
+html[data-jb-bg="tech"] #jb-public::before { background-image: radial-gradient(1px 10px at 50% 50%, rgba(121, 160, 250, 0.22), transparent),
+      radial-gradient(1px 7px at 50% 50%, rgba(220, 50, 60, 0.14), transparent); background-size: 46px 100px, 71px 150px }
+html[data-jb-bg="tech"] #jb-app #jb-public .jb-top-bar .jb-lang-btn { --lb: #5b62f0; --lb-ink: #ffffff }
+html[data-jb-bg="tech"] #jb-app #jb-public .jb-top-bar .jb-lang-btn { border: 2px solid var(--lb) !important; color: var(--lb) !important; background: transparent !important; box-shadow: none !important }
+html[data-jb-bg="tech"] #jb-app #jb-public .jb-top-bar .jb-lang-btn.jb-lang-active { background: var(--lb) !important; color: var(--lb-ink) !important; text-shadow: none !important }
+html[data-jb-bg="tech"] #jb-app #jb-section-title-row .jb-bg-btn { color: #5b62f0; border: 2px solid #5b62f0; background: rgba(91, 98, 240, 0.08); box-shadow: none; font-family: 'Chakra Petch', monospace }
+html[data-jb-bg="tech"] #jb-public::after { background-image: repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.025) 0 1px, transparent 1px 3px) }
+html[data-jb-bg="tech"] #jb-public .jb-top-bar h1 { color: var(--accent2); text-shadow: none; animation: jb-cp-glitch-tech 0.9s steps(1, end) 1 }
+@keyframes jb-cp-glitch-tech {
+  0% { opacity: 0 }
+  10% { opacity: 1; transform: translateX(-3px); text-shadow: none }
+  20% { transform: translateX(2px); text-shadow: none }
+  30% { transform: none; opacity: 0.4 }
+  40% { opacity: 1; transform: translateX(-1px); text-shadow: none }
+  55%, 100% { transform: none; opacity: 1; text-shadow: none }
+}
+html[data-jb-bg="tech"] #jb-public .jb-lang-btn { background: transparent; border: 1px solid var(--border); border-radius: 0; font-family: 'Chakra Petch', monospace; color: var(--text-dim) }
+html[data-jb-bg="tech"] #jb-public .jb-lang-btn.jb-lang-active { border-color: var(--accent2); color: var(--accent2) }
+html[data-jb-bg="tech"] #jb-public .jb-catalog-searchbar input[type="text"] { background: #f4f7fc; color: var(--accent); border: 1px solid rgba(121, 160, 250, 0.45); border-left: 4px solid var(--accent); border-radius: 0 }
+html[data-jb-bg="tech"] #jb-public input::placeholder { color: rgba(121, 160, 250, 0.55) }
+html[data-jb-bg="tech"] #jb-public input:focus { outline: none; border-color: var(--accent); box-shadow: none }
+html[data-jb-bg="tech"] #jb-public .jb-back-btn { background: transparent; border: 1px solid var(--accent2); color: var(--accent2); border-radius: 0; font-family: 'Chakra Petch', monospace }
+html[data-jb-bg="tech"] #jb-public .jb-top-bar h1 { border: 1px solid var(--accent2); background: var(--jb-cp-diag) top right / 10px 10px no-repeat border-box,
+      var(--jb-cp-diag) bottom left / 10px 10px no-repeat border-box,
+      rgba(91, 98, 240, 0.04) }
+html[data-jb-bg="tech"] #jb-public .jb-cp-status { font-family: 'Chakra Petch', monospace; color: var(--accent) }
+html[data-jb-bg="tech"] #jb-public .jb-cp-live { background: var(--danger); color: #f8fafd }
+html[data-jb-bg="tech"] #jb-public #jb-palmares-title::after { color: var(--danger) }
+html[data-jb-bg="tech"] #jb-public .jb-mode-btn { background: var(--jb-cp-diag) top right / 12px 12px no-repeat border-box,
+      var(--jb-cp-diag) bottom left / 12px 12px no-repeat border-box,
+      rgba(255, 255, 255, 0.02); border: 1px solid var(--jb-cp-c); color: var(--jb-cp-c); border-radius: 0; font-family: 'Chakra Petch', monospace }
+html[data-jb-bg="tech"] #jb-public .jb-mode-btn:active { background: var(--jb-cp-c); color: #f8fafd }
+html[data-jb-bg="tech"] #jb-app .jb-slot-bar { background: #1a2030 }
+html[data-jb-bg="tech"] #jb-app .jb-slot-bar-fill { background: var(--accent) }
+html[data-jb-bg="tech"] #jb-public .jb-slot:nth-child(3n+1) .jb-slot-bar-fill { background: var(--danger); box-shadow: none }
+html[data-jb-bg="tech"] #jb-public .jb-slot:nth-child(3n+2) .jb-slot-bar-fill { background: var(--accent); box-shadow: none }
+html[data-jb-bg="tech"] #jb-public .jb-slot:nth-child(3n+3) .jb-slot-bar-fill { background: var(--accent2); box-shadow: none }
+html[data-jb-bg="tech"] #jb-public #jb-catalog-list .jb-song-item { border-bottom: 1px dashed var(--border) }
+html[data-jb-bg="tech"] #jb-public .jb-slot { border-bottom: 1px dashed var(--border) }
+html[data-jb-bg="tech"] #jb-public .jb-slot-rank { font-family: 'Chakra Petch', monospace; color: var(--accent2) }
+html[data-jb-bg="tech"] #jb-public .jb-slot-head .jb-slot-artist { font-family: 'Chakra Petch', monospace; color: var(--text-dim) }
+html[data-jb-bg="tech"] #jb-app .jb-voter-delta { font-family: 'Chakra Petch', monospace }
+html[data-jb-bg="tech"] #jb-app .jb-voter-delta-up { color: #5b62f0 }
+html[data-jb-bg="tech"] #jb-app .jb-voter-delta-down { color: #6e7da0 }
+html[data-jb-bg="tech"] #jb-public .jb-slot-votes-label { font-family: 'Jukehub Tech', sans-serif; color: var(--accent2) }
+html[data-jb-bg="tech"] #jb-public .jb-slot-votes, html[data-jb-bg="tech"] #jb-public .jb-song-votes { color: var(--accent2); text-shadow: none }
+html[data-jb-bg="tech"] #jb-public .jb-palmares-heading, html[data-jb-bg="tech"] #jb-public .jb-my-votes-heading { background: transparent }
+html[data-jb-bg="tech"] #jb-public .jb-slot-title, html[data-jb-bg="tech"] #jb-public .jb-song-title { color: var(--text) }
+html[data-jb-bg="tech"] #jb-public .jb-slot-vote-btn { border-radius: 0; color: #f8fafd }
+html[data-jb-bg="tech"] #jb-public .jb-slot-vote-up { background: #39ff14; box-shadow: none }
+html[data-jb-bg="tech"] #jb-public .jb-slot-vote-down { background: #ff1f3d; box-shadow: none }
+html[data-jb-bg="tech"] #jb-public .jb-my-vote-delta-down { color: var(--danger) }
+html[data-jb-bg="tech"] #jb-public .jb-vote-used-word { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif }
+html[data-jb-bg="tech"] #jb-public .jb-my-vote-line { border-bottom: 1px solid var(--border) }
+html[data-jb-bg="tech"] #jb-public .jb-my-vote-delta { font-family: 'Chakra Petch', monospace }
+html[data-jb-bg="tech"] #jb-public .jb-my-vote-unit { font-family: 'Jukehub Tech', sans-serif }
+html[data-jb-bg="tech"] #jb-public .jb-my-vote-line .jb-my-vote-dash { color: var(--text) }
+html[data-jb-bg="tech"] #jb-public .jb-my-vote-line .jb-slot-artist { font-family: 'Chakra Petch', monospace }
+html[data-jb-bg="tech"] #jb-public { --text: #5b62f0 }
+html[data-jb-bg="tech"] #jb-public .jb-slot-title, html[data-jb-bg="tech"] #jb-public .jb-song-title { text-shadow: none }
+html[data-jb-bg="tech"] #jb-public .jb-btn-primary { background: var(--accent2); color: #f8fafd; border-radius: 0; font-family: 'Chakra Petch', monospace }
+html[data-jb-bg="tech"] #jb-public .jb-name-prompt-skip-btn { border-radius: 0; background: transparent }
+html[data-jb-bg="tech"] #jb-public .jb-cooldown-badge, html[data-jb-bg="tech"] #jb-public .jb-cooldown-explicit, html[data-jb-bg="tech"] #jb-public .jb-burned-badge, html[data-jb-bg="tech"] #jb-public .jb-request-remaining { border-radius: 0 }
+html[data-jb-bg="tech"] #jb-public .jb-cooldown-badge, html[data-jb-bg="tech"] #jb-public .jb-cooldown-wait-seg { background: #1a0a14 }
+html[data-jb-bg="tech"] #jb-public .jb-cooldown-played-seg { color: #f8fafd }
+html[data-jb-bg="tech"] #jb-public .jb-offline-card, html[data-jb-bg="tech"] #jb-public .jb-name-prompt-card { background: #f4f7fc; border-radius: 0 }
+html[data-jb-bg="tech"] #jb-public .jb-offline-card { border: 1px solid var(--accent) }
+html[data-jb-bg="tech"] #jb-public .jb-offline-card h1 { font-family: 'Jukehub Tech', sans-serif; color: var(--accent2) }
+html[data-jb-bg="tech"] #jb-public .jb-cal-day { font-family: 'Chakra Petch', monospace; color: var(--accent2) }
+html[data-jb-bg="tech"] #jb-public .jb-cal-row { border-bottom: 1px dashed var(--border) }
+html[data-jb-bg="tech"] #jb-public .jb-name-prompt-card { border: 1px solid var(--danger) }
+html[data-jb-bg="tech"], html[data-jb-bg="tech"] body, html[data-jb-bg="tech"] #jb-app { background: #ffffff }
+html[data-jb-bg="tech"] #jb-app #jb-public, html[data-jb-bg="tech"] #jb-app #jb-admin { background: transparent }
+html[data-jb-bg="tech"] #jb-public { --bg: #ffffff; --bg2: #ffffff; --card: #ffffff; --card2: #ebf1fa; --text: #5b62f0; --text-dim: #6e7da0; --accent: #5b62f0; --accent2: #1f2552; --danger: #5056dc; --success: #5b62f0; --border: #c8d4eb }
+html[data-jb-bg="tech"] #jb-public .jb-top-bar h1 { background: var(--jb-cp-diag) top right / 10px 10px no-repeat border-box,
+      var(--jb-cp-diag) bottom left / 10px 10px no-repeat border-box,
+      rgba(91, 98, 240, 0.05); text-shadow: none }
+html[data-jb-bg="tech"] #jb-public .jb-top-bar::before { filter: none }
+html[data-jb-bg="tech"] #jb-public .jb-cp-status { color: var(--text-dim) }
+html[data-jb-bg="tech"] #jb-public .jb-cp-live { background: #5b62f0; color: #ffffff }
+html[data-jb-bg="tech"] #jb-public .jb-catalog-searchbar input[type="text"] { background: #ffffff; border-color: rgba(91, 98, 240, 0.45) }
+html[data-jb-bg="tech"] #jb-public input::placeholder { color: rgba(91, 98, 240, 0.5) }
+html[data-jb-bg="tech"] #jb-public input:focus { box-shadow: none }
+html[data-jb-bg="tech"] #jb-public .jb-catalog-frame { box-shadow: none }
+html[data-jb-bg="tech"] #jb-public #jb-catalog-list { border-top-color: rgba(91, 98, 240, 0.6); border-bottom-color: rgba(91, 98, 240, 0.6) }
+html[data-jb-bg="tech"] #jb-public .jb-catalog-frame-cap { background: #5b62f0; box-shadow: none }
+html[data-jb-bg="tech"] #jb-public .jb-mode-btn { --jb-cp-c: #5b62f0 }
+html[data-jb-bg="tech"] #jb-public .jb-mode-btn:nth-child(3n+2) { --jb-cp-c: #1f2552 }
+html[data-jb-bg="tech"] #jb-public .jb-mode-btn:nth-child(3n+3) { --jb-cp-c: #5056dc }
+html[data-jb-bg="tech"] #jb-public .jb-mode-btn:active { color: #ffffff }
+html[data-jb-bg="tech"] #jb-public #jb-palmares-title::after { color: #5056dc }
+html[data-jb-bg="tech"] #jb-app #jb-public .jb-slot-bar { background: #29250a }
+html[data-jb-bg="tech"] #jb-public .jb-slot:nth-child(3n+1) .jb-slot-bar-fill { background: #5b62f0; box-shadow: none }
+html[data-jb-bg="tech"] #jb-public .jb-slot:nth-child(3n+2) .jb-slot-bar-fill { background: #1f2552; box-shadow: none }
+html[data-jb-bg="tech"] #jb-public .jb-slot:nth-child(3n+3) .jb-slot-bar-fill { background: #5056dc; box-shadow: none }
+html[data-jb-bg="tech"] #jb-public .jb-slot-votes, html[data-jb-bg="tech"] #jb-public .jb-song-votes { text-shadow: none }
+html[data-jb-bg="tech"] #jb-public .jb-slot-vote-up { background: #5b62f0; box-shadow: none; color: #ffffff }
+html[data-jb-bg="tech"] #jb-public .jb-slot-vote-down { background: #96aad2; box-shadow: none; color: #1f2552 }
+html[data-jb-bg="tech"] #jb-public .jb-slot-vote-down.jb-slot-vote-floor { box-shadow: none }
+html[data-jb-bg="tech"] #jb-public .jb-my-vote-delta-down { color: #5056dc }
+html[data-jb-bg="tech"] #jb-public .jb-btn-primary { color: #ffffff }
+html[data-jb-bg="tech"] #jb-public .jb-cooldown-badge, html[data-jb-bg="tech"] #jb-public .jb-cooldown-wait-seg { background: #ebf1fa }
+html[data-jb-bg="tech"] #jb-public .jb-offline-card, html[data-jb-bg="tech"] #jb-public .jb-name-prompt-card { background: #ffffff }
+html[data-jb-bg="tech"] #jb-public .jb-my-dons { color: #5b62f0; font-family: 'Chakra Petch', monospace }
+html[data-jb-bg="tech"] #jb-public .jb-myreq-votes-left { color: #1f2552; font-family: 'Chakra Petch', monospace }
+html[data-jb-bg="tech"] #jb-public .jb-myreq-row { border-bottom: 1px dashed var(--border) }
+html[data-jb-bg="tech"] #jb-public .jb-myreq-up-wrap::before { border-top: 2px solid rgba(91, 98, 240, 0.55); border-left: 2px solid rgba(91, 98, 240, 0.55) }
+html[data-jb-bg="tech"] #jb-public .jb-myreq-rank { color: #1f2552; font-family: 'Chakra Petch', monospace }
+html[data-jb-bg="tech"] #jb-public .jb-myreq-info .jb-slot-artist { font-family: 'Chakra Petch', monospace }
+html[data-jb-bg="tech"] #jb-app .jb-vote-modal { background: rgba(0, 0, 0, 0.8) }
+html[data-jb-bg="tech"] #jb-public .jb-vote-modal-card { background: #ffffff; border: 1px solid rgba(91, 98, 240, 0.55) }
+html[data-jb-bg="tech"] #jb-public .jb-vote-modal-text { color: #5b62f0; font-family: 'Chakra Petch', monospace; text-shadow: none }
+html[data-jb-bg="tech"] #jb-public .jb-vote-modal-close { font-family: 'Chakra Petch', monospace }
+html[data-jb-bg="tech"] #jb-public .jb-pay-chip { background: #ffffff; color: #5b62f0; border: 1px solid rgba(91, 98, 240, 0.5); font-family: 'Chakra Petch', monospace }
+html[data-jb-bg="tech"] #jb-public .jb-pay-chip.jb-pay-chip-on { background: #5b62f0; color: #ffffff; box-shadow: none }
+html[data-jb-bg="tech"] #jb-public .jb-pay-custom { background: #ffffff; color: #5b62f0; border: 1px solid rgba(91, 98, 240, 0.35) }
+html[data-jb-bg="tech"] #jb-public .jb-pay-note { color: #6e7da0; font-family: 'Chakra Petch', monospace }
+html[data-jb-bg="tech"] #jb-admin .jb-admin-toggle input { accent-color: #5b62f0 }
+html[data-jb-bg="tech"] #jb-admin .jb-admin-special-wrap > summary::before { color: var(--accent2, #1f2552) }
+html[data-jb-bg="tech"] #jb-public #jb-catalog-list .jb-song-item-inpalm { background: #0d110e }
+html[data-jb-bg="tech"] #jb-public #jb-catalog-list .jb-inpalm-rank { color: #a0a06e; text-shadow: none }
+html[data-jb-bg="tech"] #jb-public #jb-catalog-list .jb-inpalm-rank-first { background: #d4af37; border-color: #f0cf5a; color: #000; box-shadow: none }
+html[data-jb-bg="tech"] #jb-public #jb-catalog-list .jb-inpalm-rank-second { background: #c0c0c0; border-color: #e4e4e4; color: #000; box-shadow: none }
+html[data-jb-bg="tech"] #jb-public #jb-catalog-list .jb-inpalm-rank-third { background: #cd7f32; border-color: #e39a55; color: #000; box-shadow: none }
+html[data-jb-bg="tech"] #jb-public .jb-song-vote-box { font-family: 'Jukehub Tech', sans-serif }
+html[data-jb-bg="tech"] #jb-public .jb-song-vote-num { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif }
+html[data-jb-bg="tech"] #jb-app, html[data-jb-bg="tech"] #jb-admin { --bg: #ffffff; --bg2: #ffffff; --card: #ffffff; --card2: #ebf1fa; --text: #5b62f0; --text-dim: #6e7da0; --accent: #5b62f0; --accent2: #1f2552; --danger: #5056dc; --success: #5b62f0; --border: #c8d4eb }
+html[data-jb-bg="tech"] #jb-admin h2, html[data-jb-bg="tech"] #jb-admin h3 { font-family: 'Chakra Petch', monospace; color: var(--accent); text-shadow: none }
+html[data-jb-bg="tech"] #jb-admin .jb-admin-topbar h2::before, html[data-jb-bg="tech"] #jb-admin .jb-login h2::before { color: var(--accent2) }
+html[data-jb-bg="tech"] #jb-admin .jb-admin-section { border-top: 1px dashed var(--border) }
+html[data-jb-bg="tech"] #jb-admin .jb-admin-section:not(.jb-admin-columns), html[data-jb-bg="tech"] #jb-admin .jb-admin-columns > .jb-admin-column { border: 2px solid #5b62f0; border-top: 2px solid #5b62f0; background-color: rgba(225, 236, 252, 0.28); box-shadow: none; background-image: linear-gradient(to bottom left, transparent 50%, #5b62f0 50%, #5b62f0 calc(50% + 2px), transparent calc(50% + 2px)),
+      linear-gradient(to top right, transparent 50%, #5b62f0 50%, #5b62f0 calc(50% + 2px), transparent calc(50% + 2px)); background-size: 12px 12px, 12px 12px; background-position: right top, left bottom; background-repeat: no-repeat; background-origin: border-box }
+html[data-jb-bg="tech"] #jb-admin .jb-admin-columns { border-top: none }
+html[data-jb-bg="tech"] #jb-admin .jb-admin-columns > .jb-admin-column.jb-admin-public { border-color: #4f46e5; background-color: rgba(236, 238, 253, 0.28); box-shadow: none; background-image: linear-gradient(to bottom left, transparent 50%, #4f46e5 50%, #4f46e5 calc(50% + 2px), transparent calc(50% + 2px)),
+      linear-gradient(to top right, transparent 50%, #4f46e5 50%, #4f46e5 calc(50% + 2px), transparent calc(50% + 2px)) }
+html[data-jb-bg="tech"] #jb-admin .jb-admin-public h3 { color: #4f46e5; text-shadow: none }
+html[data-jb-bg="tech"] #jb-admin .jb-admin-section.jb-admin-blue { border-color: #79a0fa; background-color: rgba(230, 240, 253, 0.28); box-shadow: none; background-image: linear-gradient(to bottom left, transparent 50%, #79a0fa 50%, #79a0fa calc(50% + 2px), transparent calc(50% + 2px)),
+      linear-gradient(to top right, transparent 50%, #79a0fa 50%, #79a0fa calc(50% + 2px), transparent calc(50% + 2px)) }
+html[data-jb-bg="tech"] #jb-admin .jb-admin-blue h3 { color: #79a0fa; text-shadow: none }
+html[data-jb-bg="tech"] #jb-admin .jb-admin-section.jb-admin-green, html[data-jb-bg="tech"] #jb-admin .jb-admin-columns > .jb-admin-column.jb-admin-green { border-color: #16a34a; background-color: rgba(232, 248, 238, 0.28); box-shadow: none; background-image: linear-gradient(to bottom left, transparent 50%, #16a34a 50%, #16a34a calc(50% + 2px), transparent calc(50% + 2px)),
+      linear-gradient(to top right, transparent 50%, #16a34a 50%, #16a34a calc(50% + 2px), transparent calc(50% + 2px)) }
+html[data-jb-bg="tech"] #jb-admin .jb-admin-green h3, html[data-jb-bg="tech"] #jb-admin .jb-admin-green summary { color: #16a34a; text-shadow: none }
+html[data-jb-bg="tech"] #jb-admin .jb-admin-tabs { --ac: #16a34a; --ac-rgb: 22, 163, 74; --abg: rgba(232, 248, 238, 0.28) }
+html[data-jb-bg="tech"] #jb-admin .jb-admin-tabs.jb-admin-on-blue { --ac: #79a0fa; --ac-rgb: 121, 160, 250; --abg: rgba(230, 240, 253, 0.28) }
+html[data-jb-bg="tech"] #jb-admin .jb-admin-tab { --tc: #16a34a; --tc-rgb: 22, 163, 74; border: 1px solid rgba(var(--tc-rgb), 0.5); border-bottom: none; border-radius: 0; background-color: rgba(var(--tc-rgb), 0.07); color: var(--tc); font-family: 'Chakra Petch', monospace; text-shadow: none; background-image: linear-gradient(to bottom left, transparent 50%, rgba(var(--tc-rgb), 0.5) 50%, rgba(var(--tc-rgb), 0.5) calc(50% + 1px), transparent calc(50% + 1px)); background-size: 9px 9px; background-position: right top; background-repeat: no-repeat; background-origin: border-box }
+html[data-jb-bg="tech"] #jb-admin .jb-admin-tab-blue { --tc: #79a0fa; --tc-rgb: 121, 160, 250 }
+html[data-jb-bg="tech"] #jb-admin .jb-admin-panel-head { font-family: 'Chakra Petch', monospace; color: var(--ac) }
+html[data-jb-bg="tech"] #jb-admin .jb-admin-tab.jb-admin-tab-active { border: 2px solid var(--tc); border-bottom: none; background-color: var(--abg); background-image: linear-gradient(to bottom left, transparent 50%, var(--tc) 50%, var(--tc) calc(50% + 2px), transparent calc(50% + 2px)); background-size: 12px 12px }
+html[data-jb-bg="tech"] #jb-admin .jb-admin-tabbody { border: 2px solid var(--ac); border-top: none; background-color: var(--abg); box-shadow: none; background-image: linear-gradient(to bottom left, transparent 50%, var(--ac) 50%, var(--ac) calc(50% + 2px), transparent calc(50% + 2px)),
+      linear-gradient(to top right, transparent 50%, var(--ac) 50%, var(--ac) calc(50% + 2px), transparent calc(50% + 2px)); background-size: 12px 12px, 12px 12px; background-position: right top, left bottom; background-repeat: no-repeat; background-origin: border-box }
+html[data-jb-bg="tech"] #jb-admin .jb-admin-tabbody::before { background: var(--ac) }
+html[data-jb-bg="tech"] #jb-admin .jb-hint, html[data-jb-bg="tech"] #jb-admin .jb-empty { color: var(--text-dim); font-family: 'Chakra Petch', monospace }
+html[data-jb-bg="tech"] #jb-admin input[type="text"], html[data-jb-bg="tech"] #jb-admin input[type="email"], html[data-jb-bg="tech"] #jb-admin input[type="password"], html[data-jb-bg="tech"] #jb-admin textarea { background: #ffffff; color: var(--accent); border: 1px solid rgba(91, 98, 240, 0.4); border-left: 4px solid var(--accent); border-radius: 0; font-family: 'Chakra Petch', monospace }
+html[data-jb-bg="tech"] #jb-admin input::placeholder, html[data-jb-bg="tech"] #jb-admin textarea::placeholder { color: rgba(91, 98, 240, 0.45) }
+html[data-jb-bg="tech"] #jb-admin input:focus, html[data-jb-bg="tech"] #jb-admin textarea:focus { outline: none; box-shadow: none }
+html[data-jb-bg="tech"] #jb-admin button.jb-btn-primary, html[data-jb-bg="tech"] #jb-admin button.jb-btn-danger, html[data-jb-bg="tech"] #jb-admin button.jb-btn-ghost, html[data-jb-bg="tech"] #jb-admin .jb-mark-played-btn, html[data-jb-bg="tech"] #jb-admin .jb-unmark-btn, html[data-jb-bg="tech"] #jb-admin .jb-dismiss-special-btn, html[data-jb-bg="tech"] #jb-admin .jb-bypass-btn, html[data-jb-bg="tech"] #jb-admin .jb-burn-btn, html[data-jb-bg="tech"] #jb-admin .jb-unburn-btn, html[data-jb-bg="tech"] #jb-admin .jb-icon-btn { border-radius: 0; font-family: 'Chakra Petch', monospace }
+html[data-jb-bg="tech"] #jb-admin .jb-btn-primary { background: var(--accent); color: #ffffff }
+html[data-jb-bg="tech"] #jb-admin .jb-btn-danger { background: #5b62f0; color: #ffffff; box-shadow: none }
+html[data-jb-bg="tech"] #jb-admin .jb-btn-danger.jb-newnight-small { border: 1px solid transparent }
+html[data-jb-bg="tech"] #jb-admin .jb-admin-topbar > button { border: 2px solid #5b62f0; background-image: linear-gradient(to bottom left, transparent 50%, #5b62f0 50%, #5b62f0 calc(50% + 2px), transparent calc(50% + 2px)),
+      linear-gradient(to top right, transparent 50%, #5b62f0 50%, #5b62f0 calc(50% + 2px), transparent calc(50% + 2px)); background-size: 8px 8px, 8px 8px; background-position: right top, left bottom; background-repeat: no-repeat; background-origin: border-box }
+html[data-jb-bg="tech"] #jb-admin .jb-btn-ghost { background: transparent; color: var(--accent); border: 1px solid var(--accent) }
+html[data-jb-bg="tech"] #jb-admin .jb-mark-played-btn { background: var(--accent); color: #ffffff }
+html[data-jb-bg="tech"] #jb-admin .jb-mark-played-btn.jb-mark-played-armed { background: #1f2552; color: #ffffff }
+@keyframes jb-mark-played-pulse-tech {
+  0%, 100% { box-shadow: none }
+  50% { box-shadow: none }
+}
+html[data-jb-bg="tech"] #jb-admin .jb-unmark-btn, html[data-jb-bg="tech"] #jb-admin .jb-dismiss-special-btn { background: transparent; color: var(--text-dim); border: 1px solid var(--border) }
+html[data-jb-bg="tech"] #jb-admin .jb-bypass-btn { background: var(--accent); color: #ffffff }
+html[data-jb-bg="tech"] #jb-admin .jb-burn-btn { background: #ebf1fa; color: #1f2552; border: 1px solid #5056dc }
+html[data-jb-bg="tech"] #jb-admin .jb-unburn-btn { background: #5056dc; color: #ffffff }
+html[data-jb-bg="tech"] #jb-admin .jb-icon-btn.jb-del { background: var(--card2); color: #1f2552 }
+html[data-jb-bg="tech"] #jb-admin .jb-icon-btn.jb-plus { background: var(--card2); color: var(--accent) }
+html[data-jb-bg="tech"] #jb-admin .jb-icon-btn.jb-fire { background: var(--card2); color: #1f2552 }
+html[data-jb-bg="tech"] #jb-admin .jb-icon-btn.jb-fire.jb-active { background: #96aad2; border: 1px solid #5b62f0 }
+html[data-jb-bg="tech"] #jb-admin .jb-slot { border-bottom: 1px dashed var(--border); background: transparent }
+html[data-jb-bg="tech"] #jb-admin .jb-slot-rank { font-family: 'Chakra Petch', monospace; color: var(--accent2) }
+html[data-jb-bg="tech"] #jb-admin .jb-slot-votes { color: var(--accent2); text-shadow: none }
+html[data-jb-bg="tech"] #jb-admin .jb-slot-title, html[data-jb-bg="tech"] #jb-admin .jb-song-title { color: var(--text); text-shadow: none }
+html[data-jb-bg="tech"] #jb-admin .jb-slot-artist, html[data-jb-bg="tech"] #jb-admin .jb-song-artist { font-family: 'Chakra Petch', monospace }
+html[data-jb-bg="tech"] #jb-admin .jb-cooldown-row, html[data-jb-bg="tech"] #jb-admin .jb-admin-catalog-item, html[data-jb-bg="tech"] #jb-admin .jb-rank-item, html[data-jb-bg="tech"] #jb-admin .jb-song-item { border-radius: 0; background: rgba(3, 18, 10, 0.85); border: 1px solid var(--border) }
+html[data-jb-bg="tech"] #jb-admin .jb-cooldown-badge, html[data-jb-bg="tech"] #jb-admin .jb-cooldown-explicit, html[data-jb-bg="tech"] #jb-admin .jb-burned-badge { border-radius: 0 }
+html[data-jb-bg="tech"] #jb-admin .jb-cooldown-badge, html[data-jb-bg="tech"] #jb-admin .jb-cooldown-wait-seg { background: #ebf1fa }
+html[data-jb-bg="tech"] #jb-admin .jb-cooldown-played-seg { color: #ffffff }
+html[data-jb-bg="tech"] #jb-admin .jb-burned-badge { background: #ebf1fa; border-color: #5056dc; color: #1f2552 }
+html[data-jb-bg="tech"] #jb-admin .jb-genre-chip { border-radius: 0; font-family: 'Chakra Petch', monospace }
+html[data-jb-bg="tech"] #jb-admin .jb-genre-chip.jb-genre-chip-active { background: #96aad2; border-color: var(--accent); color: #1f2552 }
+html[data-jb-bg="tech"] #jb-admin .jb-error { color: #1f2552 }
+html[data-jb-bg="tech"] #jb-admin .jb-back-link { font-family: 'Chakra Petch', monospace }
+html[data-jb-bg="tech"] #jb-app .jb-toast { border-radius: 0; font-family: 'Chakra Petch', monospace }
+html[data-jb-bg="tech"] #jb-app .jb-splash-btn { --jb-cp-c: #5b62f0; font-family: 'Chakra Petch', monospace; color: #5b62f0; border: 1px solid #5b62f0; border-radius: 0; background: var(--jb-cp-diag) top right / 14px 14px no-repeat border-box,
+      var(--jb-cp-diag) bottom left / 14px 14px no-repeat border-box,
+      rgba(255, 255, 255, 0.75); text-shadow: none }
+html[data-jb-bg="tech"] #jb-app .jb-splash-btn:active { background: #5b62f0; color: #ffffff; text-shadow: none }
+html[data-jb-bg="tech"] #jb-public .jb-catalog-frame { background-color: #ffffff; border: 2px solid #79a0fa; box-shadow: none; border-radius: 3px }
+html[data-jb-bg="tech"] #jb-public .jb-catalog-frame::before { border: 1px solid rgba(121, 160, 250, 0.35) }
+html[data-jb-bg="tech"] #jb-public .jb-catalog-frame::after { border-radius: 50%; background: #79a0fa; box-shadow: none }
+html[data-jb-bg="tech"] #jb-public #jb-catalog-list { border-top: none; border-bottom: none }
+html[data-jb-bg="tech"] #jb-public .jb-catalog-frame-caps-top::before { background: #79a0fa; color: #ffffff; font-family: 'Chakra Petch', monospace }
+html[data-jb-bg="tech"] #jb-public .jb-catalog-frame { --fc: #79a0fa; --fbg: rgba(230, 240, 253, 0.22); --fbg-solid: #ffffff; --fglow: rgba(121, 160, 250, 0.6) }
+html[data-jb-bg="tech"] #jb-public #jb-catalog-list .jb-song-item { border-bottom: 1px solid #79a0fa }
+html[data-jb-bg="tech"] #jb-public .jb-catalog-frame, html[data-jb-bg="tech"] #jb-public .jb-myreq-frame, html[data-jb-bg="tech"] #jb-public .jb-palm-frame { border: none; border-radius: 0; background: none; box-shadow: none }
+html[data-jb-bg="tech"] #jb-public .jb-catalog-frame::before, html[data-jb-bg="tech"] #jb-public .jb-myreq-frame::before, html[data-jb-bg="tech"] #jb-public .jb-palm-frame::before { border: none; background: var(--fbg) }
+html[data-jb-bg="tech"] #jb-public .jb-frame-deco { filter: none }
+html[data-jb-bg="tech"] #jb-public .jb-fd-ring { background: var(--fc-dim) }
+html[data-jb-bg="tech"] #jb-public .jb-fd-tabfill { background: var(--fc) }
+html[data-jb-bg="tech"] #jb-public .jb-fd-fillet { background: var(--fc) }
+html[data-jb-bg="tech"] #jb-public .jb-fd-bodyline { background: var(--fc) }
+html[data-jb-bg="tech"] #jb-public .jb-fd-rail { background: var(--fc) }
+html[data-jb-bg="tech"] #jb-public .jb-fd-dots { background: repeating-linear-gradient(to right, var(--fc) 0 4px, transparent 4px 8px) }
+html[data-jb-bg="tech"] #jb-public .jb-fd-notch { background: var(--fc) }
+html[data-jb-bg="tech"] #jb-public .jb-fd-ladder { background: repeating-linear-gradient(to bottom, var(--fc) 0 3px, transparent 3px 7px) 0 11px / 100% calc(100% - 22px) no-repeat; background: repeating-linear-gradient(to bottom, var(--fc) 0 3px, transparent 3px 7px)
+      0 50% / 100% calc(round(down, calc(100% - 18px), 7px) - 4px) no-repeat }
+html[data-jb-bg="tech"] #jb-public .jb-catalog-frame.jb-ladder-drag .jb-fd-ladder { filter: none }
+html[data-jb-bg="tech"] #jb-public .jb-fd-ladder::before, html[data-jb-bg="tech"] #jb-public .jb-fd-ladder::after { background: var(--fc) }
+html[data-jb-bg="tech"] #jb-public .jb-fd-accent { background: var(--fc) }
+html[data-jb-bg="tech"] #jb-public .jb-catalog-frame-caps-top::before { background: none }
+html[data-jb-bg="tech"] #jb-public .jb-myreq-frame { --fc: #dc323c; --fbg: rgba(253, 236, 236, 0.22); --fbg-solid: #fff5f5; --fglow: rgba(220, 50, 60, 0.6) }
+html[data-jb-bg="tech"] #jb-public .jb-palm-frame { --fc: #4f46e5; --fbg: rgba(236, 238, 253, 0.22); --fbg-solid: #f5f6ff; --fglow: rgba(79, 70, 229, 0.55) }
+html[data-jb-bg="tech"] #jb-public .jb-myreq-frame-label, html[data-jb-bg="tech"] #jb-public .jb-palm-frame-label { color: var(--fbg-solid); font-family: 'Chakra Petch', monospace }
+html[data-jb-bg="tech"] #jb-public #jb-back-btn { border-width: 3px; background-image: linear-gradient(to bottom left, transparent 50%, currentColor 50%, currentColor calc(50% + 3px), transparent calc(50% + 3px)),
+      linear-gradient(to top right, transparent 50%, currentColor 50%, currentColor calc(50% + 3px), transparent calc(50% + 3px)); background-size: 8px 8px, 8px 8px; background-position: right top, left bottom; background-repeat: no-repeat; background-origin: border-box }
+html[data-jb-bg="tech"] #jb-public .jb-tab { --tc: #79a0fa; --tc-rgb: 121, 160, 250; border: 1px solid rgba(var(--tc-rgb), 0.5); border-radius: 0; background-color: rgba(var(--tc-rgb), 0.07); color: var(--tc); font-family: 'Chakra Petch', monospace; text-shadow: none; background-image: linear-gradient(to bottom left, transparent 50%, rgba(var(--tc-rgb), 0.5) 50%, rgba(var(--tc-rgb), 0.5) calc(50% + 1px), transparent calc(50% + 1px)); background-size: 9px 9px; background-position: right top; background-repeat: no-repeat; background-origin: border-box }
+html[data-jb-bg="tech"] #jb-public .jb-tab-req { --tc: #dc323c; --tc-rgb: 220, 50, 60 }
+html[data-jb-bg="tech"] #jb-public .jb-tab-pub { --tc: #4f46e5; --tc-rgb: 79, 70, 229 }
+html[data-jb-bg="tech"]:not([data-jb-bg]) #jb-public .jb-tab { --tc: #dc323c; --tc-rgb: 220, 50, 60 }
+html[data-jb-bg="tech"]:not([data-jb-bg]) #jb-public .jb-tab.jb-tab-active { --tc: #79a0fa; --tc-rgb: 121, 160, 250 }
+html[data-jb-bg="tech"]:not([data-jb-bg]) #jb-public .jb-catalog-frame { --fc: #79a0fa; --fbg: rgba(230, 240, 253, 0.22); --fbg-solid: #ffffff; --fglow: rgba(121, 160, 250, 0.6) }
+html[data-jb-bg="tech"] #jb-public .jb-tab-ico { background: rgba(var(--tc-rgb), 0.22); border: 1px solid rgba(var(--tc-rgb), 0.65) }
+html[data-jb-bg="tech"] #jb-public .jb-tab.jb-tab-active { border: 3px solid var(--tc); border-bottom: none; background-color: var(--fbg); background-image: linear-gradient(to bottom left, transparent 50%, var(--tc) 50%, var(--tc) calc(50% + 3px), transparent calc(50% + 3px)),
+      linear-gradient(transparent, transparent); background-size: 12px 12px, 100% 100%; background-position: right top, 0 0 }
+html[data-jb-bg="tech"] #jb-public .jb-tab.jb-tab-active::after { background: none }
+html[data-jb-bg="tech"] #jb-public .jb-tab.jb-tab-active .jb-tab-ico { background: rgba(var(--tc-rgb), 0.4); border-color: var(--tc) }
+html[data-jb-bg="tech"] #jb-public .jb-catalog-frame.jb-tab-on-myreq { --fc: #dc323c; --fbg: rgba(253, 236, 236, 0.22); --fbg-solid: #fff5f5; --fglow: rgba(220, 50, 60, 0.6) }
+html[data-jb-bg="tech"] #jb-public .jb-catalog-frame.jb-tab-on-public { --fc: #4f46e5; --fbg: rgba(236, 238, 253, 0.22); --fbg-solid: #f5f6ff; --fglow: rgba(79, 70, 229, 0.55) }
+html[data-jb-bg="tech"] #jb-public .jb-tab-count { font-family: 'Chakra Petch', monospace; color: var(--fc) }
+html[data-jb-bg="tech"] #jb-app:not(.jb-browse-only) #jb-public #jb-catalog-results #jb-back-btn { color: #79a0fa }
+html[data-jb-bg="tech"] #jb-app:not(.jb-browse-only) #jb-public #jb-catalog-results #jb-back-btn .jb-back-inner { border-color: #79a0fa; background: linear-gradient(to bottom left, transparent 50%, #79a0fa 50%, #79a0fa calc(50% + 2px), transparent calc(50% + 2px)) right top / 5px 5px no-repeat border-box,
+      linear-gradient(to top right, transparent 50%, #79a0fa 50%, #79a0fa calc(50% + 2px), transparent calc(50% + 2px)) left bottom / 5px 5px no-repeat border-box }
+html[data-jb-bg="tech"] #jb-app:not(.jb-browse-only) #jb-public #jb-catalog-results #jb-back-btn:active .jb-back-inner { background-color: #79a0fa; color: #ffffff }
+html[data-jb-bg="tech"] #jb-public .jb-tab-back-arrow { filter: none }
+html[data-jb-bg="tech"] #jb-public .jb-tab-rep.jb-tab-back .jb-tab-label { text-shadow: none }
+html[data-jb-bg="tech"] #jb-public #jb-back-btn.jb-back-in-title { border: none; border-radius: 0; box-shadow: none; background: transparent; color: #79a0fa; font-family: 'Chakra Petch', monospace; text-shadow: none }
+html[data-jb-bg="tech"] #jb-public #jb-back-btn.jb-back-in-title .jb-back-inner { border-color: #79a0fa; background: linear-gradient(to bottom left, transparent 50%, #79a0fa 50%, #79a0fa calc(50% + 2px), transparent calc(50% + 2px)) right top / 5px 5px no-repeat border-box,
+      linear-gradient(to top right, transparent 50%, #79a0fa 50%, #79a0fa calc(50% + 2px), transparent calc(50% + 2px)) left bottom / 5px 5px no-repeat border-box }
+html[data-jb-bg="tech"] #jb-public #jb-back-btn.jb-back-in-title:active .jb-back-inner { background-color: #79a0fa; color: #ffffff }
+html[data-jb-bg="tech"] #jb-public .jb-vote-modal-card, html[data-jb-bg="tech"] #jb-public .jb-name-prompt-card { border: 3px solid #5b62f0; background-image: linear-gradient(to bottom left, transparent 50%, #5b62f0 50%, #5b62f0 calc(50% + 3px), transparent calc(50% + 3px)),
+      linear-gradient(to top right, transparent 50%, #5b62f0 50%, #5b62f0 calc(50% + 3px), transparent calc(50% + 3px)); background-size: 12px 12px, 12px 12px; background-position: right top, left bottom; background-repeat: no-repeat; background-origin: border-box }
+html[data-jb-bg="tech"] #jb-public .jb-pay-chip { border: 3px solid #5b62f0; background-image: linear-gradient(to bottom left, transparent 50%, #5b62f0 50%, #5b62f0 calc(50% + 3px), transparent calc(50% + 3px)),
+      linear-gradient(to top right, transparent 50%, #5b62f0 50%, #5b62f0 calc(50% + 3px), transparent calc(50% + 3px)); background-size: 8px 8px, 8px 8px; background-position: right top, left bottom; background-repeat: no-repeat; background-origin: border-box }
+html[data-jb-bg="tech"] #jb-public #jb-folder-title-wrap { background: transparent }
+html[data-jb-bg="tech"] #jb-public .jb-offline-card { border: none; background: rgba(14, 12, 1, 0.4) }
+html[data-jb-bg="tech"] #jb-public .jb-offline-browse-link, html[data-jb-bg="tech"] #jb-public .jb-browse-back { background: transparent; color: #5b62f0; border: 2px solid #5b62f0; font-family: 'Chakra Petch', monospace }
+html[data-jb-bg="tech"] #jb-public #jb-catalog-results #jb-back-btn { border: none; border-radius: 0; background: transparent; box-shadow: none; color: #ffffff; font-family: 'Chakra Petch', monospace; text-shadow: none }
+html[data-jb-bg="tech"] #jb-public #jb-back-btn .jb-back-inner { border: 2px solid #ffffff; background: linear-gradient(to bottom left, transparent 50%, #ffffff 50%, #ffffff calc(50% + 2px), transparent calc(50% + 2px)) right top / 5px 5px no-repeat border-box,
+      linear-gradient(to top right, transparent 50%, #ffffff 50%, #ffffff calc(50% + 2px), transparent calc(50% + 2px)) left bottom / 5px 5px no-repeat border-box }
+html[data-jb-bg="tech"] #jb-public #jb-back-btn:active .jb-back-inner { background-color: #ffffff; color: #79a0fa }
+html[data-jb-bg="tech"] #jb-public .jb-chat .jb-style-heading-row { border-bottom: 2px solid #5b62f0; box-shadow: none }
+html[data-jb-bg="tech"] #jb-public .jb-kbd-caret { font-family: 'Chakra Petch', monospace; color: #5b62f0; text-shadow: none }
+html[data-jb-bg="tech"] #jb-public #jb-chat-input { background: rgba(0, 0, 0, 0.35); color: #1f2552; border: 2px solid #5b62f0; border-left-width: 5px; border-radius: 0; font-family: 'Chakra Petch', monospace }
+html[data-jb-bg="tech"] #jb-public #jb-chat-input::placeholder { color: #5a6e96 }
+html[data-jb-bg="tech"] #jb-public .jb-chat-send { border: none; border-radius: 0; background: #5b62f0; color: #ffffff }
+html[data-jb-bg="tech"] #jb-public .jb-kbd { border: 2px solid rgba(91, 98, 240, 0.55); background: rgba(240, 245, 252, 0.75) }
+html[data-jb-bg="tech"] #jb-public .jb-kbd-key { border-radius: 0; border: 1px solid rgba(121, 160, 250, 0.55); background: rgba(121, 160, 250, 0.07); color: #19376e; font-family: 'Chakra Petch', monospace; text-shadow: none }
+html[data-jb-bg="tech"] #jb-public .jb-kbd-key.jb-kbd-wide { color: #5b62f0; border-color: rgba(91, 98, 240, 0.55); background: rgba(91, 98, 240, 0.07); text-shadow: none }
+html[data-jb-bg="tech"] #jb-public .jb-kbd-key.jb-kbd-shift svg { fill: none; stroke: currentColor; filter: none }
+html[data-jb-bg="tech"] #jb-public .jb-kbd-key.jb-kbd-shift.jb-kbd-shift-on { background: #5b62f0; color: #ffffff; border-color: #5b62f0; box-shadow: none }
+html[data-jb-bg="tech"] #jb-public .jb-kbd-key.jb-kbd-shift.jb-kbd-shift-on svg { fill: #ffffff; filter: none }
+html[data-jb-bg="tech"] #jb-public .jb-kbd-key[data-k="back"] svg { fill: none; stroke: currentColor; filter: none }
+html[data-jb-bg="tech"] #jb-public .jb-kbd-key.jb-kbd-emoji { text-shadow: none }
+html[data-jb-bg="tech"] #jb-public .jb-kbd-key.jb-kbd-on { background: rgba(91, 98, 240, 0.35); color: #ffffff }
+html[data-jb-bg="tech"] #jb-public .jb-kbd-key.jb-kbd-down { background: #79a0fa; color: #ffffff; text-shadow: none }
+html[data-jb-bg="tech"] #jb-public .jb-kbd-key.jb-kbd-wide.jb-kbd-down, html[data-jb-bg="tech"] #jb-public .jb-kbd-key.jb-kbd-send.jb-kbd-down { background: #1f2552; color: #ffffff }
+html[data-jb-bg="tech"] #jb-public .jb-chat-row .jb-chat-av { border-width: 1.5px }
+html[data-jb-bg="tech"] #jb-public .jb-chat-new .jb-chat-av { animation: jb-chat-flash-tech 2.6s ease-out calc(0.72s - var(--lag, 0ms)) both }
+@keyframes jb-chat-flash-tech {
+  0% { box-shadow: none; background: rgba(255, 255, 255, 0.04) }
+  30% { box-shadow: none; background: color-mix(in srgb, var(--av) 35%, transparent) }
+  100% { box-shadow: none; background: rgba(255, 255, 255, 0.04) }
+}
+html[data-jb-bg="tech"] #jb-public .jb-chat-name, html[data-jb-bg="tech"] #jb-admin .jb-chat-name { font-family: 'Jukehub Tech', sans-serif; color: #5b62f0 }
+html[data-jb-bg="tech"] #jb-public .jb-chat-text { color: #1f2552 }
+html[data-jb-bg="tech"] #jb-app .jb-chat-av { color: var(--av); border: 1.5px solid var(--av); background: rgba(255, 255, 255, 0.04) }
+html[data-jb-bg="tech"] #jb-app .jb-chat-av svg, html[data-jb-bg="tech"] #jb-app .jb-avatar-opt svg { fill: none; stroke: currentColor; filter: none }
+html[data-jb-bg="tech"] #jb-app .jb-avatar-opt { border-radius: 0; color: var(--av); border: 1.5px solid color-mix(in srgb, var(--av) 45%, transparent); background: rgba(255, 255, 255, 0.03) }
+html[data-jb-bg="tech"] #jb-app .jb-avatar-opt.jb-avatar-on { border: 2.5px solid var(--av); background: color-mix(in srgb, var(--av) 22%, transparent); box-shadow: none }
+html[data-jb-bg="tech"] #jb-public .jb-chat-banned { color: #dc323c }
+html[data-jb-bg="tech"] #jb-admin .jb-admin-chat-msg { border-bottom: 1px dashed rgba(91, 98, 240, 0.3) }
+html[data-jb-bg="tech"] #jb-admin .jb-admin-chat-time { color: #6e7da0 }
+html[data-jb-bg="tech"] #jb-admin .jb-chat-text { color: #1f2552 }
+html[data-jb-bg="tech"] #jb-admin .jb-admin-kick { border: 1px solid #dc323c; border-radius: 0; background: transparent; color: #dc323c; font-family: 'Chakra Petch', monospace }
+html[data-jb-bg="tech"] #jb-public #jb-search-input { border-color: #5b62f0; box-shadow: none }
+html[data-jb-bg="tech"] #jb-public :is(.jb-myreq-frame, .jb-tab-myreq) .jb-myreq-row:last-child { border-bottom: none }
+html[data-jb-bg="tech"] #jb-public :is(.jb-palm-frame, .jb-tab-public) .jb-slot:last-child { border-bottom: none }
+/* ==== FIN DU GÉNÉRÉ (tech) ==== */
+
+/* ---- Décor : fond blanc et grille légère (plus de bandes bleues, Hubert 28 oct. 2026) ---- */
+.jb-tech-scene { display: none; }
+html[data-jb-bg="tech"] #jb-app .jb-cp-matrix,
+html[data-jb-bg="tech"] #jb-app .jb-city-bg,
+html[data-jb-bg="tech"] #jb-public::after { display: none !important; }
+html[data-jb-bg="tech"] body, html[data-jb-bg="tech"] #jb-app { background-color: #f4f7fc !important; }
+html[data-jb-bg="tech"] .jb-tech-scene {
+  display: block; position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden;
+  background:
+    linear-gradient(rgba(30, 95, 220, 0.05) 1px, transparent 1px) 0 0 / 28px 28px,
+    linear-gradient(90deg, rgba(30, 95, 220, 0.05) 1px, transparent 1px) 0 0 / 28px 28px,
+    linear-gradient(180deg, #ffffff, #edf2fa);
+}
+html[data-jb-bg="tech"] #jb-public #jb-chat-input { background: #ffffff !important; color: #13254a !important; }
+html[data-jb-bg="tech"] #jb-public #jb-chat-input::placeholder { color: #7f93b8 !important; }
+html[data-jb-bg="tech"] #jb-app > .jb-view { position: relative; z-index: 1; }
+
+/* ==== Style propre au thème Tech (Hubert, 28 oct. 2026 : « plus simple, comme ça ») : cadres arrondis
+   en dégradé indigo -> bleu ciel, bande plus épaisse en haut, intérieur blanc, languette trapézoïdale en
+   bas au centre ; boutons et champs blancs arrondis à contour lavande. Mêmes dimensions que les autres
+   thèmes. ==== */
+html[data-jb-bg="tech"] {
+  --tk-blue: #5b62f0; --tk-sky: #79b4fa; --tk-line: #c9cffb; --tk-text: #1f2552;
+  --tk-grad: linear-gradient(180deg, #6a6ffc, #79b4fa);
+  --tk-grad-h: linear-gradient(90deg, #6a6ffc, #79b4fa);
+}
+html[data-jb-bg="tech"] #jb-public .jb-top-bar::before { background: var(--tk-grad-h) !important; filter: none !important; }
+/* toute l'interface dans la police maison (Hubert : « change toute la police ») ; un caractère absent
+   de la police retombe sur Chakra Petch */
+html[data-jb-bg="tech"] #jb-app, html[data-jb-bg="tech"] #jb-app *, html[data-jb-bg="tech"] #jb-app *::placeholder {
+  font-family: 'Jukehub Tech', 'Chakra Petch', sans-serif !important;
+}
+/* police plus large : le message « aucun message » doit rester sur une ligne (sinon la barre du chat descend) */
+html[data-jb-bg="tech"] #jb-public #jb-chat-empty { font-size: 10.5px !important; line-height: 20.16px !important; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* titre : carte blanche arrondie — même longueur que dans les autres thèmes */
+html[data-jb-bg="tech"] #jb-app #jb-public #jb-artist-name {
+  scale: 0.74; transform-origin: left center;
+  /* Jukehub Tech est plus large qu'Orbitron : lettres resserrées pour garder le bandeau aux mêmes dimensions */
+  letter-spacing: 1px; font-size: calc(2.027rem * var(--jb-topbar-scale, 1)) !important;
+  clip-path: none !important; border-color: transparent !important; border-radius: 10px !important; color: var(--tk-text) !important;
+  background: #fff !important; box-shadow: inset 0 0 0 2px var(--tk-line) !important;
+}
+html[data-jb-bg="tech"] #jb-app #jb-public #jb-artist-name::before, html[data-jb-bg="tech"] #jb-app #jb-public #jb-artist-name::after { display: none !important; }
+
+/* recherche et boutons : blancs arrondis, contour lavande */
+html[data-jb-bg="tech"] #jb-public #jb-search-input,
+html[data-jb-bg="tech"] #jb-public .jb-mode-btn,
+html[data-jb-bg="tech"] #jb-public #jb-chat-input {
+  clip-path: none !important; border: none !important; border-radius: 12px !important;
+  background: #fff !important; box-shadow: inset 0 0 0 2px var(--tk-line) !important;
+  color: var(--tk-text) !important;
+}
+html[data-jb-bg="tech"] #jb-public .jb-mode-btn { color: var(--tk-blue) !important; font-weight: 700 !important; }
+html[data-jb-bg="tech"] #jb-public .jb-mode-btn::before, html[data-jb-bg="tech"] #jb-public .jb-mode-btn::after { content: none !important; }
+html[data-jb-bg="tech"] #jb-public #jb-search-input::placeholder, html[data-jb-bg="tech"] #jb-public #jb-chat-input::placeholder { color: #8f95c4 !important; }
+html[data-jb-bg="tech"] #jb-public .jb-chat-send, html[data-jb-bg="tech"] #jb-app #jb-section-title-row .jb-bg-btn {
+  clip-path: none !important; border: none !important; border-radius: 10px !important; background: var(--tk-grad-h) !important; color: #fff !important; box-shadow: none !important;
+}
+
+/* titres de section : petite barre arrondie en dégradé au lieu du « // » */
+html[data-jb-bg="tech"] #jb-public .jb-style-heading-row h2 { color: var(--tk-blue) !important; }
+html[data-jb-bg="tech"] #jb-public .jb-style-heading-row h2::before {
+  content: "" !important; display: inline-block; width: 6px; height: 18px; margin-right: 10px; vertical-align: -2px;
+  border-radius: 3px; background: var(--tk-grad);
+}
+html[data-jb-bg="tech"] #jb-public .jb-chat .jb-style-heading-row { border-bottom-color: var(--tk-line) !important; box-shadow: none !important; }
+
+/* cadres : dégradé arrondi (::before), intérieur blanc (::after), languette en bas (deco .jb-fd-accent) */
+html[data-jb-bg="tech"] #jb-public .jb-catalog-frame { --fc: var(--tk-blue) !important; --fglow: transparent !important; }
+html[data-jb-bg="tech"] #jb-public .jb-catalog-frame-caps { display: none !important; }
+html[data-jb-bg="tech"] #jb-public .jb-frame-deco { display: block !important; filter: none !important; z-index: 1; }
+html[data-jb-bg="tech"] #jb-public .jb-frame-deco > i { display: none !important; }
+html[data-jb-bg="tech"] #jb-public :is(.jb-catalog-frame, .jb-myreq-frame, .jb-palm-frame)::before {
+  /* la bande de couleur entoure aussi les onglets (dessinée vers l'extérieur : aucune dimension ne change) */
+  inset: -8px -6px 0 -6px !important; border: none !important; border-radius: 18px !important; box-shadow: none !important;
+  background: var(--tk-grad) !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; clip-path: none !important;
+}
+html[data-jb-bg="tech"] #jb-public :is(.jb-catalog-frame, .jb-myreq-frame, .jb-palm-frame)::after {
+  content: "" !important; display: block !important; position: absolute; inset: calc(var(--ft) + 8px) 0 6px 0 !important;
+  width: auto !important; height: auto !important; box-shadow: none !important; pointer-events: none;
+  /* coin du haut carré du côté où l'onglet choisi touche le bord du cadre (--cTL / --cTR, fitTabGaps) */
+  border-radius: calc(10px * var(--cTL, 1)) calc(10px * var(--cTR, 1)) 10px 10px !important;
+  background: #fff !important; clip-path: none !important;
+}
+html[data-jb-bg="tech"] #jb-public .jb-frame-deco > i.jb-fd-accent {
+  display: block !important; position: absolute; inset: auto 32% 0 32% !important; width: auto !important; height: 16px !important;
+  background: var(--tk-sky) !important; border: none !important; box-shadow: none !important; filter: none !important;
+  clip-path: polygon(10px 0, calc(100% - 10px) 0, 100% 100%, 0 100%) !important;
+}
+html[data-jb-bg="tech"] #jb-public #jb-catalog-results #jb-catalog-list { clip-path: inset(0 round 10px) !important; }
+html[data-jb-bg="tech"] #jb-public #jb-catalog-results #jb-catalog-list .jb-song-item { border-bottom-color: #e4e7fb !important; }
+
+/* onglets posés dans la bande de couleur du cadre (maquette de Hubert) : blancs arrondis à contour
+   lavande ; le choisi se prolonge dans l'intérieur blanc du cadre */
+html[data-jb-bg="tech"] #jb-public .jb-tab {
+  position: relative; clip-path: none !important; border-radius: 10px !important; background: #fff !important;
+  background-image: none !important; border: none !important; box-shadow: inset 0 0 0 2px var(--tk-line) !important; color: #6b72c9 !important;
+}
+/* les onglets vont d'un bord à l'autre du cadre : l'onglet choisi aux extrémités s'y soude sans coin bizarre */
+html[data-jb-bg="tech"] #jb-app:not(.jb-browse-only) #jb-public .jb-catalog .jb-tabbar { right: 0 !important; }
+html[data-jb-bg="tech"] #jb-public .jb-tab.jb-tab-active { box-shadow: none !important; color: var(--tk-blue) !important; border-radius: 10px 10px 0 0 !important; }
+html[data-jb-bg="tech"] #jb-public .jb-tab.jb-tab-active::after {
+  /* prolongement blanc jusqu'à l'intérieur du cadre + raccords arrondis (concaves) de chaque côté ; pas de
+     raccord du côté où l'onglet touche le bord du cadre (--cTL / --cTR = 0) */
+  content: "" !important; display: block !important; position: absolute; top: calc(100% - 2px); height: calc(var(--ft) + 10px - 100%);
+  left: calc(-8px * var(--cTL, 1)); right: calc(-8px * var(--cTR, 1));
+  background:
+    radial-gradient(circle at 0 0, transparent 7.5px, #fff 8px) left bottom / calc(8px * var(--cTL, 1)) 8px no-repeat,
+    radial-gradient(circle at 100% 0, transparent 7.5px, #fff 8px) right bottom / calc(8px * var(--cTR, 1)) 8px no-repeat,
+    linear-gradient(#fff, #fff) calc(8px * var(--cTL, 1)) 0 / calc(100% - 8px * var(--cTL, 1) - 8px * var(--cTR, 1)) 100% no-repeat !important;
+  border: none !important; box-shadow: none !important; clip-path: none !important; filter: none !important;
+  pointer-events: none;
+}
+html[data-jb-bg="tech"] #jb-public .jb-tab-ico { border-color: currentColor !important; background: transparent !important; }
+
+/* clavier : arrondi, touches blanches à contour fin ; touche enfoncée / majuscule en dégradé */
+html[data-jb-bg="tech"] #jb-public .jb-kbd {
+  clip-path: none !important; border: none !important; border-radius: 12px !important; background: #fff !important; box-shadow: inset 0 0 0 2px var(--tk-line) !important;
+}
+html[data-jb-bg="tech"] #jb-public .jb-kbd-key {
+  clip-path: none !important; border-radius: 6px !important; border: none !important; background: #f4f5ff !important;
+  box-shadow: inset 0 0 0 1px var(--tk-line) !important; color: var(--tk-text) !important;
+}
+html[data-jb-bg="tech"] #jb-public .jb-kbd-key.jb-kbd-wide { background: #e9ebff !important; color: var(--tk-blue) !important; }
+html[data-jb-bg="tech"] #jb-public .jb-kbd-key.jb-kbd-down,
+html[data-jb-bg="tech"] #jb-public .jb-kbd-key.jb-kbd-shift.jb-kbd-shift-on { background: var(--tk-grad-h) !important; color: #fff !important; box-shadow: none !important; }
+html[data-jb-bg="tech"] #jb-public .jb-kbd-key.jb-kbd-shift.jb-kbd-shift-on svg { fill: #fff !important; }
+html[data-jb-bg="tech"] #jb-public .jb-kbd-caret { color: var(--tk-blue) !important; }
+</style>
 
 <div id="jb-app">
 
@@ -3905,9 +4496,11 @@ html[data-jb-bg="foret"] #jb-app .jb-chat-av { clip-path: none !important; borde
    <div class="jb-bar-scene" aria-hidden="true"><i class="jb-bar-bulbs"></i><i class="jb-bar-curtain jb-bar-curtain-l"></i><i class="jb-bar-curtain jb-bar-curtain-r"></i></div>
    <!-- Forêt du thème « Forêt enchantée » (28 oct. 2026), voir html[data-jb-bg="foret"] .jb-forest-scene -->
    <div class="jb-forest-scene" aria-hidden="true"></div>
+   <!-- Fond du thème « Tech blanc » (28 oct. 2026), voir html[data-jb-bg="tech"] .jb-tech-scene -->
+   <div class="jb-tech-scene" aria-hidden="true"></div>
    <!-- 28 oct. 2026 : seulement 2 styles maintenant, « Cyberpunk » (défaut) et « Bar spectacle » ; un
         ancien fond gardé sur le téléphone (rose, grille…) revient au Cyberpunk -->
-   <script>try { var jbBg = localStorage.getItem("jb-bg"); if (jbBg === "bar" || jbBg === "foret") document.documentElement.dataset.jbBg = jbBg; } catch (e) {}</script>
+   <script>try { var jbBg = localStorage.getItem("jb-bg"); if (jbBg === "bar" || jbBg === "foret" || jbBg === "tech") document.documentElement.dataset.jbBg = jbBg; } catch (e) {}</script>
    <script>
    (function () {
      const canvas = document.getElementById("jb-cp-matrix");
@@ -4260,7 +4853,7 @@ html[data-jb-bg="foret"] #jb-app .jb-chat-av { clip-path: none !important; borde
        if (!board.width || !board.height || !canvas.width || !canvas.height) return;
        // Fond « grille » ou « noir » choisi par le client : pas de circuit (et rien à calculer)
        const bg = document.documentElement.dataset.jbBg;
-       if (bg === "grille" || bg === "noir" || bg === "bar" || bg === "foret") { ctx.clearRect(0, 0, w, vh); return; }
+       if (bg === "grille" || bg === "noir" || bg === "bar" || bg === "foret" || bg === "tech") { ctx.clearRect(0, 0, w, vh); return; }
        if (bg === "etoiles") { drawStars(dt); return; }
        const sy =Math.max(0, Math.min(H - vh, window.scrollY || 0));
        ctx.clearRect(0, 0, w, vh);
@@ -5120,7 +5713,7 @@ répertoire</button>
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-22.215";
+  const APP_BUILD = "2026-10-22.216";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -5827,6 +6420,7 @@ répertoire</button>
     { id: "", fr: "Cyberpunk", en: "Cyberpunk" },
     { id: "bar", fr: "Bar spectacle", en: "Show bar" },
     { id: "foret", fr: "Forêt enchantée", en: "Enchanted forest" }, // 3e thème (Hubert, 28 oct. 2026)
+    { id: "tech", fr: "Tech blanc", en: "White tech" }, // 4e thème (Hubert, 28 oct. 2026)
   ];
   document.getElementById("jb-bg-btn").addEventListener("click", () => {
     const cur = document.documentElement.dataset.jbBg || "";
