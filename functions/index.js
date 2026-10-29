@@ -191,7 +191,9 @@ exports.stripeWebhook = onRequest(
           });
           return "reject";
         }
-        const update = { requests: admin.firestore.FieldValue.increment(amount) };
+        // tippedAt : heure du dernier pourboire, pour départager deux chansons à montant égal en haut
+        // du chat (la plus récemment « tippée » passe devant — Hubert, 29 oct. 2026)
+        const update = { requests: admin.firestore.FieldValue.increment(amount), tippedAt: admin.firestore.FieldValue.serverTimestamp() };
         if (name) update[`voters.${name}`] = admin.firestore.FieldValue.increment(amount);
         tx.update(songRef, update);
         tx.set(payRef, {
