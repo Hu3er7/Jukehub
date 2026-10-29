@@ -2597,6 +2597,17 @@
     border: 2.5px solid var(--av); background: color-mix(in srgb, var(--av) 22%, transparent);
     box-shadow: inset 0 0 10px color-mix(in srgb, var(--av) 50%, transparent);
   }
+  /* contour bien fermé aux 2 coins coupés (Hubert, 29 oct. 2026) : la bordure (transparente) garde la place,
+     le trait est un anneau découpé d'un seul morceau, diagonales comprises (--ab = épaisseur, --ac = couleur) */
+  #jb-app .jb-avatar-opt { position: relative; border-color: transparent !important; --ab: 1.5px; --ac: color-mix(in srgb, var(--av) 45%, transparent); }
+  #jb-app .jb-avatar-opt.jb-avatar-on { --ab: 2.5px; --ac: var(--av); }
+  #jb-app .jb-avatar-opt::after {
+    content: ""; position: absolute; inset: calc(var(--ab) * -1); pointer-events: none; background: var(--ac);
+    clip-path: polygon(0 0, calc(100% - 7px) 0, 100% 7px, 100% 100%, 7px 100%, 0 calc(100% - 7px), 0 0,
+      var(--ab) var(--ab), var(--ab) calc(100% - 7px - var(--ab) * 0.4142), calc(7px + var(--ab) * 0.4142) calc(100% - var(--ab)),
+      calc(100% - var(--ab)) calc(100% - var(--ab)), calc(100% - var(--ab)) calc(7px + var(--ab) * 0.4142),
+      calc(100% - 7px - var(--ab) * 0.4142) var(--ab), var(--ab) var(--ab));
+  }
   #jb-public .jb-chat-empty { margin: 4px 0 6px; }
   #jb-public .jb-chat-banned { color: #ff2d55; margin: 0 0 10px; font-size: 0.9rem; }
   /* Panneau admin : messages + bouton « Expulser » */
@@ -3084,6 +3095,8 @@ html[data-jb-bg="bar"] #jb-app .jb-chat-av::after { background: var(--av) }
 html[data-jb-bg="bar"] #jb-app .jb-chat-av svg, html[data-jb-bg="bar"] #jb-app .jb-avatar-opt svg { fill: none; stroke: currentColor; filter: drop-shadow(0 0 2px currentColor) }
 html[data-jb-bg="bar"] #jb-app .jb-avatar-opt { border-radius: 0; color: var(--av); border: 1.5px solid color-mix(in srgb, var(--av) 45%, transparent); background: rgba(255, 255, 255, 0.03) }
 html[data-jb-bg="bar"] #jb-app .jb-avatar-opt.jb-avatar-on { border: 2.5px solid var(--av); background: color-mix(in srgb, var(--av) 22%, transparent); box-shadow: inset 0 0 10px color-mix(in srgb, var(--av) 50%, transparent) }
+html[data-jb-bg="bar"] #jb-app .jb-avatar-opt { border-color: transparent !important }
+html[data-jb-bg="bar"] #jb-app .jb-avatar-opt::after { background: var(--ac) }
 html[data-jb-bg="bar"] #jb-public .jb-chat-banned { color: #e84034 }
 html[data-jb-bg="bar"] #jb-admin .jb-admin-chat-msg { border-bottom: 1px dashed rgba(255, 184, 77, 0.3) }
 html[data-jb-bg="bar"] #jb-admin .jb-admin-chat-time { color: #a8805a }
@@ -3775,6 +3788,8 @@ html[data-jb-bg="foret"] #jb-app .jb-chat-av::after { background: var(--av) }
 html[data-jb-bg="foret"] #jb-app .jb-chat-av svg, html[data-jb-bg="foret"] #jb-app .jb-avatar-opt svg { fill: none; stroke: currentColor; filter: drop-shadow(0 0 2px currentColor) }
 html[data-jb-bg="foret"] #jb-app .jb-avatar-opt { border-radius: 0; color: var(--av); border: 1.5px solid color-mix(in srgb, var(--av) 45%, transparent); background: rgba(255, 255, 255, 0.03) }
 html[data-jb-bg="foret"] #jb-app .jb-avatar-opt.jb-avatar-on { border: 2.5px solid var(--av); background: color-mix(in srgb, var(--av) 22%, transparent); box-shadow: inset 0 0 10px color-mix(in srgb, var(--av) 50%, transparent) }
+html[data-jb-bg="foret"] #jb-app .jb-avatar-opt { border-color: transparent !important }
+html[data-jb-bg="foret"] #jb-app .jb-avatar-opt::after { background: var(--ac) }
 html[data-jb-bg="foret"] #jb-public .jb-chat-banned { color: #ff8a5c }
 html[data-jb-bg="foret"] #jb-admin .jb-admin-chat-msg { border-bottom: 1px dashed rgba(198, 243, 106, 0.3) }
 html[data-jb-bg="foret"] #jb-admin .jb-admin-chat-time { color: #96b46e }
@@ -4441,6 +4456,8 @@ html[data-jb-bg="tech"] #jb-app .jb-chat-av::after { background: var(--av) }
 html[data-jb-bg="tech"] #jb-app .jb-chat-av svg, html[data-jb-bg="tech"] #jb-app .jb-avatar-opt svg { fill: none; stroke: currentColor; filter: none }
 html[data-jb-bg="tech"] #jb-app .jb-avatar-opt { border-radius: 0; color: var(--av); border: 1.5px solid color-mix(in srgb, var(--av) 45%, transparent); background: rgba(255, 255, 255, 0.03) }
 html[data-jb-bg="tech"] #jb-app .jb-avatar-opt.jb-avatar-on { border: 2.5px solid var(--av); background: color-mix(in srgb, var(--av) 22%, transparent); box-shadow: none }
+html[data-jb-bg="tech"] #jb-app .jb-avatar-opt { border-color: transparent !important }
+html[data-jb-bg="tech"] #jb-app .jb-avatar-opt::after { background: var(--ac) }
 html[data-jb-bg="tech"] #jb-public .jb-chat-banned { color: #111111 }
 html[data-jb-bg="tech"] #jb-admin .jb-admin-chat-msg { border-bottom: 1px dashed rgba(17, 17, 17, 0.3) }
 html[data-jb-bg="tech"] #jb-admin .jb-admin-chat-time { color: #5a5a5a }
@@ -5107,6 +5124,8 @@ html[data-jb-bg="matrix"] #jb-app .jb-chat-av::after { background: var(--av) }
 html[data-jb-bg="matrix"] #jb-app .jb-chat-av svg, html[data-jb-bg="matrix"] #jb-app .jb-avatar-opt svg { fill: none; stroke: currentColor; filter: drop-shadow(0 0 2px currentColor) }
 html[data-jb-bg="matrix"] #jb-app .jb-avatar-opt { border-radius: 0; color: var(--av); border: 1.5px solid color-mix(in srgb, var(--av) 45%, transparent); background: rgba(255, 255, 255, 0.03) }
 html[data-jb-bg="matrix"] #jb-app .jb-avatar-opt.jb-avatar-on { border: 2.5px solid var(--av); background: color-mix(in srgb, var(--av) 22%, transparent); box-shadow: inset 0 0 10px color-mix(in srgb, var(--av) 50%, transparent) }
+html[data-jb-bg="matrix"] #jb-app .jb-avatar-opt { border-color: transparent !important }
+html[data-jb-bg="matrix"] #jb-app .jb-avatar-opt::after { background: var(--ac) }
 html[data-jb-bg="matrix"] #jb-public .jb-chat-banned { color: #beff28 }
 html[data-jb-bg="matrix"] #jb-admin .jb-admin-chat-msg { border-bottom: 1px dashed rgba(0, 255, 65, 0.3) }
 html[data-jb-bg="matrix"] #jb-admin .jb-admin-chat-time { color: #46a05a }
@@ -5130,6 +5149,13 @@ html[data-jb-bg="matrix"] #jb-public .jb-chat-frame { background: rgba(0, 6, 2, 
 html[data-jb-bg="matrix"] #jb-app #jb-public #jb-artist-name { text-shadow: 0 0 6px rgba(0, 255, 65, 0.8), 0 0 14px rgba(0, 255, 65, 0.4) !important; }
 /* titre de la même longueur que dans les autres thèmes (même réduction d'affichage que le Cyberpunk) */
 html[data-jb-bg="matrix"] #jb-app #jb-public #jb-artist-name { scale: 0.74; transform-origin: left center; }
+/* les 2 onglets non choisis en vert pâle (Hubert, 29 oct. 2026) */
+html[data-jb-bg="matrix"] #jb-public .jb-tab:not(.jb-tab-active) { --tc: #9fe6ad !important; --tc-rgb: 159, 230, 173 !important; }
+/* onglet ouvert : toujours le même vert vif que « Mon répertoire », et son cadre aussi (Hubert, 29 oct. 2026) */
+html[data-jb-bg="matrix"] #jb-public .jb-tab.jb-tab-active { --tc: #78ff96 !important; --tc-rgb: 120, 255, 150 !important; }
+html[data-jb-bg="matrix"] #jb-public .jb-catalog-frame:is(.jb-tab-on-myreq, .jb-tab-on-public) {
+  --fc: #78ff96 !important; --fbg: rgba(4, 45, 15, 0.22) !important; --fbg-solid: #010f05 !important; --fglow: rgba(0, 230, 100, 0.6) !important;
+}
 html[data-jb-bg="matrix"] #jb-public .jb-style-heading-row h2 { text-shadow: 0 0 6px rgba(0, 255, 65, 0.6) !important; }
 </style>
 
@@ -6373,7 +6399,12 @@ répertoire</button>
     { id: "alien", fr: "Extraterrestre", en: "Alien", c: "#39ff7a", d: '<path d="M16 3.5c7.5 0 11 5.5 11 11 0 7-6.5 14-11 14S5 21.5 5 14.5c0-5.5 3.5-11 11-11zM14.8 23.5h2.4"/><path d="M8.5 13.5q5 0 5.8 5.5-5 .2-5.8-5.5zM23.5 13.5q-5 0-5.8 5.5 5 .2 5.8-5.5z" fill="currentColor"/>' },
     { id: "ghost", fr: "Fantôme", en: "Ghost", c: "#c9d4ff", d: '<path d="M7 28V14a9 9 0 0 1 18 0v14l-3-2.5-3 2.5-3-2.5-3 2.5-3-2.5z"/><ellipse cx="12.8" cy="14.5" rx="1.6" ry="2.3" fill="currentColor"/><ellipse cx="19.2" cy="14.5" rx="1.6" ry="2.3" fill="currentColor"/><ellipse cx="16" cy="20.5" rx="1.4" ry="1.8"/>' },
     { id: "skull", fr: "Crâne", en: "Skull", c: "#ff2d55", d: '<path d="M16 3.5a10 10 0 0 0-10 10c0 4 2 6.5 4 7.5v5.5h12V21c2-1 4-3.5 4-7.5a10 10 0 0 0-10-10zM13 26.5v-3M16 26.5v-3M19 26.5v-3"/><circle cx="12" cy="14" r="2.6" fill="currentColor"/><circle cx="20" cy="14" r="2.6" fill="currentColor"/><path d="M16 17.2l-1.6 2.8h3.2z" fill="currentColor"/>' },
-  ];
+    // fleur (Hubert, 29 oct. 2026, d'après son image)
+    { id: "flower", fr: "Fleur", en: "Flower", c: "#ff6ec7", d: '<g transform="translate(16 16)"><path d="M0 -3C-3 -3.6 -5.6 -7 -4.9 -10C-4.3 -12.2 -1.8 -12.6 0 -11C1.8 -12.6 4.3 -12.2 4.9 -10C5.6 -7 3 -3.6 0 -3Z" transform="rotate(0)"/> <path d="M0 -3C-3 -3.6 -5.6 -7 -4.9 -10C-4.3 -12.2 -1.8 -12.6 0 -11C1.8 -12.6 4.3 -12.2 4.9 -10C5.6 -7 3 -3.6 0 -3Z" transform="rotate(72)"/> <path d="M0 -3C-3 -3.6 -5.6 -7 -4.9 -10C-4.3 -12.2 -1.8 -12.6 0 -11C1.8 -12.6 4.3 -12.2 4.9 -10C5.6 -7 3 -3.6 0 -3Z" transform="rotate(144)"/> <path d="M0 -3C-3 -3.6 -5.6 -7 -4.9 -10C-4.3 -12.2 -1.8 -12.6 0 -11C1.8 -12.6 4.3 -12.2 4.9 -10C5.6 -7 3 -3.6 0 -3Z" transform="rotate(216)"/> <path d="M0 -3C-3 -3.6 -5.6 -7 -4.9 -10C-4.3 -12.2 -1.8 -12.6 0 -11C1.8 -12.6 4.3 -12.2 4.9 -10C5.6 -7 3 -3.6 0 -3Z" transform="rotate(288)"/><circle r="2.1"/><path d="M0.99 -3.04L1.92 -5.9M2.59 -1.88L5.02 -3.64M3.2 0L6.2 0M2.59 1.88L5.02 3.64M0.99 3.04L1.92 5.9M-0.99 3.04L-1.92 5.9M-2.59 1.88L-5.02 3.64M-3.2 0L-6.2 0M-2.59 -1.88L-5.02 -3.64M-0.99 -3.04L-1.92 -5.9" stroke-width="1.4"/></g>' },
+    { id: "heart", fr: "Cœur", en: "Heart", c: "#ff4d6d", d: '<path d="M16 27.5S4.5 20.6 4.5 12.2C4.5 8.3 7.5 5.5 11 5.5c2.2 0 4 1.1 5 2.8 1-1.7 2.8-2.8 5-2.8 3.5 0 6.5 2.8 6.5 6.7 0 8.4-11.5 15.3-11.5 15.3z"/><path d="M8.8 11.8a3.2 3.2 0 0 1 2.8-2.7"/>' }, // cœur (Hubert, 29 oct. 2026)
+    { id: "star", fr: "Étoile", en: "Star", c: "#ffe14d", d: '<path d="M16 3.8l3.7 7.6 8.3 1.2-6 5.9 1.4 8.3-7.4-3.9-7.4 3.9 1.4-8.3-6-5.9 8.3-1.2z"/>' }, // étoile (Hubert, 29 oct. 2026)
+    { id: "peace", fr: "Paix", en: "Peace", c: "#b3ff4d", d: '<circle cx="16" cy="16" r="11.5"/><path d="M16 4.5v23M16 16l-8.1 8.1M16 16l8.1 8.1"/>' }, // signe de paix (Hubert, 29 oct. 2026)
+    { id: "leaf", fr: "Feuille", en: "Leaf", c: "#7ed957", d: '<path d="M26.5 4.5C14 4.5 6 10.5 6 19.5c0 2.3.6 4.3 1.6 5.9C9.2 26.4 11.2 27 13.5 27c9 0 13-9.5 13-22.5z"/><path d="M4.5 28.5L19.5 12.5M11.5 21h5.5M14.6 17.7l.2-4.6"/>' }, // feuille (Hubert, 29 oct. 2026)
   function chatAvatarById(id) { return CHAT_AVATARS.find((a) => a.id === id) || null; }
   function getClientAvatar() { const a = chatAvatarById(safeSessionStorageGet("jb_client_avatar") || ""); return a ? a.id : ""; }
   // petite icône néon à mettre devant un nom ("" si pas d'avatar)
@@ -6458,7 +6489,7 @@ répertoire</button>
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-22.218";
+  const APP_BUILD = "2026-10-22.219";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;

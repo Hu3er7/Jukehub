@@ -121,7 +121,7 @@ service cloud.firestore {
           (request.resource.data.song is string && request.resource.data.song.size() > 0 && request.resource.data.song.size() <= 200)) &&
         // avatar facultatif (27 oct. 2026) : un des identifiants de CHAT_AVATARS dans index.html
         (!('avatar' in request.resource.data) ||
-          request.resource.data.avatar in ['bear', 'robot', 'alien', 'ghost', 'skull']) &&
+          request.resource.data.avatar in ['bear', 'robot', 'alien', 'ghost', 'skull', 'flower', 'heart', 'star', 'peace', 'leaf']) &&
         request.resource.data.name is string && request.resource.data.name.size() > 0 && request.resource.data.name.size() <= 15 &&
         request.resource.data.text is string && request.resource.data.text.size() > 0 && request.resource.data.text.size() <= 200 &&
         !request.resource.data.text.matches('(?i).*(https?://|www[.]).*') &&
