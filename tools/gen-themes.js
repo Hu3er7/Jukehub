@@ -84,41 +84,6 @@ const THEMES = [
     flat: false,
   },
   {
-    id: "tech",
-    // Palette « Tech blanc » (fond blanc, cadres bleus façon interface) : le néon devient du bleu, les
-    // textes clairs deviennent bleu marine, les fonds sombres deviennent blanc / bleu très pâle
-    map: {
-      // 29 oct. 2026 : noir, blanc et gris (images de référence de Hubert : expo « robot » et fond abstrait)
-      // néon jaune / cyan / rose -> encre noire ; textes clairs -> noir ; fonds sombres -> blanc cassé
-      "255,242,0": [17, 17, 17], "252,238,10": [17, 17, 17], "244,255,43": [40, 40, 40],
-      "212,192,0": [50, 50, 50], "110,99,0": [120, 120, 120], "61,56,13": [190, 190, 188],
-      "32,29,4": [236, 236, 234], "43,26,6": [232, 232, 230], "255,250,168": [17, 17, 17],
-      "255,248,230": [17, 17, 17], "201,191,74": [70, 70, 70], "168,157,58": [90, 90, 90],
-      "8,7,1": [250, 250, 248], "18,16,3": [250, 250, 248], "40,36,2": [228, 228, 226], "20,18,2": [240, 240, 238],
-      "90,244,240": [17, 17, 17], "63,246,238": [17, 17, 17], "5,217,232": [40, 40, 40],
-      "24,241,255": [17, 17, 17], "0,230,220": [30, 30, 30], "189,252,249": [17, 17, 17],
-      "19,176,165": [80, 80, 80], "8,52,62": [236, 236, 234], "4,18,28": [250, 250, 248],
-      "255,59,212": [17, 17, 17], "255,42,170": [17, 17, 17], "244,114,212": [60, 60, 60],
-      "72,10,58": [232, 232, 230], "31,5,25": [245, 245, 243], "43,10,26": [240, 240, 238],
-      "58,26,48": [220, 220, 218], "58,21,48": [220, 220, 218], "224,86,143": [60, 60, 60],
-      "255,45,85": [17, 17, 17], "255,45,77": [17, 17, 17], "255,42,109": [17, 17, 17],
-      "224,49,77": [40, 40, 40], "70,8,22": [232, 232, 230], "26,4,9": [245, 245, 243],
-      "58,22,32": [220, 220, 218], "58,26,36": [220, 220, 218], "255,156,143": [90, 90, 90],
-      "57,255,122": [17, 17, 17], "6,50,22": [236, 236, 234],
-      "5,6,10": [250, 250, 248], "10,13,20": [244, 244, 242], "5,8,8": [250, 250, 248],
-      "5,16,14": [244, 244, 242], "8,23,22": [240, 240, 238], "7,23,22": [240, 240, 238], "13,36,34": [232, 232, 230],
-      "6,36,32": [232, 232, 230],
-    },
-    // police maison large à coins coupés (tools/gen-font.js, style de l'« ERON » montré par Hubert) ; texte courant en Chakra Petch
-    fonts: [
-      [/'Orbitron'|"Orbitron"|\bOrbitron\b/g, "'Jukehub Line'"],
-      [/'Press Start 2P'|"Press Start 2P"/g, "'Jukehub Line'"],
-      [/'Share Tech Mono'|"Share Tech Mono"/g, "'Chakra Petch'"],
-    ],
-    // pas de lueurs : lignes nettes sur fond blanc
-    flat: true,
-  },
-  {
     id: "matrix",
     // Palette « Matrix » (5e thème, Hubert 29 oct. 2026) : tout en vert phosphore sur noir — néon jaune -> vert
     // vif, cyan -> vert clair, rose -> vert acide, rouge -> vert-jaune ; textes clairs -> vert très pâle ;
