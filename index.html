@@ -2645,6 +2645,37 @@
      le bouton à côté de FR/EN (html[data-jb-bg="bar"]) ; le Cyberpunk reste le style par défaut.
      1re partie : générée par tools/gen-themes.js (toutes les couleurs néon du site, recolorées).
      2e partie : décor et retouches faites à la main. -->
+<!-- Police du thème Cyberpunk (Hubert, 29 oct. 2026, style « CRYPTO ») : « Jukehub Crypto » (tools/gen-font-crypto.js)
+     à la place d'Orbitron, seulement quand aucun autre thème n'est choisi. Liste tirée des règles qui utilisent Orbitron. -->
+<style id="jb-cyber-font">
+@font-face { font-family: 'Jukehub Crypto'; src: url('fonts/jukehub-crypto.otf') format('opentype'); font-weight: 100 900; font-display: swap; }
+html:not([data-jb-bg]) #jb-public .jb-top-bar h1,
+html:not([data-jb-bg]) #jb-public .jb-offline-card h1,
+html:not([data-jb-bg]) #jb-public .jb-name-prompt-card h3,
+html:not([data-jb-bg]) #jb-public .jb-slot-votes-label,
+html:not([data-jb-bg]) #jb-public .jb-my-vote-unit,
+html:not([data-jb-bg]) #jb-public .jb-song-vote-box,
+html:not([data-jb-bg]) #jb-public .jb-chat-top-title,
+html:not([data-jb-bg]) #jb-public .jb-chat-name,
+html:not([data-jb-bg]) #jb-admin .jb-chat-name {
+  font-family: 'Jukehub Crypto', 'Orbitron', sans-serif !important;
+}
+/* titres de section plus grands, comme dans les autres thèmes (Hubert, 29 oct. 2026) — hauteur de ligne inchangée */
+/* plus de « // » devant les titres de section (Hubert, 29 oct. 2026) */
+html:not([data-jb-bg]) #jb-public :is(.jb-style-heading-row h2, h2)::before { content: none !important; }
+/* aussi les titres de section, les onglets et les boutons */
+html:not([data-jb-bg]) #jb-public :is(.jb-style-heading-row h2, .jb-tab, .jb-mode-btn, .jb-bg-btn, .jb-lang-btn, .jb-chat-top-title) {
+  font-family: 'Jukehub Crypto', 'Orbitron', sans-serif !important;
+}
+/* police plus large : libellés des onglets et du bouton Thème un peu plus petits pour tenir dans leur case */
+html:not([data-jb-bg]) #jb-public .jb-tab-label { font-size: 8.8px !important; letter-spacing: 0 !important; }
+html:not([data-jb-bg]) #jb-app #jb-section-title-row .jb-bg-btn { font-size: 11px !important; letter-spacing: 0.5px !important; }
+/* titre : taille calée pour garder le bandeau aux mêmes dimensions qu'avec Orbitron */
+html:not([data-jb-bg]) #jb-app #jb-public #jb-artist-name {
+  font-size: calc(1.655rem * var(--jb-topbar-scale, 1)) !important;
+  line-height: calc(1.9rem * 1.4 * var(--jb-topbar-scale, 1)) !important;
+}
+</style>
 <style id="jb-theme-bar">
 @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Oswald:wght@400;600;700&family=Yellowtail&display=swap');
 /* ==== GÉNÉRÉ (bar) par tools/gen-themes.js — ne pas modifier à la main ==== */
@@ -3339,7 +3370,7 @@ html[data-jb-bg="bar"] #jb-admin .jb-admin-tab.jb-admin-tab-active { box-shadow:
      cadres en portail vert lumineux avec un rebord de bois, onglets en planches, titres ronds.
      1re partie générée par tools/gen-themes.js, 2e partie faite à la main. -->
 <style id="jb-theme-foret">
-@import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@400;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@400;600;700&family=Quicksand:wght@500;600;700&display=swap');
 /* ==== GÉNÉRÉ (foret) par tools/gen-themes.js — ne pas modifier à la main ==== */
 html[data-jb-bg="foret"] #jb-app { --accent: #f0be5a; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: var(--bg); color: var(--text) }
 html[data-jb-bg="foret"] #jb-app h1, html[data-jb-bg="foret"] #jb-app h2, html[data-jb-bg="foret"] #jb-app h3, html[data-jb-bg="foret"] #jb-app p, html[data-jb-bg="foret"] #jb-app ul, html[data-jb-bg="foret"] #jb-app ol, html[data-jb-bg="foret"] #jb-app li, html[data-jb-bg="foret"] #jb-app input, html[data-jb-bg="foret"] #jb-app textarea, html[data-jb-bg="foret"] #jb-app button, html[data-jb-bg="foret"] #jb-app a { font-family: inherit; color: inherit; border: 0; background: none; text-decoration: none }
@@ -3915,6 +3946,15 @@ html[data-jb-bg="foret"] #jb-public .jb-chat-frame::before {
   content: ""; position: absolute; inset: -10px; z-index: -1; pointer-events: none;
   background: var(--fo-portal); border: 3px solid var(--fo-lime); border-radius: 6px; box-shadow: var(--fo-portal-shadow);
 }
+/* police de la section du chat (Hubert, 29 oct. 2026) : Quicksand, ronde et très lisible */
+html[data-jb-bg="foret"] #jb-public .jb-chat :is(h2, h3, .jb-chat-top-title, .jb-slot-title, .jb-slot-artist, .jb-song-chat-btn, .jb-slot-votes, .jb-chat-name, .jb-chat-song, .jb-chat-text, .jb-empty, #jb-chat-input, .jb-chat-song-tag) {
+  font-family: 'Quicksand', sans-serif !important; font-weight: 700 !important;
+}
+html[data-jb-bg="foret"] #jb-public .jb-chat :is(.jb-chat-text, .jb-slot-artist, .jb-empty) { font-weight: 600 !important; }
+/* fenêtre du chat assombrie (Hubert, 29 oct. 2026) : voile vert très foncé par-dessus le portail */
+html[data-jb-bg="foret"] #jb-public .jb-chat-frame::before {
+  background: linear-gradient(rgba(4, 18, 6, 0.72), rgba(4, 18, 6, 0.72)), var(--fo-portal) !important;
+}
 html[data-jb-bg="foret"] #jb-app :is(.jb-vote-modal-card, .jb-name-prompt-card) { background: linear-gradient(170deg, #2e5a1c, #1d3f14) !important; }
 html[data-jb-bg="foret"] #jb-admin .jb-admin-tabbody::before { display: none; }
 html[data-jb-bg="foret"] #jb-app :is(.jb-song-title, .jb-chat-text, .jb-empty, .jb-hint) { font-family: 'Nunito', sans-serif !important; }
@@ -3955,6 +3995,11 @@ html[data-jb-bg="foret"] #jb-app:not(.jb-browse-only) #jb-public .jb-catalog .jb
 html[data-jb-bg="foret"] #jb-app:not(.jb-browse-only) #jb-public .jb-catalog .jb-catalog-frame::before {
   inset: 0 !important; border: none !important; border-radius: 0 !important; box-shadow: none !important;
   clip-path: polygon(calc(0px + 10px) calc(100% - 3px), calc(0px + 7.32px) calc(100% - 3.53px), calc(0px + 5.05px) calc(100% - 5.05px), calc(0px + 3.53px) calc(100% - 7.32px), calc(0px + 3px) calc(100% - 10px), calc(0px + 3px + var(--cTL, 1) * 7px * 0) calc(var(--wT) + 3px + var(--cTL, 1) * 7px * 1), calc(0px + 3px + var(--cTL, 1) * 7px * 0.08) calc(var(--wT) + 3px + var(--cTL, 1) * 7px * 0.62), calc(0px + 3px + var(--cTL, 1) * 7px * 0.29) calc(var(--wT) + 3px + var(--cTL, 1) * 7px * 0.29), calc(0px + 3px + var(--cTL, 1) * 7px * 0.62) calc(var(--wT) + 3px + var(--cTL, 1) * 7px * 0.08), calc(0px + 3px + var(--cTL, 1) * 7px * 1) calc(var(--wT) + 3px + var(--cTL, 1) * 7px * 0), calc(var(--wL) + 3px - var(--cTL, 1) * 10px * 1) calc(var(--wT) + 3px - var(--cTL, 1) * 10px * 0), calc(var(--wL) + 3px - var(--cTL, 1) * 10px * 0.62) calc(var(--wT) + 3px - var(--cTL, 1) * 10px * 0.08), calc(var(--wL) + 3px - var(--cTL, 1) * 10px * 0.29) calc(var(--wT) + 3px - var(--cTL, 1) * 10px * 0.29), calc(var(--wL) + 3px - var(--cTL, 1) * 10px * 0.08) calc(var(--wT) + 3px - var(--cTL, 1) * 10px * 0.62), calc(var(--wL) + 3px - var(--cTL, 1) * 10px * 0) calc(var(--wT) + 3px - var(--cTL, 1) * 10px * 1), calc(var(--wL) + 3px) calc(var(--wTop) + 7px), calc(var(--wL) + 3.3px) calc(var(--wTop) + 5.47px), calc(var(--wL) + 4.17px) calc(var(--wTop) + 4.17px), calc(var(--wL) + 5.47px) calc(var(--wTop) + 3.3px), calc(var(--wL) + 7px) calc(var(--wTop) + 3px), calc(var(--wR) - 7px) calc(var(--wTop) + 3px), calc(var(--wR) - 5.47px) calc(var(--wTop) + 3.3px), calc(var(--wR) - 4.17px) calc(var(--wTop) + 4.17px), calc(var(--wR) - 3.3px) calc(var(--wTop) + 5.47px), calc(var(--wR) - 3px) calc(var(--wTop) + 7px), calc(var(--wR) - 3px + var(--cTR, 1) * 10px * 0) calc(var(--wT) + 3px - var(--cTR, 1) * 10px * 1), calc(var(--wR) - 3px + var(--cTR, 1) * 10px * 0.08) calc(var(--wT) + 3px - var(--cTR, 1) * 10px * 0.62), calc(var(--wR) - 3px + var(--cTR, 1) * 10px * 0.29) calc(var(--wT) + 3px - var(--cTR, 1) * 10px * 0.29), calc(var(--wR) - 3px + var(--cTR, 1) * 10px * 0.62) calc(var(--wT) + 3px - var(--cTR, 1) * 10px * 0.08), calc(var(--wR) - 3px + var(--cTR, 1) * 10px * 1) calc(var(--wT) + 3px - var(--cTR, 1) * 10px * 0), calc(100% - 3px - var(--cTR, 1) * 7px * 1) calc(var(--wT) + 3px + var(--cTR, 1) * 7px * 0), calc(100% - 3px - var(--cTR, 1) * 7px * 0.62) calc(var(--wT) + 3px + var(--cTR, 1) * 7px * 0.08), calc(100% - 3px - var(--cTR, 1) * 7px * 0.29) calc(var(--wT) + 3px + var(--cTR, 1) * 7px * 0.29), calc(100% - 3px - var(--cTR, 1) * 7px * 0.08) calc(var(--wT) + 3px + var(--cTR, 1) * 7px * 0.62), calc(100% - 3px - var(--cTR, 1) * 7px * 0) calc(var(--wT) + 3px + var(--cTR, 1) * 7px * 1), calc(100% - 3px) calc(100% - 10px), calc(100% - 3.53px) calc(100% - 7.32px), calc(100% - 5.05px) calc(100% - 5.05px), calc(100% - 7.32px) calc(100% - 3.53px), calc(100% - 10px) calc(100% - 3px)) !important;
+}
+/* cadres aussi foncés que la fenêtre du chat : même voile sombre par-dessus le fond lime (Hubert, 29 oct. 2026) */
+html[data-jb-bg="foret"] #jb-public :is(.jb-catalog-frame, .jb-myreq-frame, .jb-palm-frame)::before,
+html[data-jb-bg="foret"] #jb-app:not(.jb-browse-only) #jb-public .jb-catalog .jb-catalog-frame::before {
+  background: linear-gradient(rgba(4, 18, 6, 0.72), rgba(4, 18, 6, 0.72)), var(--fo-portal) !important;
 }
 html[data-jb-bg="foret"] #jb-app:not(.jb-browse-only) #jb-public .jb-catalog .jb-tab.jb-tab-active {
   height: calc(100% - 2px) !important; margin-top: 8px !important; background: transparent !important; border-color: transparent !important;
@@ -4477,7 +4522,118 @@ html[data-jb-bg="matrix"] #jb-public .jb-catalog-frame:is(.jb-tab-on-myreq, .jb-
   --fc: #78ff96 !important; --fbg: rgba(4, 45, 15, 0.22) !important; --fbg-solid: #010f05 !important; --fglow: rgba(0, 230, 100, 0.6) !important;
 }
 html[data-jb-bg="matrix"] #jb-public .jb-style-heading-row h2 { text-shadow: 0 0 6px rgba(0, 255, 65, 0.6) !important; }
-</style>
+
+/* ==== Fenêtres façon terminal (Hubert, 29 oct. 2026, image « SYSTEM SETTINGS ») : panneaux noirs translucides,
+   trait vert fin et lueur douce, coins à peine arrondis, titres en police machine à écrire grasse avec halo,
+   onglets en simples mots (celui ouvert souligné), boutons en rectangles fins. Mêmes dimensions. ==== */
+html[data-jb-bg="matrix"] { --mx: #00ff41; --mx-line: rgba(0, 255, 65, 0.65); --mx-bg: rgba(0, 10, 3, 0.88); --mx-glow: 0 0 14px rgba(0, 255, 65, 0.22); }
+html[data-jb-bg="matrix"] #jb-public :is(.jb-style-heading-row h2, .jb-tab, .jb-mode-btn, .jb-chat-top-title) {
+  font-family: "Courier New", Courier, monospace !important; font-weight: 700 !important; letter-spacing: 1.5px !important;
+}
+html[data-jb-bg="matrix"] #jb-public .jb-style-heading-row h2 { color: var(--mx) !important; text-shadow: 0 0 8px rgba(0, 255, 65, 0.7) !important; }
+html[data-jb-bg="matrix"] #jb-public .jb-style-heading-row h2::before { content: "" !important; }
+
+/* titre : petite fenêtre */
+html[data-jb-bg="matrix"] #jb-app #jb-public #jb-artist-name {
+  clip-path: none !important; border: 1px solid var(--mx-line) !important; border-radius: 3px !important;
+  background: var(--mx-bg) !important; box-shadow: var(--mx-glow) !important;
+}
+html[data-jb-bg="matrix"] #jb-app #jb-public #jb-artist-name::before, html[data-jb-bg="matrix"] #jb-app #jb-public #jb-artist-name::after { display: none !important; }
+
+/* champs (recherche, chat) et boutons : rectangles fins */
+html[data-jb-bg="matrix"] #jb-public :is(#jb-search-input, #jb-chat-input) {
+  clip-path: none !important; border: 1px solid var(--mx-line) !important; border-radius: 3px !important;
+  background: rgba(0, 6, 2, 0.9) !important; box-shadow: inset 0 0 10px rgba(0, 255, 65, 0.08) !important;
+}
+html[data-jb-bg="matrix"] #jb-public .jb-mode-btn {
+  clip-path: none !important; border: 1px solid var(--mx-line) !important; border-radius: 3px !important;
+  background: rgba(0, 18, 6, 0.7) !important; box-shadow: none !important; color: var(--mx) !important;
+  text-shadow: 0 0 6px rgba(0, 255, 65, 0.6) !important;
+}
+html[data-jb-bg="matrix"] #jb-public .jb-mode-btn::before, html[data-jb-bg="matrix"] #jb-public .jb-mode-btn::after { content: none !important; display: none !important; }
+html[data-jb-bg="matrix"] #jb-public .jb-mode-btn:active { background: rgba(0, 255, 65, 0.18) !important; }
+html[data-jb-bg="matrix"] #jb-public .jb-chat-send, html[data-jb-bg="matrix"] #jb-app #jb-section-title-row .jb-bg-btn,
+html[data-jb-bg="matrix"] #jb-app #jb-public .jb-top-bar .jb-lang-btn {
+  clip-path: none !important; border-radius: 3px !important; box-shadow: var(--mx-glow) !important;
+}
+
+/* cadres : une fenêtre qui englobe aussi la rangée d'onglets (sa « barre de titre ») */
+html[data-jb-bg="matrix"] #jb-public :is(.jb-catalog-frame, .jb-myreq-frame, .jb-palm-frame) { clip-path: none !important; -webkit-mask: none !important; mask: none !important; filter: none !important; box-shadow: none !important; }
+html[data-jb-bg="matrix"] #jb-public .jb-catalog-frame-caps, html[data-jb-bg="matrix"] #jb-public .jb-frame-deco { display: none !important; }
+html[data-jb-bg="matrix"] #jb-public :is(.jb-catalog-frame, .jb-myreq-frame, .jb-palm-frame)::before {
+  content: "" !important; display: block !important; position: absolute; inset: 0 !important; z-index: 0;
+  clip-path: none !important; -webkit-mask: none !important; mask: none !important; transform: none !important;
+  border: 1px solid var(--mx-line) !important; border-radius: 4px !important; background: var(--mx-bg) !important;
+  box-shadow: none !important; filter: none !important; /* trait net, sans halo flou (Hubert, 29 oct. 2026) */
+  -webkit-backdrop-filter: none !important; backdrop-filter: none !important; /* pas de flou (il brouillait le haut de l'onglet choisi) */
+}
+html[data-jb-bg="matrix"] #jb-public :is(.jb-catalog-frame, .jb-myreq-frame, .jb-palm-frame)::after { display: none !important; }
+html[data-jb-bg="matrix"] #jb-public :is(.jb-catalog-frame, .jb-myreq-frame, .jb-palm-frame) > :not(.jb-frame-deco) { position: relative; z-index: 1; }
+/* onglets : mots simples dans la barre de titre ; celui qui est ouvert, souligné et lumineux ; trait fin dessous */
+html[data-jb-bg="matrix"] #jb-public .jb-tabbar { border-bottom: 1px solid var(--mx-line) !important; background: none !important; clip-path: none !important; box-sizing: border-box !important; height: var(--ft, 38px) !important; }
+/* onglets jusqu'au bord droit de la fenêtre : le trait sous les onglets va d'un bord à l'autre */
+html[data-jb-bg="matrix"] #jb-app:not(.jb-browse-only) #jb-public .jb-catalog .jb-tabbar { right: 0 !important; }
+html[data-jb-bg="matrix"] #jb-public .jb-tab {
+  clip-path: none !important; border: none !important; border-radius: 0 !important; background: transparent !important;
+  background-image: none !important; box-shadow: none !important; color: rgba(0, 255, 65, 0.55) !important; text-shadow: none !important;
+  box-sizing: border-box !important; height: 38px !important; /* même hauteur qu'ailleurs malgré la police plus haute */
+}
+html[data-jb-bg="matrix"] #jb-public .jb-tab::before, html[data-jb-bg="matrix"] #jb-public .jb-tab::after { display: none !important; }
+/* texte des onglets non ouverts plus sombre, pour bien voir lequel est ouvert (Hubert, 29 oct. 2026) */
+html[data-jb-bg="matrix"] #jb-public .jb-tab:not(.jb-tab-active) { color: rgba(0, 255, 65, 0.4) !important; } /* texte seulement : les traits gardent leur éclat */
+/* onglet ouvert « en dossier » (maquette de Hubert, 29 oct. 2026) : pas de soulignement, traits verticaux sur ses
+   côtés, et le trait sous les onglets s'arrête à lui (il est caché sous l'onglet, qui s'ouvre sur le contenu) */
+html[data-jb-bg="matrix"] #jb-public .jb-tab.jb-tab-active {
+  color: var(--mx) !important; text-shadow: 0 0 8px rgba(0, 255, 65, 0.8) !important;
+  box-shadow: inset 1px 0 0 var(--mx-line), inset -1px 0 0 var(--mx-line), inset 0 1px 0 var(--mx-line) !important; /* + trait du haut (son fond cachait celui de la fenêtre) */
+  background: #000903 !important; height: 39px !important; margin-bottom: -1px !important; z-index: 2;
+}
+html[data-jb-bg="matrix"] #jb-public .jb-tab-ico { border-color: currentColor !important; background: transparent !important; }
+
+/* chat : même fenêtre */
+html[data-jb-bg="matrix"] #jb-public .jb-chat-frame {
+  /* fond et trait étalés vers l'extérieur (ombres pleines) : la taille du chat ne change pas */
+  background: var(--mx-bg) !important; border-radius: 4px;
+  box-shadow: 0 0 0 8px var(--mx-bg), 0 0 0 9px var(--mx-line), 0 0 18px 8px rgba(0, 255, 65, 0.18) !important;
+}
+html[data-jb-bg="matrix"] #jb-public .jb-chat .jb-style-heading-row { border-bottom: 1px solid var(--mx-line) !important; box-shadow: none !important; }
+html[data-jb-bg="matrix"] #jb-public .jb-chat-frame .jb-chat-top { border-bottom: 1px solid var(--mx-line) !important; box-shadow: none !important; }
+/* ==== Teintes de vert différentes selon le rôle (Hubert, 29 oct. 2026) : titres vert vif, artistes et textes
+   secondaires vert sombre, messages vert très pâle, noms vert moyen, chanson citée vert d'eau, icônes vert
+   menthe, boutons pleins vert franc, montants payés vert-jaune et 0 $ vert éteint ==== */
+html[data-jb-bg="matrix"] {
+  --mx-title: #00ff41; --mx-dim: #3f9f58; --mx-text: #c8ffd4; --mx-name: #7dff9a; --mx-song: #2bd9a0;
+  --mx-icon: #8affc1; --mx-btn: #19c24f; --mx-paid: #c6ff3d; --mx-zero: #3e7d4f;
+}
+html[data-jb-bg="matrix"] #jb-public .jb-slot-title, html[data-jb-bg="matrix"] #jb-public .jb-song-title { color: var(--mx-title) !important; text-shadow: 0 0 6px rgba(0, 255, 65, 0.45) !important; }
+html[data-jb-bg="matrix"] #jb-public :is(.jb-slot-artist, .jb-song-artist, .jb-voters, .jb-tab-count, .jb-my-dons, .jb-empty) { color: var(--mx-dim) !important; text-shadow: none !important; }
+html[data-jb-bg="matrix"] #jb-public .jb-chat-text { color: var(--mx-text) !important; text-shadow: none !important; }
+html[data-jb-bg="matrix"] #jb-public .jb-chat-name { color: var(--mx-name) !important; }
+html[data-jb-bg="matrix"] .jb-chat-song { color: var(--mx-song) !important; }
+/* icônes (avatars, icônes des onglets et du bouton Chat room) : vert menthe */
+html[data-jb-bg="matrix"] #jb-app .jb-chat-av { --av: var(--mx-icon) !important; }
+html[data-jb-bg="matrix"] #jb-public .jb-tab-ico { color: var(--mx-icon) !important; }
+/* boutons pleins : ▲ (pourboire) et ➤ (envoyer) en vert franc, symbole noir ; bouton « Chat » en vert d'eau */
+html[data-jb-bg="matrix"] #jb-public .jb-myreq-up, html[data-jb-bg="matrix"] #jb-public .jb-chat-send {
+  background: var(--mx-btn) !important; color: #001a07 !important; border-color: var(--mx-btn) !important; box-shadow: 0 0 8px rgba(25, 194, 79, 0.5) !important;
+}
+html[data-jb-bg="matrix"] #jb-public .jb-song-chat-btn { color: var(--mx-song) !important; border-color: var(--mx-song) !important; background: rgba(43, 217, 160, 0.08) !important; }
+/* montants : payés en vert-jaune lumineux, 0 $ en vert éteint */
+html[data-jb-bg="matrix"] #jb-public .jb-slot-votes { color: var(--mx-paid) !important; text-shadow: 0 0 6px rgba(198, 255, 61, 0.45) !important; }
+html[data-jb-bg="matrix"] #jb-public .jb-chat-top-free .jb-slot-votes { color: var(--mx-zero) !important; text-shadow: none !important; }
+/* « Choix du public » du chat : écarts de teinte plus marqués (Hubert, 29 oct. 2026) */
+html[data-jb-bg="matrix"] #jb-public .jb-chat-top-title { color: #b8ffc8 !important; text-shadow: none !important; }
+html[data-jb-bg="matrix"] #jb-public .jb-chat-top-info .jb-slot-title { color: #00ff41 !important; text-shadow: 0 0 7px rgba(0, 255, 65, 0.6) !important; }
+html[data-jb-bg="matrix"] #jb-public .jb-chat-top-info .jb-slot-artist { color: #2c8044 !important; }
+html[data-jb-bg="matrix"] #jb-public .jb-song-chat-btn { color: #5ff5d6 !important; border-color: rgba(95, 245, 214, 0.75) !important; background: rgba(0, 40, 32, 0.85) !important; }</style>
+<!-- Titres de section (« 670 CHANSONS », « CHAT ROOM »…) de la même grosseur dans tous les thèmes (Hubert,
+     29 oct. 2026) : tailles calées pour que les majuscules et chiffres aient la même hauteur à l'écran (~16,5px),
+     chaque police ayant des proportions différentes -->
+<style id="jb-titles-size">
+/* (Hubert : « je veux que tu la diminues ») : on part de la plus petite, celle du Matrix (18,4px, majuscules
+   ~11,6px de haut), et on réduit les autres thèmes à la même hauteur de majuscules */
+html:not([data-jb-bg]) #jb-public .jb-style-heading-row h2 { font-size: 16.6px !important; letter-spacing: 0.5px !important; }
+html[data-jb-bg="matrix"] #jb-public .jb-style-heading-row h2 { font-size: 18.4px !important; }</style>
 
 <div id="jb-app">
 
@@ -5808,7 +5964,7 @@ répertoire</button>
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-22.221";
+  const APP_BUILD = "2026-10-22.222";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
