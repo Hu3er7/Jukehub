@@ -2119,6 +2119,11 @@
   }
   #jb-public .jb-tab-req { --tc: #ff2d55; --tc-rgb: 255, 45, 85; }
   #jb-public .jb-tab-pub { --tc: #ff3bd4; --tc-rgb: 255, 59, 212; }
+  /* 28 oct. 2026 (Hubert), thème Cyberpunk seulement : l'onglet choisi (et son cadre) toujours en BLEU,
+     les 2 autres en ROUGE — peu importe lequel est choisi */
+  html:not([data-jb-bg]) #jb-public .jb-tab { --tc: #ff2d55; --tc-rgb: 255, 45, 85; }
+  html:not([data-jb-bg]) #jb-public .jb-tab.jb-tab-active { --tc: #5af4f0; --tc-rgb: 90, 244, 240; }
+  html:not([data-jb-bg]) #jb-public .jb-catalog-frame { --fc: #5af4f0; --fbg: rgba(8, 52, 62, 0.22); --fbg-solid: #04121c; --fglow: rgba(0, 230, 220, 0.6); }
   #jb-public .jb-tab-ico {
     flex: 0 0 auto; width: 15px; height: 19px; display: flex; align-items: center; justify-content: center;
     background: rgba(var(--tc-rgb), 0.22); border: 1px solid rgba(var(--tc-rgb), 0.65);
@@ -2898,6 +2903,9 @@ html[data-jb-bg="bar"] #jb-public #jb-back-btn { border-width: 3px; background-i
 html[data-jb-bg="bar"] #jb-public .jb-tab { --tc: #4ed4c8; --tc-rgb: 78, 212, 200; border: 1px solid rgba(var(--tc-rgb), 0.5); border-radius: 0; background-color: rgba(var(--tc-rgb), 0.07); color: var(--tc); font-family: 'Oswald', monospace; text-shadow: 0 0 6px rgba(var(--tc-rgb), 0.45); background-image: linear-gradient(to bottom left, transparent 50%, rgba(var(--tc-rgb), 0.5) 50%, rgba(var(--tc-rgb), 0.5) calc(50% + 1px), transparent calc(50% + 1px)); background-size: 9px 9px; background-position: right top; background-repeat: no-repeat; background-origin: border-box }
 html[data-jb-bg="bar"] #jb-public .jb-tab-req { --tc: #e84034; --tc-rgb: 232, 64, 52 }
 html[data-jb-bg="bar"] #jb-public .jb-tab-pub { --tc: #ff7a3d; --tc-rgb: 255, 122, 61 }
+html[data-jb-bg="bar"]:not([data-jb-bg]) #jb-public .jb-tab { --tc: #e84034; --tc-rgb: 232, 64, 52 }
+html[data-jb-bg="bar"]:not([data-jb-bg]) #jb-public .jb-tab.jb-tab-active { --tc: #4ed4c8; --tc-rgb: 78, 212, 200 }
+html[data-jb-bg="bar"]:not([data-jb-bg]) #jb-public .jb-catalog-frame { --fc: #4ed4c8; --fbg: rgba(14, 46, 44, 0.22); --fbg-solid: #1a0a05; --fglow: rgba(70, 205, 195, 0.6) }
 html[data-jb-bg="bar"] #jb-public .jb-tab-ico { background: rgba(var(--tc-rgb), 0.22); border: 1px solid rgba(var(--tc-rgb), 0.65) }
 html[data-jb-bg="bar"] #jb-public .jb-tab.jb-tab-active { border: 3px solid var(--tc); border-bottom: none; background-color: var(--fbg); background-image: linear-gradient(to bottom left, transparent 50%, var(--tc) 50%, var(--tc) calc(50% + 3px), transparent calc(50% + 3px)),
       linear-gradient(transparent, transparent); background-size: 12px 12px, 100% 100%; background-position: right top, 0 0 }
@@ -3569,6 +3577,9 @@ html[data-jb-bg="foret"] #jb-public #jb-back-btn { border-width: 3px; background
 html[data-jb-bg="foret"] #jb-public .jb-tab { --tc: #96f0aa; --tc-rgb: 150, 240, 170; border: 1px solid rgba(var(--tc-rgb), 0.5); border-radius: 0; background-color: rgba(var(--tc-rgb), 0.07); color: var(--tc); font-family: 'Nunito', monospace; text-shadow: 0 0 6px rgba(var(--tc-rgb), 0.45); background-image: linear-gradient(to bottom left, transparent 50%, rgba(var(--tc-rgb), 0.5) 50%, rgba(var(--tc-rgb), 0.5) calc(50% + 1px), transparent calc(50% + 1px)); background-size: 9px 9px; background-position: right top; background-repeat: no-repeat; background-origin: border-box }
 html[data-jb-bg="foret"] #jb-public .jb-tab-req { --tc: #ff8a5c; --tc-rgb: 255, 138, 92 }
 html[data-jb-bg="foret"] #jb-public .jb-tab-pub { --tc: #ffd666; --tc-rgb: 255, 214, 102 }
+html[data-jb-bg="foret"]:not([data-jb-bg]) #jb-public .jb-tab { --tc: #ff8a5c; --tc-rgb: 255, 138, 92 }
+html[data-jb-bg="foret"]:not([data-jb-bg]) #jb-public .jb-tab.jb-tab-active { --tc: #96f0aa; --tc-rgb: 150, 240, 170 }
+html[data-jb-bg="foret"]:not([data-jb-bg]) #jb-public .jb-catalog-frame { --fc: #96f0aa; --fbg: rgba(20, 60, 30, 0.22); --fbg-solid: #0a1c0e; --fglow: rgba(130, 225, 160, 0.6) }
 html[data-jb-bg="foret"] #jb-public .jb-tab-ico { background: rgba(var(--tc-rgb), 0.22); border: 1px solid rgba(var(--tc-rgb), 0.65) }
 html[data-jb-bg="foret"] #jb-public .jb-tab.jb-tab-active { border: 3px solid var(--tc); border-bottom: none; background-color: var(--fbg); background-image: linear-gradient(to bottom left, transparent 50%, var(--tc) 50%, var(--tc) calc(50% + 3px), transparent calc(50% + 3px)),
       linear-gradient(transparent, transparent); background-size: 12px 12px, 100% 100%; background-position: right top, 0 0 }
@@ -5053,7 +5064,7 @@ répertoire</button>
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-22.212";
+  const APP_BUILD = "2026-10-22.213";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
