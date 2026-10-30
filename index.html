@@ -4731,7 +4731,9 @@ html[data-jb-bg="matrix"] #jb-public .jb-style-heading-row h2 { font-size: 18.4p
    </script>
    <!-- 28 oct. 2026 : seulement 2 styles maintenant, « Cyberpunk » (défaut) et « Bar spectacle » ; un
         ancien fond gardé sur le téléphone (rose, grille…) revient au Cyberpunk -->
-   <script>try { var jbBg = localStorage.getItem("jb-bg"); if (jbBg === "bar" || jbBg === "foret" || jbBg === "matrix") document.documentElement.dataset.jbBg = jbBg; } catch (e) {}</script>
+   <!-- le site s'ouvre toujours en « Bar spectacle » (Hubert, 29 oct. 2026) : le bouton style change le thème
+        seulement pour la visite en cours -->
+   <script>document.documentElement.dataset.jbBg = "bar";</script>
    <script>
    (function () {
      const canvas = document.getElementById("jb-cp-matrix");
@@ -5964,7 +5966,7 @@ répertoire</button>
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-22.222";
+  const APP_BUILD = "2026-10-22.223";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
