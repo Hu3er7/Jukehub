@@ -2611,16 +2611,12 @@
   }
   #jb-public .jb-chat-empty { margin: 4px 0 6px; }
   #jb-public .jb-chat-banned { color: #ff2d55; margin: 0 0 10px; font-size: 0.9rem; }
-  /* Panneau admin : messages + bouton « Expulser » */
+  /* Panneau admin : messages (lecture seulement — « Expulser » retiré, Hubert, 29 oct. 2026) */
   #jb-admin .jb-admin-chat { display: flex; flex-direction: column; max-height: 300px; overflow-y: auto; }
   #jb-admin .jb-admin-chat-msg { display: flex; align-items: center; gap: 10px; padding: 7px 0; border-bottom: 1px dashed rgba(255, 242, 0, 0.3); }
   #jb-admin .jb-admin-chat-body { flex: 1; min-width: 0; }
   #jb-admin .jb-admin-chat-time { color: #a89d3a; font-size: 0.75rem; }
   #jb-admin .jb-chat-text { color: #fffaa8; font-size: 0.9rem; word-break: break-word; }
-  #jb-admin .jb-admin-kick {
-    flex: 0 0 auto; width: auto; margin: 0; padding: 6px 10px; border: 1px solid #ff2d55; border-radius: 0;
-    background: transparent; color: #ff2d55; font-family: 'Share Tech Mono', monospace; font-size: 0.8rem; cursor: pointer;
-  }
   #jb-public #jb-back-btn, #jb-public #jb-search-input {
     box-sizing: border-box; height: 40px; min-height: 40px; max-height: 40px; margin-top: 0; margin-bottom: 0;
   }
@@ -4733,8 +4729,9 @@ html[data-jb-bg="matrix"] #jb-public .jb-style-heading-row h2 { font-size: 18.4p
    <!-- 28 oct. 2026 : seulement 2 styles maintenant, « Cyberpunk » (défaut) et « Bar spectacle » ; un
         ancien fond gardé sur le téléphone (rose, grille…) revient au Cyberpunk -->
    <!-- le site s'ouvre toujours en « Bar spectacle » (Hubert, 29 oct. 2026) : le bouton style change le thème
-        seulement pour la visite en cours -->
-   <script>document.documentElement.dataset.jbBg = "bar";</script>
+        seulement pour la visite en cours. Sauf sur le téléphone de Hubert connecté en admin : toujours
+        Cyberpunk (marque « jb-admin-device », posée à la connexion admin, retirée à la déconnexion) -->
+   <script>try { if (localStorage.getItem("jb-admin-device") !== "1") document.documentElement.dataset.jbBg = "bar"; } catch (e) { document.documentElement.dataset.jbBg = "bar"; }</script>
    <script>
    (function () {
      const canvas = document.getElementById("jb-cp-matrix");
@@ -5507,9 +5504,7 @@ html[data-jb-bg="matrix"] #jb-public .jb-style-heading-row h2 { font-size: 18.4p
         <button id="jb-logout-btn" class="jb-btn-ghost">Déconnexion</button>
       </div>
 
-      <!-- Chat room des clients (26 oct. 2026) : Hubert lit seulement, et peut expulser quelqu'un
-           (bouton « Expulser » : ses messages disparaissent pour les autres ; lui continue d'écrire sans
-           le savoir, mais ce qu'il écrit ne s'affiche que chez lui) -->
+      <!-- Chat room des clients (26 oct. 2026) : Hubert lit seulement (bouton « Expulser » retiré le 29 oct. 2026) -->
       <section class="jb-admin-section">
         <h3>💬 Chat room</h3>
         <div id="jb-admin-chat" class="jb-admin-chat"></div>
@@ -5967,7 +5962,7 @@ répertoire</button>
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-22.225";
+  const APP_BUILD = "2026-10-22.226";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -10098,6 +10093,16 @@ répertoire</button>
   // ============================================================
   onAuthStateChanged(auth, (user) => {
     isAdmin = !!user;
+    // admin : toujours le thème Cyberpunk (Hubert, 29 oct. 2026) ; les clients restent en Bar spectacle
+    if (isAdmin) {
+      safeStorageSet("jb-admin-device", "1");
+      if (document.documentElement.dataset.jbBg) {
+        delete document.documentElement.dataset.jbBg;
+        window.dispatchEvent(new Event("jb-bg-change"));
+      }
+    } else {
+      try { localStorage.removeItem("jb-admin-device"); } catch (e) {}
+    }
     setSpecialRequestsListener(isAdmin);
     if (isAdmin) { try { startChat(); renderChat(); } catch (e) { console.warn("chat admin", e); } }
     document.getElementById("jb-login").hidden = isAdmin;
@@ -10606,7 +10611,7 @@ répertoire</button>
       input.placeholder = ""; // barre de texte vide, sans texte d'aide (Hubert, 27 oct. 2026)
       if (banned) banned.hidden = true; // jamais de message « tu as été retiré » : l'expulsion reste invisible
     }
-    // Panneau admin : le plus récent en haut, avec « Expulser »
+    // Panneau admin : le plus récent en haut (lecture seulement)
     const al = document.getElementById("jb-admin-chat");
     const ae = document.getElementById("jb-admin-chat-empty");
     if (al && ae && isAdmin) {
@@ -10618,10 +10623,8 @@ répertoire</button>
         return `<div class="jb-admin-chat-msg">
           <div class="jb-admin-chat-body"><span class="jb-chat-name">${chatAvatarHtml(m.avatar)}${chatLabelHtml(m)}</span> <span class="jb-admin-chat-time">${hhmm}</span>
             <div class="jb-chat-text">${escapeHtml(m.text || "")}</div></div>
-          <button type="button" class="jb-admin-kick" data-kick="${escapeHtml(m.clientId || "")}" data-kick-name="${escapeHtml(m.name || "")}">Expulser</button>
         </div>`;
       }).join("");
-      al.querySelectorAll("[data-kick]").forEach((b) => b.addEventListener("click", () => kickChatUser(b.dataset.kick, b.dataset.kickName)));
     }
   }
   // Nom affiché au-dessus d'un message, suivi de la chanson pour un message écrit sur une chanson
@@ -10843,21 +10846,6 @@ répertoire</button>
     window.addEventListener("blur", release);
   })();
   renderChat();
-  async function kickChatUser(clientId, name) {
-    if (!clientId || !isAdmin) return;
-    if (!confirm(`Expulser « ${name} » du chat ? Ses messages disparaissent pour tout le monde. Lui pourra continuer d'écrire sans s'en rendre compte : ses messages ne seront visibles que sur son écran.`)) return;
-    try {
-      await setDoc(doc(db, "chatBans", clientId), { name: name || "", at: serverTimestamp() });
-      const snap = await getDocs(query(collection(db, "chat"), where("clientId", "==", clientId)));
-      const batch = writeBatch(db);
-      snap.docs.forEach((d) => batch.delete(d.ref));
-      await batch.commit();
-      showToast(`🚫 ${name} a été expulsé du chat`);
-    } catch (err) {
-      console.error("kick", err);
-      showToast("Erreur : expulsion impossible.");
-    }
-  }
   // vide le chat et les expulsions (appelée par « Nouvelle soirée »)
   async function clearChat() {
     for (const col of ["chat", "chatBans"]) {
