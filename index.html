@@ -2452,10 +2452,11 @@
      séparation, messages qui défilent dans le 70 % du bas ; hauteur jusqu'au bas de l'écran (--jb-chatframe-h,
      voir fitChatFrame()) */
   #jb-public .jb-chat-frame { display: flex; flex-direction: column; height: var(--jb-chatframe-h, 520px); margin-bottom: 12px; }
-  #jb-public .jb-chat-frame .jb-chat-top { flex: 0 0 30%; min-height: 0; display: flex; flex-direction: column; margin: 0; padding: 4px 0 6px; border-bottom: 2px solid #fff200; box-shadow: 0 4px 6px -5px rgba(255, 242, 0, 0.7); }
+  /* 45 % choix du public / 55 % chat (Hubert, 29 oct. 2026) : 44/56 ici, car les marges du haut s'ajoutent */
+  #jb-public .jb-chat-frame .jb-chat-top { flex: 44 1 0; min-height: 0; display: flex; flex-direction: column; margin: 0; padding: 4px 0 6px; border-bottom: 2px solid #fff200; box-shadow: 0 4px 6px -5px rgba(255, 242, 0, 0.7); }
   #jb-public .jb-chat-top-title { margin: 0 0 4px; font-family: 'Orbitron', sans-serif; font-size: 0.72rem; letter-spacing: 1px; text-transform: uppercase; color: #fff200; }
   #jb-public .jb-chat-frame .jb-chat-top-list { flex: 1 1 auto; min-height: 0; max-height: none; }
-  #jb-public .jb-chat-main { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; justify-content: flex-end; overflow: hidden; }
+  #jb-public .jb-chat-main { flex: 56 1 0; min-height: 0; display: flex; flex-direction: column; justify-content: flex-end; overflow: hidden; }
   #jb-public .jb-chat-main .jb-chat-list { flex: 1 1 auto; height: auto; min-height: 0; }
   #jb-public .jb-chat-main .jb-chat-empty { margin-top: 8px; }
   #jb-public .jb-chat-kbd-gap, #jb-public .jb-chat > .jb-kbd { margin-bottom: 12px; }
@@ -5966,7 +5967,7 @@ répertoire</button>
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-22.224";
+  const APP_BUILD = "2026-10-22.225";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -8342,16 +8343,15 @@ répertoire</button>
     if (bar) ro.observe(bar);
   }
 
-  // cadre du chat (écran du chat) : du dessous de RETOUR jusqu'au bas de l'écran, moins le clavier de
-  // l'app et le RETOUR du bas, qui restent sous le cadre
+  // cadre du chat (écran du chat) : du dessous de RETOUR jusqu'au bas de l'écran. Le clavier de l'app et le
+  // RETOUR du bas sont sous le cadre : le client fait défiler la page pour les voir (Hubert, 29 oct. 2026 —
+  // avant, le cadre rapetissait pour laisser le clavier à l'écran)
   function fitChatFrame() {
     const content = document.getElementById("jb-app-content");
     const frame = document.querySelector("#jb-public .jb-chat-frame");
-    const section = document.querySelector("#jb-public .jb-chat");
-    if (!frame || !section || !content.classList.contains("jb-chat-mode")) return;
+    if (!frame || !content.classList.contains("jb-chat-mode")) return;
     const fr = frame.getBoundingClientRect();
-    const below = section.getBoundingClientRect().bottom - fr.bottom; // clavier + RETOUR + marges (ne dépend pas de la hauteur du cadre)
-    const h = Math.max(320, Math.round(window.innerHeight - (fr.top + window.scrollY) - below - 8));
+    const h = Math.max(320, Math.round(window.innerHeight - (fr.top + window.scrollY) - 12));
     document.getElementById("jb-public").style.setProperty("--jb-chatframe-h", `${h}px`);
   }
   window.addEventListener("resize", () => requestAnimationFrame(fitChatFrame));
@@ -8392,8 +8392,11 @@ répertoire</button>
     if (!v || !v.title) return;
     chatSong = { id, title: String(v.title).slice(0, 200) };
     renderChatSongTag();
+    // le clavier de l'app est sous le cadre du chat : on descend jusqu'à lui (la barre reste visible juste au-dessus)
+    const kbd = document.getElementById("jb-kbd");
     const form = document.getElementById("jb-chat-form");
-    if (form) form.scrollIntoView({ block: "center", behavior: "smooth" });
+    if (kbd && !kbd.hidden) kbd.scrollIntoView({ block: "end", behavior: "smooth" });
+    else if (form) form.scrollIntoView({ block: "center", behavior: "smooth" });
     const input = document.getElementById("jb-chat-input");
     if (input) input.focus({ preventScroll: true });
   }
