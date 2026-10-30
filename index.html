@@ -5966,7 +5966,7 @@ répertoire</button>
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-22.223";
+  const APP_BUILD = "2026-10-22.224";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -10805,8 +10805,20 @@ répertoire</button>
       downKey = null;
       kbd.querySelectorAll(".jb-kbd-down").forEach((x) => x.classList.remove("jb-kbd-down"));
     }
+    // Doigt tombé entre deux touches (espaces, coins arrondis : environ le quart du clavier) : on prend la
+    // touche la plus proche — avant, ce toucher était perdu et la lettre ne s'écrivait pas (Hubert, 29 oct. 2026)
+    function nearestKey(x, y) {
+      let best = null, bestD = Infinity;
+      kbd.querySelectorAll("[data-k]").forEach((el) => {
+        const r = el.getBoundingClientRect();
+        const dx = Math.max(r.left - x, 0, x - r.right), dy = Math.max(r.top - y, 0, y - r.bottom);
+        const d = dx * dx + dy * dy;
+        if (d < bestD) { bestD = d; best = el; }
+      });
+      return best;
+    }
     kbd.addEventListener("pointerdown", (e) => {
-      const b = e.target.closest("[data-k]");
+      const b = e.target.closest("[data-k]") || nearestKey(e.clientX, e.clientY);
       e.preventDefault();
       release();
       if (!b) return;
@@ -10819,7 +10831,7 @@ répertoire</button>
     });
     document.addEventListener("pointerup", (e) => {
       if (!downKey) return;
-      const b = e.target.closest && e.target.closest("[data-k]");
+      const b = (e.target.closest && e.target.closest("[data-k]")) || (kbd.contains(e.target) && nearestKey(e.clientX, e.clientY));
       const k = downKey;
       release();
       if (MODE_KEYS.includes(k) && b && b.dataset.k === k) press(k);
