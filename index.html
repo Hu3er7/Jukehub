@@ -2371,7 +2371,9 @@
   #jb-app:not(.jb-browse-only) #jb-public .jb-catalog .jb-catalog-frame {
     box-sizing: border-box; height: var(--jb-frame-h, 285px); min-height: var(--jb-frame-h, 285px) !important; display: flex; flex-direction: column;
   }
-  #jb-app:not(.jb-browse-only) #jb-public #jb-catalog-list { flex: 1 1 auto; min-height: 0; max-height: none; }
+  /* min-height !important : la hauteur minimale posée par le JS (catalogListMinHeight, d'avant le cadre à
+     hauteur fixe) faisait déborder la liste sous le cadre sur un écran peu haut (Hubert, 16 nov. 2026) */
+  #jb-app:not(.jb-browse-only) #jb-public #jb-catalog-list { flex: 1 1 auto; min-height: 0 !important; max-height: none; }
   #jb-app:not(.jb-browse-only) #jb-public .jb-tab-panel:not([hidden]) { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
   #jb-app:not(.jb-browse-only) #jb-public .jb-tab-panel :is(#jb-palmares-list, #jb-my-votes-list) {
     /* ne grandit pas (sinon le texte « Aucune demande… », placé après la liste, tombait au bas du
@@ -2392,6 +2394,13 @@
   #jb-app.jb-browse-only .jb-chat { display: none; }
   /* 29 oct. 2026 (Hubert) : écran du chat à part — bouton « Chat room » au-dessus de la recherche ;
      une fois ouvert, tout le reste disparaît (voir setChatMode()) */
+  /* page principale fixe : on ne peut plus la faire défiler (Hubert, 16 nov. 2026) — seulement les listes à
+     l'intérieur du cadre défilent. Pas sur l'écran du chat (le clavier est sous le cadre), ni en simple
+     consultation (calendrier), ni dans le panneau admin. */
+  html:has(#jb-public:not([hidden]) > #jb-app-content:not([hidden]):not(.jb-chat-mode)):not(:has(#jb-app.jb-browse-only)),
+  html:has(#jb-public:not([hidden]) > #jb-app-content:not([hidden]):not(.jb-chat-mode)):not(:has(#jb-app.jb-browse-only)) body {
+    overflow: hidden; overscroll-behavior: none;
+  }
   #jb-app-content:not(.jb-chat-mode) .jb-chat { display: none; }
   #jb-app-content.jb-chat-mode > :not(.jb-chat) { display: none !important; }
   #jb-app.jb-browse-only #jb-public .jb-chat-open-btn { display: none !important; }
@@ -6011,7 +6020,7 @@ répertoire</button>
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-22.229";
+  const APP_BUILD = "2026-10-22.230";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
