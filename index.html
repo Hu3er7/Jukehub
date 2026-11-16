@@ -6109,7 +6109,7 @@ répertoire</button>
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-22.239";
+  const APP_BUILD = "2026-10-22.240";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -10592,12 +10592,8 @@ répertoire</button>
     sizeSpecialList();
 
     list.querySelectorAll("[data-dismiss]").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        // Retrait définitif : on demande confirmation (Hubert garde cette liste pour pratiquer)
-        const text = specialRequests[btn.dataset.dismiss]?.text || "";
-        if (!confirm(`Retirer définitivement « ${text} » de la liste ?`)) return;
-        dismissSpecialRequest(btn.dataset.dismiss);
-      });
+      // retrait immédiat, sans fenêtre de confirmation (Hubert, 16 nov. 2026)
+      btn.addEventListener("click", () => dismissSpecialRequest(btn.dataset.dismiss));
     });
   }
   // 5 suggestions visibles au maximum ; on fait défiler pour voir les autres (Hubert, 16 nov. 2026).
