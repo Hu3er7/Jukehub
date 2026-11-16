@@ -2401,6 +2401,11 @@
   html:has(#jb-public:not([hidden]) > #jb-app-content:not([hidden]):not(.jb-chat-mode)):not(:has(#jb-app.jb-browse-only)) body {
     overflow: hidden; overscroll-behavior: none;
   }
+  /* …et rien à faire défiler : la page s'arrête au bas du bouton « Suggestion ». Sur iPhone, 100vh dépasse la
+     zone visible et la marge du bas de #jb-public laissait Safari remonter la page (titre caché, 16 nov. 2026) */
+  html:has(#jb-public:not([hidden]) > #jb-app-content:not([hidden]):not(.jb-chat-mode)):not(:has(#jb-app.jb-browse-only)) :is(#jb-app, #jb-public) {
+    min-height: 0 !important; padding-bottom: 0 !important;
+  }
   #jb-app-content:not(.jb-chat-mode) .jb-chat { display: none; }
   #jb-app-content.jb-chat-mode > :not(.jb-chat) { display: none !important; }
   #jb-app.jb-browse-only #jb-public .jb-chat-open-btn { display: none !important; }
@@ -6020,7 +6025,7 @@ répertoire</button>
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-22.230";
+  const APP_BUILD = "2026-10-22.231";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -8400,6 +8405,17 @@ répertoire</button>
     const h = Math.max(285, Math.round(window.innerHeight - top - FRAME_BOTTOM_GAP - below));
     document.getElementById("jb-public").style.setProperty("--jb-frame-h", `${h}px`);
   }
+  // Page principale fixe (16 nov. 2026) : si Safari la décale quand même (geste, clavier refermé…), on la remet en haut
+  window.addEventListener("scroll", () => {
+    if (window.scrollY === 0 || getComputedStyle(document.documentElement).overflowY !== "hidden") return;
+    const a = document.activeElement;
+    if (a && (a.tagName === "INPUT" || a.tagName === "TEXTAREA")) return; // Safari remonte la page pour montrer le champ
+    window.scrollTo(0, 0);
+  }, { passive: true });
+  // clavier refermé (fin de la recherche) : la page revient en haut
+  document.addEventListener("focusout", () => setTimeout(() => {
+    if (window.scrollY && getComputedStyle(document.documentElement).overflowY === "hidden") window.scrollTo(0, 0);
+  }, 150));
   var fitFrameTimer = null;
   function scheduleFitFrameToScreen() { clearTimeout(fitFrameTimer); fitFrameTimer = setTimeout(fitFrameToScreen, 120); }
   window.addEventListener("resize", scheduleFitFrameToScreen);
