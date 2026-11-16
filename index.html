@@ -6108,7 +6108,7 @@ répertoire</button>
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-22.237";
+  const APP_BUILD = "2026-10-22.238";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -10937,6 +10937,9 @@ répertoire</button>
       const ref = await addDoc(collection(db, "chat"), msg);
       myChatLocal.push({ id: ref.id, ...local });
       saveMyChatLocal();
+      // Copie dans la boîte de suggestions du panneau admin, gardée d'une soirée à l'autre (Hubert, 16 nov. 2026)
+      const sugg = { text: (song ? `🎵 ${song} — ${text}` : text).slice(0, 200), createdAt: serverTimestamp(), name: name.slice(0, 15) };
+      addDoc(collection(db, "specialRequests"), sugg).catch((err) => console.warn("suggestion", err && err.code));
     } catch (err) {
       console.warn("chat send", err && err.code);
       if (err && err.code === "permission-denied") {
