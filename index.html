@@ -2151,6 +2151,8 @@
   /* 28 oct. 2026 (Hubert), thème Cyberpunk seulement : l'onglet choisi (et son cadre) toujours en BLEU,
      les 2 autres en ROUGE — peu importe lequel est choisi */
   html:not([data-jb-bg]) #jb-public .jb-tab { --tc: #ff2d55; --tc-rgb: 255, 45, 85; }
+  /* 16 nov. 2026 (Hubert) : onglets fermés en ROSE (comme le bouton Suggestion) ; l'onglet ouvert et son cadre restent BLEUS */
+  html:not([data-jb-bg]) #jb-public .jb-tab { --tc: #ff3bd4; --tc-rgb: 255, 59, 212; }
   html:not([data-jb-bg]) #jb-public .jb-tab.jb-tab-active { --tc: #5af4f0; --tc-rgb: 90, 244, 240; }
   html:not([data-jb-bg]) #jb-public .jb-catalog-frame { --fc: #5af4f0; --fbg: rgba(8, 52, 62, 0.22); --fbg-solid: #04121c; --fglow: rgba(0, 230, 220, 0.6); }
   #jb-public .jb-tab-ico {
@@ -2394,39 +2396,88 @@
   #jb-app.jb-browse-only .jb-chat { display: none; }
   /* 29 oct. 2026 (Hubert) : écran du chat à part — bouton « Chat room » au-dessus de la recherche ;
      une fois ouvert, tout le reste disparaît (voir setChatMode()) */
+  /* moins d'espace perdu en haut de l'écran : le titre (et RETOUR du chat) remonte (Hubert, 16 nov. 2026) */
+  html #jb-app #jb-public.jb-view { padding-top: 6px !important; }
+  /* plus de petit triangle dans le coin en haut à droite, dans tous les thèmes (Hubert, 16 nov. 2026) */
+  html #jb-app #jb-public .jb-top-bar::before { display: none !important; }
   /* page principale fixe : on ne peut plus la faire défiler (Hubert, 16 nov. 2026) — seulement les listes à
-     l'intérieur du cadre défilent. Pas sur l'écran du chat (le clavier est sous le cadre), ni en simple
-     consultation (calendrier), ni dans le panneau admin. */
-  html:has(#jb-public:not([hidden]) > #jb-app-content:not([hidden]):not(.jb-chat-mode)):not(:has(#jb-app.jb-browse-only)),
-  html:has(#jb-public:not([hidden]) > #jb-app-content:not([hidden]):not(.jb-chat-mode)):not(:has(#jb-app.jb-browse-only)) body {
+     l'intérieur du cadre défilent. L'écran Suggestion (chat) aussi : son cadre, le clavier et RETOUR tiennent
+     maintenant dans l'écran (voir fitChatFrame()). Pas en simple consultation (calendrier), ni dans le panneau admin. */
+  html:has(#jb-public:not([hidden]) > #jb-app-content:not([hidden])):not(:has(#jb-app.jb-browse-only)),
+  html:has(#jb-public:not([hidden]) > #jb-app-content:not([hidden])):not(:has(#jb-app.jb-browse-only)) body {
     overflow: hidden; overscroll-behavior: none;
   }
   /* …et rien à faire défiler : la page s'arrête au bas du bouton « Suggestion ». Sur iPhone, 100vh dépasse la
      zone visible et la marge du bas de #jb-public laissait Safari remonter la page (titre caché, 16 nov. 2026) */
-  html:has(#jb-public:not([hidden]) > #jb-app-content:not([hidden]):not(.jb-chat-mode)):not(:has(#jb-app.jb-browse-only)) :is(#jb-app, #jb-public) {
+  html:has(#jb-public:not([hidden]) > #jb-app-content:not([hidden])):not(:has(#jb-app.jb-browse-only)) :is(#jb-app, #jb-public) {
     min-height: 0 !important; padding-bottom: 0 !important;
   }
   #jb-app-content:not(.jb-chat-mode) .jb-chat { display: none; }
+  /* écran Suggestion : plus de « Choix du public » en haut du cadre, seulement les messages (Hubert, 16 nov. 2026) */
+  #jb-public .jb-chat-frame .jb-chat-top { display: none !important; }
+  /* …ni de RETOUR sous le clavier : celui du haut suffit (Hubert, 16 nov. 2026) */
+  #jb-public .jb-chat > .jb-chat-back:last-child { display: none !important; }
+  #jb-public .jb-chat > .jb-kbd { margin-bottom: 4px !important; }
   #jb-app-content.jb-chat-mode > :not(.jb-chat) { display: none !important; }
   #jb-app.jb-browse-only #jb-public .jb-chat-open-btn { display: none !important; }
   #jb-public .jb-chat-open-btn { width: 100%; margin: 0 0 10px; }
   #jb-public .jb-chat-open-btn.jb-chat-open-bottom { margin: 10px 0 0; } /* « Suggestion », sous le cadre (16 nov. 2026) */
   /* « Pourboire » dans le style de l'onglet Mon répertoire (Hubert, 16 nov. 2026) : même couleur, même lueur,
      même police et même case d'icône que l'onglet, selon le thème */
+  /* en vert néon (Hubert, 16 nov. 2026) */
   html #jb-app #jb-public #jb-tip-open {
-    --tc: #5af4f0; --tc-rgb: 90, 244, 240;
-    display: flex; align-items: center; justify-content: center; gap: 10px;
+    --tc: #39ff7a; --tc-rgb: 57, 255, 122;
+    display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 0 10px !important;
     border: 2px solid var(--tc) !important; background: rgba(var(--tc-rgb), 0.08) !important; background-image: none !important;
     box-shadow: 0 0 10px rgba(var(--tc-rgb), 0.35), inset 0 0 8px rgba(var(--tc-rgb), 0.12) !important;
     color: var(--tc) !important; text-shadow: 0 0 6px rgba(var(--tc-rgb), 0.45) !important;
     font-family: 'Jukehub Crypto', Orbitron, sans-serif !important; font-weight: 700 !important;
+    font-size: 1.2rem !important; /* mot plus gros (Hubert, 16 nov. 2026) */
   }
   html #jb-app #jb-public #jb-tip-open::before, html #jb-app #jb-public #jb-tip-open::after { content: none !important; }
-  html #jb-app #jb-public #jb-tip-open .jb-tab-ico { width: 22px; height: 26px; background: rgba(var(--tc-rgb), 0.4); border: 1px solid var(--tc); }
-  html #jb-app #jb-public #jb-tip-open .jb-tab-ico svg { width: 15px; height: 15px; }
-  html #jb-app #jb-public #jb-tip-open .jb-tab-label { flex: 0 0 auto; }
+  /* « Suggestion » en rose néon (comme l'onglet Choix du public), même traitement que Pourboire (Hubert, 16 nov. 2026) */
+  html #jb-app #jb-public #jb-chat-open {
+    --tc: #ff3bd4; --tc-rgb: 255, 59, 212;
+    border: 2px solid var(--tc) !important; background: rgba(var(--tc-rgb), 0.08) !important; background-image: none !important;
+    box-shadow: 0 0 10px rgba(var(--tc-rgb), 0.35), inset 0 0 8px rgba(var(--tc-rgb), 0.12) !important;
+    color: var(--tc) !important; text-shadow: 0 0 6px rgba(var(--tc-rgb), 0.45) !important; font-weight: 700 !important;
+    height: 60px !important; font-size: 1.25rem !important; /* plus grand (Hubert, 16 nov. 2026) */
+    /* même largeur que le cadre au-dessus, qui déborde de 10px de chaque côté */
+    width: calc(100% + 20px) !important; margin-left: -10px !important; margin-right: -10px !important;
+  }
+  html #jb-app #jb-public #jb-chat-open::before, html #jb-app #jb-public #jb-chat-open::after { content: none !important; }
+  /* Forêt : « Suggestion » en bois, comme les onglets non sélectionnés (Hubert, 16 nov. 2026) */
+  html[data-jb-bg="foret"] #jb-app #jb-public #jb-chat-open {
+    background: linear-gradient(rgb(106, 74, 43), rgb(74, 50, 28) 55%, rgb(58, 39, 21)) !important;
+    border: 2px solid rgb(36, 23, 12) !important; border-radius: 7px !important; box-shadow: none !important;
+    color: rgb(236, 255, 210) !important; text-shadow: 0 0 6px rgba(255, 138, 92, 0.45) !important;
+    font-family: Fredoka, sans-serif !important; font-weight: 700 !important;
+    /* même largeur que le cadre en bois au-dessus, dont le contour déborde de 8px de plus */
+    width: calc(100% + 36px) !important; margin-left: -18px !important; margin-right: -18px !important;
+  }
+  /* Matrix : « Suggestion » en vert flash pâle (Hubert, 16 nov. 2026) */
+  html[data-jb-bg="matrix"] #jb-app #jb-public #jb-chat-open {
+    --tc: #b4ffbe; --tc-rgb: 180, 255, 190; color: #d8ffde !important;
+    text-shadow: 0 0 2px #fff, 0 0 8px rgba(var(--tc-rgb), 0.9) !important;
+  }
+  /* Cyberpunk : coins coupés en biseau — on trace leurs diagonales pour fermer le contour (Hubert, 16 nov. 2026) */
+  html:not([data-jb-bg]) #jb-app #jb-public :is(#jb-tip-open, #jb-chat-open) {
+    background-image:
+      linear-gradient(to bottom left, transparent 50%, var(--tc) 50%, var(--tc) calc(50% + 2px), transparent calc(50% + 2px)),
+      linear-gradient(to top right, transparent 50%, var(--tc) 50%, var(--tc) calc(50% + 2px), transparent calc(50% + 2px)) !important;
+    background-size: 12px 12px, 12px 12px !important; background-position: right top, left bottom !important;
+    background-repeat: no-repeat !important; background-origin: border-box !important;
+  }
+  html[data-jb-bg="bar"] #jb-app #jb-public #jb-chat-open {
+    --tc: #ff5fa8; --tc-rgb: 255, 95, 168; color: #ffd6ea !important;
+    text-shadow: 0 0 2px #fff, 0 0 6px var(--tc), 0 0 12px var(--tc) !important;
+  }
+  /* juste le rond avec le $, sans case autour (Hubert, 16 nov. 2026) */
+  html #jb-app #jb-public #jb-tip-open .jb-tab-ico { width: 28px; height: 28px; background: none; border: none; filter: drop-shadow(0 0 4px var(--tc)); }
+  html #jb-app #jb-public #jb-tip-open .jb-tab-ico svg { width: 28px; height: 28px; }
+  html #jb-app #jb-public #jb-tip-open .jb-tab-label { flex: 1 1 auto; text-align: center; font-size: inherit !important; }
   html[data-jb-bg="bar"] #jb-app #jb-public #jb-tip-open {
-    --tc: #6fe0ff; --tc-rgb: 111, 224, 255; color: #e2f8ff !important; font-family: Oswald, monospace !important;
+    --tc: #5dff8a; --tc-rgb: 93, 255, 138; color: #e6ffec !important; font-family: Oswald, monospace !important;
     text-shadow: 0 0 2px #fff, 0 0 6px var(--tc), 0 0 12px var(--tc) !important;
   }
   html[data-jb-bg="foret"] #jb-app #jb-public #jb-tip-open {
@@ -2434,10 +2485,12 @@
     text-shadow: 0 0 8px rgba(170, 255, 80, 0.55) !important;
   }
   html[data-jb-bg="matrix"] #jb-app #jb-public #jb-tip-open {
-    --tc: #78ff96; --tc-rgb: 120, 255, 150; color: #00ff41 !important; font-family: "Courier New", Courier, monospace !important;
-    text-shadow: 0 0 8px rgba(0, 255, 65, 0.8) !important;
+    /* mot de la même couleur que le contour (Hubert, 16 nov. 2026) */
+    --tc: #78ff96; --tc-rgb: 120, 255, 150; color: var(--tc) !important; font-family: "Courier New", Courier, monospace !important;
+    text-shadow: 0 0 8px rgba(var(--tc-rgb), 0.8) !important;
   }
-  #jb-public .jb-chat-back { width: 100%; margin: 14px 0 14px; }
+  /* RETOUR du haut collé en haut, à la même hauteur que le titre de la page principale (Hubert, 16 nov. 2026) */
+  #jb-public .jb-chat-back { width: 100%; margin: 0 0 14px; }
   #jb-public .jb-chat-back:last-child { margin-top: 0; }
   #jb-public .jb-chat-open-btn::before, #jb-public .jb-chat-open-btn::after,
   #jb-public .jb-chat-back::before, #jb-public .jb-chat-back::after { content: none !important; }
@@ -6054,7 +6107,7 @@ répertoire</button>
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-22.234";
+  const APP_BUILD = "2026-10-22.235";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -6162,7 +6215,7 @@ répertoire</button>
       tab_public: "CHOIX\nDU PUBLIC",
       tab_myreq_title: "Tes chansons",
       tab_public_title: "Choix du public",
-      chat_title: "Chat room",
+      chat_title: "Suggestion", // titre de l'écran du chat (Hubert, 16 nov. 2026)
       chat_open: "Suggestion", // ouvre le chat (16 nov. 2026)
       chat_back: "⬅ Retour",
       chat_top_title: "Choix du public",
@@ -6275,7 +6328,7 @@ répertoire</button>
       tab_public: "CROWD\nPICKS",
       tab_myreq_title: "Your songs",
       tab_public_title: "Crowd picks",
-      chat_title: "Chat room",
+      chat_title: "Suggestion", // titre de l'écran du chat (Hubert, 16 nov. 2026)
       chat_open: "Suggestion", // ouvre le chat (16 nov. 2026)
       chat_back: "⬅ Back",
       chat_top_title: "Crowd picks",
@@ -6410,8 +6463,10 @@ répertoire</button>
     const chatTitle = document.getElementById("jb-chat-title");
     if (chatTitle) chatTitle.textContent = t("chat_title");
     document.getElementById("jb-chat-open").textContent = t("chat_open");
-    // « Pourboire » dans le style de l'onglet Mon répertoire : case d'icône + texte (Hubert, 16 nov. 2026)
-    document.getElementById("jb-tip-open").innerHTML = `<span class="jb-tab-ico" aria-hidden="true"><svg viewBox="0 0 12 12" fill="currentColor"><circle cx="6" cy="6" r="5.2" fill="none" stroke="currentColor" stroke-width="1.1"/><path d="M6.5 2.4v.8c.9.1 1.5.6 1.6 1.4h-.9c-.1-.4-.5-.6-1-.6-.6 0-1 .3-1 .7s.3.6 1.1.8c1.2.3 1.8.7 1.8 1.6 0 .8-.6 1.4-1.6 1.5v.8h-.9v-.8c-1-.1-1.7-.7-1.7-1.6h.9c.1.5.5.8 1.2.8s1.1-.3 1.1-.7-.3-.6-1.1-.8c-1.1-.3-1.8-.7-1.8-1.6 0-.7.6-1.3 1.5-1.4v-.8z"/></svg></span><span class="jb-tab-label">${escapeHtml(t("tip_open"))}</span>`;
+    // « Pourboire » dans le style de l'onglet Mon répertoire : case d'icône $ à chaque bout du bouton, texte au
+    // centre (Hubert, 16 nov. 2026)
+    const tipIco = `<span class="jb-tab-ico" aria-hidden="true"><svg viewBox="0 0 12 12" fill="currentColor"><circle cx="6" cy="6" r="5.2" fill="none" stroke="currentColor" stroke-width="1.1"/><path d="M6.5 2.4v.8c.9.1 1.5.6 1.6 1.4h-.9c-.1-.4-.5-.6-1-.6-.6 0-1 .3-1 .7s.3.6 1.1.8c1.2.3 1.8.7 1.8 1.6 0 .8-.6 1.4-1.6 1.5v.8h-.9v-.8c-1-.1-1.7-.7-1.7-1.6h.9c.1.5.5.8 1.2.8s1.1-.3 1.1-.7-.3-.6-1.1-.8c-1.1-.3-1.8-.7-1.8-1.6 0-.7.6-1.3 1.5-1.4v-.8z"/></svg></span>`;
+    document.getElementById("jb-tip-open").innerHTML = `${tipIco}<span class="jb-tab-label">${escapeHtml(t("tip_open"))}</span>${tipIco}`;
     document.querySelectorAll("[data-chat-back]").forEach((b) => { b.textContent = t("chat_back"); });
     document.getElementById("jb-chat-top-title").textContent = t("chat_top_title");
     document.getElementById("jb-chat-top-empty").textContent = t("chat_top_empty");
@@ -6801,10 +6856,7 @@ répertoire</button>
     else delete document.documentElement.dataset.jbBg;
     safeStorageSet("jb-bg", next.id);
     window.dispatchEvent(new Event("jb-bg-change"));
-    document.querySelectorAll(".jb-toast-bg").forEach((el) => el.remove());
-    showToast((lang === "en" ? "Style: " : "Style : ") + next[lang === "en" ? "en" : "fr"], 1400);
-    const toasts = document.querySelectorAll(".jb-toast");
-    if (toasts.length) toasts[toasts.length - 1].classList.add("jb-toast-bg");
+    // plus de message « Style : … » au changement de thème (Hubert, 16 nov. 2026)
   });
 
   if (firebaseConfig.apiKey === "REMPLACE_MOI") {
@@ -8491,12 +8543,16 @@ répertoire</button>
   // cadre du chat (écran du chat) : du dessous de RETOUR jusqu'au bas de l'écran. Le clavier de l'app et le
   // RETOUR du bas sont sous le cadre : le client fait défiler la page pour les voir (Hubert, 29 oct. 2026 —
   // avant, le cadre rapetissait pour laisser le clavier à l'écran)
+  // 16 nov. 2026 (Hubert) : on revient au cadre qui laisse la place au clavier et au RETOUR du bas — tout
+  // tient dans l'écran (« Choix du public » est retiré du cadre)
   function fitChatFrame() {
     const content = document.getElementById("jb-app-content");
     const frame = document.querySelector("#jb-public .jb-chat-frame");
-    if (!frame || !content.classList.contains("jb-chat-mode")) return;
+    const section = document.querySelector("#jb-public .jb-chat");
+    if (!frame || !section || !content.classList.contains("jb-chat-mode")) return;
     const fr = frame.getBoundingClientRect();
-    const h = Math.max(320, Math.round(window.innerHeight - (fr.top + window.scrollY) - 12));
+    const below = section.getBoundingClientRect().bottom - fr.bottom; // clavier + RETOUR + marges (ne dépend pas de la hauteur du cadre)
+    const h = Math.max(160, Math.round(visibleHeight() - (fr.top + window.scrollY) - below - 6));
     document.getElementById("jb-public").style.setProperty("--jb-chatframe-h", `${h}px`);
   }
   window.addEventListener("resize", () => requestAnimationFrame(fitChatFrame));
