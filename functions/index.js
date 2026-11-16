@@ -74,8 +74,37 @@ exports.createCheckout = onRequest(
       return;
     }
     try {
-      const { songId, amountCents, name } = req.body || {};
+      const { songId, amountCents, name, tip } = req.body || {};
       const amount = Math.round(Number(amountCents));
+      // Pourboire à Hubert, sans chanson (16 nov. 2026) : prélevé tout de suite (pas de réservation),
+      // il ne touche à aucune chanson du palmarès.
+      if (tip === true) {
+        if (!Number.isFinite(amount) || amount < MIN_CENTS || amount > MAX_CENTS) {
+          res.status(400).json({ error: "Montant invalide (2 $ à 100 $)" });
+          return;
+        }
+        const settings = (await db.doc("config/settings").get()).data() || {};
+        const metadata = { type: "tip", nightId: settings.nightId || "default", name: voterKey(name) };
+        const session = await stripeClient().checkout.sessions.create({
+          mode: "payment",
+          locale: "fr-CA",
+          payment_method_types: ["card"],
+          line_items: [{
+            quantity: 1,
+            price_data: {
+              currency: "cad",
+              unit_amount: amount,
+              product_data: { name: "Pourboire — Mon Répertoire" },
+            },
+          }],
+          payment_intent_data: { description: "Mon Répertoire — pourboire", metadata },
+          metadata,
+          success_url: `${SITE_URL}#tipped`,
+          cancel_url: `${SITE_URL}#`,
+        });
+        res.json({ url: session.url });
+        return;
+      }
       if (typeof songId !== "string" || !songId || songId.length > 100) {
         res.status(400).json({ error: "Chanson invalide" });
         return;
@@ -169,6 +198,18 @@ exports.stripeWebhook = onRequest(
         return;
       }
       const pi = await stripe.paymentIntents.retrieve(piId);
+      // Pourboire (déjà prélevé) : on le note seulement, une seule fois (16 nov. 2026)
+      if ((pi.metadata || {}).type === "tip") {
+        if (pi.status === "succeeded") {
+          const { nightId, name } = pi.metadata;
+          await db.doc(`payments/${piId}`).create({
+            type: "tip", nightId: nightId || "default", name: name || "", amountCents: pi.amount, status: "captured",
+            createdAt: admin.firestore.FieldValue.serverTimestamp(),
+          }).catch((e) => { if (e.code !== 6) throw e; }); // 6 = ALREADY_EXISTS : Stripe a renvoyé l'événement
+        }
+        res.json({ received: true });
+        return;
+      }
       if (pi.status !== "requires_capture") {
         res.json({ received: true });
         return;

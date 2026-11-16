@@ -1662,10 +1662,10 @@
   /* Sections sous « Choix du public » en onglets, comme les 3 onglets des clients (Hubert, 27 oct. 2026) :
      vert = Boîte de suggestions / Refroidissement, bleu = Ajouter / Répertoire. L'onglet choisi est
      soudé au cadre (le trait du haut s'ouvre sous lui) et le cadre prend sa couleur.
-     --ai = onglet choisi (posé par setAdminTab()), --atw = largeur d'un onglet (4 onglets, 3 espaces de 6px) */
+     --ai = onglet choisi (posé par setAdminTab()), --atw = largeur d'un onglet (3 onglets depuis le 16 nov. 2026, 2 espaces de 6px) */
   #jb-admin .jb-admin-tabs {
     --ac: #39ff7a; --ac-rgb: 57, 255, 122; --abg: rgba(6, 50, 22, 0.28); --ai: 0;
-    --atw: calc((100% - 10px - 18px) / 4);
+    --atw: calc((100% - 10px - 12px) / 3);
     margin-top: 16px;
   }
   #jb-admin .jb-admin-tabs.jb-admin-on-blue { --ac: #5af4f0; --ac-rgb: 90, 244, 240; --abg: rgba(8, 52, 62, 0.28); }
@@ -1738,6 +1738,12 @@
   /* même grosseur que « Déconnexion » (140 x 44px), et décollé de lui (Hubert) */
   #jb-admin .jb-btn-danger.jb-newnight-small { width: 140px; min-height: 44px; padding: 12px 16px; font-size: 16px; border: 1px solid transparent; margin: 0; }
   #jb-admin .jb-admin-topbar { gap: 16px; align-items: center; }
+  /* FR/EN au milieu de la barre du haut du panneau admin (Hubert, 16 nov. 2026) */
+  #jb-admin .jb-admin-lang { display: flex; gap: 6px; margin: 0; }
+  #jb-admin .jb-admin-lang .jb-lang-btn { width: auto; min-height: 0; margin: 0; padding: 6px 10px; }
+  /* Boîte de suggestions en haut du panneau : 5 visibles (hauteur posée par renderAdminSpecial()), le reste défile */
+  #jb-admin .jb-admin-special-list { overflow-y: auto; overscroll-behavior: contain; margin: 0; }
+  #jb-admin .jb-admin-sugg h3 { margin-bottom: 8px; }
   /* Reset et Déconnexion : même format (140 x 44px, contour 2px, coins biseautés FERMÉS par leur
      diagonale — le contour fait tout le tour) et à la même hauteur (Hubert, 26 oct. 2026) */
   #jb-admin .jb-admin-topbar > button {
@@ -2390,6 +2396,7 @@
   #jb-app-content.jb-chat-mode > :not(.jb-chat) { display: none !important; }
   #jb-app.jb-browse-only #jb-public .jb-chat-open-btn { display: none !important; }
   #jb-public .jb-chat-open-btn { width: 100%; margin: 0 0 10px; }
+  #jb-public .jb-chat-open-btn.jb-chat-open-bottom { margin: 10px 0 0; } /* « Suggestion », sous le cadre (16 nov. 2026) */
   #jb-public .jb-chat-back { width: 100%; margin: 14px 0 14px; }
   #jb-public .jb-chat-back:last-child { margin-top: 0; }
   #jb-public .jb-chat-open-btn::before, #jb-public .jb-chat-open-btn::after,
@@ -3360,10 +3367,18 @@ html[data-jb-bg="bar"] #jb-admin :is(.jb-admin-section:not(.jb-admin-columns), .
   clip-path: none !important; background-image: none !important; border-radius: 18px !important; border-width: 3px !important;
   box-shadow: 0 0 14px rgba(111, 224, 255, 0.25), inset 0 0 12px rgba(111, 224, 255, 0.1) !important;
 }
-html[data-jb-bg="bar"] #jb-admin .jb-admin-tabbody { border-top: 3px solid var(--ac) !important; }
+/* onglet choisi soudé au cadre (Hubert, 16 nov. 2026) : le trait du haut du cadre s'ouvre sous l'onglet (masque),
+   coin du haut à gauche droit pour rejoindre le 1er onglet ; côtés de l'onglet à la même épaisseur que le cadre */
+html[data-jb-bg="bar"] #jb-admin .jb-admin-tabbody {
+  border-top: 3px solid var(--ac) !important; border-top-left-radius: 0 !important;
+  --gl: calc(var(--ai) * (var(--atw) + 6px) + 3px); --gr: calc(var(--ai) * (var(--atw) + 6px) + var(--atw) - 3px);
+  -webkit-mask: linear-gradient(#000 0 0), linear-gradient(to right, transparent var(--gl), #000 var(--gl), #000 var(--gr), transparent var(--gr)) top / 100% 3px no-repeat;
+  -webkit-mask-composite: xor; mask-composite: exclude;
+  box-shadow: inset 0 0 12px rgba(var(--ac-rgb), 0.1) !important;
+}
 html[data-jb-bg="bar"] #jb-admin .jb-admin-tabbody::before { display: none; }
 html[data-jb-bg="bar"] #jb-admin .jb-admin-tab { clip-path: none !important; background-image: none !important; border-radius: 12px 12px 0 0 !important; }
-html[data-jb-bg="bar"] #jb-admin .jb-admin-tab.jb-admin-tab-active { box-shadow: 0 0 8px var(--tc) !important; }
+html[data-jb-bg="bar"] #jb-admin .jb-admin-tab.jb-admin-tab-active { border-width: 3px !important; box-shadow: none !important; }
 </style>
 <!-- 3e thème « Forêt enchantée » (Hubert, 28 oct. 2026, image d'un portail lumineux dans une forêt à
      l'appui — remplace le thème « Ciel ») : forêt sombre, troncs, feuillage, rayon de lumière, lucioles ;
@@ -5248,8 +5263,9 @@ html[data-jb-bg="matrix"] #jb-public .jb-style-heading-row h2 { font-size: 18.4p
     </header>
     <div class="jb-cp-status" aria-hidden="true"><span class="jb-cp-live">LIVE</span><span>// signal ok</span></div>
     <section class="jb-catalog">
-      <!-- 29 oct. 2026 (Hubert) : le chat a maintenant son propre écran, ouvert par ce bouton (voir setChatMode()) -->
-      <button id="jb-chat-open" type="button" class="jb-mode-btn jb-chat-open-btn"></button>
+      <!-- 16 nov. 2026 (Hubert) : « Pourboire » en haut (don à Hubert, sans chanson — voir showPayModal()) ;
+           le chat s'ouvre maintenant par « Suggestion », en bas sous le cadre -->
+      <button id="jb-tip-open" type="button" class="jb-mode-btn jb-chat-open-btn"></button>
       <div id="jb-catalog-searchbar" class="jb-catalog-searchbar">
         <input id="jb-search-input" type="text" placeholder="🔍 Cherche par mots clés" autocomplete="off" />
       </div>
@@ -5361,6 +5377,8 @@ html[data-jb-bg="matrix"] #jb-public .jb-style-heading-row h2 { font-size: 18.4p
           <button id="jb-special-request-btn" class="jb-btn-primary jb-special-request-btn"></button>
         </div>
       </div>
+      <!-- « Suggestion » : ouvre l'écran du chat (voir setChatMode()) — sous le cadre, qui laisse sa place (fitFrameToScreen()) -->
+      <button id="jb-chat-open" type="button" class="jb-mode-btn jb-chat-open-btn jb-chat-open-bottom"></button>
     </section>
 
     <!-- Chat room (maquette de Hubert, 26 oct. 2026) : sous les onglets, pendant le spectacle seulement.
@@ -5506,16 +5524,23 @@ html[data-jb-bg="matrix"] #jb-public .jb-style-heading-row h2 { font-size: 18.4p
     <div id="jb-dashboard" class="jb-dashboard" hidden>
       <!-- 26 oct. 2026 (Hubert, fenêtre admin étroite sur iPad) : plus de titre « Panneau admin » ;
            « Nouvelle soirée », en plus petit, prend sa place en haut à gauche -->
+      <!-- FR/EN du panneau admin (Hubert, 16 nov. 2026) : textes marqués data-at="français|anglais" -->
       <div class="jb-admin-topbar">
-        <button id="jb-newnight-btn" class="jb-btn-danger jb-newnight-small">Reset</button>
-        <button id="jb-logout-btn" class="jb-btn-ghost">Déconnexion</button>
+        <button id="jb-newnight-btn" class="jb-btn-danger jb-newnight-small" data-at="Reset|Reset">Reset</button>
+        <div class="jb-lang-bar jb-admin-lang">
+          <button class="jb-lang-btn" data-lang="fr">FR</button>
+          <button class="jb-lang-btn" data-lang="en">EN</button>
+        </div>
+        <button id="jb-logout-btn" class="jb-btn-ghost" data-at="Déconnexion|Log out">Déconnexion</button>
       </div>
 
-      <!-- Chat room des clients (26 oct. 2026) : Hubert lit seulement (bouton « Expulser » retiré le 29 oct. 2026) -->
-      <section class="jb-admin-section">
-        <h3>💬 Chat room</h3>
-        <div id="jb-admin-chat" class="jb-admin-chat"></div>
-        <p id="jb-admin-chat-empty" class="jb-empty">Aucun message pour l'instant.</p>
+      <!-- 16 nov. 2026 (Hubert) : plus de chat room ici ; la boîte de suggestions prend sa place, bien en
+           évidence (5 suggestions visibles, on fait défiler pour les autres). Gardée d'une soirée à
+           l'autre — « Reset » ne l'efface pas. -->
+      <section class="jb-admin-section jb-admin-green jb-admin-sugg">
+        <h3><span data-at="💡 Boîte de suggestions|💡 Suggestion box">💡 Boîte de suggestions</span> <span id="jb-admin-special-count" class="jb-admin-special-count"></span></h3>
+        <ol id="jb-admin-special" class="jb-admin-palmares jb-admin-special-list"></ol>
+        <p id="jb-admin-special-empty" class="jb-empty" hidden data-at="Rien pour l'instant.|Nothing yet.">Rien pour l'instant.</p>
       </section>
 
       <!-- Paiements (19 oct. 2026) : Hubert choisit si les clients voient les montants payés.
@@ -5528,9 +5553,9 @@ html[data-jb-bg="matrix"] #jb-public .jb-style-heading-row h2 { font-size: 18.4p
 
       <section class="jb-admin-section jb-admin-columns">
         <div class="jb-admin-column jb-admin-public">
-          <h3>👥 Choix du public</h3>
+          <h3 data-at="👥 Choix du public|👥 Crowd picks">👥 Choix du public</h3>
           <ol id="jb-admin-palmares" class="jb-admin-palmares"></ol>
-          <p id="jb-admin-palmares-empty" class="jb-empty" hidden>Rien pour l'instant.</p>
+          <p id="jb-admin-palmares-empty" class="jb-empty" hidden data-at="Rien pour l'instant.|Nothing yet.">Rien pour l'instant.</p>
         </div>
       </section>
 
@@ -5539,38 +5564,37 @@ html[data-jb-bg="matrix"] #jb-public .jb-style-heading-row h2 { font-size: 18.4p
            cadre, qui prend sa couleur. La boîte de suggestions reste GARDÉE d'une soirée à l'autre
            (« Reset » n'efface que le palmarès) — Hubert y revient chez lui pour pratiquer. -->
       <section id="jb-admin-tabs" class="jb-admin-tabs">
+        <!-- 16 nov. 2026 : 3 onglets (la boîte de suggestions est sortie, en haut du panneau) -->
         <div class="jb-admin-tabbar" role="tablist">
-          <button type="button" class="jb-admin-tab jb-admin-tab-green" data-atab="sugg" role="tab">Boîte de
-suggestions</button>
-          <button type="button" class="jb-admin-tab jb-admin-tab-green" data-atab="cool" role="tab">Refroid. &amp;
+          <button type="button" class="jb-admin-tab jb-admin-tab-green" data-atab="cool" role="tab" data-at="Refroid. &amp;
+brûlées|Cooldown &amp;
+burned">Refroid. &amp;
 brûlées</button>
-          <button type="button" class="jb-admin-tab jb-admin-tab-blue" data-atab="add" role="tab">Ajouter
+          <button type="button" class="jb-admin-tab jb-admin-tab-blue" data-atab="add" role="tab" data-at="Ajouter
+chansons|Add
+songs">Ajouter
 chansons</button>
-          <button type="button" class="jb-admin-tab jb-admin-tab-blue" data-atab="rep" role="tab">Mon
+          <button type="button" class="jb-admin-tab jb-admin-tab-blue" data-atab="rep" role="tab" data-at="Mon
+répertoire|My
+repertoire">Mon
 répertoire</button>
         </div>
         <div class="jb-admin-tabbody">
-          <div class="jb-admin-tabpanel" data-apanel="sugg" role="tabpanel">
-            <div class="jb-admin-panel-head">Boîte de suggestions <span id="jb-admin-special-count" class="jb-admin-special-count"></span></div>
-            <p class="jb-hint">Recherches de clients restées sans résultat dans le répertoire. Gardées d'une soirée à l'autre — « Reset » ne les efface pas.</p>
-            <ol id="jb-admin-special" class="jb-admin-palmares"></ol>
-            <p id="jb-admin-special-empty" class="jb-empty" hidden>Rien pour l'instant.</p>
-          </div>
-          <div class="jb-admin-tabpanel" data-apanel="cool" role="tabpanel" hidden>
-            <div class="jb-admin-panel-head">Refroidissement &amp; brûlées</div>
+          <div class="jb-admin-tabpanel" data-apanel="cool" role="tabpanel">
+            <div class="jb-admin-panel-head" data-at="Refroidissement &amp; brûlées|Cooldown &amp; burned">Refroidissement &amp; brûlées</div>
             <div id="jb-cooldown-list" class="jb-cooldown-list"></div>
-            <p id="jb-cooldown-empty" class="jb-empty" hidden>Aucune chanson en attente pour l'instant.</p>
+            <p id="jb-cooldown-empty" class="jb-empty" hidden data-at="Aucune chanson en attente pour l'instant.|No songs waiting right now.">Aucune chanson en attente pour l'instant.</p>
           </div>
           <div class="jb-admin-tabpanel" data-apanel="add" role="tabpanel" hidden>
-            <div class="jb-admin-panel-head">Ajouter des chansons</div>
+            <div class="jb-admin-panel-head" data-at="Ajouter des chansons|Add songs">Ajouter des chansons</div>
             <textarea id="jb-bulk-input" rows="3"></textarea>
             <div id="jb-bulk-genre-row" class="jb-genre-chip-row"></div>
-            <button id="jb-bulk-add-btn" class="jb-btn-primary">Ajouter au répertoire</button>
+            <button id="jb-bulk-add-btn" class="jb-btn-primary" data-at="Ajouter au répertoire|Add to repertoire">Ajouter au répertoire</button>
             <p id="jb-bulk-status" class="jb-hint"></p>
           </div>
           <div class="jb-admin-tabpanel" data-apanel="rep" role="tabpanel" hidden>
-            <div class="jb-admin-panel-head">Répertoire complet (<span id="jb-admin-count">0</span>)</div>
-            <input id="jb-admin-search" type="text" placeholder="🔍 Chercher pour modifier / supprimer…" />
+            <div class="jb-admin-panel-head"><span data-at="Répertoire complet|Full repertoire">Répertoire complet</span> (<span id="jb-admin-count">0</span>)</div>
+            <input id="jb-admin-search" type="text" placeholder="🔍 Chercher pour modifier / supprimer…" data-at-ph="🔍 Chercher pour modifier / supprimer…|🔍 Search to edit / delete…" />
             <div id="jb-admin-catalog" class="jb-admin-catalog"></div>
           </div>
         </div>
@@ -5987,7 +6011,7 @@ répertoire</button>
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-22.228";
+  const APP_BUILD = "2026-10-22.229";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -6096,7 +6120,7 @@ répertoire</button>
       tab_myreq_title: "Tes chansons",
       tab_public_title: "Choix du public",
       chat_title: "Chat room",
-      chat_open: "💬 Chat room",
+      chat_open: "Suggestion", // ouvre le chat (16 nov. 2026)
       chat_back: "⬅ Retour",
       chat_top_title: "Choix du public",
       chat_top_empty: "Aucune demande pour l'instant.",
@@ -6124,6 +6148,11 @@ répertoire</button>
       pay_error: "Le paiement n'a pas pu démarrer. Réessaie dans un instant.",
       pay_close: "Fermer",
       paid_thanks: "💳 Merci ! Ta chanson monte dans le palmarès.",
+      // Pourboire à Hubert, sans chanson (16 nov. 2026) : prélevé tout de suite
+      tip_open: "Pourboire",
+      tip_title: "Un pourboire pour Hubert",
+      tip_note: "Merci de m'encourager ! Ton pourboire est prélevé tout de suite.",
+      tipped_thanks: "💳 Merci beaucoup pour le pourboire !",
       boost_word: "Faire monter",
       req_first_title: (n) => `Il te reste ${n} chansons à sélectionner`,
       req_first_back: "",
@@ -6204,7 +6233,7 @@ répertoire</button>
       tab_myreq_title: "Your songs",
       tab_public_title: "Crowd picks",
       chat_title: "Chat room",
-      chat_open: "💬 Chat room",
+      chat_open: "Suggestion", // ouvre le chat (16 nov. 2026)
       chat_back: "⬅ Back",
       chat_top_title: "Crowd picks",
       chat_top_empty: "No requests yet.",
@@ -6231,6 +6260,10 @@ répertoire</button>
       pay_error: "The payment couldn't start. Try again in a moment.",
       pay_close: "Close",
       paid_thanks: "💳 Thank you! Your song is moving up.",
+      tip_open: "Tip",
+      tip_title: "A tip for Hubert",
+      tip_note: "Thanks for the support! Your tip is charged right away.",
+      tipped_thanks: "💳 Thank you so much for the tip!",
       boost_word: "Push up",
       req_first_title: (n) => `You have ${n} songs left to pick`,
       req_first_back: "",
@@ -6291,10 +6324,14 @@ répertoire</button>
     const v = I18N[lang][key];
     return typeof v === "function" ? v(...args) : v;
   }
+  // texte du panneau admin dans la langue choisie (Hubert, 16 nov. 2026)
+  function at(fr, en) { return lang === "en" ? en : fr; }
   function applyStaticTranslations() {
     document.querySelectorAll(".jb-lang-btn").forEach((b) => {
       b.classList.toggle("jb-lang-active", b.dataset.lang === lang);
     });
+    document.querySelectorAll("[data-at]").forEach((el) => { const [fr, en] = el.dataset.at.split("|"); el.textContent = at(fr, en); });
+    document.querySelectorAll("[data-at-ph]").forEach((el) => { const [fr, en] = el.dataset.atPh.split("|"); el.placeholder = at(fr, en); });
     // Fenêtre "donne-toi un nom" : maintenant qu'elle a ses propres boutons FR/EN (demande de
     // Hubert), son texte doit se retraduire tout de suite si le client clique dessus PENDANT
     // qu'elle est ouverte — avant, elle ne se (re)remplissait qu'à l'ouverture, dans
@@ -6330,6 +6367,7 @@ répertoire</button>
     const chatTitle = document.getElementById("jb-chat-title");
     if (chatTitle) chatTitle.textContent = t("chat_title");
     document.getElementById("jb-chat-open").textContent = t("chat_open");
+    document.getElementById("jb-tip-open").textContent = t("tip_open");
     document.querySelectorAll("[data-chat-back]").forEach((b) => { b.textContent = t("chat_back"); });
     document.getElementById("jb-chat-top-title").textContent = t("chat_top_title");
     document.getElementById("jb-chat-top-empty").textContent = t("chat_top_empty");
@@ -8347,7 +8385,10 @@ répertoire</button>
     const f = visibleCatalogFrame();
     if (!f || browseOnly) return;
     const top = f.getBoundingClientRect().top + window.scrollY;
-    const h = Math.max(285, Math.round(window.innerHeight - top - FRAME_BOTTOM_GAP));
+    // place pour le bouton « Suggestion » sous le cadre (16 nov. 2026)
+    const sb = document.getElementById("jb-chat-open");
+    const below = sb && sb.offsetParent ? sb.offsetHeight + 10 : 0;
+    const h = Math.max(285, Math.round(window.innerHeight - top - FRAME_BOTTOM_GAP - below));
     document.getElementById("jb-public").style.setProperty("--jb-frame-h", `${h}px`);
   }
   var fitFrameTimer = null;
@@ -8523,15 +8564,18 @@ répertoire</button>
     btn.textContent = ok ? t("pay_btn", formatMoney(cents)) : t("pay_invalid");
     return ok ? cents : null;
   }
+  // id = chanson à faire monter, ou TIP_ID pour un pourboire à Hubert sans chanson (16 nov. 2026)
+  const TIP_ID = "__tip__";
   function showPayModal(id) {
     const modal = document.getElementById("jb-vote-modal");
     if (!modal) return;
     payTargetId = id;
     voteModalMode = "pay";
     payAmountCents = 500;
+    const isTip = id === TIP_ID;
     const title = votes[id]?.title || "";
-    document.getElementById("jb-vote-modal-text").textContent = t("pay_title", title);
-    document.getElementById("jb-pay-note").textContent = t("pay_note");
+    document.getElementById("jb-vote-modal-text").textContent = isTip ? t("tip_title") : t("pay_title", title);
+    document.getElementById("jb-pay-note").textContent = isTip ? t("tip_note") : t("pay_note");
     const custom = document.getElementById("jb-pay-custom");
     custom.value = "";
     custom.placeholder = t("pay_custom_ph");
@@ -8566,16 +8610,18 @@ répertoire</button>
     const btn = document.getElementById("jb-vote-modal-btn");
     btn.disabled = true;
     btn.textContent = t("pay_redirect");
+    const isTip = payTargetId === TIP_ID;
     try {
       const res = await fetch(PAY_FUNCTION_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ songId: payTargetId, amountCents: cents, name: getClientName() }),
+        body: JSON.stringify(isTip ? { tip: true, amountCents: cents, name: getClientName() } : { songId: payTargetId, amountCents: cents, name: getClientName() }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok || !data.url) throw new Error(data.error || `HTTP ${res.status}`);
       // Retenu AVANT de partir chez Stripe : au retour ("#paid"), ce montant s'ajoute à « Tes dons »
-      safeStorageSet("jb_pay_pending", JSON.stringify({
+      // (pas un pourboire : il ne fait monter aucune chanson)
+      if (!isTip) safeStorageSet("jb_pay_pending", JSON.stringify({
         id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
         cents, songId: payTargetId, nightId: nightId || "default", at: Date.now(),
       }));
@@ -8594,6 +8640,12 @@ répertoire</button>
     history.replaceState(null, "", location.pathname + location.search);
     setTimeout(() => showToast(t("paid_thanks")), 1500);
   }
+  // Retour d'un pourboire ("#tipped", 16 nov. 2026)
+  if (location.hash === "#tipped") {
+    history.replaceState(null, "", location.pathname + location.search);
+    setTimeout(() => showToast(t("tipped_thanks")), 1500);
+  }
+  document.getElementById("jb-tip-open").addEventListener("click", () => showPayModal(TIP_ID));
   // « TES DONS FACTURÉS » : total des dons de CE téléphone ce soir, mais SEULEMENT pour les chansons
   // que Hubert a marquées « Jouée » après le don (c'est là que la carte est vraiment prélevée — voir
   // markPlayed()/captureSong). jb_dons_<soirée> = { id: { c: cents, s: chanson, t: moment, b: facturé } }.
@@ -10274,7 +10326,7 @@ répertoire</button>
             ${renderVotersLine(v.voters, true, v.askedBy)}
           </span>
         </a>
-        <button class="jb-mark-played-btn${isMarkPlayedArmed(id) ? " jb-mark-played-armed" : ""}" data-played="${id}">${isMarkPlayedArmed(id) ? "❓ Confirmer ?" : "✅ Jouée"}</button>`;
+        <button class="jb-mark-played-btn${isMarkPlayedArmed(id) ? " jb-mark-played-armed" : ""}" data-played="${id}">${isMarkPlayedArmed(id) ? at("❓ Confirmer ?", "❓ Confirm?") : at("✅ Jouée", "✅ Played")}</button>`;
       list.appendChild(li);
     });
 
@@ -10350,9 +10402,10 @@ répertoire</button>
           <span class="jb-slot-title">${escapeHtml(req.text || "")}</span>
           ${sub ? `<span class="jb-slot-artist">${sub}</span>` : ""}
         </span>
-        <button class="jb-dismiss-special-btn" data-dismiss="${id}">✖ Retirer</button>`;
+        <button class="jb-dismiss-special-btn" data-dismiss="${id}">${at("✖ Retirer", "✖ Remove")}</button>`;
       list.appendChild(li);
     });
+    sizeSpecialList();
 
     list.querySelectorAll("[data-dismiss]").forEach((btn) => {
       btn.addEventListener("click", () => {
@@ -10363,12 +10416,26 @@ répertoire</button>
       });
     });
   }
+  // 5 suggestions visibles au maximum ; on fait défiler pour voir les autres (Hubert, 16 nov. 2026).
+  // Mesuré seulement quand la liste est affichée (panneau caché = hauteurs à 0) : remesuré dès qu'elle change de taille.
+  function sizeSpecialList() {
+    const list = document.getElementById("jb-admin-special");
+    if (!list) return;
+    const items = list.children;
+    const h = items.length > 5 ? items[5].offsetTop - items[0].offsetTop : 0;
+    if (h > 0) list.style.maxHeight = `${h}px`;
+    else if (items.length <= 5) list.style.maxHeight = "";
+  }
+  if (window.ResizeObserver) {
+    const sl = document.getElementById("jb-admin-special");
+    if (sl) new ResizeObserver(() => { if (!sl.style.maxHeight) sizeSpecialList(); }).observe(sl);
+  }
   // Onglets du panneau admin (27 oct. 2026) : se souvient de l'onglet choisi (sur cet appareil)
   function setAdminTab(name) {
     const box = document.getElementById("jb-admin-tabs");
     if (!box) return;
     const tabs = [...box.querySelectorAll(".jb-admin-tab")];
-    if (!tabs.some((b) => b.dataset.atab === name)) name = "sugg";
+    if (!tabs.some((b) => b.dataset.atab === name)) name = "cool";
     tabs.forEach((b, i) => {
       const on = b.dataset.atab === name;
       b.classList.toggle("jb-admin-tab-active", on);
@@ -10380,7 +10447,7 @@ répertoire</button>
     safeStorageSet("jb_admin_tab", name);
   }
   document.querySelectorAll(".jb-admin-tab").forEach((b) => b.addEventListener("click", () => setAdminTab(b.dataset.atab)));
-  setAdminTab(safeStorageGet("jb_admin_tab") || "sugg");
+  setAdminTab(safeStorageGet("jb_admin_tab") || "cool");
 
   async function dismissSpecialRequest(id) {
     try {
@@ -10483,9 +10550,9 @@ répertoire</button>
         row.innerHTML = `
           <div class="jb-song-info">
             <div class="jb-song-title">${escapeHtml(v.title)}</div>
-            <div class="jb-song-artist">${escapeHtml(v.artist || "")} · 🔥❌ Brûlée</div>
+            <div class="jb-song-artist">${escapeHtml(v.artist || "")} · 🔥❌ ${at("Brûlée", "Burned")}</div>
           </div>
-          <button class="jb-unburn-btn" data-unburn="${id}">♻️ Réactiver</button>`;
+          <button class="jb-unburn-btn" data-unburn="${id}">${at("♻️ Réactiver", "♻️ Restore")}</button>`;
       } else {
         row.dataset.until = v.cooldownUntil;
         // Titre/artiste sur leur propre ligne, AU-DESSUS du minuteur/des boutons (voir
@@ -10500,8 +10567,8 @@ répertoire</button>
           </div>
           <div class="jb-cooldown-row-controls">
             <div class="jb-cooldown-badge" data-until="${v.cooldownUntil}"><span class="jb-cooldown-num">${formatCooldown(v)}</span></div>
-            <button class="jb-bypass-btn" data-bypass="${id}">▶️ Disponible</button>
-            <button class="jb-burn-btn" data-burn="${id}">🔥 Brûler</button>
+            <button class="jb-bypass-btn" data-bypass="${id}">${at("▶️ Disponible", "▶️ Available")}</button>
+            <button class="jb-burn-btn" data-burn="${id}">${at("🔥 Brûler", "🔥 Burn")}</button>
           </div>`;
       }
       container.appendChild(row);
