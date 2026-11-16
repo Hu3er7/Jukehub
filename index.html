@@ -6108,7 +6108,7 @@ répertoire</button>
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-22.236";
+  const APP_BUILD = "2026-10-22.237";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -6250,6 +6250,8 @@ répertoire</button>
       tip_title: "Un pourboire pour Hubert",
       tip_note: "Merci de m'encourager ! Ton pourboire est prélevé tout de suite.",
       tipped_thanks: "💳 Merci beaucoup pour le pourboire !",
+      tip_ask: "Tu aimes la soirée ? Encourage Hubert avec un pourboire 🎸",
+      tip_unlock: (title) => `Pour une 5e chanson${title ? ` (« ${title} »)` : ""}, laisse un pourboire à Hubert 🎸`,
       boost_word: "Faire monter",
       req_first_title: (n) => `Il te reste ${n} chansons à sélectionner`,
       req_first_back: "",
@@ -6361,6 +6363,8 @@ répertoire</button>
       tip_title: "A tip for Hubert",
       tip_note: "Thanks for the support! Your tip is charged right away.",
       tipped_thanks: "💳 Thank you so much for the tip!",
+      tip_ask: "Enjoying the night? Support Hubert with a tip 🎸",
+      tip_unlock: (title) => `For a 5th song${title ? ` (“${title}”)` : ""}, leave Hubert a tip 🎸`,
       boost_word: "Push up",
       req_first_title: (n) => `You have ${n} songs left to pick`,
       req_first_back: "",
@@ -8708,17 +8712,21 @@ répertoire</button>
   }
   // id = chanson à faire monter, ou TIP_ID pour un pourboire à Hubert sans chanson (16 nov. 2026)
   const TIP_ID = "__tip__";
-  function showPayModal(id) {
+  // tipMode : "ask" = fenêtre ouverte d'elle-même après la 3e demande (petit mot qui invite au pourboire) ;
+  // "unlock" = 5e chanson, payable seulement avec un pourboire (unlockSong = la chanson retenue)
+  let tipUnlockSong = null;
+  function showPayModal(id, tipMode = "", unlockSong = null) {
     const modal = document.getElementById("jb-vote-modal");
     if (!modal) return;
     payTargetId = id;
     voteModalMode = "pay";
     payAmountCents = 500;
     const isTip = id === TIP_ID;
+    tipUnlockSong = isTip && tipMode === "unlock" ? unlockSong : null;
     const title = votes[id]?.title || "";
     const modalText = document.getElementById("jb-vote-modal-text");
-    modalText.textContent = isTip ? "" : t("pay_title", title);
-    modalText.hidden = isTip; // pas de titre dans la fenêtre du pourboire (Hubert, 16 nov. 2026)
+    modalText.textContent = isTip ? (tipMode === "ask" ? t("tip_ask") : tipMode === "unlock" ? t("tip_unlock", unlockSong?.title || "") : "") : t("pay_title", title);
+    modalText.hidden = isTip && !tipMode; // pas de titre dans la fenêtre du pourboire (Hubert, 16 nov. 2026)
     document.getElementById("jb-pay-note").textContent = isTip ? t("tip_note") : t("pay_note");
     const custom = document.getElementById("jb-pay-custom");
     custom.value = "";
@@ -8764,6 +8772,9 @@ répertoire</button>
       const data = await res.json().catch(() => ({}));
       if (!res.ok || !data.url) throw new Error(data.error || `HTTP ${res.status}`);
       // Retenu AVANT de partir chez Stripe : au retour ("#paid"), ce montant s'ajoute à « Tes dons »
+      // 5e chanson retenue : ajoutée au retour du pourboire réussi ("#tipped", voir resumeTipUnlock())
+      if (isTip && tipUnlockSong) safeStorageSet("jb_tip_unlock", JSON.stringify({ ...tipUnlockSong, at: Date.now() }));
+      else if (isTip) { try { localStorage.removeItem("jb_tip_unlock"); } catch (e) {} }
       // (pas un pourboire : il ne fait monter aucune chanson)
       if (!isTip) safeStorageSet("jb_pay_pending", JSON.stringify({
         id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
@@ -8785,9 +8796,21 @@ répertoire</button>
     setTimeout(() => showToast(t("paid_thanks")), 1500);
   }
   // Retour d'un pourboire ("#tipped", 16 nov. 2026)
+  // pendingTipUnlock : 5e chanson débloquée par ce pourboire, ajoutée dès que les chansons de la soirée
+  // sont chargées (voir resumeTipUnlock(), appelée par l'écouteur "votes")
+  var pendingTipUnlock = null;
   if (location.hash === "#tipped") {
     history.replaceState(null, "", location.pathname + location.search);
     setTimeout(() => showToast(t("tipped_thanks")), 1500);
+    try { pendingTipUnlock = JSON.parse(safeStorageGet("jb_tip_unlock") || "null"); } catch (e) { pendingTipUnlock = null; }
+    if (pendingTipUnlock && !(Date.now() - (pendingTipUnlock.at || 0) < 2 * 3600 * 1000 && pendingTipUnlock.id)) pendingTipUnlock = null;
+  }
+  try { localStorage.removeItem("jb_tip_unlock"); } catch (e) {}
+  function resumeTipUnlock() {
+    if (!pendingTipUnlock) return;
+    const song = pendingTipUnlock;
+    pendingTipUnlock = null;
+    setTimeout(() => requestSong(song, { tipPaid: true }), 2500); // après le « merci »
   }
   document.getElementById("jb-tip-open").addEventListener("click", () => showPayModal(TIP_ID));
   // « TES DONS FACTURÉS » : total des dons de CE téléphone ce soir, mais SEULEMENT pour les chansons
@@ -9205,6 +9228,7 @@ répertoire</button>
     // null, qui aurait fait paraître cette chanson plus ANCIENNE que toutes les autres (0 ms) —
     // exactement l'inverse de l'effet recherché.
     snap.forEach((d) => { votes[d.id] = d.data({ serverTimestamps: "estimate" }); });
+    if (!snap.metadata.fromCache) resumeTipUnlock(); // 5e chanson payée par un pourboire (retour de Stripe)
     // Compare au nombre de votes mémorisé au DERNIER vrai instantané (pas à chaque rendu) pour
     // savoir quels chiffres viennent d'augmenter — demande explicite de Hubert : "je veux que les
     // chiffres de vote s'illumine quand le nombre de vote augmente". "prev > 0" exclut la toute
@@ -10085,11 +10109,19 @@ répertoire</button>
   }
 
   // ---------- Action : demander une chanson ----------
-  async function requestSong(song) {
+  // opts.tipPaid : 5e chanson débloquée par un pourboire (retour de Stripe, voir resumeTipUnlock())
+  async function requestSong(song, opts = {}) {
     if (alreadyRequested(song.id)) return;
     if (voteModalBusy()) return;
     if (activeRequestCount() >= MAX_REQUESTS) {
       showInfoModal("req_limit_title", "req_limit_back");
+      return;
+    }
+    // 5e chanson : seulement avec un pourboire (Hubert, 16 nov. 2026). La chanson est retenue ; elle est
+    // ajoutée au retour du paiement réussi.
+    if (!opts.tipPaid && activeRequestCount() === MAX_REQUESTS - 1) {
+      if (!(await ensureClientName())) return;
+      showPayModal(TIP_ID, "unlock", { id: song.id, title: song.title, artist: song.artist || "" });
       return;
     }
     // Plafond de la salle (Hubert, 28 oct. 2026) : au plus PUBLIC_MAX_SONGS chansons en même temps dans
@@ -10181,8 +10213,15 @@ répertoire</button>
     // 20 oct. 2026 (Hubert) : plus de toast « Chanson demandée ! » — seule la 1re demande affiche un
     // message (« Il te reste 4 chansons à sélectionner »), les suivantes ne font que cocher la ligne.
     const reqCount = activeRequestCount();
+    // 3e chanson demandée ce soir : on propose un pourboire, une seule fois par soirée (Hubert, 16 nov. 2026)
+    const tipAskKey = "jb_tip_asked_" + (nightId || "default");
     if (reqCount >= MAX_REQUESTS) showInfoModal("req_limit_title", "req_limit_back", VOTE_MODAL_DELAY_MS);
-    else if (reqCount === 1) showInfoModal("req_first_title", "req_first_back", VOTE_MODAL_DELAY_MS, MAX_REQUESTS - 1);
+    // (plus de message « Il te reste 4 chansons à sélectionner » à la 1re demande — Hubert, 16 nov. 2026)
+    else if (Object.keys(requestOrder).length >= 3 && safeStorageGet(tipAskKey) !== "1") {
+      safeStorageSet(tipAskKey, "1");
+      voteModalPending = true;
+      setTimeout(() => { voteModalPending = false; showPayModal(TIP_ID, "ask"); }, VOTE_MODAL_DELAY_MS);
+    }
     // Illumine la ligne elle-même — même animation que la sélection de la chanson démo dans le
     // tuto, demande explicite de Hubert : "je veux que ce soit la même animation d'illumination
     // que dans le tutoriel". Voir rowFlashElapsedMs()/renderSongRow() : la classe est reposée à
