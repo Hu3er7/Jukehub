@@ -3194,6 +3194,8 @@ html[data-jb-bg="bar"] .jb-bar-curtain {
 }
 html[data-jb-bg="bar"] .jb-bar-curtain-l { left: 0; box-shadow: 8px 0 18px rgba(0, 0, 0, 0.7); }
 html[data-jb-bg="bar"] .jb-bar-curtain-r { right: 0; box-shadow: -8px 0 18px rgba(0, 0, 0, 0.7); }
+/* tête, titre et FR/EN toujours sous la rangée d'ampoules (Hubert, 16 nov. 2026) */
+html[data-jb-bg="bar"] #jb-app #jb-public { padding-top: 28px; }
 /* ampoules : une rangée en haut et une colonne de chaque côté, à l'intérieur des rideaux */
 html[data-jb-bg="bar"] .jb-bar-bulbs {
   position: absolute; inset: 0; z-index: 1;
@@ -6025,7 +6027,7 @@ répertoire</button>
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-22.231";
+  const APP_BUILD = "2026-10-22.232";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -8395,6 +8397,13 @@ répertoire</button>
   // et en bas) ramène à l'écran principal. Sans le chat dessous, le cadre principal descend jusqu'au
   // bas de l'écran (fitFrameToScreen()).
   var FRAME_BOTTOM_GAP = 14; // var : peut être appelée avant cette ligne (voir applyI18n)
+  // Hauteur vraiment visible (16 nov. 2026) : sur iPhone, Safari peut annoncer une hauteur de page différente
+  // de la zone visible au-dessus de sa barre d'adresse — visualViewport donne la zone réellement à l'écran.
+  function visibleHeight() {
+    const vv = window.visualViewport;
+    return vv && vv.height > 0 ? vv.height : window.innerHeight;
+  }
+  if (window.visualViewport) window.visualViewport.addEventListener("resize", () => scheduleFitFrameToScreen());
   function fitFrameToScreen() {
     const f = visibleCatalogFrame();
     if (!f || browseOnly) return;
@@ -8402,7 +8411,7 @@ répertoire</button>
     // place pour le bouton « Suggestion » sous le cadre (16 nov. 2026)
     const sb = document.getElementById("jb-chat-open");
     const below = sb && sb.offsetParent ? sb.offsetHeight + 10 : 0;
-    const h = Math.max(285, Math.round(window.innerHeight - top - FRAME_BOTTOM_GAP - below));
+    const h = Math.max(285, Math.round(visibleHeight() - top - FRAME_BOTTOM_GAP - below));
     document.getElementById("jb-public").style.setProperty("--jb-frame-h", `${h}px`);
   }
   // Page principale fixe (16 nov. 2026) : si Safari la décale quand même (geste, clavier refermé…), on la remet en haut
@@ -8412,6 +8421,28 @@ répertoire</button>
     if (a && (a.tagName === "INPUT" || a.tagName === "TEXTAREA")) return; // Safari remonte la page pour montrer le champ
     window.scrollTo(0, 0);
   }, { passive: true });
+  // Safari peut aussi décaler la zone visible (visualViewport) sans changer scrollY : même correction
+  if (window.visualViewport) window.visualViewport.addEventListener("scroll", () => {
+    if (window.visualViewport.offsetTop <= 0 || getComputedStyle(document.documentElement).overflowY !== "hidden") return;
+    const a = document.activeElement;
+    if (a && (a.tagName === "INPUT" || a.tagName === "TEXTAREA")) return;
+    window.scrollTo(0, 0);
+  });
+  // Mode mesure (adresse avec ?mesure) : affiche les hauteurs que voit le téléphone, pour régler la page
+  // au pixel près sur l'iPhone de Hubert (16 nov. 2026)
+  if (/[?&]mesure\b/.test(location.search)) {
+    const box = document.createElement("div");
+    box.style.cssText = "position:fixed;left:50%;top:40%;transform:translateX(-50%);z-index:99999;background:#000;color:#0f0;font:12px/1.4 monospace;padding:8px 10px;border:1px solid #0f0;white-space:pre;pointer-events:none";
+    const probe = (u) => { const p = document.createElement("div"); p.style.cssText = `position:absolute;visibility:hidden;height:100${u}`; document.body.appendChild(p); const v = p.offsetHeight; p.remove(); return v; };
+    const draw = () => {
+      const vv = window.visualViewport;
+      const sb = document.getElementById("jb-chat-open").getBoundingClientRect();
+      box.textContent = `innerHeight ${innerHeight}\nvisual ${vv ? Math.round(vv.height) + " / dec. " + Math.round(vv.offsetTop) : "-"}\nscrollY ${Math.round(scrollY)}\nclientH ${document.documentElement.clientHeight}\nscreen ${screen.height}\nsvh ${probe("svh")} dvh ${probe("dvh")} lvh ${probe("lvh")}\nSuggestion bas ${Math.round(sb.bottom)}\ntitre haut ${Math.round(document.getElementById("jb-artist-name").getBoundingClientRect().top)}`;
+    };
+    document.body.appendChild(box);
+    draw();
+    setInterval(draw, 500);
+  }
   // clavier refermé (fin de la recherche) : la page revient en haut
   document.addEventListener("focusout", () => setTimeout(() => {
     if (window.scrollY && getComputedStyle(document.documentElement).overflowY === "hidden") window.scrollTo(0, 0);
