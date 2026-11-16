@@ -2411,6 +2411,32 @@
   #jb-app.jb-browse-only #jb-public .jb-chat-open-btn { display: none !important; }
   #jb-public .jb-chat-open-btn { width: 100%; margin: 0 0 10px; }
   #jb-public .jb-chat-open-btn.jb-chat-open-bottom { margin: 10px 0 0; } /* « Suggestion », sous le cadre (16 nov. 2026) */
+  /* « Pourboire » dans le style de l'onglet Mon répertoire (Hubert, 16 nov. 2026) : même couleur, même lueur,
+     même police et même case d'icône que l'onglet, selon le thème */
+  html #jb-app #jb-public #jb-tip-open {
+    --tc: #5af4f0; --tc-rgb: 90, 244, 240;
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    border: 2px solid var(--tc) !important; background: rgba(var(--tc-rgb), 0.08) !important; background-image: none !important;
+    box-shadow: 0 0 10px rgba(var(--tc-rgb), 0.35), inset 0 0 8px rgba(var(--tc-rgb), 0.12) !important;
+    color: var(--tc) !important; text-shadow: 0 0 6px rgba(var(--tc-rgb), 0.45) !important;
+    font-family: 'Jukehub Crypto', Orbitron, sans-serif !important; font-weight: 700 !important;
+  }
+  html #jb-app #jb-public #jb-tip-open::before, html #jb-app #jb-public #jb-tip-open::after { content: none !important; }
+  html #jb-app #jb-public #jb-tip-open .jb-tab-ico { width: 22px; height: 26px; background: rgba(var(--tc-rgb), 0.4); border: 1px solid var(--tc); }
+  html #jb-app #jb-public #jb-tip-open .jb-tab-ico svg { width: 15px; height: 15px; }
+  html #jb-app #jb-public #jb-tip-open .jb-tab-label { flex: 0 0 auto; }
+  html[data-jb-bg="bar"] #jb-app #jb-public #jb-tip-open {
+    --tc: #6fe0ff; --tc-rgb: 111, 224, 255; color: #e2f8ff !important; font-family: Oswald, monospace !important;
+    text-shadow: 0 0 2px #fff, 0 0 6px var(--tc), 0 0 12px var(--tc) !important;
+  }
+  html[data-jb-bg="foret"] #jb-app #jb-public #jb-tip-open {
+    --tc: #96f0aa; --tc-rgb: 150, 240, 170; color: #ecffd2 !important; font-family: Fredoka, sans-serif !important;
+    text-shadow: 0 0 8px rgba(170, 255, 80, 0.55) !important;
+  }
+  html[data-jb-bg="matrix"] #jb-app #jb-public #jb-tip-open {
+    --tc: #78ff96; --tc-rgb: 120, 255, 150; color: #00ff41 !important; font-family: "Courier New", Courier, monospace !important;
+    text-shadow: 0 0 8px rgba(0, 255, 65, 0.8) !important;
+  }
   #jb-public .jb-chat-back { width: 100%; margin: 14px 0 14px; }
   #jb-public .jb-chat-back:last-child { margin-top: 0; }
   #jb-public .jb-chat-open-btn::before, #jb-public .jb-chat-open-btn::after,
@@ -6027,7 +6053,7 @@ répertoire</button>
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-22.232";
+  const APP_BUILD = "2026-10-22.233";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -6383,7 +6409,8 @@ répertoire</button>
     const chatTitle = document.getElementById("jb-chat-title");
     if (chatTitle) chatTitle.textContent = t("chat_title");
     document.getElementById("jb-chat-open").textContent = t("chat_open");
-    document.getElementById("jb-tip-open").textContent = t("tip_open");
+    // « Pourboire » dans le style de l'onglet Mon répertoire : case d'icône + texte (Hubert, 16 nov. 2026)
+    document.getElementById("jb-tip-open").innerHTML = `<span class="jb-tab-ico" aria-hidden="true"><svg viewBox="0 0 12 12" fill="currentColor"><circle cx="6" cy="6" r="5.2" fill="none" stroke="currentColor" stroke-width="1.1"/><path d="M6.5 2.4v.8c.9.1 1.5.6 1.6 1.4h-.9c-.1-.4-.5-.6-1-.6-.6 0-1 .3-1 .7s.3.6 1.1.8c1.2.3 1.8.7 1.8 1.6 0 .8-.6 1.4-1.6 1.5v.8h-.9v-.8c-1-.1-1.7-.7-1.7-1.6h.9c.1.5.5.8 1.2.8s1.1-.3 1.1-.7-.3-.6-1.1-.8c-1.1-.3-1.8-.7-1.8-1.6 0-.7.6-1.3 1.5-1.4v-.8z"/></svg></span><span class="jb-tab-label">${escapeHtml(t("tip_open"))}</span>`;
     document.querySelectorAll("[data-chat-back]").forEach((b) => { b.textContent = t("chat_back"); });
     document.getElementById("jb-chat-top-title").textContent = t("chat_top_title");
     document.getElementById("jb-chat-top-empty").textContent = t("chat_top_empty");
