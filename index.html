@@ -5592,10 +5592,11 @@ html[data-jb-bg="matrix"] #jb-public .jb-style-heading-row h2 { font-size: 18.4p
         <!-- Choix du montant (paiements Stripe, 19 oct. 2026) — seulement en mode "pay", voir showPayModal() -->
         <div id="jb-pay-amounts" class="jb-pay-amounts" hidden>
           <div class="jb-pay-chips">
-            <button type="button" class="jb-pay-chip" data-amount="200">2 $</button>
+            <!-- 16 nov. 2026 (Hubert) : plus de 2 $, 50 $ ajouté après 20 $ -->
             <button type="button" class="jb-pay-chip" data-amount="500">5 $</button>
             <button type="button" class="jb-pay-chip" data-amount="1000">10 $</button>
             <button type="button" class="jb-pay-chip" data-amount="2000">20 $</button>
+            <button type="button" class="jb-pay-chip" data-amount="5000">50 $</button>
           </div>
           <input id="jb-pay-custom" class="jb-pay-custom" type="number" inputmode="decimal" min="2" max="100" step="0.01" autocomplete="off" />
           <p id="jb-pay-note" class="jb-pay-note"></p>
@@ -6107,7 +6108,7 @@ répertoire</button>
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-22.235";
+  const APP_BUILD = "2026-10-22.236";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -8666,6 +8667,7 @@ répertoire</button>
       const back = t(backKey);
       document.getElementById("jb-vote-modal-text").innerHTML =
         escapeHtml(t(lineKey, ...args)) + (back ? `<br>${escapeHtml(back)}` : "");
+      document.getElementById("jb-vote-modal-text").hidden = false; // (cachée pour un pourboire)
       document.getElementById("jb-vote-modal-btn").textContent = t("vote_modal_btn");
       document.getElementById("jb-vote-modal-btn").disabled = false;
       document.getElementById("jb-vote-modal-close").hidden = true;
@@ -8714,7 +8716,9 @@ répertoire</button>
     payAmountCents = 500;
     const isTip = id === TIP_ID;
     const title = votes[id]?.title || "";
-    document.getElementById("jb-vote-modal-text").textContent = isTip ? t("tip_title") : t("pay_title", title);
+    const modalText = document.getElementById("jb-vote-modal-text");
+    modalText.textContent = isTip ? "" : t("pay_title", title);
+    modalText.hidden = isTip; // pas de titre dans la fenêtre du pourboire (Hubert, 16 nov. 2026)
     document.getElementById("jb-pay-note").textContent = isTip ? t("tip_note") : t("pay_note");
     const custom = document.getElementById("jb-pay-custom");
     custom.value = "";
