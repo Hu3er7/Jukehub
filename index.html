@@ -3220,8 +3220,9 @@ html[data-jb-bg="bar"] .jb-bar-curtain {
 }
 html[data-jb-bg="bar"] .jb-bar-curtain-l { left: 0; box-shadow: 8px 0 18px rgba(0, 0, 0, 0.7); }
 html[data-jb-bg="bar"] .jb-bar-curtain-r { right: 0; box-shadow: -8px 0 18px rgba(0, 0, 0, 0.7); }
-/* tête, titre et FR/EN toujours sous la rangée d'ampoules (Hubert, 16 nov. 2026) */
-html[data-jb-bg="bar"] #jb-app #jb-public { padding-top: 28px; }
+/* 16 nov. 2026 (Hubert) : rangée d'ampoules retirée — elle obligeait à descendre le haut de la page en Bar
+   spectacle, ce qui faisait bouger toute la page en changeant de thème */
+html[data-jb-bg="bar"] .jb-bar-scene .jb-bar-bulbs { display: none; }
 /* ampoules : une rangée en haut et une colonne de chaque côté, à l'intérieur des rideaux */
 html[data-jb-bg="bar"] .jb-bar-bulbs {
   position: absolute; inset: 0; z-index: 1;
@@ -6053,7 +6054,7 @@ répertoire</button>
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-22.233";
+  const APP_BUILD = "2026-10-22.234";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
