@@ -2586,6 +2586,9 @@
   #jb-app .jb-avatar-pick-label { margin: 12px 0 8px; padding-right: 0; }
   #jb-app .jb-avatar-picker { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-top: 12px; }
   #jb-app #jb-name-prompt-skip { display: none; } /* plus de « Annuler » : nom + avatar obligatoires */
+  /* fenêtre du nom ouverte : rien d'autre que le décor (mur de briques…) derrière (Hubert, 16 nov. 2026) */
+  #jb-app.jb-name-open #jb-app-content { visibility: hidden; }
+  #jb-app.jb-name-open .jb-name-prompt-backdrop { background: transparent !important; }
   #jb-app #jb-name-prompt-input { margin-top: 4px; }
   #jb-app .jb-avatar-opt {
     width: 100%; aspect-ratio: 1; min-height: 0; margin: 0; padding: 0; cursor: pointer; border-radius: 0;
@@ -5931,12 +5934,14 @@ répertoire</button>
       drawPicker();
       if (picker) picker.addEventListener("click", onPick);
       wrap.hidden = false;
+      document.getElementById("jb-app").classList.add("jb-name-open");
       function finish(name) {
         safeSessionStorageSet("jb_client_name_asked", "1");
         if (name) safeSessionStorageSet("jb_client_name", name);
         if (name) safeSessionStorageSet("jb_client_avatar", pickedAvatar);
         if (picker) picker.removeEventListener("click", onPick);
         wrap.hidden = true;
+        document.getElementById("jb-app").classList.remove("jb-name-open");
         skipBtn.removeEventListener("click", onSkip);
         confirmBtn.removeEventListener("click", onConfirm);
         input.removeEventListener("keydown", onKeydown);
@@ -5982,7 +5987,7 @@ répertoire</button>
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-22.227";
+  const APP_BUILD = "2026-10-22.228";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
