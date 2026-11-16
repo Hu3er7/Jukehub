@@ -5212,6 +5212,10 @@ html[data-jb-bg="matrix"] #jb-public .jb-style-heading-row h2 { font-size: 18.4p
         const choice = btn.dataset.splashLang;
         try { window.localStorage.setItem("jb_lang", choice); } catch (e) {}
         try { window.sessionStorage.setItem("jb_splash_done", "1"); } catch (e) {}
+        // juste après la langue : nom d'utilisateur + icône (Hubert, 16 nov. 2026) — l'appli ouvre la fenêtre
+        // dès qu'elle est prête (voir askNameAfterSplash() dans le module)
+        try { window.sessionStorage.setItem("jb_ask_name", "1"); } catch (e) {}
+        window.dispatchEvent(new Event("jb-splash-done"));
         // Si l'appli est déjà chargée, on passe par ses propres boutons FR/EN (qui retraduisent
         // tout) ; sinon, elle lira simplement "jb_lang" au démarrage.
         const langBtn = document.querySelector('.jb-lang-btn[data-lang="' + choice + '"]');
@@ -5954,6 +5958,22 @@ répertoire</button>
     });
     return clientNamePromptPromise;
   }
+  // Nom + icône demandés tout de suite après le choix de la langue, au lieu d'attendre la première
+  // chanson demandée (Hubert, 16 nov. 2026). Si la page des chansons n'est pas encore affichée (spectacle
+  // pas commencé, chargement), la fenêtre attend qu'elle apparaisse.
+  function askNameAfterSplash() {
+    if (safeSessionStorageGet("jb_ask_name") !== "1" || isAdmin) return;
+    const content = document.getElementById("jb-app-content");
+    if (!content || content.hidden || document.getElementById("jb-app").classList.contains("jb-browse-only")) return;
+    try { sessionStorage.removeItem("jb_ask_name"); } catch (e) {}
+    ensureClientName();
+  }
+  window.addEventListener("jb-splash-done", () => setTimeout(askNameAfterSplash, 50));
+  {
+    const content = document.getElementById("jb-app-content");
+    if (content && window.MutationObserver) new MutationObserver(askNameAfterSplash).observe(content, { attributes: true, attributeFilter: ["hidden"] });
+    setTimeout(askNameAfterSplash, 0);
+  }
 
   // ---------- Mise à jour automatique (anti-cache) ----------
   // Marqueur de version : change à chaque déploiement. Le script ci-dessous
@@ -5962,7 +5982,7 @@ répertoire</button>
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-22.226";
+  const APP_BUILD = "2026-10-22.227";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
