@@ -5500,7 +5500,8 @@ html[data-jb-bg="matrix"] #jb-public .jb-style-heading-row h2 { font-size: 18.4p
         <!-- chanson sur laquelle le client écrit (bouton « 💬 Chat » du Choix du public, voir startSongChat()) -->
         <div id="jb-chat-song-tag" class="jb-chat-song-tag" hidden><span>🎵 <span id="jb-chat-song-tag-title"></span></span><button type="button" id="jb-chat-song-tag-x" class="jb-chat-song-tag-x" aria-label="✕">✕</button></div>
         <form id="jb-chat-form" class="jb-chat-form" autocomplete="off">
-          <input id="jb-chat-input" type="text" maxlength="200" />
+          <!-- 30 caractères au maximum (Hubert, 16 nov. 2026) -->
+          <input id="jb-chat-input" type="text" maxlength="30" />
           <button id="jb-chat-send" type="submit" class="jb-chat-send" aria-label="Envoyer">➤</button>
         </form>
       </div>
@@ -6108,7 +6109,7 @@ répertoire</button>
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-22.238";
+  const APP_BUILD = "2026-10-22.239";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -10912,7 +10913,7 @@ répertoire</button>
   // chanson : la chanson s'affiche à côté du nom). Renvoie true si le texte a été pris.
   async function postChatMessage(rawText, song, onTaken) {
     if (!db) return false;
-    const text = rawText.replace(/\s+/g, " ").trim().slice(0, 200);
+    const text = rawText.replace(/\s+/g, " ").trim().slice(0, 30); // 30 caractères au maximum (Hubert, 16 nov. 2026)
     if (!text) return false;
     if (/(https?:\/\/|www\.)/i.test(text)) { showToast(t("chat_no_links")); return false; }
     if (Date.now() - lastChatSentAt < 3000) { showToast(t("chat_slow")); return false; }
@@ -11024,7 +11025,7 @@ répertoire</button>
     }
     function autoShift() { shift = /(^\s*$)|([.!?]\s$)/.test(input.value); }
     function insert(ch) {
-      if (input.value.length >= 200) return;
+      if (input.value.length >= 30) return; // même limite que la barre (maxlength)
       const s = input.selectionStart ?? input.value.length, e = input.selectionEnd ?? s;
       input.setRangeText(ch, s, e, "end");
     }
