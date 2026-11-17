@@ -6243,7 +6243,7 @@ répertoire</button>
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-22.251";
+  const APP_BUILD = "2026-10-22.252";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -9966,7 +9966,9 @@ répertoire</button>
     // (titleWrap, juste en dessous) qui prend le relais, comme avant.
     const LIST_LEVEL = { "all-songs": 1, "artist-list": 1, "genre-list": 1 };
     const atListLevel = !search && catalogView && LIST_LEVEL[catalogView.type];
-    sectionTitleRow.hidden = !atListLevel;
+    // pendant une recherche aussi : « 670 Chansons » et Thème restent en place, rien ne bouge (Hubert, 17 nov. 2026)
+    sectionTitleRow.hidden = !atListLevel && !search;
+    if (search) sectionTitleEl.textContent = t("style_title_count", catalogSongs.length);
     titleWrap.hidden = !!atListLevel || !!search;
 
     // Préserve la position de défilement d'une liste déjà affichée face aux ré-affichages SANS
