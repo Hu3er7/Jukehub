@@ -1286,6 +1286,18 @@
     #jb-public .jb-slot-mid:has(.jb-slot-votes-wrap) .jb-slot-head { padding-right: 76px; }
   }
   #jb-public .jb-slot-mid > .jb-slot-voters { margin-top: 1px; }
+  /* La playlist (17 nov. 2026, Hubert) : le nom du client au bout à droite, sur la ligne de l'artiste
+     (titre sur toute la largeur en haut ; artiste à gauche et nom à droite en dessous) */
+  #jb-public .jb-palmares-grid .jb-slot-mid { display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 10px; }
+  #jb-public .jb-palmares-grid .jb-slot-mid > .jb-slot-head { display: contents; }
+  #jb-public .jb-palmares-grid .jb-slot-mid .jb-slot-title { grid-column: 1 / -1; }
+  #jb-public .jb-palmares-grid .jb-slot-mid .jb-slot-artist { grid-column: 1; grid-row: 2; align-self: baseline; margin-top: 1px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  #jb-public .jb-palmares-grid .jb-slot-mid > .jb-slot-voters {
+    grid-column: 2; grid-row: 2; align-self: baseline; margin: 1px 0 0; text-align: right;
+    max-width: 45vw; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  /* …suivi du montant « F : 5 $ », même taille (voir palmVotersWithAmount()) ; pas sous la barre de défilement */
+  #jb-public .jb-palmares-grid .jb-slot-mid > .jb-slot-voters { padding-right: 10px; }
   /* Solde de chaque votant à côté de son nom ("Néo +2" / "Néo -2", voir renderVotersLine()) */
   #jb-app .jb-voter-delta { font-family: 'Share Tech Mono', monospace; font-weight: 700; }
   #jb-app .jb-voter-delta-up { color: #fff200; }
@@ -2178,7 +2190,11 @@
   #jb-public .jb-tab-ico svg { width: 10px; height: 10px; display: block; }
   #jb-public .jb-tab-label { flex: 1 1 auto; min-width: 0; white-space: pre-line; }
   #jb-public .jb-tab-num { flex: 0 0 auto; font-size: 0.72rem; opacity: 0.9; }
-  #jb-public .jb-tab-num { display: none; } /* pas de chiffres dans les onglets (Hubert, 26 oct. 2026) */
+  #jb-public .jb-tab-num { display: none; }
+  /* onglet La playlist en miroir de Mon répertoire (Hubert, 17 nov. 2026) : icône tout à droite, nom collé à
+     sa gauche (aligné à droite) */
+  html #jb-app #jb-public .jb-tab.jb-tab-pub { flex-direction: row-reverse; justify-content: flex-start; padding: 0 5px 0 6px; }
+  html #jb-app #jb-public .jb-tab.jb-tab-pub .jb-tab-label { flex: 0 1 auto; text-align: right; } /* pas de chiffres dans les onglets (Hubert, 26 oct. 2026) */
   /* onglet choisi SOUDÉ au cadre, comme un onglet de dossier (maquette de Hubert, 26 oct. 2026) : le
      contour du cadre (3px) monte sur sa gauche, passe par-dessus (coin haut-droit biseauté) et
      redescend sur sa droite ; le trait du haut du cadre est ouvert sous lui (voir --gapL/--gapR) */
@@ -3561,13 +3577,36 @@ html[data-jb-bg="bar"] #jb-app:not(.jb-browse-only) #jb-public .jb-catalog .jb-t
   margin-top: 0 !important; height: calc(100% + 6px) !important; border-width: 3px !important;
   /* pas de trait rose en bas : le trait du haut du cadre reste BLEU sous l'onglet (Hubert, 17 nov. 2026) */
   border-bottom: none !important;
+  /* et aucune lueur rose sur la ligne bleue : halo coupé au bas de l'onglet, plus de halo intérieur */
+  box-shadow: 0 0 6px var(--bar-sign) !important; clip-path: inset(-12px -12px 0 -12px) !important;
 }
 /* côté collé à l'onglet bleu : pas de trait rose (seul le bleu), coin carré ; coin extérieur arrondi */
-html[data-jb-bg="bar"] #jb-app:not(.jb-browse-only) #jb-public .jb-catalog .jb-tab-pub:not(.jb-tab-active) { border-left: none !important; border-radius: 0 6px 0 0 !important; }
-html[data-jb-bg="bar"] #jb-app:not(.jb-browse-only) #jb-public .jb-catalog .jb-tab-rep:not(.jb-tab-active) { border-right: none !important; border-radius: 6px 0 0 0 !important; }
+html[data-jb-bg="bar"] #jb-app:not(.jb-browse-only) #jb-public .jb-catalog .jb-tab-pub:not(.jb-tab-active) { border-left: none !important; border-radius: 0 6px 0 0 !important; clip-path: inset(-12px -12px 0 0) !important; }
+html[data-jb-bg="bar"] #jb-app:not(.jb-browse-only) #jb-public .jb-catalog .jb-tab-rep:not(.jb-tab-active) { border-right: none !important; border-radius: 6px 0 0 0 !important; clip-path: inset(-12px 0 0 -12px) !important; }
 /* …et le contour bleu de l'onglet ouvert a un coin carré de ce côté-là, pour que les traits se touchent */
 html[data-jb-bg="bar"] #jb-app:not(.jb-browse-only) #jb-public .jb-catalog .jb-catalog-frame:not(.jb-tab-on-public) .jb-frame-deco > i.jb-fd-tabfill { border-top-right-radius: 0 !important; }
 html[data-jb-bg="bar"] #jb-app:not(.jb-browse-only) #jb-public .jb-catalog .jb-catalog-frame.jb-tab-on-public .jb-frame-deco > i.jb-fd-tabfill { border-top-left-radius: 0 !important; }
+
+/* Même raccord dans le Cyberpunk (Hubert, 17 nov. 2026) : onglet fermé (rose) collé à l'onglet ouvert (bleu),
+   même hauteur, contour 3px, pas de trait du côté de l'onglet bleu ni en bas (le trait du cadre reste bleu).
+   Le coin biseauté reste seulement sur l'onglet tout à droite ; l'onglet de gauche a un coin carré. */
+html:not([data-jb-bg]) #jb-app:not(.jb-browse-only) #jb-public .jb-catalog .jb-tabbar { gap: 0 !important; }
+html:not([data-jb-bg]) #jb-app:not(.jb-browse-only) #jb-public .jb-catalog .jb-tab:not(.jb-tab-active) {
+  height: calc(100% + 6px) !important; border: 3px solid var(--tc) !important; border-bottom: none !important;
+}
+html:not([data-jb-bg]) #jb-app:not(.jb-browse-only) #jb-public .jb-catalog .jb-tab-pub:not(.jb-tab-active) {
+  border-left: none !important;
+  clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 0 100%) !important;
+  background-image: linear-gradient(to bottom left, transparent 50%, var(--tc) 50%, var(--tc) calc(50% + 3px), transparent calc(50% + 3px)) !important;
+  background-size: 12px 12px !important;
+}
+html:not([data-jb-bg]) #jb-app:not(.jb-browse-only) #jb-public .jb-catalog .jb-tab-rep:not(.jb-tab-active) {
+  border-right: none !important; clip-path: none !important; background-image: none !important;
+}
+html:not([data-jb-bg]) #jb-app:not(.jb-browse-only) #jb-public .jb-catalog .jb-tab-rep.jb-tab-active {
+  clip-path: polygon(0 0, 100% 0, 100% calc(100% + 6px), 0 calc(100% + 6px)) !important;
+  background-image: none !important;
+}
 
 /* chat : même tube néon autour des messages, de la barre et du clavier */
 /* (le tube est dessiné VERS L'EXTÉRIEUR, dans un calque derrière : le chat garde exactement sa taille) */
@@ -4278,6 +4317,15 @@ html[data-jb-bg="foret"] #jb-app:not(.jb-browse-only) #jb-public .jb-catalog .jb
   height: calc(100% - 2px) !important; margin-top: 8px !important; background: transparent !important; border-color: transparent !important;
   box-shadow: none !important; color: var(--fo-text) !important; text-shadow: 0 0 8px var(--fo-glow) !important;
 }
+/* Raccord comme dans le thème Bar (Hubert, 17 nov. 2026) : la planche de l'onglet fermé touche le rebord de
+   bois de l'onglet choisi (8px), à la même hauteur que lui, et se pose SUR le rebord du haut du cadre ;
+   pas de bordure du côté de l'onglet choisi ni en bas (le rebord du cadre reste visible dessous) */
+html[data-jb-bg="foret"] #jb-app:not(.jb-browse-only) #jb-public .jb-catalog .jb-tabbar { gap: 8px !important; }
+html[data-jb-bg="foret"] #jb-app:not(.jb-browse-only) #jb-public .jb-catalog .jb-tab:not(.jb-tab-active) {
+  height: calc(100% - 2px) !important; margin-top: 0 !important; border-width: 3px !important; border-bottom: none !important;
+}
+html[data-jb-bg="foret"] #jb-app:not(.jb-browse-only) #jb-public .jb-catalog .jb-tab-pub:not(.jb-tab-active) { border-left: none !important; border-radius: 0 9px 0 0 !important; }
+html[data-jb-bg="foret"] #jb-app:not(.jb-browse-only) #jb-public .jb-catalog .jb-tab-rep:not(.jb-tab-active) { border-right: none !important; border-radius: 9px 0 0 0 !important; }
 
 /* ---- Boutons Chansons / Artiste / Genre ---- */
 html[data-jb-bg="foret"] #jb-public .jb-mode-btn {
@@ -6277,7 +6325,7 @@ répertoire</button>
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-22.256";
+  const APP_BUILD = "2026-10-22.257";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -9562,7 +9610,16 @@ répertoire</button>
   // les prénoms des 3 clients ayant mis le plus de votes (boosts + demande initiale confondus)
   // sur cette chanson, du plus contributeur au moins. Rien du tout si personne n'a laissé son
   // prénom (voters vide ou absent — champ resté facultatif).
-  function renderVotersLine(voters, forceAmounts = false, askedBy = []) {
+  // La playlist (17 nov. 2026, Hubert) : « F : 5 $ » — le montant total sur la même ligne que le(s) nom(s),
+  // au bout à droite ; à 0 $ (pas de pourboire), seulement le nom, sans montant.
+  function palmVotersWithAmount(v) {
+    const cents = v.requests || 0;
+    const amt = showAmounts && cents > 0 ? `<span class="jb-voter-delta jb-voter-delta-up">${escapeHtml(formatMoney(cents))}</span>` : "";
+    const line = renderVotersLine(v.voters, false, v.askedBy, true);
+    if (!line) return amt ? `<span class="jb-slot-voters">${amt}</span>` : "";
+    return amt ? line.replace(/<\/span>$/, ` : ${amt}</span>`) : line;
+  }
+  function renderVotersLine(voters, forceAmounts = false, askedBy = [], noAmounts = false) {
     // 26 oct. 2026 (Hubert) : le nom d'utilisateur de chaque client qui a demandé la chanson
     // apparaît TOUJOURS (askedBy, dans l'ordre des demandes), même à 0 $ ; puis les autres donateurs.
     // 19 oct. 2026 (paiements) : "voters" = montant payé par chaque prénom, en cents ; le montant
@@ -9578,7 +9635,7 @@ répertoire</button>
     const MAX_NAMES = 4;
     const shown = all.slice(0, MAX_NAMES);
     const more = all.length - shown.length;
-    const withAmounts = forceAmounts || showAmounts;
+    const withAmounts = !noAmounts && (forceAmounts || showAmounts);
     return `<span class="jb-slot-voters">${shown.map(([n, cents]) => {
       const amount = withAmounts && cents > 0 ? ` <span class="jb-voter-delta jb-voter-delta-up">${formatMoney(cents)}</span>` : "";
       return `${escapeHtml(n)}${amount}`;
@@ -9683,9 +9740,8 @@ répertoire</button>
             <span class="jb-slot-title"${flyingTitleKeys.has(id) ? ' style="visibility:hidden"' : ""}>${escapeHtml(v.title)}</span>
             ${v.artist ? `<span class="jb-slot-artist">${escapeHtml(v.artist)}</span>` : ""}
           </span>
-          ${renderVotersLine(v.voters, false, v.askedBy)}
-        </span>
-        ${amountHtml(id, v.requests, false, true)}`; /* « 0 $ » affiché aussi (Hubert, 26 oct. 2026) */
+          ${palmVotersWithAmount(v)}
+        </span>`;
       // 21 oct. 2026 (Hubert) : plus de barre de popularité ; le montant (s'il y en a un) passe au
       // bout de la ligne, centré comme le bouton ▲ (barPct n'est plus affiché).
     });
