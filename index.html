@@ -547,6 +547,15 @@
     margin: 0; padding: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     pointer-events: none; z-index: 9999; will-change: transform;
   }
+  /* l'onglet « Choix du public » s'illumine quand une chanson demandée vient d'y arriver (Hubert, 16 nov. 2026) */
+  @keyframes jb-tab-glow {
+    0% { filter: none; }
+    30% { filter: brightness(2.65) saturate(1.75); }
+    60% { filter: brightness(1.75) saturate(1.45); }
+    100% { filter: none; }
+  }
+  /* 50 % plus apparent (plus lumineux et un peu plus long — Hubert, 16 nov. 2026) */
+  #jb-public .jb-tab.jb-tab-glow { animation: jb-tab-glow 1.3s ease-out; }
   /* Badge "Demande" avec le chiffre fusionné dedans, "N Demande" (voir renderSongRow()/
      .jb-song-request-badge) — reprend le style pilule de .jb-request-remaining, en un peu plus
      compact pour tenir dans une ligne de chanson. */
@@ -2515,6 +2524,9 @@
   html #jb-app #jb-public .jb-pay-chip { height: 28px !important; min-height: 0 !important; padding-top: 0 !important; padding-bottom: 0 !important; display: flex; align-items: center; justify-content: center; }
   /* Bar spectacle : montants arrondis comme le bouton Pourboire (plus de coins coupés) (Hubert, 16 nov. 2026) */
   html[data-jb-bg="bar"] #jb-app #jb-public .jb-pay-chip { clip-path: none !important; background-image: none !important; border-radius: 10px !important; }
+  /* Matrix : montants en simples rectangles, comme « Autre montant » (Hubert, 16 nov. 2026) */
+  html[data-jb-bg="matrix"] #jb-app #jb-public .jb-pay-chip,
+  html[data-jb-bg="matrix"] #jb-app #jb-public .jb-tip-mode .jb-pay-chip:not(.jb-pay-chip-on) { clip-path: none !important; background-image: none !important; border-radius: 0 !important; }
   /* Forêt : montants arrondis comme « Donner » (12px) (Hubert, 16 nov. 2026) */
   html[data-jb-bg="foret"] #jb-app #jb-public .jb-pay-chip,
   html[data-jb-bg="foret"] #jb-app #jb-public .jb-tip-mode .jb-pay-chip:not(.jb-pay-chip-on) { clip-path: none !important; background-image: none !important; border-radius: 12px !important; }
@@ -2528,8 +2540,13 @@
     box-shadow: 0 0 8px rgba(var(--tc-rgb), 0.3) !important; text-shadow: none !important;
   }
   html #jb-app #jb-public .jb-tip-mode .jb-pay-chip.jb-pay-chip-on { background-color: var(--tc) !important; color: #06200f !important; }
-  html:not([data-jb-bg="bar"]) #jb-app #jb-public .jb-tip-mode .jb-pay-chip:not(.jb-pay-chip-on) {
-    background-image: linear-gradient(to bottom left, transparent 50%, var(--tc) 50%, var(--tc) calc(50% + 3px), transparent calc(50% + 3px)) !important;
+  /* coins coupés (8px) : on trace leurs deux diagonales pour fermer le contour (Hubert, 16 nov. 2026) */
+  html:not([data-jb-bg]) #jb-app #jb-public .jb-tip-mode .jb-pay-chip:not(.jb-pay-chip-on) { /* Cyberpunk seulement */
+    background-image:
+      linear-gradient(to bottom left, transparent 50%, var(--tc) 50%, var(--tc) calc(50% + 2.5px), transparent calc(50% + 2.5px)),
+      linear-gradient(to top right, transparent 50%, var(--tc) 50%, var(--tc) calc(50% + 2.5px), transparent calc(50% + 2.5px)) !important;
+    background-size: 8px 8px, 8px 8px !important; background-position: right top, left bottom !important;
+    background-repeat: no-repeat !important; background-origin: border-box !important;
   }
   /* « Autre montant » : contour et texte de la même couleur que les boutons de montant (Hubert, 16 nov. 2026) */
   html #jb-app #jb-public #jb-pay-custom { --pc: #fff200; border-color: var(--pc) !important; color: var(--pc) !important; }
@@ -2549,7 +2566,10 @@
   /* « Merci de m'encourager ! 😉 » plus gros dans la fenêtre du pourboire (Hubert, 16 nov. 2026) */
   html #jb-app #jb-public .jb-pay-note.jb-pay-note-tip { font-size: 1.55rem !important; line-height: 1.3; }
   /* …dans la police du titre « 670 Chansons » de chaque thème (Hubert, 16 nov. 2026) */
-  html:not([data-jb-bg]) #jb-app #jb-public .jb-pay-note.jb-pay-note-tip { font-family: 'Jukehub Crypto', Orbitron, sans-serif !important; font-weight: 700 !important; text-transform: uppercase; font-size: 1.1rem !important; }
+  html:not([data-jb-bg]) #jb-app #jb-public .jb-pay-note.jb-pay-note-tip { font-family: 'Jukehub Crypto', Orbitron, sans-serif !important; font-weight: 700 !important; text-transform: uppercase; font-size: 0.9rem !important;
+    color: #ff3bd4 !important; text-shadow: 0 0 6px rgba(255, 59, 212, 0.45) !important; /* rose comme Suggestion (Hubert, 16 nov. 2026) */ }
+  /* l'émoticône reste au bout du texte, jamais en dessous (Hubert, 16 nov. 2026) */
+  html #jb-app #jb-public .jb-pay-note.jb-pay-note-tip { white-space: nowrap; }
   html[data-jb-bg="bar"] #jb-app #jb-public .jb-pay-note.jb-pay-note-tip {
     font-family: Yellowtail, cursive !important; font-weight: 400 !important; font-size: 1.85rem !important;
     /* rose néon comme « 670 Chansons » — Bar spectacle seulement (Hubert, 16 nov. 2026) */
@@ -6200,7 +6220,7 @@ répertoire</button>
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-22.242";
+  const APP_BUILD = "2026-10-22.243";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -7438,6 +7458,36 @@ répertoire</button>
       transform: "translate(0, 0)",
     });
     document.body.appendChild(clone);
+
+    // 16 nov. 2026 (Hubert) : le palmarès est maintenant dans l'onglet « Choix du public » (souvent fermé). Si sa
+    // ligne n'est pas à l'écran, le titre file vers cet onglet, s'efface en arrivant au-dessus, puis l'onglet s'illumine.
+    const visibleRow = palmaresElByKey.get(key);
+    const rowShown = visibleRow && visibleRow.isConnected && visibleRow.getBoundingClientRect().height > 0;
+    const pubTab = [...document.querySelectorAll('.jb-tab[data-tab="public"]')].find((t) => t.getBoundingClientRect().width > 0);
+    if (!rowShown && pubTab) {
+      const tr = pubTab.getBoundingClientRect();
+      const dx = tr.left + tr.width / 2 - (startRect.left + startRect.width / 2);
+      const dy = tr.top + tr.height / 2 - (startRect.top + startRect.height / 2);
+      clone.style.transformOrigin = "50% 50%";
+      // plus apparent (Hubert, 16 nov. 2026) : titre lumineux, vol plus lent, il rapetisse moins et ne s'efface qu'à l'arrivée
+      clone.style.textShadow = `0 0 6px ${fromStyle.color}, 0 0 14px ${fromStyle.color}`;
+      clone.style.filter = "brightness(1.4)";
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        clone.style.transition = "transform 0.9s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease 0.62s";
+        clone.style.transform = `translate(${dx}px, ${dy}px) scale(0.7)`;
+        clone.style.opacity = "0";
+      }));
+      setTimeout(() => {
+        clone.remove();
+        document.querySelectorAll('.jb-tab[data-tab="public"]').forEach((t) => {
+          t.classList.remove("jb-tab-glow");
+          void t.offsetWidth; // relance l'animation
+          t.classList.add("jb-tab-glow");
+          setTimeout(() => t.classList.remove("jb-tab-glow"), 1400);
+        });
+      }, 940);
+      return;
+    }
 
     let attemptsLeft = 40; // ~40 frames (~650ms à 60fps) avant d'abandonner silencieusement
     function tryLand() {
