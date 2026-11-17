@@ -6502,7 +6502,7 @@ répertoire</button>
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-22.264";
+  const APP_BUILD = "2026-10-22.265";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -9233,6 +9233,8 @@ répertoire</button>
       if (!res.ok || !data.url) throw new Error(data.error || `HTTP ${res.status}`);
       // Retenu AVANT de partir chez Stripe : au retour ("#paid"), ce montant s'ajoute à « Tes dons »
       // 5e chanson retenue : ajoutée au retour du pourboire réussi ("#tipped", voir resumeTipUnlock())
+      // montant du pourboire, pour savoir combien de chansons/messages ajouter au retour (voir tipBonus())
+      if (isTip) safeStorageSet("jb_tip_pending", JSON.stringify({ cents, at: Date.now() }));
       if (isTip && tipUnlockSong) safeStorageSet("jb_tip_unlock", JSON.stringify({ ...tipUnlockSong, at: Date.now() }));
       else if (isTip) { try { localStorage.removeItem("jb_tip_unlock"); } catch (e) {} }
       // (pas un pourboire : il ne fait monter aucune chanson)
@@ -9262,20 +9264,25 @@ répertoire</button>
   var tippedReturn = location.hash === "#tipped";
   if (location.hash === "#tipped") {
     history.replaceState(null, "", location.pathname + location.search);
-    // Pourboire réussi : on débloque TOUT DE SUITE (5 nouvelles chansons + 3 messages de Demande spéciale).
-    // Avant, ça attendait un instantané « serveur » de la liste des chansons, qui n'arrive pas toujours quand
-    // le cache local est déjà à jour — tout restait bloqué après le pourboire (Hubert, 17 nov. 2026).
-    saveTipCycle({ n: 0, asked: false });
-    saveChatSentCount(0);
+    // Pourboire réussi : chansons et messages AJOUTÉS selon le montant (voir tipBonus()/credits()), comptés dès
+    // que la soirée est connue — sans attendre la liste des chansons (Hubert, 17 nov. 2026). Le montant a été
+    // retenu juste avant d'aller chez Stripe (jb_tip_pending, voir startPayment()).
+    {
+      let p = null;
+      try { p = JSON.parse(safeStorageGet("jb_tip_pending") || "null"); } catch (e) { p = null; }
+      try { localStorage.removeItem("jb_tip_pending"); } catch (e) {}
+      const cents = p && Date.now() - (p.at || 0) < 3 * 3600 * 1000 ? p.cents : 0;
+      safeStorageSet("jb_tip_bonus", JSON.stringify({ ...tipBonus(cents), at: Date.now() }));
+    }
     setTimeout(() => showToast(t("tipped_thanks")), 1500);
     try { pendingTipUnlock = JSON.parse(safeStorageGet("jb_tip_unlock") || "null"); } catch (e) { pendingTipUnlock = null; }
     if (pendingTipUnlock && !(Date.now() - (pendingTipUnlock.at || 0) < 2 * 3600 * 1000 && pendingTipUnlock.id)) pendingTipUnlock = null;
   }
   try { localStorage.removeItem("jb_tip_unlock"); } catch (e) {}
   function resumeTipUnlock() {
-    // pourboire réussi : le compte des demandes repart à zéro (voir tipCycle()), une seule fois par retour
-    // (et les 3 messages gratuits de Demande spéciale repartent aussi, 17 nov. 2026)
-    if (tippedReturn) { tippedReturn = false; saveTipCycle({ n: 0, asked: false }); saveChatSentCount(0); }
+    // pourboire réussi : ses chansons/messages sont ajoutés par credits() dès que la soirée est connue
+    // (les crédits du pourboire sont ajoutés par credits(), voir le retour « #tipped » plus haut)
+    if (tippedReturn) { tippedReturn = false; credits(); }
     if (!pendingTipUnlock) return;
     const song = pendingTipUnlock;
     pendingTipUnlock = null;
@@ -10615,25 +10622,47 @@ répertoire</button>
   // Le pourboire est proposé à la 4e demande et obligatoire pour la 5e ; un pourboire remet ce compte à zéro
   // (le client repart pour un nouveau tour de 4 demandes). Gardé sur ce téléphone, pour la soirée en cours.
   // { night, n : demandes depuis le dernier pourboire, asked : pourboire déjà proposé dans ce tour }
-  function tipCycle() {
+  // ---------- Crédits du client (Hubert, 17 nov. 2026) ----------
+  // Chaque soirée, un téléphone a 5 chansons et 3 messages de « Demande spéciale » gratuits. Un pourboire en
+  // AJOUTE selon le montant (tranches de 5 $, montant pile = tranche du haut) :
+  //   2 à 4,99 $ : +5 chansons / +3 messages · 5 à 9,99 $ : +10 / +5 · 10 à 14,99 $ : +15 / +8 · 15 $ : +20 / +10…
+  //   (chansons = 5 × (tranche + 1) ; messages = la moitié des chansons, arrondie vers le haut)
+  // L'invitation au pourboire s'ouvre quand il ne reste plus que 2 chansons ; à 0, la demande est bloquée
+  // (fenêtre Pourboire). Pareil pour les messages : à 0, la fenêtre Pourboire et retour à la page principale.
+  const FREE_SONGS = 5, FREE_MSGS = 3, TIP_ASK_AT = 2;
+  function tipBonus(cents) {
+    const songs = 5 * (Math.floor((cents || 0) / 500) + 1);
+    return { songs, msgs: Math.ceil(songs / 2) };
+  }
+  function credits() {
+    const night = nightId || "default";
     let c;
-    try { c = JSON.parse(safeStorageGet("jb_tip_cycle") || "null"); } catch (e) { c = null; }
-    if (!c || (c.night && c.night !== (nightId || "default"))) c = { night: nightId || "default", n: 0, asked: false };
+    try { c = JSON.parse(safeStorageGet("jb_credits") || "null"); } catch (e) { c = null; }
+    if (!c || c.night !== night) {
+      c = { night, songs: FREE_SONGS, msgs: FREE_MSGS };
+      // passage depuis l'ancien système (même soirée) : on garde ce qui avait déjà été utilisé
+      try {
+        const old = JSON.parse(safeStorageGet("jb_tip_cycle") || "null");
+        if (old && old.night === night) c.songs = Math.max(0, FREE_SONGS - (old.n || 0));
+        const oldChat = JSON.parse(safeStorageGet("jb_chat_count") || "null");
+        if (oldChat && oldChat.night === night) c.msgs = Math.max(0, FREE_MSGS - (oldChat.n || 0));
+      } catch (e) {}
+    }
+    // pourboire réussi pas encore compté : ajouté seulement une fois la soirée connue (sinon il serait perdu
+    // au moment où l'identifiant de la soirée arrive)
+    if (nightId) {
+      let b = null;
+      try { b = JSON.parse(safeStorageGet("jb_tip_bonus") || "null"); } catch (e) { b = null; }
+      if (b) {
+        try { localStorage.removeItem("jb_tip_bonus"); } catch (e) {}
+        if (Date.now() - (b.at || 0) < 12 * 3600 * 1000) { c.songs += b.songs || 0; c.msgs += b.msgs || 0; }
+        saveCredits(c);
+      }
+    }
     return c;
   }
-  function saveTipCycle(c) { c.night = nightId || "default"; safeStorageSet("jb_tip_cycle", JSON.stringify(c)); }
-  // ---------- Messages de « Demande spéciale » (Hubert, 17 nov. 2026) ----------
-  // 3 messages gratuits par soirée sur ce téléphone. Au 4e (ou en rouvrant Demande spéciale ensuite), la
-  // fenêtre Pourboire s'ouvre à la place, et « Ne pas donner de pourboire » ramène à la page principale.
-  // Un pourboire réussi remet ce compte à zéro.
-  const CHAT_FREE_MSGS = 3;
-  function chatSentCount() {
-    let c;
-    try { c = JSON.parse(safeStorageGet("jb_chat_count") || "null"); } catch (e) { c = null; }
-    return c && c.night === (nightId || "default") ? (c.n || 0) : 0;
-  }
-  function saveChatSentCount(n) { safeStorageSet("jb_chat_count", JSON.stringify({ night: nightId || "default", n })); }
-  function chatNeedsTip() { return chatSentCount() >= CHAT_FREE_MSGS; }
+  function saveCredits(c) { c.night = nightId || "default"; safeStorageSet("jb_credits", JSON.stringify(c)); }
+  function chatNeedsTip() { return credits().msgs <= 0; }
 
   // ---------- Action : demander une chanson ----------
   // opts.tipPaid : 5e chanson débloquée par un pourboire (retour de Stripe, voir resumeTipUnlock())
@@ -10644,7 +10673,7 @@ répertoire</button>
     // 5e chanson : seulement avec un pourboire (Hubert, 16 nov. 2026). La chanson est retenue ; elle est
     // ajoutée au retour du paiement réussi.
     // 16 nov. 2026 (Hubert) : finalement, c'est la 6e chanson qui exige un pourboire
-    if (!opts.tipPaid && tipCycle().n >= 5) {
+    if (!opts.tipPaid && credits().songs <= 0) { // plus de chansons : seulement avec un pourboire
       if (!(await ensureClientName())) return;
       showPayModal(TIP_ID, "unlock", { id: song.id, title: song.title, artist: song.artist || "" });
       return;
@@ -10743,15 +10772,16 @@ répertoire</button>
     // (plus de message « Il te reste 4 chansons à sélectionner » à la 1re demande — Hubert, 16 nov. 2026)
     // 3e, 4e et 5e demandes depuis le dernier pourboire : on propose un pourboire chaque fois ; la 6e en exige un
     // (voir plus haut) (Hubert, 16 nov. 2026)
-    const cycle = tipCycle();
-    cycle.n += 1;
-    if (cycle.n >= 3 && cycle.n <= 5) {
+    // (17 nov. 2026) une chanson de moins ; invitation au pourboire quand il n'en reste plus que 2
+    const cr = credits();
+    cr.songs = Math.max(0, cr.songs - 1);
+    saveCredits(cr);
+    if (cr.songs === TIP_ASK_AT) {
       voteModalPending = true;
       // attend la fin du vol du titre vers « La playlist » et de l'illumination de l'onglet (~2,2 s) pour ne pas
       // que la fenêtre les chevauche (Hubert, 17 nov. 2026)
       setTimeout(() => { voteModalPending = false; showPayModal(TIP_ID, "ask"); }, 2300);
     }
-    saveTipCycle(cycle);
     // Illumine la ligne elle-même — même animation que la sélection de la chanson démo dans le
     // tuto, demande explicite de Hubert : "je veux que ce soit la même animation d'illumination
     // que dans le tutoriel". Voir rowFlashElapsedMs()/renderSongRow() : la classe est reposée à
@@ -11452,7 +11482,7 @@ répertoire</button>
     const name = await ensureClientName(); // nom d'utilisateur obligatoire
     if (!name) return false;
     lastChatSentAt = Date.now();
-    saveChatSentCount(chatSentCount() + 1);
+    { const cr = credits(); cr.msgs = Math.max(0, cr.msgs - 1); saveCredits(cr); } // un message de moins
     if (onTaken) onTaken(); // la barre se vide tout de suite, sans attendre le serveur
     const avatar = getClientAvatar(); // "" = pas d'avatar (le champ n'est alors pas envoyé)
     const local = { name, avatar, text, ms: Date.now() };
