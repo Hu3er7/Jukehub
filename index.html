@@ -1304,6 +1304,11 @@
   #jb-public .jb-palmares-grid .jb-voter-named { display: inline-flex; align-items: center; gap: 5px; vertical-align: middle; }
   #jb-app #jb-public .jb-palmares-grid .jb-voter-named .jb-chat-av { width: 1.25em; height: 1.25em; border-width: 1.5px; }
   #jb-app #jb-public .jb-palmares-grid .jb-voter-named .jb-chat-av svg { width: 0.95em; height: 0.95em; }
+  /* Bar spectacle : l'icône seule, sans cadre autour (Hubert, 17 nov. 2026) */
+  html[data-jb-bg="bar"] #jb-app #jb-public .jb-palmares-grid .jb-voter-named .jb-chat-av {
+    clip-path: none !important; border: none !important; background: none !important; box-sizing: border-box;
+  }
+  html[data-jb-bg="bar"] #jb-app #jb-public .jb-palmares-grid .jb-voter-named .jb-chat-av::after { display: none !important; }
   /* Solde de chaque votant à côté de son nom ("Néo +2" / "Néo -2", voir renderVotersLine()) */
   #jb-app .jb-voter-delta { font-family: 'Share Tech Mono', monospace; font-weight: 700; }
   #jb-app .jb-voter-delta-up { color: #fff200; }
@@ -6497,7 +6502,7 @@ répertoire</button>
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-22.262";
+  const APP_BUILD = "2026-10-22.263";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
