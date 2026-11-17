@@ -1475,6 +1475,8 @@
   }
   /* Bouton réduit (21 oct. 2026, Hubert) — même taille dans « Tes demandes », la sélection et le palmarès */
   #jb-public .jb-myreq-up { position: relative; z-index: 1; width: 27px; height: 27px; }
+  /* 17 nov. 2026 (Hubert) : plus de bouton « Faire monter cette chanson » (double flèche) nulle part */
+  html #jb-app #jb-public .jb-myreq-up-wrap { display: none !important; }
   #jb-public .jb-myreq-up svg { width: 12px; height: 12px; } /* boutons encore réduits (21 oct. 2026, Hubert) */
   #jb-public .jb-myreq-rank {
     white-space: nowrap; color: #fffaa8; line-height: 1.2;
@@ -6275,7 +6277,7 @@ répertoire</button>
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-22.255";
+  const APP_BUILD = "2026-10-22.256";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -6383,8 +6385,8 @@ répertoire</button>
       tab_public: "LA PLAYLIST", // ex-« Choix du public » (Hubert, 16 nov. 2026)
       tab_myreq_title: "Tes chansons",
       tab_public_title: "La playlist",
-      chat_title: "Suggestion", // titre de l'écran du chat (Hubert, 16 nov. 2026)
-      chat_open: "Suggestion", // ouvre le chat (16 nov. 2026)
+      chat_title: "Demande spéciale", // titre de l'écran du chat (Hubert, 16 nov. 2026 ; ex-« Suggestion », 17 nov.)
+      chat_open: "Demande spéciale", // ouvre le chat (16 nov. 2026 ; ex-« Suggestion », 17 nov.)
       chat_back: "⬅ Retour",
       chat_top_title: "Choix du public",
       chat_top_empty: "Aucune demande pour l'instant.",
@@ -6499,8 +6501,8 @@ répertoire</button>
       tab_public: "THE PLAYLIST",
       tab_myreq_title: "Your songs",
       tab_public_title: "The playlist",
-      chat_title: "Suggestion", // titre de l'écran du chat (Hubert, 16 nov. 2026)
-      chat_open: "Suggestion", // ouvre le chat (16 nov. 2026)
+      chat_title: "Special request", // titre de l'écran du chat (ex-« Suggestion », 17 nov. 2026)
+      chat_open: "Special request", // ouvre le chat (ex-« Suggestion », 17 nov. 2026)
       chat_back: "⬅ Back",
       chat_top_title: "Crowd picks",
       chat_top_empty: "No requests yet.",
