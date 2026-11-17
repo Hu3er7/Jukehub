@@ -2822,6 +2822,12 @@
   #jb-app.jb-name-open #jb-app-content { visibility: hidden; }
   #jb-app.jb-name-open .jb-name-prompt-backdrop { background: transparent !important; }
   #jb-app #jb-name-prompt-input { margin-top: 4px; }
+  /* clavier de l'app dans la fenêtre du nom (17 nov. 2026) : entre les icônes et « Confirmer » ; la fenêtre
+     grandit mais reste centrée (top 50 % + translateY(-50 %)) ; écran trop court : elle défile */
+  #jb-public .jb-name-input-wrap { position: relative; }
+  #jb-public .jb-name-input-wrap:has(.jb-kbd-caret) #jb-name-prompt-input::placeholder { color: transparent; } /* le « _ » cachait le N de « Nom » */
+  #jb-public .jb-kbd.jb-name-kbd { margin: 12px -8px 0; }
+  #jb-app .jb-name-prompt-card { max-height: calc(100% - 16px); overflow-y: auto; box-sizing: border-box; }
   #jb-app .jb-avatar-opt {
     width: 100%; aspect-ratio: 1; min-height: 0; margin: 0; padding: 0; cursor: pointer; border-radius: 0;
     display: flex; align-items: center; justify-content: center;
@@ -5710,11 +5716,15 @@ html[data-jb-bg="matrix"] #jb-public .jb-style-heading-row h2 { font-size: 18.4p
         </div>
         <h3 id="jb-name-prompt-title"></h3>
         <p id="jb-name-prompt-text" hidden></p>
-        <input id="jb-name-prompt-input" type="text" autocomplete="off" maxlength="15" />
+        <div id="jb-name-input-wrap" class="jb-name-input-wrap">
+          <input id="jb-name-prompt-input" type="text" autocomplete="off" maxlength="15" />
+        </div>
         <!-- Avatar obligatoire (Hubert, 27 oct. 2026) : affiché à côté du nom dans le chat (voir CHAT_AVATARS).
              Texte d'explication, libellé et « Annuler » retirés de l'écran (cachés, gardés pour le code). -->
         <p id="jb-avatar-pick-label" class="jb-avatar-pick-label" hidden></p>
         <div id="jb-avatar-picker" class="jb-avatar-picker" role="radiogroup"></div>
+        <!-- clavier de l'app pour écrire le nom (écrans tactiles, Hubert, 17 nov. 2026) : voir setupNameKeyboard() -->
+        <div id="jb-name-kbd" class="jb-kbd jb-name-kbd" hidden></div>
         <div class="jb-name-prompt-actions">
           <button id="jb-name-prompt-skip" class="jb-name-prompt-skip-btn"></button>
           <button id="jb-name-prompt-confirm" class="jb-btn-primary"></button>
@@ -6155,6 +6165,7 @@ répertoire</button>
   // 26 oct. 2026 (Hubert) : le nom d'utilisateur devient OBLIGATOIRE pour demander une chanson ou
   // donner — « Annuler » annule l'action (ensureClientName() rend alors ""), un nom vide ne passe pas.
   let clientNamePromptPromise = null;
+  var nameUsesAppKbd = false; // clavier de l'app dans la fenêtre du nom (voir setupNameKeyboard())
   function ensureClientName() {
     // 27 oct. 2026 (Hubert) : l'avatar est obligatoire aussi — un nom déjà donné sans avatar (ex. par la
     // boîte de suggestions) rouvre la fenêtre, avec le nom déjà rempli
@@ -6171,6 +6182,7 @@ répertoire</button>
       document.getElementById("jb-name-prompt-text").textContent = t("name_prompt_text");
       input.placeholder = t("name_prompt_placeholder");
       input.value = existing || "";
+      if (nameUsesAppKbd) input.dispatchEvent(new Event("input")); // clavier de l'app : curseur « _ » et majuscule à jour
       skipBtn.textContent = t("name_prompt_skip");
       confirmBtn.textContent = t("name_prompt_confirm");
       // grille d'avatars : un toucher choisit (obligatoire — plus de texte d'explication ni de bouton
@@ -6211,7 +6223,7 @@ répertoire</button>
       function onSkip() { finish(""); }
       function onConfirm() {
         const name = input.value.trim().slice(0, 15);
-        if (!name) { input.focus(); input.classList.remove("jb-input-shake"); void input.offsetWidth; input.classList.add("jb-input-shake"); return; }
+        if (!name) { if (!nameUsesAppKbd) input.focus(); input.classList.remove("jb-input-shake"); void input.offsetWidth; input.classList.add("jb-input-shake"); return; }
         if (!pickedAvatar) { if (picker) { picker.classList.remove("jb-input-shake"); void picker.offsetWidth; picker.classList.add("jb-input-shake"); } return; }
         finish(name);
       }
@@ -6219,7 +6231,7 @@ répertoire</button>
       skipBtn.addEventListener("click", onSkip);
       confirmBtn.addEventListener("click", onConfirm);
       input.addEventListener("keydown", onKeydown);
-      setTimeout(() => input.focus(), 50);
+      if (!nameUsesAppKbd) setTimeout(() => input.focus(), 50);
     });
     return clientNamePromptPromise;
   }
@@ -6247,7 +6259,7 @@ répertoire</button>
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-22.253";
+  const APP_BUILD = "2026-10-22.254";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -11405,6 +11417,23 @@ répertoire</button>
       if (e.target === input || kbd.contains(e.target)) return;
       close();
     }, true);
+  })();
+  // Fenêtre « Nom d'utilisateur » : clavier de l'app toujours affiché entre les icônes et « Confirmer »
+  // (Hubert, 17 nov. 2026). Comme la recherche, la barre ne prend jamais le focus du téléphone.
+  (function setupNameKeyboard() {
+    const input = document.getElementById("jb-name-prompt-input");
+    const kbd = document.getElementById("jb-name-kbd");
+    if (!setupAppKeyboard({ input, kbd, form: document.getElementById("jb-name-input-wrap"), maxLen: 15 })) return;
+    nameUsesAppKbd = true;
+    kbd.hidden = false;
+    input.readOnly = true;
+    input.setAttribute("spellcheck", "false");
+    input.setAttribute("autocorrect", "off");
+    input.setAttribute("autocapitalize", "off");
+    input.addEventListener("pointerdown", (e) => e.preventDefault());
+    input.addEventListener("mousedown", (e) => e.preventDefault());
+    input.addEventListener("touchend", (e) => { if (e.cancelable) e.preventDefault(); }, { passive: false });
+    input.addEventListener("focus", () => input.blur());
   })();
   renderChat();
   // vide le chat et les expulsions (appelée par « Nouvelle soirée »)
