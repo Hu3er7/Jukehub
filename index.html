@@ -2410,6 +2410,8 @@
   #jb-app.jb-browse-only .jb-chat { display: none; }
   /* 29 oct. 2026 (Hubert) : écran du chat à part — bouton « Chat room » au-dessus de la recherche ;
      une fois ouvert, tout le reste disparaît (voir setChatMode()) */
+  /* « Aucun résultat » dans le cadre de la liste, au-dessus du fond du cadre (Hubert, 17 nov. 2026) */
+  #jb-public .jb-catalog-empty-in { position: relative; z-index: 2; margin: 6px 0 0 !important; padding: 8px 12px !important; }
   /* clavier de la recherche (Hubert, 17 nov. 2026) : collé au bas de l'écran, il monte quand on touche la barre de
      recherche et redescend quand on en sort ; « Suggestion » est caché pendant ce temps */
   /* (17 nov. 2026) dans la page sous le cadre, pas par-dessus : le cadre rapetisse pour lui faire la place */
@@ -5573,6 +5575,9 @@ html[data-jb-bg="matrix"] #jb-public .jb-style-heading-row h2 { font-size: 18.4p
           <!-- RETOUR : dans l'onglet du cadre en simple consultation (22 oct. 2026) ; pendant le spectacle,
                petit bouton en haut de la liste, sous les onglets (Hubert, 26 oct. 2026) -->
           <button id="jb-back-btn" class="jb-back-btn" hidden>⬅ RETOUR</button>
+          <!-- « Aucun résultat » dans le cadre, en haut de la liste : sous le cadre, il poussait le clavier de
+               recherche vers le bas (Hubert, 17 nov. 2026) -->
+          <p id="jb-catalog-empty" class="jb-empty jb-catalog-empty-in" hidden>Aucun résultat pour cette recherche.</p>
           <ul id="jb-catalog-list" class="jb-catalog-list"></ul>
           <!-- Onglet « Tes suggestions » (ex-section « Tes demandes ») -->
           <div id="jb-tab-myreq" class="jb-tab-panel jb-tab-myreq" hidden>
@@ -5596,7 +5601,6 @@ html[data-jb-bg="matrix"] #jb-public .jb-style-heading-row h2 { font-size: 18.4p
             <span class="jb-catalog-frame-cap"></span>
           </div>
         </div>
-        <p id="jb-catalog-empty" class="jb-empty" hidden>Aucun résultat pour cette recherche.</p>
         <div id="jb-special-request-block" class="jb-special-request-block" hidden>
           <p id="jb-special-request-text" class="jb-special-request-text"></p>
           <input id="jb-special-request-name" type="text" class="jb-special-request-name-input" autocomplete="off" maxlength="15" />
@@ -6239,7 +6243,7 @@ répertoire</button>
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-22.249";
+  const APP_BUILD = "2026-10-22.250";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
