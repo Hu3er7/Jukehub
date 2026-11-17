@@ -3551,6 +3551,22 @@ html[data-jb-bg="bar"] #jb-app:not(.jb-browse-only) #jb-public .jb-catalog .jb-f
   border: 3px solid var(--fc); border-bottom: none; border-radius: 6px 6px 0 0;
 }
 
+/* Onglet fermé (rose) collé à l'onglet ouvert et posé SUR le trait du haut du cadre, presque aussi haut
+   que lui, jusqu'au bord droit (image de Hubert, 17 nov. 2026) */
+html[data-jb-bg="bar"] #jb-app:not(.jb-browse-only) #jb-public .jb-catalog .jb-tabbar { gap: 0 !important; }
+html[data-jb-bg="bar"] #jb-app:not(.jb-browse-only) #jb-public .jb-catalog .jb-tab:not(.jb-tab-active) {
+  /* même hauteur que l'onglet bleu : les 2 traits du haut se rejoignent (Hubert, 17 nov. 2026) */
+  margin-top: 0 !important; height: calc(100% + 6px) !important; border-width: 3px !important;
+  /* pas de trait rose en bas : le trait du haut du cadre reste BLEU sous l'onglet (Hubert, 17 nov. 2026) */
+  border-bottom: none !important;
+}
+/* côté collé à l'onglet bleu : pas de trait rose (seul le bleu), coin carré ; coin extérieur arrondi */
+html[data-jb-bg="bar"] #jb-app:not(.jb-browse-only) #jb-public .jb-catalog .jb-tab-pub:not(.jb-tab-active) { border-left: none !important; border-radius: 0 6px 0 0 !important; }
+html[data-jb-bg="bar"] #jb-app:not(.jb-browse-only) #jb-public .jb-catalog .jb-tab-rep:not(.jb-tab-active) { border-right: none !important; border-radius: 6px 0 0 0 !important; }
+/* …et le contour bleu de l'onglet ouvert a un coin carré de ce côté-là, pour que les traits se touchent */
+html[data-jb-bg="bar"] #jb-app:not(.jb-browse-only) #jb-public .jb-catalog .jb-catalog-frame:not(.jb-tab-on-public) .jb-frame-deco > i.jb-fd-tabfill { border-top-right-radius: 0 !important; }
+html[data-jb-bg="bar"] #jb-app:not(.jb-browse-only) #jb-public .jb-catalog .jb-catalog-frame.jb-tab-on-public .jb-frame-deco > i.jb-fd-tabfill { border-top-left-radius: 0 !important; }
+
 /* chat : même tube néon autour des messages, de la barre et du clavier */
 /* (le tube est dessiné VERS L'EXTÉRIEUR, dans un calque derrière : le chat garde exactement sa taille) */
 html[data-jb-bg="bar"] #jb-public .jb-chat-frame { isolation: isolate; }
@@ -6259,7 +6275,7 @@ répertoire</button>
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-22.254";
+  const APP_BUILD = "2026-10-22.255";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
