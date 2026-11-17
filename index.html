@@ -6239,7 +6239,7 @@ répertoire</button>
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-22.248";
+  const APP_BUILD = "2026-10-22.249";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -10037,7 +10037,8 @@ répertoire</button>
 
       // Demande spéciale : seulement pertinent pour une recherche textuelle sans résultat (pas
       // pour une liste/un dossier vide, où il n'y a rien de précis à envoyer à Hubert).
-      const showSpecial = !!search && songs.length === 0;
+      // 17 nov. 2026 (Hubert) : retiré — plus jamais d'offre d'envoyer la recherche comme suggestion
+      const showSpecial = false;
       specialBlock.hidden = !showSpecial;
       if (showSpecial) {
         document.getElementById("jb-special-request-text").textContent = t("special_request_text");
