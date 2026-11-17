@@ -6509,7 +6509,7 @@ répertoire</button>
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-22.266";
+  const APP_BUILD = "2026-10-22.267";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -10780,10 +10780,12 @@ répertoire</button>
     // 3e, 4e et 5e demandes depuis le dernier pourboire : on propose un pourboire chaque fois ; la 6e en exige un
     // (voir plus haut) (Hubert, 16 nov. 2026)
     // (17 nov. 2026) une chanson de moins ; invitation au pourboire quand il n'en reste plus que 2
+    // (la chanson gardée de côté pendant le pourboire ne compte pas : 5 $ = 10 chansons EN PLUS d'elle, la
+    // 11e est bloquée — Hubert, 17 nov. 2026)
     const cr = credits();
-    cr.songs = Math.max(0, cr.songs - 1);
+    if (!opts.tipPaid) cr.songs = Math.max(0, cr.songs - 1);
     saveCredits(cr);
-    if (cr.songs === TIP_ASK_AT) {
+    if (!opts.tipPaid && cr.songs === TIP_ASK_AT) {
       voteModalPending = true;
       // attend la fin du vol du titre vers « La playlist » et de l'illumination de l'onglet (~2,2 s) pour ne pas
       // que la fenêtre les chevauche (Hubert, 17 nov. 2026)
