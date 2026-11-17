@@ -6243,7 +6243,7 @@ répertoire</button>
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-22.250";
+  const APP_BUILD = "2026-10-22.251";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -11380,6 +11380,14 @@ répertoire</button>
     input.addEventListener("focus", open);
     input.addEventListener("pointerdown", open); // (barre déjà active : le toucher suffit à rouvrir le clavier)
     input.addEventListener("blur", () => setTimeout(() => { if (document.activeElement !== input) close(); }, 0));
+    // Sur iPhone, toucher ailleurs ne retire pas toujours le curseur de la barre : on ferme le clavier dès qu'on
+    // touche n'importe où ailleurs que la barre ou le clavier (Hubert, 17 nov. 2026)
+    document.addEventListener("pointerdown", (e) => {
+      if (!root.classList.contains("jb-search-kbd-open")) return;
+      if (e.target === input || kbd.contains(e.target)) return;
+      input.blur();
+      close();
+    }, true);
   })();
   renderChat();
   // vide le chat et les expulsions (appelée par « Nouvelle soirée »)
