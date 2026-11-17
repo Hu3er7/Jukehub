@@ -2538,6 +2538,12 @@
     --tc: #ff5fa8; --tc-rgb: 255, 95, 168; color: #ffd6ea !important;
     text-shadow: 0 0 2px #fff, 0 0 6px var(--tc), 0 0 12px var(--tc) !important;
   }
+  /* Cyberpunk : lettres roses plus flash (blanc rosé avec halo rose) — « Demande spéciale » et l'onglet
+     fermé La playlist / Mon répertoire (Hubert, 17 nov. 2026) */
+  html:not([data-jb-bg]) #jb-app #jb-public #jb-chat-open,
+  html:not([data-jb-bg]) #jb-app #jb-public .jb-tab:not(.jb-tab-active) {
+    color: #ffe3f7 !important; text-shadow: 0 0 2px #fff, 0 0 6px #ff3bd4, 0 0 12px #ff3bd4 !important;
+  }
   /* titre « $ POURBOIRE $ » de la fenêtre ouverte à la 3e demande : même vert et mêmes ronds $ que le bouton,
      sans cadre (Hubert, 16 nov. 2026) */
   html #jb-app #jb-public .jb-tip-title {
@@ -3587,22 +3593,98 @@ html[data-jb-bg="bar"] #jb-app:not(.jb-browse-only) #jb-public .jb-catalog .jb-t
   box-shadow: 0 0 6px var(--bar-sign) !important; clip-path: inset(-12px -12px 0 -12px) !important;
 }
 /* côté collé à l'onglet bleu : pas de trait rose (seul le bleu), coin carré ; coin extérieur arrondi */
-html[data-jb-bg="bar"] #jb-app:not(.jb-browse-only) #jb-public .jb-catalog .jb-tab-pub:not(.jb-tab-active) { border-left: none !important; border-radius: 0 6px 0 0 !important; clip-path: inset(-12px -12px 0 0) !important; }
-html[data-jb-bg="bar"] #jb-app:not(.jb-browse-only) #jb-public .jb-catalog .jb-tab-rep:not(.jb-tab-active) { border-right: none !important; border-radius: 6px 0 0 0 !important; clip-path: inset(-12px 0 0 -12px) !important; }
-/* …et le contour bleu de l'onglet ouvert a un coin carré de ce côté-là, pour que les traits se touchent */
-html[data-jb-bg="bar"] #jb-app:not(.jb-browse-only) #jb-public .jb-catalog .jb-catalog-frame:not(.jb-tab-on-public) .jb-frame-deco > i.jb-fd-tabfill { border-top-right-radius: 0 !important; }
-html[data-jb-bg="bar"] #jb-app:not(.jb-browse-only) #jb-public .jb-catalog .jb-catalog-frame.jb-tab-on-public .jb-frame-deco > i.jb-fd-tabfill { border-top-left-radius: 0 !important; }
+/* 17 nov. 2026 (Hubert) : TOUS les coins des jonctions arrondis comme le coin de l'onglet (rayon --jr) :
+   (1) le côté de l'onglet bleu qui tourne dans la ligne du cadre (arc dessiné par .jb-fd-fillet) ;
+   (2) le haut de l'onglet bleu, arrondi, qui rejoint le trait rose (le trait rose passe par-dessus le coin) ;
+   (3) le bout : la ligne bleue du cadre tourne vers le bas pour rejoindre le côté rose, qui descend jusqu'à elle. */
+html[data-jb-bg="bar"] #jb-app:not(.jb-browse-only) #jb-public .jb-catalog .jb-catalog-frame { --jr: 8px; }
+/* les lignes bleues (cadre + onglet ouvert) passent PAR-DESSUS les traits roses aux jonctions (Hubert, 17 nov. 2026) */
+html[data-jb-bg="bar"] #jb-app:not(.jb-browse-only) #jb-public .jb-catalog .jb-frame-deco { z-index: 4 !important; pointer-events: none !important; }
+html[data-jb-bg="bar"] #jb-app:not(.jb-browse-only) #jb-public .jb-catalog .jb-tab:not(.jb-tab-active)::before,
+html[data-jb-bg="bar"] #jb-app:not(.jb-browse-only) #jb-public .jb-catalog .jb-tab:not(.jb-tab-active)::after {
+  content: ""; position: absolute; pointer-events: none; background: var(--bar-sign); box-shadow: 0 0 6px var(--bar-sign);
+}
+/* onglet rose à DROITE (Mon répertoire ouvert) */
+html[data-jb-bg="bar"] #jb-app:not(.jb-browse-only) #jb-public .jb-catalog .jb-tab-pub:not(.jb-tab-active) {
+  border-left: none !important; border-radius: 0 6px 0 0 !important; overflow: visible !important;
+  clip-path: polygon(-8px -12px, calc(100% + 12px) -12px, calc(100% + 12px) calc(100% + 8px), calc(100% - 3px) calc(100% + 8px),
+    calc(100% - 3px) 100%, 0 100%, 0 3px, -8px 3px) !important;
+}
+html[data-jb-bg="bar"] #jb-app:not(.jb-browse-only) #jb-public .jb-catalog .jb-tab-pub:not(.jb-tab-active)::before { top: -3px; left: -8px; width: 8px; height: 3px; }
+html[data-jb-bg="bar"] #jb-app:not(.jb-browse-only) #jb-public .jb-catalog .jb-tab-pub:not(.jb-tab-active)::after { top: 100%; right: -3px; width: 3px; height: 6px; }
+/* onglet rose à GAUCHE (La playlist ouverte) : le même, en miroir */
+html[data-jb-bg="bar"] #jb-app:not(.jb-browse-only) #jb-public .jb-catalog .jb-tab-rep:not(.jb-tab-active) {
+  border-right: none !important; border-radius: 6px 0 0 0 !important; overflow: visible !important;
+  clip-path: polygon(-12px -12px, calc(100% + 8px) -12px, calc(100% + 8px) 3px, 100% 3px, 100% 100%, 3px 100%,
+    3px calc(100% + 8px), -12px calc(100% + 8px)) !important;
+}
+html[data-jb-bg="bar"] #jb-app:not(.jb-browse-only) #jb-public .jb-catalog .jb-tab-rep:not(.jb-tab-active)::before { top: -3px; right: -8px; width: 8px; height: 3px; }
+html[data-jb-bg="bar"] #jb-app:not(.jb-browse-only) #jb-public .jb-catalog .jb-tab-rep:not(.jb-tab-active)::after { top: 100%; left: -3px; width: 3px; height: 6px; }
+/* (1) arc entre le côté de l'onglet bleu et la ligne du cadre */
+html[data-jb-bg="bar"] #jb-app:not(.jb-browse-only) #jb-public .jb-catalog .jb-frame-deco > i.jb-fd-fillet {
+  display: block !important; position: absolute !important; box-sizing: border-box !important;
+  inset: auto !important; top: calc(var(--ft) + 3px - var(--jr)) !important; width: var(--jr) !important; height: var(--jr) !important;
+  background: none !important; clip-path: none !important; -webkit-mask: none !important; mask: none !important;
+  transform: none !important; opacity: 1 !important; box-shadow: none !important; border: 0 solid var(--fc) !important;
+}
+html[data-jb-bg="bar"] #jb-app:not(.jb-browse-only) #jb-public .jb-catalog .jb-catalog-frame:not(.jb-tab-on-public) .jb-frame-deco > i.jb-fd-fillet {
+  left: var(--gapR) !important; border-left-width: 3px !important; border-bottom-width: 3px !important; border-bottom-left-radius: var(--jr) !important;
+}
+html[data-jb-bg="bar"] #jb-app:not(.jb-browse-only) #jb-public .jb-catalog .jb-catalog-frame.jb-tab-on-public .jb-frame-deco > i.jb-fd-fillet {
+  left: calc(var(--gapL) - var(--jr)) !important; border-right-width: 3px !important; border-bottom-width: 3px !important; border-bottom-right-radius: var(--jr) !important;
+}
+/* le côté de l'onglet bleu s'arrête au début de l'arc… */
+html[data-jb-bg="bar"] #jb-app:not(.jb-browse-only) #jb-public .jb-catalog .jb-catalog-frame:not(.jb-tab-on-public) .jb-frame-deco > i.jb-fd-tabfill {
+  -webkit-mask: linear-gradient(#000 0 0) 0 0 / calc(100% - 3px) 100% no-repeat, linear-gradient(#000 0 0) 100% 0 / 3px calc(100% - var(--jr)) no-repeat;
+  mask: linear-gradient(#000 0 0) 0 0 / calc(100% - 3px) 100% no-repeat, linear-gradient(#000 0 0) 100% 0 / 3px calc(100% - var(--jr)) no-repeat;
+}
+html[data-jb-bg="bar"] #jb-app:not(.jb-browse-only) #jb-public .jb-catalog .jb-catalog-frame.jb-tab-on-public .jb-frame-deco > i.jb-fd-tabfill {
+  -webkit-mask: linear-gradient(#000 0 0) 100% 0 / calc(100% - 3px) 100% no-repeat, linear-gradient(#000 0 0) 0 0 / 3px calc(100% - var(--jr)) no-repeat;
+  mask: linear-gradient(#000 0 0) 100% 0 / calc(100% - 3px) 100% no-repeat, linear-gradient(#000 0 0) 0 0 / 3px calc(100% - var(--jr)) no-repeat;
+}
+/* …la ligne du cadre commence après l'arc, et (3) tourne en arrondi au bout, sous le côté rose */
+html[data-jb-bg="bar"] #jb-app:not(.jb-browse-only) #jb-public .jb-catalog .jb-catalog-frame:not(.jb-tab-on-public) .jb-frame-deco > i.jb-fd-ring {
+  border-top-right-radius: var(--jr) !important;
+  -webkit-mask: linear-gradient(#000, #000) 0 3px / 100% calc(100% - 3px) no-repeat,
+    linear-gradient(to right, #000 var(--gapL, 0px), transparent var(--gapL, 0px), transparent calc(var(--gapR, 0px) + var(--jr)), #000 calc(var(--gapR, 0px) + var(--jr))) 0 0 / 100% 3px no-repeat;
+  mask: linear-gradient(#000, #000) 0 3px / 100% calc(100% - 3px) no-repeat,
+    linear-gradient(to right, #000 var(--gapL, 0px), transparent var(--gapL, 0px), transparent calc(var(--gapR, 0px) + var(--jr)), #000 calc(var(--gapR, 0px) + var(--jr))) 0 0 / 100% 3px no-repeat;
+}
+html[data-jb-bg="bar"] #jb-app:not(.jb-browse-only) #jb-public .jb-catalog .jb-catalog-frame.jb-tab-on-public .jb-frame-deco > i.jb-fd-ring {
+  border-top-left-radius: var(--jr) !important;
+  -webkit-mask: linear-gradient(#000, #000) 0 3px / 100% calc(100% - 3px) no-repeat,
+    linear-gradient(to right, #000 calc(var(--gapL, 0px) - var(--jr)), transparent calc(var(--gapL, 0px) - var(--jr)), transparent var(--gapR, 0px), #000 var(--gapR, 0px)) 0 0 / 100% 3px no-repeat;
+  mask: linear-gradient(#000, #000) 0 3px / 100% calc(100% - 3px) no-repeat,
+    linear-gradient(to right, #000 calc(var(--gapL, 0px) - var(--jr)), transparent calc(var(--gapL, 0px) - var(--jr)), transparent var(--gapR, 0px), #000 var(--gapR, 0px)) 0 0 / 100% 3px no-repeat;
+}
 
 /* Même raccord dans le Cyberpunk (Hubert, 17 nov. 2026) : onglet fermé (rose) collé à l'onglet ouvert (bleu),
    même hauteur, contour 3px, pas de trait du côté de l'onglet bleu ni en bas (le trait du cadre reste bleu).
    Le coin biseauté reste seulement sur l'onglet tout à droite ; l'onglet de gauche a un coin carré. */
-html:not([data-jb-bg]) #jb-app:not(.jb-browse-only) #jb-public .jb-catalog .jb-tabbar { gap: 0 !important; }
+html:not([data-jb-bg]) #jb-app:not(.jb-browse-only) #jb-public .jb-catalog .jb-tabbar { gap: 0 !important; right: 0 !important; }
 html:not([data-jb-bg]) #jb-app:not(.jb-browse-only) #jb-public .jb-catalog .jb-tab:not(.jb-tab-active) {
   height: calc(100% + 6px) !important; border: 3px solid var(--tc) !important; border-bottom: none !important;
 }
+/* l'onglet rose de droite va jusqu'au bord du cadre ; son côté descend jusqu'au biseau bleu du cadre, qui
+   passe par-dessus (Hubert, 17 nov. 2026) */
+html:not([data-jb-bg]) #jb-app:not(.jb-browse-only) #jb-public .jb-catalog .jb-frame-deco { z-index: 4 !important; pointer-events: none !important; }
+html:not([data-jb-bg]) #jb-app:not(.jb-browse-only) #jb-public .jb-catalog .jb-tab-pub:not(.jb-tab-active) { overflow: visible !important; }
+/* La playlist ouverte (onglet bleu jusqu'au bord droit) : le côté droit du cadre monte tout droit jusqu'à
+   l'onglet (pas de biseau), pour que le côté de l'onglet continue sans coupure */
+html:not([data-jb-bg]) #jb-app:not(.jb-browse-only) #jb-public .jb-catalog .jb-catalog-frame.jb-tab-on-public .jb-frame-deco > i.jb-fd-ring {
+  clip-path: polygon(0px 38px, 0px calc(50% + 19px - (0.5 * max(20px, 100% - 110px))), 0px calc(50% + 19px + (0.5 * max(20px, 100% - 110px))),
+    0px calc(100% - 12px), 12px 100%, calc(100% - 12px) 100%, 100% calc(100% - 12px), 100% 38px, calc(100% - 3px) 38px,
+    calc(100% - 3px) calc(100% - 13.24px), calc(100% - 13.24px) calc(100% - 3px), 13.24px calc(100% - 3px), 3px calc(100% - 13.24px),
+    3px calc(50% + 22px + (0.5 * max(20px, 100% - 110px))), 1.24px calc(50% + 22px + (0.5 * max(20px, 100% - 110px))),
+    3px calc(50% + 20.24px + (0.5 * max(20px, 100% - 110px))), 3px calc(50% + 17.76px - (0.5 * max(20px, 100% - 110px))),
+    1.24px calc(50% + 16px - (0.5 * max(20px, 100% - 110px))), 3px calc(50% + 16px - (0.5 * max(20px, 100% - 110px))), 3px 38px) !important;
+}
+html:not([data-jb-bg]) #jb-app:not(.jb-browse-only) #jb-public .jb-catalog .jb-tab-pub:not(.jb-tab-active)::after {
+  content: ""; position: absolute; top: 100%; right: -3px; width: 3px; height: 10px; background: var(--tc); pointer-events: none;
+}
 html:not([data-jb-bg]) #jb-app:not(.jb-browse-only) #jb-public .jb-catalog .jb-tab-pub:not(.jb-tab-active) {
   border-left: none !important;
-  clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 0 100%) !important;
+  clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% calc(100% + 10px), calc(100% - 3px) calc(100% + 10px), calc(100% - 3px) 100%, 0 100%) !important;
   background-image: linear-gradient(to bottom left, transparent 50%, var(--tc) 50%, var(--tc) calc(50% + 3px), transparent calc(50% + 3px)) !important;
   background-size: 12px 12px !important;
 }
@@ -3610,8 +3692,34 @@ html:not([data-jb-bg]) #jb-app:not(.jb-browse-only) #jb-public .jb-catalog .jb-t
   border-right: none !important; clip-path: none !important; background-image: none !important;
 }
 html:not([data-jb-bg]) #jb-app:not(.jb-browse-only) #jb-public .jb-catalog .jb-tab-rep.jb-tab-active {
-  clip-path: polygon(0 0, 100% 0, 100% calc(100% + 6px), 0 calc(100% + 6px)) !important;
+  clip-path: polygon(0 0, 100% 0, 100% calc(100% - 8px), calc(100% - 3px) calc(100% - 8px), calc(100% - 3px) 100%, 0 100%) !important;
   background-image: none !important;
+}
+/* Coin au pied de l'onglet bleu (là où son côté rejoint la ligne du cadre) : BISEAUTÉ comme les autres coins
+   du Cyberpunk (Hubert, 17 nov. 2026) — le côté de l'onglet s'arrête 8px plus haut, la ligne du cadre
+   commence 11px plus loin, et .jb-fd-fillet trace la diagonale entre les deux */
+html:not([data-jb-bg]) #jb-app:not(.jb-browse-only) #jb-public .jb-catalog .jb-catalog-frame.jb-tab-on-public .jb-tab-pub.jb-tab-active {
+  clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 3px 100%, 3px calc(100% - 8px), 0 calc(100% - 8px)) !important;
+}
+html:not([data-jb-bg]) #jb-app:not(.jb-browse-only) #jb-public .jb-catalog .jb-frame-deco > i.jb-fd-fillet {
+  display: block !important; position: absolute !important; inset: auto !important;
+  top: calc(var(--ft) - 8px) !important; width: 11px !important; height: 11px !important;
+  background: var(--fc) !important; border: none !important; -webkit-mask: none !important; mask: none !important;
+  transform: none !important; opacity: 1 !important; box-shadow: none !important;
+}
+html:not([data-jb-bg]) #jb-app:not(.jb-browse-only) #jb-public .jb-catalog .jb-catalog-frame:not(.jb-tab-on-public) .jb-frame-deco > i.jb-fd-fillet {
+  left: var(--gapR) !important; clip-path: polygon(0 0, 4.24px 0, 100% 6.76px, 100% 100%) !important;
+}
+html:not([data-jb-bg]) #jb-app:not(.jb-browse-only) #jb-public .jb-catalog .jb-catalog-frame.jb-tab-on-public .jb-frame-deco > i.jb-fd-fillet {
+  left: calc(var(--gapL) - 11px) !important; clip-path: polygon(100% 0, calc(100% - 4.24px) 0, 0 6.76px, 0 100%) !important;
+}
+html:not([data-jb-bg]) #jb-app:not(.jb-browse-only) #jb-public .jb-catalog .jb-catalog-frame:not(.jb-tab-on-public) .jb-fd-bodyline {
+  -webkit-mask-image: linear-gradient(to right, #000 var(--gapL, 0px), transparent var(--gapL, 0px), transparent calc(var(--gapR, 0px) + 11px), #000 calc(var(--gapR, 0px) + 11px)) !important;
+  mask-image: linear-gradient(to right, #000 var(--gapL, 0px), transparent var(--gapL, 0px), transparent calc(var(--gapR, 0px) + 11px), #000 calc(var(--gapR, 0px) + 11px)) !important;
+}
+html:not([data-jb-bg]) #jb-app:not(.jb-browse-only) #jb-public .jb-catalog .jb-catalog-frame.jb-tab-on-public .jb-fd-bodyline {
+  -webkit-mask-image: linear-gradient(to right, #000 calc(var(--gapL, 0px) - 11px), transparent calc(var(--gapL, 0px) - 11px), transparent var(--gapR, 0px), #000 var(--gapR, 0px)) !important;
+  mask-image: linear-gradient(to right, #000 calc(var(--gapL, 0px) - 11px), transparent calc(var(--gapL, 0px) - 11px), transparent var(--gapR, 0px), #000 var(--gapR, 0px)) !important;
 }
 
 /* chat : même tube néon autour des messages, de la barre et du clavier */
@@ -4326,9 +4434,63 @@ html[data-jb-bg="foret"] #jb-app:not(.jb-browse-only) #jb-public .jb-catalog .jb
 /* Raccord comme dans le thème Bar (Hubert, 17 nov. 2026) : la planche de l'onglet fermé touche le rebord de
    bois de l'onglet choisi (8px), à la même hauteur que lui, et se pose SUR le rebord du haut du cadre ;
    pas de bordure du côté de l'onglet choisi ni en bas (le rebord du cadre reste visible dessous) */
-html[data-jb-bg="foret"] #jb-app:not(.jb-browse-only) #jb-public .jb-catalog .jb-tabbar { gap: 8px !important; }
+html[data-jb-bg="foret"] #jb-app:not(.jb-browse-only) #jb-public .jb-catalog .jb-tabbar { gap: 0 !important; }
+/* parfaitement joint (Hubert, 17 nov. 2026) : la planche passe SOUS le rebord de bois de l'onglet choisi (8px),
+   et le contour du cadre est dessiné par-dessus — plus de trou sombre dans les coins arrondis */
+/* (17 nov. 2026, Hubert : « enlève le fluorescent à l'intérieur de l'onglet ») La planche est PAR-DESSUS le
+   cadre — sa lueur verte ne la touche donc jamais — et elle est découpée exactement autour du rebord de bois
+   de l'onglet choisi (arrondi de 15px) et de l'arrondi du coin du cadre (18px), qui restent visibles. */
+html[data-jb-bg="foret"] #jb-app:not(.jb-browse-only) #jb-public .jb-catalog .jb-tab-pub:not(.jb-tab-active) {
+  clip-path: polygon(0 0, 100% 0, 100% calc(100% + 17px), calc(100% - 1.25px) calc(100% + 14px), calc(100% - 2.03px) calc(100% + 11px),
+    calc(100% - 3.4px) calc(100% + 8px), calc(100% - 5.6px) calc(100% + 5px), calc(100% - 9.05px) calc(100% + 2px),
+    calc(100% - 12px) calc(100% + 0.42px), calc(100% - 12px) 100%, 7px 100%, 7px 15px, 5px 7.52px, 2px 3.82px, 1px 3px,
+    -1px 1.73px, -4px 0.54px, -6px 0.13px, -8px 0) !important;
+}
+/* le trait foncé du haut de la planche se prolonge jusqu'au rebord de l'onglet choisi et se perd DESSOUS
+   (découpé selon l'arrondi du rebord, qui reste par-dessus) — Hubert, 17 nov. 2026 */
+html[data-jb-bg="foret"] #jb-app:not(.jb-browse-only) #jb-public .jb-catalog .jb-tab:not(.jb-tab-active)::before {
+  content: ""; position: absolute; top: -3px; width: 8px; height: 3px; background: var(--fo-wood-edge); pointer-events: none;
+}
+html[data-jb-bg="foret"] #jb-app:not(.jb-browse-only) #jb-public .jb-catalog .jb-tab-pub:not(.jb-tab-active)::before { left: -8px; }
+html[data-jb-bg="foret"] #jb-app:not(.jb-browse-only) #jb-public .jb-catalog .jb-tab-rep:not(.jb-tab-active)::before { right: -8px; }
+html[data-jb-bg="foret"] #jb-app:not(.jb-browse-only) #jb-public .jb-catalog .jb-tab-rep:not(.jb-tab-active) {
+  clip-path: polygon(0 0, calc(100% + 8px) 0, calc(100% + 6px) 0.13px, calc(100% + 4px) 0.54px, calc(100% + 1px) 1.73px,
+    calc(100% - 1px) 3px, calc(100% - 2px) 3.82px, calc(100% - 5px) 7.52px, calc(100% - 7px) 15px,
+    calc(100% - 7px) 100%, 12px 100%, 12px calc(100% + 0.42px), 9.05px calc(100% + 2px), 5.6px calc(100% + 5px),
+    3.4px calc(100% + 8px), 2.03px calc(100% + 11px), 1.25px calc(100% + 14px), 0 calc(100% + 17px)) !important;
+}
+html[data-jb-bg="foret"] #jb-app:not(.jb-browse-only) #jb-public .jb-catalog .jb-tab-pub:not(.jb-tab-active) { margin-left: 0 !important; padding-left: 14px !important; }
+html[data-jb-bg="foret"] #jb-app:not(.jb-browse-only) #jb-public .jb-catalog .jb-tab-rep:not(.jb-tab-active) { margin-right: 0 !important; padding-right: 14px !important; }
+/* …et le bout de la planche aligné sur le bord EXTÉRIEUR du cadre (son rebord de bois déborde de 8px) ; le
+   coin du cadre sous la planche est droit, pour que le côté de la planche continue dans celui du cadre */
+html[data-jb-bg="foret"] #jb-app:not(.jb-browse-only) #jb-public .jb-catalog .jb-tab-pub:not(.jb-tab-active) { margin-right: -8px !important; }
+html[data-jb-bg="foret"] #jb-app:not(.jb-browse-only) #jb-public .jb-catalog .jb-tab-rep:not(.jb-tab-active) { margin-left: -8px !important; }
+/* coin du cadre sous la planche ARRONDI comme les autres (Hubert, 17 nov. 2026) : le bord extérieur de la
+   planche descend un peu derrière l'arrondi (bande de bois), pour que planche et cadre restent joints */
+html[data-jb-bg="foret"] #jb-app:not(.jb-browse-only) #jb-public .jb-catalog .jb-tab:not(.jb-tab-active) { overflow: visible !important; }
+html[data-jb-bg="foret"] #jb-app:not(.jb-browse-only) #jb-public .jb-catalog .jb-tab:not(.jb-tab-active)::after {
+  content: ""; position: absolute; top: calc(100% - 1px); width: 11px; height: 19px; pointer-events: none; box-sizing: border-box;
+  background: #3a2715; /* exactement le brun du bas de la planche (fin du dégradé --fo-wood), Hubert 17 nov. 2026 */
+  border: 0 solid var(--fo-wood-edge);
+}
+/* sous la planche, le dessin du cadre laissait un petit trou où passait la lueur verte : on le bouche par un
+   fond brun (même brun que le bas de la planche), dessiné SOUS le rebord du cadre (Hubert, 17 nov. 2026) */
+html[data-jb-bg="foret"] #jb-app:not(.jb-browse-only) #jb-public .jb-catalog .jb-frame-deco > i.jb-fd-bodyline {
+  display: block !important; position: absolute !important; z-index: -1 !important; inset: auto !important;
+  top: calc(var(--ft) - 8px) !important; height: 12px !important; background: #3a2715 !important;
+  clip-path: none !important; -webkit-mask: none !important; mask: none !important; border: none !important; box-shadow: none !important; opacity: 1 !important;
+}
+html[data-jb-bg="foret"] #jb-app:not(.jb-browse-only) #jb-public .jb-catalog .jb-catalog-frame:not(.jb-tab-on-public) .jb-frame-deco > i.jb-fd-bodyline {
+  left: calc(var(--gapR, 0px) + 11px) !important; right: -8px !important; width: auto !important;
+}
+html[data-jb-bg="foret"] #jb-app:not(.jb-browse-only) #jb-public .jb-catalog .jb-catalog-frame.jb-tab-on-public .jb-frame-deco > i.jb-fd-bodyline {
+  left: -8px !important; width: calc(var(--gapL, 0px) - 11px + 8px) !important; right: auto !important;
+}
+/* le trait foncé extérieur de la planche se prolonge vers le bas et se perd sous l'arrondi du cadre (Hubert, 17 nov. 2026) */
+html[data-jb-bg="foret"] #jb-app:not(.jb-browse-only) #jb-public .jb-catalog .jb-tab-pub:not(.jb-tab-active)::after { right: -3px; border-right-width: 3px; }
+html[data-jb-bg="foret"] #jb-app:not(.jb-browse-only) #jb-public .jb-catalog .jb-tab-rep:not(.jb-tab-active)::after { left: -3px; border-left-width: 3px; }
 html[data-jb-bg="foret"] #jb-app:not(.jb-browse-only) #jb-public .jb-catalog .jb-tab:not(.jb-tab-active) {
-  height: calc(100% - 2px) !important; margin-top: 0 !important; border-width: 3px !important; border-bottom: none !important;
+  height: calc(100% - 1px) !important; margin-top: 0 !important; border-width: 3px !important; border-bottom: none !important;
 }
 html[data-jb-bg="foret"] #jb-app:not(.jb-browse-only) #jb-public .jb-catalog .jb-tab-pub:not(.jb-tab-active) { border-left: none !important; border-radius: 0 9px 0 0 !important; }
 html[data-jb-bg="foret"] #jb-app:not(.jb-browse-only) #jb-public .jb-catalog .jb-tab-rep:not(.jb-tab-active) { border-right: none !important; border-radius: 9px 0 0 0 !important; }
@@ -6331,7 +6493,7 @@ répertoire</button>
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-22.259";
+  const APP_BUILD = "2026-10-22.260";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
