@@ -556,6 +556,11 @@
   }
   /* 50 % plus apparent (plus lumineux et un peu plus long — Hubert, 16 nov. 2026) */
   #jb-public .jb-tab.jb-tab-glow { animation: jb-tab-glow 1.3s ease-out; }
+  /* 2 onglets seulement : nom sur une ligne, en plus gros, dans tous les thèmes (Hubert, 16 nov. 2026) */
+  html #jb-app #jb-public .jb-tab .jb-tab-label { white-space: nowrap !important; font-size: 14px !important; line-height: 1.1 !important; overflow: hidden; text-overflow: ellipsis; }
+  /* polices plus larges : un peu plus petit pour que le nom tienne sur une ligne, même sur un téléphone étroit */
+  html:not([data-jb-bg]) #jb-app #jb-public .jb-tab .jb-tab-label { font-size: 10px !important; }
+  html[data-jb-bg="matrix"] #jb-app #jb-public .jb-tab .jb-tab-label { font-size: 12.5px !important; }
   /* Badge "Demande" avec le chiffre fusionné dedans, "N Demande" (voir renderSongRow()/
      .jb-song-request-badge) — reprend le style pilule de .jb-request-remaining, en un peu plus
      compact pour tenir dans une ligne de chanson. */
@@ -5504,7 +5509,6 @@ html[data-jb-bg="matrix"] #jb-public .jb-style-heading-row h2 { font-size: 18.4p
                setCatalogTab()). Cachés en simple consultation (page hors spectacle). -->
           <div class="jb-tabbar" role="tablist">
             <button type="button" class="jb-tab jb-tab-rep" data-tab="repertoire" role="tab"></button>
-            <button type="button" class="jb-tab jb-tab-req" data-tab="myreq" role="tab"></button>
             <button type="button" class="jb-tab jb-tab-pub" data-tab="public" role="tab"></button>
           </div>
           <div class="jb-catalog-frame-caps jb-catalog-frame-caps-top" aria-hidden="true">
@@ -5541,7 +5545,6 @@ html[data-jb-bg="matrix"] #jb-public .jb-style-heading-row h2 { font-size: 18.4p
                setCatalogTab()). Cachés en simple consultation (page hors spectacle). -->
           <div class="jb-tabbar" role="tablist">
             <button type="button" class="jb-tab jb-tab-rep" data-tab="repertoire" role="tab"></button>
-            <button type="button" class="jb-tab jb-tab-req" data-tab="myreq" role="tab"></button>
             <button type="button" class="jb-tab jb-tab-pub" data-tab="public" role="tab"></button>
           </div>
           <div class="jb-ladder-hit" aria-hidden="true"></div>
@@ -6220,7 +6223,7 @@ répertoire</button>
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-22.243";
+  const APP_BUILD = "2026-10-22.244";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -6323,11 +6326,11 @@ répertoire</button>
       my_requests_title: "Tes demandes",
       my_dons: (amount) => `Tes dons (facturés) : ${amount}`,
       myreq_label: (n, max) => `DEMANDES ${n}/${max}`,
-      tab_repertoire: "MON\nRÉPERTOIRE",
+      tab_repertoire: "MON RÉPERTOIRE", // sur une seule ligne (2 onglets seulement — Hubert, 16 nov. 2026)
       tab_myreq: "TES\nCHANSONS",
-      tab_public: "CHOIX\nDU PUBLIC",
+      tab_public: "LA PLAYLIST", // ex-« Choix du public » (Hubert, 16 nov. 2026)
       tab_myreq_title: "Tes chansons",
-      tab_public_title: "Choix du public",
+      tab_public_title: "La playlist",
       chat_title: "Suggestion", // titre de l'écran du chat (Hubert, 16 nov. 2026)
       chat_open: "Suggestion", // ouvre le chat (16 nov. 2026)
       chat_back: "⬅ Retour",
@@ -6439,11 +6442,11 @@ répertoire</button>
       my_requests_title: "Your requests",
       my_dons: (amount) => `Your tips (billed): ${amount}`,
       myreq_label: (n, max) => `REQUESTS ${n}/${max}`,
-      tab_repertoire: "MON\nRÉPERTOIRE",
+      tab_repertoire: "MY REPERTOIRE",
       tab_myreq: "YOUR\nSONGS",
-      tab_public: "CROWD\nPICKS",
+      tab_public: "THE PLAYLIST",
       tab_myreq_title: "Your songs",
-      tab_public_title: "Crowd picks",
+      tab_public_title: "The playlist",
       chat_title: "Suggestion", // titre de l'écran du chat (Hubert, 16 nov. 2026)
       chat_open: "Suggestion", // ouvre le chat (16 nov. 2026)
       chat_back: "⬅ Back",
