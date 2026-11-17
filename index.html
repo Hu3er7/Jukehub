@@ -6234,7 +6234,7 @@ répertoire</button>
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-22.246";
+  const APP_BUILD = "2026-10-22.247";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -8664,7 +8664,10 @@ répertoire</button>
       const ks = getComputedStyle(skb);
       below = skb.offsetHeight + parseFloat(ks.marginTop) + parseFloat(ks.marginBottom);
     }
-    const h = Math.max(285, Math.round(visibleHeight() - top - FRAME_BOTTOM_GAP - below));
+    // clavier de recherche ouvert : le cadre peut descendre bien plus bas que d'habitude (285px) pour que le
+    // clavier tienne en entier à l'écran, même sur un iPhone (679px de haut, mesuré chez Hubert, 17 nov. 2026)
+    const minH = skb && document.documentElement.classList.contains("jb-search-kbd-open") ? 120 : 285;
+    const h = Math.max(minH, Math.round(visibleHeight() - top - FRAME_BOTTOM_GAP - below));
     document.getElementById("jb-public").style.setProperty("--jb-frame-h", `${h}px`);
   }
   // Page principale fixe (16 nov. 2026) : si Safari la décale quand même (geste, clavier refermé…), on la remet en haut
