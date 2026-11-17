@@ -6200,7 +6200,7 @@ répertoire</button>
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-22.241";
+  const APP_BUILD = "2026-10-22.242";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -6344,7 +6344,7 @@ répertoire</button>
       tip_close: "Ne pas donner de pourboire",
       tipped_thanks: "💳 Merci beaucoup pour le pourboire !",
       tip_ask: "Tu aimes la soirée ? Encourage Hubert avec un pourboire 🎸",
-      tip_unlock: (title) => `Pour une 5e chanson${title ? ` (« ${title} »)` : ""}, laisse un pourboire à Hubert 🎸`,
+      tip_unlock: (title) => `Pour une 6e chanson${title ? ` (« ${title} »)` : ""}, laisse un pourboire à Hubert 🎸`,
       boost_word: "Faire monter",
       req_first_title: (n) => `Il te reste ${n} chansons à sélectionner`,
       req_first_back: "",
@@ -6458,7 +6458,7 @@ répertoire</button>
       tip_close: "No tip",
       tipped_thanks: "💳 Thank you so much for the tip!",
       tip_ask: "Enjoying the night? Support Hubert with a tip 🎸",
-      tip_unlock: (title) => `For a 5th song${title ? ` (“${title}”)` : ""}, leave Hubert a tip 🎸`,
+      tip_unlock: (title) => `For a 6th song${title ? ` (“${title}”)` : ""}, leave Hubert a tip 🎸`,
       boost_word: "Push up",
       req_first_title: (n) => `You have ${n} songs left to pick`,
       req_first_back: "",
@@ -8823,7 +8823,7 @@ répertoire</button>
     tipUnlockSong = isTip && tipMode === "unlock" ? unlockSong : null;
     const title = votes[id]?.title || "";
     const modalText = document.getElementById("jb-vote-modal-text");
-    if (isTip && tipMode === "ask") {
+    if (isTip && (tipMode === "ask" || tipMode === "unlock")) { // 6e demande aussi : même titre (Hubert, 16 nov. 2026)
       // titre « $ POURBOIRE $ » (comme le bouton, sans le cadre) au lieu d'une phrase (Hubert, 16 nov. 2026)
       modalText.innerHTML = `<span class="jb-tip-title">${TIP_ICO}<span>${escapeHtml(t("tip_open"))}</span>${TIP_ICO}</span>`;
     } else {
@@ -10242,7 +10242,8 @@ répertoire</button>
     // (plus de limite fixe de 5 chansons : après 4 demandes, la suivante demande un pourboire, qui remet le compte à zéro)
     // 5e chanson : seulement avec un pourboire (Hubert, 16 nov. 2026). La chanson est retenue ; elle est
     // ajoutée au retour du paiement réussi.
-    if (!opts.tipPaid && tipCycle().n >= MAX_REQUESTS - 1) {
+    // 16 nov. 2026 (Hubert) : finalement, c'est la 6e chanson qui exige un pourboire
+    if (!opts.tipPaid && tipCycle().n >= 5) {
       if (!(await ensureClientName())) return;
       showPayModal(TIP_ID, "unlock", { id: song.id, title: song.title, artist: song.artist || "" });
       return;
@@ -10336,11 +10337,11 @@ répertoire</button>
     // 20 oct. 2026 (Hubert) : plus de toast « Chanson demandée ! » — seule la 1re demande affiche un
     // message (« Il te reste 4 chansons à sélectionner »), les suivantes ne font que cocher la ligne.
     // (plus de message « Il te reste 4 chansons à sélectionner » à la 1re demande — Hubert, 16 nov. 2026)
-    // 4e demande depuis le dernier pourboire : on propose un pourboire, une fois par tour (Hubert, 16 nov. 2026)
+    // 3e, 4e et 5e demandes depuis le dernier pourboire : on propose un pourboire chaque fois ; la 6e en exige un
+    // (voir plus haut) (Hubert, 16 nov. 2026)
     const cycle = tipCycle();
     cycle.n += 1;
-    if (cycle.n >= MAX_REQUESTS - 1 && !cycle.asked) {
-      cycle.asked = true;
+    if (cycle.n >= 3 && cycle.n <= 5) {
       voteModalPending = true;
       setTimeout(() => { voteModalPending = false; showPayModal(TIP_ID, "ask"); }, VOTE_MODAL_DELAY_MS);
     }
