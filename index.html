@@ -2412,14 +2412,13 @@
      une fois ouvert, tout le reste disparaît (voir setChatMode()) */
   /* clavier de la recherche (Hubert, 17 nov. 2026) : collé au bas de l'écran, il monte quand on touche la barre de
      recherche et redescend quand on en sort ; « Suggestion » est caché pendant ce temps */
-  #jb-public .jb-kbd.jb-search-kbd {
-    position: fixed; left: 8px; right: 8px; bottom: 4px; z-index: 50; margin: 0 !important;
-    transform: translateY(calc(100% + 12px)); visibility: hidden;
-    transition: transform 0.25s ease, visibility 0s linear 0.25s;
-  }
-  html.jb-search-kbd-open #jb-public .jb-kbd.jb-search-kbd { transform: none; visibility: visible; transition: transform 0.25s ease; }
+  /* (17 nov. 2026) dans la page sous le cadre, pas par-dessus : le cadre rapetisse pour lui faire la place */
+  #jb-public .jb-kbd.jb-search-kbd { display: none !important; margin: 10px -10px 4px !important; }
+  html.jb-search-kbd-open #jb-public .jb-kbd.jb-search-kbd { display: flex !important; animation: jb-kbd-up 0.3s ease; }
+  @keyframes jb-kbd-up { from { opacity: 0; transform: translateY(40px); } to { opacity: 1; transform: none; } }
   html.jb-search-kbd-open #jb-app #jb-public #jb-chat-open { display: none !important; }
-  html.jb-search-kbd-open #jb-app-content.jb-chat-mode ~ .jb-search-kbd { display: none; }
+  /* le cadre change de hauteur en douceur pendant que le clavier monte ou redescend */
+  html.jb-frame-anim #jb-app:not(.jb-browse-only) #jb-public .jb-catalog .jb-catalog-frame { transition: height 0.3s ease, min-height 0.3s ease !important; }
   /* hors spectacle : pas de bouton Thème (toujours Cyberpunk — Hubert, 17 nov. 2026) */
   html.jb-offline-mode #jb-app #jb-bg-btn { display: none !important; }
   /* moins d'espace perdu en haut de l'écran : le titre (et RETOUR du chat) remonte (Hubert, 16 nov. 2026) */
@@ -6235,7 +6234,7 @@ répertoire</button>
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-22.245";
+  const APP_BUILD = "2026-10-22.246";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -8661,7 +8660,10 @@ répertoire</button>
     let below = sbs ? sb.offsetHeight + parseFloat(sbs.marginTop) + parseFloat(sbs.marginBottom) : 0;
     // clavier de la recherche ouvert : le cadre rapetisse pour lui laisser la place (17 nov. 2026)
     const skb = document.getElementById("jb-search-kbd");
-    if (skb && document.documentElement.classList.contains("jb-search-kbd-open")) below = skb.offsetHeight + 8;
+    if (skb && document.documentElement.classList.contains("jb-search-kbd-open")) {
+      const ks = getComputedStyle(skb);
+      below = skb.offsetHeight + parseFloat(ks.marginTop) + parseFloat(ks.marginBottom);
+    }
     const h = Math.max(285, Math.round(visibleHeight() - top - FRAME_BOTTOM_GAP - below));
     document.getElementById("jb-public").style.setProperty("--jb-frame-h", `${h}px`);
   }
@@ -11345,12 +11347,23 @@ répertoire</button>
     const kbd = document.createElement("div");
     kbd.id = "jb-search-kbd";
     kbd.className = "jb-kbd jb-search-kbd";
-    document.getElementById("jb-public").appendChild(kbd);
+    // dans la page, sous le cadre (à la place de « Suggestion ») : le cadre et le clavier se partagent l'écran —
+    // pas par-dessus (sur iPhone, le clavier « flottant » se retrouvait coupé au milieu de l'écran, 17 nov. 2026)
+    document.getElementById("jb-chat-open").after(kbd);
     if (!setupAppKeyboard({ input, kbd, maxLen: 60, capitalize: false, notify: true })) { kbd.remove(); return; }
     searchUsesAppKbd = true;
     const root = document.documentElement;
-    const open = () => { root.classList.add("jb-search-kbd-open"); fitFrameToScreen(); };
-    const close = () => { root.classList.remove("jb-search-kbd-open"); fitFrameToScreen(); };
+    // le cadre rapetisse (ou regrandit) en douceur pendant que le clavier monte (ou part)
+    let animT = null;
+    const animate = () => { root.classList.add("jb-frame-anim"); clearTimeout(animT); animT = setTimeout(() => root.classList.remove("jb-frame-anim"), 400); };
+    const open = () => {
+      if (root.classList.contains("jb-search-kbd-open")) return;
+      animate(); root.classList.add("jb-search-kbd-open"); fitFrameToScreen(); window.scrollTo(0, 0);
+    };
+    const close = () => {
+      if (!root.classList.contains("jb-search-kbd-open")) return;
+      animate(); root.classList.remove("jb-search-kbd-open"); fitFrameToScreen();
+    };
     input.addEventListener("focus", open);
     input.addEventListener("pointerdown", open); // (barre déjà active : le toucher suffit à rouvrir le clavier)
     input.addEventListener("blur", () => setTimeout(() => { if (document.activeElement !== input) close(); }, 0));
