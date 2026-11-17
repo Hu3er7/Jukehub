@@ -1304,6 +1304,13 @@
   #jb-public .jb-palmares-grid .jb-voter-named { display: inline-flex; align-items: center; gap: 5px; vertical-align: middle; }
   #jb-app #jb-public .jb-palmares-grid .jb-voter-named .jb-chat-av { width: 1.25em; height: 1.25em; border-width: 1.5px; }
   #jb-app #jb-public .jb-palmares-grid .jb-voter-named .jb-chat-av svg { width: 0.95em; height: 0.95em; }
+  /* PARTOUT (tous les thèmes : chat, La playlist, admin) : l'icône du client seule, sans cadre autour
+     (Hubert, 17 nov. 2026). (La grille de choix de la fenêtre du nom garde ses cases.) */
+  html #jb-app .jb-chat-av {
+    clip-path: none !important; border: none !important; border-radius: 0 !important;
+    background: none !important; box-shadow: none !important;
+  }
+  html #jb-app .jb-chat-av::after { display: none !important; }
   /* Bar spectacle : l'icône seule, sans cadre autour (Hubert, 17 nov. 2026) */
   html[data-jb-bg="bar"] #jb-app #jb-public .jb-palmares-grid .jb-voter-named .jb-chat-av {
     clip-path: none !important; border: none !important; background: none !important; box-sizing: border-box;
@@ -6502,7 +6509,7 @@ répertoire</button>
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-22.265";
+  const APP_BUILD = "2026-10-22.266";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
