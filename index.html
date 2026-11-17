@@ -2697,6 +2697,10 @@
   #jb-public .jb-chat-form[hidden] { display: none; }
   /* curseur « _ » jaune fixe (pas clignotant, Hubert) au bout du texte (posé par placeCaret(), écrans tactiles) */
   #jb-public .jb-chat-form { position: relative; }
+  /* barre de recherche (17 nov. 2026) : même curseur « _ », visible seulement quand son clavier est ouvert */
+  #jb-public #jb-catalog-searchbar { position: relative; }
+  html:not(.jb-search-kbd-open) #jb-public #jb-catalog-searchbar .jb-kbd-caret { display: none; }
+  html.jb-search-kbd-open #jb-public #jb-search-input::placeholder { color: transparent; }
   #jb-public .jb-kbd-caret {
     position: absolute; top: 50%; transform: translateY(-50%); pointer-events: none;
     font-family: 'Share Tech Mono', monospace; font-size: 0.95rem; font-weight: 700; color: #fff200;
@@ -6243,7 +6247,7 @@ répertoire</button>
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-22.252";
+  const APP_BUILD = "2026-10-22.253";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -11365,8 +11369,17 @@ répertoire</button>
     // dans la page, sous le cadre (à la place de « Suggestion ») : le cadre et le clavier se partagent l'écran —
     // pas par-dessus (sur iPhone, le clavier « flottant » se retrouvait coupé au milieu de l'écran, 17 nov. 2026)
     document.getElementById("jb-chat-open").after(kbd);
-    if (!setupAppKeyboard({ input, kbd, maxLen: 60, capitalize: false, notify: true })) { kbd.remove(); return; }
+    const bar = document.getElementById("jb-catalog-searchbar");
+    if (!setupAppKeyboard({ input, kbd, form: bar, maxLen: 60, capitalize: false, notify: true })) { kbd.remove(); return; }
     searchUsesAppKbd = true;
+    // La barre ne reçoit JAMAIS le vrai focus du téléphone (17 nov. 2026) : sur iPhone, ce focus montrait le
+    // curseur bleu clignotant et le soulignement rouge de l'orthographe, et iOS retirait ensuite le focus en
+    // cours de frappe (ex. quand « Aucun résultat » s'affichait), ce qui refermait le clavier. Seul le clavier de
+    // l'app écrit dedans, avec son curseur « _ » comme dans Suggestion ; il ne se ferme qu'en touchant ailleurs.
+    input.readOnly = true;
+    input.setAttribute("spellcheck", "false");
+    input.setAttribute("autocorrect", "off");
+    input.setAttribute("autocapitalize", "off");
     const root = document.documentElement;
     // le cadre rapetisse (ou regrandit) en douceur pendant que le clavier monte (ou part)
     let animT = null;
@@ -11379,15 +11392,17 @@ répertoire</button>
       if (!root.classList.contains("jb-search-kbd-open")) return;
       animate(); root.classList.remove("jb-search-kbd-open"); fitFrameToScreen();
     };
-    input.addEventListener("focus", open);
-    input.addEventListener("pointerdown", open); // (barre déjà active : le toucher suffit à rouvrir le clavier)
-    input.addEventListener("blur", () => setTimeout(() => { if (document.activeElement !== input) close(); }, 0));
-    // Sur iPhone, toucher ailleurs ne retire pas toujours le curseur de la barre : on ferme le clavier dès qu'on
-    // touche n'importe où ailleurs que la barre ou le clavier (Hubert, 17 nov. 2026)
+    // toucher la barre ouvre le clavier sans lui donner le focus du téléphone
+    const tap = (e) => { e.preventDefault(); open(); };
+    input.addEventListener("pointerdown", tap);
+    input.addEventListener("mousedown", (e) => e.preventDefault());
+    input.addEventListener("touchend", (e) => { if (e.cancelable) e.preventDefault(); }, { passive: false });
+    // si le téléphone lui donne quand même le focus : on ouvre le clavier de l'app et on retire ce focus
+    input.addEventListener("focus", () => { open(); input.blur(); });
+    // toucher n'importe où ailleurs que la barre ou le clavier : le clavier redescend (Hubert, 17 nov. 2026)
     document.addEventListener("pointerdown", (e) => {
       if (!root.classList.contains("jb-search-kbd-open")) return;
       if (e.target === input || kbd.contains(e.target)) return;
-      input.blur();
       close();
     }, true);
   })();
