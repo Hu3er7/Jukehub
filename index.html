@@ -2417,6 +2417,11 @@
   html.jb-search-kbd-open #jb-public .jb-kbd.jb-search-kbd { display: flex !important; animation: jb-kbd-up 0.3s ease; }
   @keyframes jb-kbd-up { from { opacity: 0; transform: translateY(40px); } to { opacity: 1; transform: none; } }
   html.jb-search-kbd-open #jb-app #jb-public #jb-chat-open { display: none !important; }
+  /* petits écrans (iPhone SE, etc.) : clavier compact pour qu'il tienne en entier (Hubert, 17 nov. 2026) */
+  @media (max-height: 640px) {
+    #jb-public .jb-kbd { gap: 5px !important; padding-top: 6px !important; padding-bottom: 5px !important; }
+    #jb-public .jb-kbd .jb-kbd-key { height: 34px !important; }
+  }
   /* le cadre change de hauteur en douceur pendant que le clavier monte ou redescend */
   html.jb-frame-anim #jb-app:not(.jb-browse-only) #jb-public .jb-catalog .jb-catalog-frame { transition: height 0.3s ease, min-height 0.3s ease !important; }
   /* hors spectacle : pas de bouton Thème (toujours Cyberpunk — Hubert, 17 nov. 2026) */
@@ -6234,7 +6239,7 @@ répertoire</button>
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-22.247";
+  const APP_BUILD = "2026-10-22.248";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
