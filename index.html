@@ -2410,6 +2410,18 @@
   #jb-app.jb-browse-only .jb-chat { display: none; }
   /* 29 oct. 2026 (Hubert) : écran du chat à part — bouton « Chat room » au-dessus de la recherche ;
      une fois ouvert, tout le reste disparaît (voir setChatMode()) */
+  /* clavier de la recherche (Hubert, 17 nov. 2026) : collé au bas de l'écran, il monte quand on touche la barre de
+     recherche et redescend quand on en sort ; « Suggestion » est caché pendant ce temps */
+  #jb-public .jb-kbd.jb-search-kbd {
+    position: fixed; left: 8px; right: 8px; bottom: 4px; z-index: 50; margin: 0 !important;
+    transform: translateY(calc(100% + 12px)); visibility: hidden;
+    transition: transform 0.25s ease, visibility 0s linear 0.25s;
+  }
+  html.jb-search-kbd-open #jb-public .jb-kbd.jb-search-kbd { transform: none; visibility: visible; transition: transform 0.25s ease; }
+  html.jb-search-kbd-open #jb-app #jb-public #jb-chat-open { display: none !important; }
+  html.jb-search-kbd-open #jb-app-content.jb-chat-mode ~ .jb-search-kbd { display: none; }
+  /* hors spectacle : pas de bouton Thème (toujours Cyberpunk — Hubert, 17 nov. 2026) */
+  html.jb-offline-mode #jb-app #jb-bg-btn { display: none !important; }
   /* moins d'espace perdu en haut de l'écran : le titre (et RETOUR du chat) remonte (Hubert, 16 nov. 2026) */
   html #jb-app #jb-public.jb-view { padding-top: 6px !important; }
   /* plus de petit triangle dans le coin en haut à droite, dans tous les thèmes (Hubert, 16 nov. 2026) */
@@ -6223,7 +6235,7 @@ répertoire</button>
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-22.244";
+  const APP_BUILD = "2026-10-22.245";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -6895,7 +6907,9 @@ répertoire</button>
   // elle-même) : cette dernière remplace brièvement le contenu réel de la liste par 3 chansons de
   // mesure, en partant du principe qu'un vrai rendu la réécrit l'instant d'après (voir ses
   // commentaires) — vrai dans renderCatalog(), pas forcément depuis un simple évènement focus/blur.
+  var searchUsesAppKbd = false; // clavier de l'app pour la recherche (voir setupSearchKeyboard()) : rien à faire ici
   function applySearchFocusHeight(focused) {
+    if (searchUsesAppKbd) return;
     const prevH = catalogFrameHeight();
     applySearchFocusHeightNow(focused);
     animateCatalogFrame(prevH);
@@ -8644,7 +8658,10 @@ répertoire</button>
     // place pour le bouton « Suggestion » sous le cadre (16 nov. 2026)
     const sb = document.getElementById("jb-chat-open");
     const sbs = sb && sb.offsetParent ? getComputedStyle(sb) : null;
-    const below = sbs ? sb.offsetHeight + parseFloat(sbs.marginTop) + parseFloat(sbs.marginBottom) : 0;
+    let below = sbs ? sb.offsetHeight + parseFloat(sbs.marginTop) + parseFloat(sbs.marginBottom) : 0;
+    // clavier de la recherche ouvert : le cadre rapetisse pour lui laisser la place (17 nov. 2026)
+    const skb = document.getElementById("jb-search-kbd");
+    if (skb && document.documentElement.classList.contains("jb-search-kbd-open")) below = skb.offsetHeight + 8;
     const h = Math.max(285, Math.round(visibleHeight() - top - FRAME_BOTTOM_GAP - below));
     document.getElementById("jb-public").style.setProperty("--jb-frame-h", `${h}px`);
   }
@@ -9120,6 +9137,7 @@ répertoire</button>
   // immédiatement (une fois déjà révélé une première fois) et après le court délai d'absorption du
   // tout premier affichage (voir bootRevealTimer).
   var browseOnly = false; // var : lue par applyLiveGateNow(), qui peut tourner avant cette ligne
+  var offlineSavedTheme = ""; // thème à remettre quand le spectacle recommence (voir applyLiveGateNow())
   function applyLiveGateNow(live) {
     const appContent = document.getElementById("jb-app-content");
     const offlinePage = document.getElementById("jb-offline-page");
@@ -9146,6 +9164,19 @@ répertoire</button>
     if (appContent) appContent.hidden = !(granted || browsing);
     if (offlinePage) offlinePage.hidden = granted || browsing;
     if (qrGatePage) qrGatePage.hidden = true;
+    // Hors spectacle (page « pas en spectacle » et simple consultation) : toujours le thème Cyberpunk, sans
+    // bouton Thème (Hubert, 17 nov. 2026). Le thème choisi revient quand le spectacle (re)commence.
+    const root = document.documentElement;
+    if (!granted) {
+      if (!root.classList.contains("jb-offline-mode")) {
+        offlineSavedTheme = root.dataset.jbBg || "";
+        root.classList.add("jb-offline-mode");
+      }
+      if (root.dataset.jbBg) { delete root.dataset.jbBg; window.dispatchEvent(new Event("jb-bg-change")); }
+    } else if (root.classList.contains("jb-offline-mode")) {
+      root.classList.remove("jb-offline-mode");
+      if (offlineSavedTheme) { root.dataset.jbBg = offlineSavedTheme; window.dispatchEvent(new Event("jb-bg-change")); }
+    }
     if (granted) {
       // #jb-app-content démarre "hidden" (voir plus haut, pour éviter un flash de l'appli au
       // chargement/rechargement — voir aussi le correctif du bug de rechargement en boucle). La
@@ -10396,7 +10427,9 @@ répertoire</button>
     cycle.n += 1;
     if (cycle.n >= 3 && cycle.n <= 5) {
       voteModalPending = true;
-      setTimeout(() => { voteModalPending = false; showPayModal(TIP_ID, "ask"); }, VOTE_MODAL_DELAY_MS);
+      // attend la fin du vol du titre vers « La playlist » et de l'illumination de l'onglet (~2,2 s) pour ne pas
+      // que la fenêtre les chevauche (Hubert, 17 nov. 2026)
+      setTimeout(() => { voteModalPending = false; showPayModal(TIP_ID, "ask"); }, 2300);
     }
     saveTipCycle(cycle);
     // Illumine la ligne elle-même — même animation que la sélection de la chanson démo dans le
@@ -11148,11 +11181,11 @@ répertoire</button>
   // celui du téléphone qui montait par-dessus la page (inputmode="none" le garde fermé). « ÉÀ » = accents,
   // « 123 » = chiffres et ponctuation ; ⇧ = majuscule pour une lettre (automatique au début du message).
   // Sur ordinateur, rien ne change (vrai clavier).
-  (function setupChatKeyboard() {
-    const input = document.getElementById("jb-chat-input");
-    const kbd = document.getElementById("jb-kbd");
-    const form = document.getElementById("jb-chat-form");
-    if (!input || !kbd || !form) return;
+  // 17 nov. 2026 : le même clavier sert aussi à la recherche par mot clé (voir setupSearchKeyboard() plus bas).
+  // opts : input, kbd, form (où poser le curseur « _ » ; aucun = pas de curseur), maxLen, capitalize (majuscule
+  // automatique en début de phrase), notify (prévient la barre à chaque touche, pour la recherche en direct)
+  function setupAppKeyboard({ input, kbd, form = null, maxLen = 30, capitalize = true, notify = false }) {
+    if (!input || !kbd) return;
     if (!(window.matchMedia && window.matchMedia("(pointer: coarse)").matches)) return;
     input.setAttribute("inputmode", "none");
     // 27 oct. 2026 (Hubert) : plus de touche jaune d'envoi (le ➤ à côté de la barre suffit) ; touche 😀 = émoticônes
@@ -11195,20 +11228,24 @@ répertoire</button>
       // touche encore tenue (le clavier vient d'être redessiné sous le doigt) : elle reste bleue
       if (downKey) kbd.querySelectorAll("[data-k]").forEach((b) => { if (b.dataset.k === downKey) b.classList.add("jb-kbd-down"); });
     }
-    function autoShift() { shift = /(^\s*$)|([.!?]\s$)/.test(input.value); }
+    function autoShift() { shift = capitalize && /(^\s*$)|([.!?]\s$)/.test(input.value); }
+    function changed() { if (notify) { notifying = true; input.dispatchEvent(new Event("input", { bubbles: true })); notifying = false; } }
+    let notifying = false;
     function insert(ch) {
-      if (input.value.length >= 30) return; // même limite que la barre (maxlength)
+      if (input.value.length >= maxLen) return; // même limite que la barre (maxlength)
       const s = input.selectionStart ?? input.value.length, e = input.selectionEnd ?? s;
       input.setRangeText(ch, s, e, "end");
+      changed();
     }
     function backspace() {
       const s = input.selectionStart ?? input.value.length, e = input.selectionEnd ?? s;
-      if (s !== e) { input.setRangeText("", s, e, "end"); return; }
+      if (s !== e) { input.setRangeText("", s, e, "end"); changed(); return; }
       if (s <= 0) return;
       // efface le dernier caractère ENTIER (une émoticône peut compter pour plusieurs)
       const before = input.value.slice(0, s);
       const parts = window.Intl && Intl.Segmenter ? [...new Intl.Segmenter().segment(before)].map((x) => x.segment) : Array.from(before);
       input.setRangeText("", s - parts[parts.length - 1].length, s, "end");
+      changed();
     }
     // touches qui changent de mode (agissent au relâchement) ; toutes les autres écrivent dès le toucher
     // et se répètent si on les garde enfoncées (sssss…), comme un vrai clavier (Hubert, 27 oct. 2026)
@@ -11231,9 +11268,10 @@ répertoire</button>
     caret.className = "jb-kbd-caret";
     caret.textContent = "_";
     caret.setAttribute("aria-hidden", "true");
-    form.appendChild(caret);
+    if (form) form.appendChild(caret);
     const measure = document.createElement("canvas").getContext("2d");
     function placeCaret() {
+      if (!form) { input.scrollLeft = input.scrollWidth; return; } // barre de recherche : vrai curseur du téléphone
       const cs = getComputedStyle(input);
       measure.font = `${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;
       input.scrollLeft = input.scrollWidth; // texte long : on montre la fin
@@ -11245,14 +11283,12 @@ répertoire</button>
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(placeCaret);
     window.addEventListener("resize", placeCaret);
     // texte changé ailleurs que par ce clavier (message envoyé : la barre se vide) — Hubert, 28 oct. 2026
-    input.addEventListener("input", () => { autoShift(); render(); placeCaret(); });
+    input.addEventListener("input", () => { if (notifying) return; autoShift(); render(); placeCaret(); });
     // la barre est encore cachée au chargement (page hors spectacle, etc.) : on replace le curseur dès qu'elle apparaît
     if (window.ResizeObserver) new ResizeObserver(placeCaret).observe(input);
-    // Toujours affiché (Hubert, 27 oct. 2026) : plus besoin de toucher la barre, il ne se replie jamais.
     autoShift(); render();
-    kbd.hidden = false;
     // message parti (la barre se vide) : majuscule pour le prochain
-    form.addEventListener("submit", () => setTimeout(() => { autoShift(); render(); placeCaret(); }, 400));
+    if (form) form.addEventListener("submit", () => setTimeout(() => { autoShift(); render(); placeCaret(); }, 400));
     // Touche enfoncée : bleue tant que le doigt reste dessus ; gardée enfoncée, elle se répète (après 0,45 s,
     // 14 fois par seconde). Le relâchement est écouté sur TOUTE la page (doigt qui glisse hors du clavier,
     // geste annulé par le téléphone…) — avant, une touche pouvait rester bleue, ou ⌫ continuer d'effacer.
@@ -11295,6 +11331,29 @@ répertoire</button>
     });
     document.addEventListener("pointercancel", release);
     window.addEventListener("blur", release);
+    return true;
+  }
+  // Clavier du chat : toujours affiché sous la barre (Hubert, 27 oct. 2026) — il ne se replie jamais
+  if (setupAppKeyboard({ input: document.getElementById("jb-chat-input"), kbd: document.getElementById("jb-kbd"), form: document.getElementById("jb-chat-form") })) {
+    document.getElementById("jb-kbd").hidden = false;
+  }
+  // Recherche par mot clé (Hubert, 17 nov. 2026) : le clavier de l'app monte du bas de l'écran quand on touche
+  // la barre, et redescend quand on en sort ; « Suggestion » est caché pendant ce temps et le cadre Mon
+  // répertoire / La playlist rapetisse pour lui laisser la place (voir fitFrameToScreen()).
+  (function setupSearchKeyboard() {
+    const input = document.getElementById("jb-search-input");
+    const kbd = document.createElement("div");
+    kbd.id = "jb-search-kbd";
+    kbd.className = "jb-kbd jb-search-kbd";
+    document.getElementById("jb-public").appendChild(kbd);
+    if (!setupAppKeyboard({ input, kbd, maxLen: 60, capitalize: false, notify: true })) { kbd.remove(); return; }
+    searchUsesAppKbd = true;
+    const root = document.documentElement;
+    const open = () => { root.classList.add("jb-search-kbd-open"); fitFrameToScreen(); };
+    const close = () => { root.classList.remove("jb-search-kbd-open"); fitFrameToScreen(); };
+    input.addEventListener("focus", open);
+    input.addEventListener("pointerdown", open); // (barre déjà active : le toucher suffit à rouvrir le clavier)
+    input.addEventListener("blur", () => setTimeout(() => { if (document.activeElement !== input) close(); }, 0));
   })();
   renderChat();
   // vide le chat et les expulsions (appelée par « Nouvelle soirée »)
