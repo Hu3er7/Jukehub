@@ -28,15 +28,23 @@ service cloud.firestore {
       function oneName(list) {
         return list is list && list.size() == 1 && list[0] is string && list[0].size() > 0 && list[0].size() <= 15;
       }
+      // 17 nov. 2026 : "askedAv" = icône (avatar) de chaque nom de "askedBy" { nom: "star" }, affichée à côté
+      // du nom dans « La playlist ». À la création / réactivation : vide, ou l'icône de ce seul nom.
+      function avOk(v) { return v is string && v.size() > 0 && v.size() <= 12; }
+      function soloAv(d) {
+        return !('askedAv' in d) || (d.askedAv is map && (d.askedAv.size() == 0 ||
+          (d.askedAv.size() == 1 && 'askedBy' in d && d.askedAv.keys().hasOnly(d.askedBy) && avOk(d.askedAv[d.askedBy[0]]))));
+      }
 
       // Première demande de la soirée : création à 0 $, avec le nom de qui la demande.
       allow create: if isAdmin() || (
-        request.resource.data.keys().hasOnly(['requests', 'burned', 'title', 'artist', 'createdAt', 'askedBy']) &&
+        request.resource.data.keys().hasOnly(['requests', 'burned', 'title', 'artist', 'createdAt', 'askedBy', 'askedAv']) &&
         request.resource.data.requests == 0 &&
         request.resource.data.burned == false &&
         request.resource.data.title is string &&
         request.resource.data.title.size() <= 200 &&
-        (!('askedBy' in request.resource.data) || oneName(request.resource.data.askedBy))
+        (!('askedBy' in request.resource.data) || oneName(request.resource.data.askedBy)) &&
+        soloAv(request.resource.data)
       );
 
       allow update: if isAdmin() || (
@@ -45,17 +53,25 @@ service cloud.firestore {
         resource.data.get('burned', false) == false &&
         resource.data.requests == 0 &&
         resource.data.get('playedAt', null) != null &&
-        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['createdAt', 'playedAt', 'askedBy']) &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['createdAt', 'playedAt', 'askedBy', 'askedAv']) &&
         request.resource.data.playedAt == null &&
-        (!('askedBy' in request.resource.data) || oneName(request.resource.data.askedBy))
+        (!('askedBy' in request.resource.data) || oneName(request.resource.data.askedBy)) &&
+        soloAv(request.resource.data)
       ) || (
-        // Une autre personne demande une chanson déjà là : on AJOUTE seulement son nom à la liste.
-        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['askedBy']) &&
+        // Une autre personne demande une chanson déjà là : on AJOUTE seulement son nom à la liste
+        // (et, s'il en a une, son icône dans "askedAv" — rien d'autre n'y change).
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['askedBy', 'askedAv']) &&
         request.resource.data.askedBy is list &&
         request.resource.data.askedBy.size() <= 40 &&
         request.resource.data.askedBy.size() == resource.data.get('askedBy', []).size() + 1 &&
         request.resource.data.askedBy.hasAll(resource.data.get('askedBy', [])) &&
-        oneName(request.resource.data.askedBy.removeAll(resource.data.get('askedBy', [])))
+        oneName(request.resource.data.askedBy.removeAll(resource.data.get('askedBy', []))) &&
+        (!('askedAv' in request.resource.data.diff(resource.data).affectedKeys()) || (
+          request.resource.data.askedAv is map &&
+          request.resource.data.askedAv.diff(resource.data.get('askedAv', {})).affectedKeys()
+            .hasOnly(request.resource.data.askedBy.removeAll(resource.data.get('askedBy', []))) &&
+          avOk(request.resource.data.askedAv[request.resource.data.askedBy.removeAll(resource.data.get('askedBy', []))[0]])
+        ))
       );
 
       allow delete: if isAdmin();

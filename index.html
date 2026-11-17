@@ -1298,6 +1298,11 @@
   }
   /* …suivi du montant « F : 5 $ », même taille (voir palmVotersWithAmount()) ; pas sous la barre de défilement */
   #jb-public .jb-palmares-grid .jb-slot-mid > .jb-slot-voters { padding-right: 10px; }
+  /* nom un peu plus gros, avec l'icône du client devant, de la même hauteur que les lettres (17 nov. 2026) */
+  html #jb-app #jb-public .jb-palmares-grid .jb-slot-mid > .jb-slot-voters { font-size: 0.86rem; }
+  #jb-public .jb-palmares-grid .jb-voter-named { display: inline-flex; align-items: center; gap: 5px; vertical-align: middle; }
+  #jb-app #jb-public .jb-palmares-grid .jb-voter-named .jb-chat-av { width: 1.25em; height: 1.25em; border-width: 1.5px; }
+  #jb-app #jb-public .jb-palmares-grid .jb-voter-named .jb-chat-av svg { width: 0.95em; height: 0.95em; }
   /* Solde de chaque votant à côté de son nom ("Néo +2" / "Néo -2", voir renderVotersLine()) */
   #jb-app .jb-voter-delta { font-family: 'Share Tech Mono', monospace; font-weight: 700; }
   #jb-app .jb-voter-delta-up { color: #fff200; }
@@ -6325,7 +6330,7 @@ répertoire</button>
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-22.257";
+  const APP_BUILD = "2026-10-22.258";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -9615,11 +9620,11 @@ répertoire</button>
   function palmVotersWithAmount(v) {
     const cents = v.requests || 0;
     const amt = showAmounts && cents > 0 ? `<span class="jb-voter-delta jb-voter-delta-up">${escapeHtml(formatMoney(cents))}</span>` : "";
-    const line = renderVotersLine(v.voters, false, v.askedBy, true);
+    const line = renderVotersLine(v.voters, false, v.askedBy, true, v.askedAv);
     if (!line) return amt ? `<span class="jb-slot-voters">${amt}</span>` : "";
     return amt ? line.replace(/<\/span>$/, ` : ${amt}</span>`) : line;
   }
-  function renderVotersLine(voters, forceAmounts = false, askedBy = [], noAmounts = false) {
+  function renderVotersLine(voters, forceAmounts = false, askedBy = [], noAmounts = false, avatars = null) {
     // 26 oct. 2026 (Hubert) : le nom d'utilisateur de chaque client qui a demandé la chanson
     // apparaît TOUJOURS (askedBy, dans l'ordre des demandes), même à 0 $ ; puis les autres donateurs.
     // 19 oct. 2026 (paiements) : "voters" = montant payé par chaque prénom, en cents ; le montant
@@ -9638,7 +9643,9 @@ répertoire</button>
     const withAmounts = !noAmounts && (forceAmounts || showAmounts);
     return `<span class="jb-slot-voters">${shown.map(([n, cents]) => {
       const amount = withAmounts && cents > 0 ? ` <span class="jb-voter-delta jb-voter-delta-up">${formatMoney(cents)}</span>` : "";
-      return `${escapeHtml(n)}${amount}`;
+      // icône du client devant son nom, s'il en a une (La playlist, 17 nov. 2026)
+      const av = avatars && typeof avatars === "object" && typeof avatars[n] === "string" ? chatAvatarHtml(avatars[n]) : "";
+      return av ? `<span class="jb-voter-named">${av}${escapeHtml(n)}</span>${amount}` : `${escapeHtml(n)}${amount}`;
     }).join(" · ")}${more > 0 ? ` · +${more}` : ""}</span>`;
   }
 
@@ -10448,6 +10455,7 @@ répertoire</button>
       return;
     }
     const myName = await ensureClientName();
+    const myAv = getClientAvatar(); // icône du client, gardée avec son nom (« La playlist », 17 nov. 2026)
     if (!myName) return; // nom obligatoire (Annuler = pas de demande)
     const staySameList = currentResultsCount() > 1;
     // Si la chanson est actuellement "éteinte" (voir isDormant() plus haut), cette demande va la
@@ -10508,6 +10516,7 @@ répertoire</button>
         artist: song.artist || "",
         createdAt: { seconds: Math.floor(Date.now() / 1000) },
         askedBy: [myName],
+        askedAv: myAv ? { [myName]: myAv } : {},
       };
       renderPalmares();
     } else if (wasDormant) {
@@ -10516,11 +10525,12 @@ répertoire</button>
       // sans ça, elle resterait invisible du palmarès de CE client jusqu'à ce que l'écouteur
       // onSnapshot(collection(db, "votes")) relivre un nouvel instantané confirmé par le serveur —
       // même raison que le correctif précédent plus haut (listener parfois lent, Safari).
-      votes[song.id] = { ...votes[song.id], requests: 0, playedAt: null, createdAt: { seconds: Math.floor(Date.now() / 1000) }, askedBy: [myName] };
+      votes[song.id] = { ...votes[song.id], requests: 0, playedAt: null, createdAt: { seconds: Math.floor(Date.now() / 1000) }, askedBy: [myName], askedAv: myAv ? { [myName]: myAv } : {} };
       renderPalmares();
     } else if (!(votes[song.id].askedBy || []).includes(myName)) {
       // déjà au « Choix du public » : on ajoute ce nom à ceux qui l'ont demandée
-      votes[song.id] = { ...votes[song.id], askedBy: [...(votes[song.id].askedBy || []), myName] };
+      votes[song.id] = { ...votes[song.id], askedBy: [...(votes[song.id].askedBy || []), myName],
+        ...(myAv ? { askedAv: { ...(votes[song.id].askedAv || {}), [myName]: myAv } } : {}) };
       renderPalmares();
     }
     renderMyVotes(); // la chanson apparaît tout de suite dans "// Tes demandes", sans attendre Firestore
@@ -10604,15 +10614,20 @@ répertoire</button>
             artist: song.artist || "",
             createdAt: serverTimestamp(),
             askedBy: [myName], // nom d'utilisateur de qui l'a demandée (26 oct. 2026, Hubert)
+            askedAv: myAv ? { [myName]: myAv } : {}, // son icône, à côté du nom dans La playlist (17 nov. 2026)
           });
         } else if (isDormant(snap.data())) {
           // Chanson "éteinte" (voir le commentaire ci-dessus) : cette nouvelle demande la relance
           // comme une toute nouvelle entrée du palmarès, à 0 vote — et repart avec ce seul nom.
-          tx.update(ref, { createdAt: serverTimestamp(), playedAt: null, askedBy: [myName] });
+          tx.update(ref, { createdAt: serverTimestamp(), playedAt: null, askedBy: [myName], askedAv: myAv ? { [myName]: myAv } : {} });
         } else {
           // Déjà au « Choix du public » : on ajoute ce nom à ceux qui l'ont demandée (s'il n'y est pas)
           const askedBy = snap.data().askedBy || [];
-          if (!askedBy.includes(myName) && askedBy.length < 40) tx.update(ref, { askedBy: [...askedBy, myName] });
+          if (!askedBy.includes(myName) && askedBy.length < 40) {
+            tx.update(ref, myAv
+              ? { askedBy: [...askedBy, myName], askedAv: { ...(snap.data().askedAv || {}), [myName]: myAv } }
+              : { askedBy: [...askedBy, myName] });
+          }
         }
         // Sinon (déjà activement au palmarès ce soir, demandée par ce client ou par un autre avant
         // lui, ou encore en refroidissement/brûlée) : rien à faire ici, voir le commentaire
