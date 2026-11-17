@@ -6502,7 +6502,7 @@ répertoire</button>
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-22.263";
+  const APP_BUILD = "2026-10-22.264";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -9262,6 +9262,11 @@ répertoire</button>
   var tippedReturn = location.hash === "#tipped";
   if (location.hash === "#tipped") {
     history.replaceState(null, "", location.pathname + location.search);
+    // Pourboire réussi : on débloque TOUT DE SUITE (5 nouvelles chansons + 3 messages de Demande spéciale).
+    // Avant, ça attendait un instantané « serveur » de la liste des chansons, qui n'arrive pas toujours quand
+    // le cache local est déjà à jour — tout restait bloqué après le pourboire (Hubert, 17 nov. 2026).
+    saveTipCycle({ n: 0, asked: false });
+    saveChatSentCount(0);
     setTimeout(() => showToast(t("tipped_thanks")), 1500);
     try { pendingTipUnlock = JSON.parse(safeStorageGet("jb_tip_unlock") || "null"); } catch (e) { pendingTipUnlock = null; }
     if (pendingTipUnlock && !(Date.now() - (pendingTipUnlock.at || 0) < 2 * 3600 * 1000 && pendingTipUnlock.id)) pendingTipUnlock = null;
@@ -9711,7 +9716,9 @@ répertoire</button>
     // null, qui aurait fait paraître cette chanson plus ANCIENNE que toutes les autres (0 ms) —
     // exactement l'inverse de l'effet recherché.
     snap.forEach((d) => { votes[d.id] = d.data({ serverTimestamps: "estimate" }); });
-    if (!snap.metadata.fromCache) resumeTipUnlock(); // 5e chanson payée par un pourboire (retour de Stripe)
+    // chanson retenue par le pourboire (retour de Stripe) : ajoutée dès que la liste est là — même venant du
+    // cache local (un instantané « serveur » identique au cache n'est jamais relivré)
+    resumeTipUnlock();
     // Compare au nombre de votes mémorisé au DERNIER vrai instantané (pas à chaque rendu) pour
     // savoir quels chiffres viennent d'augmenter — demande explicite de Hubert : "je veux que les
     // chiffres de vote s'illumine quand le nombre de vote augmente". "prev > 0" exclut la toute
