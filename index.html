@@ -1300,7 +1300,7 @@
   /* …suivi du montant « F : 5 $ », même taille (voir palmVotersWithAmount()) ; pas sous la barre de défilement */
   #jb-public .jb-palmares-grid .jb-slot-mid > .jb-slot-voters { padding-right: 10px; }
   /* nom un peu plus gros, avec l'icône du client devant, de la même hauteur que les lettres (17 nov. 2026) */
-  html #jb-app #jb-public .jb-palmares-grid .jb-slot-mid > .jb-slot-voters { font-size: 0.86rem; }
+  html #jb-app #jb-public .jb-palmares-grid .jb-slot-mid > .jb-slot-voters { font-size: 1.05rem; } /* encore plus gros (Hubert, 17 nov. 2026) */
   #jb-public .jb-palmares-grid .jb-voter-named { display: inline-flex; align-items: center; gap: 5px; vertical-align: middle; }
   #jb-app #jb-public .jb-palmares-grid .jb-voter-named .jb-chat-av { width: 1.25em; height: 1.25em; border-width: 1.5px; }
   #jb-app #jb-public .jb-palmares-grid .jb-voter-named .jb-chat-av svg { width: 0.95em; height: 0.95em; }
@@ -6509,7 +6509,7 @@ répertoire</button>
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-22.267";
+  const APP_BUILD = "2026-10-22.268";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
