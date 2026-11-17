@@ -6497,7 +6497,7 @@ répertoire</button>
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-22.261";
+  const APP_BUILD = "2026-10-22.262";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -9010,7 +9010,11 @@ répertoire</button>
       requestAnimationFrame(fitFrameToScreen);
     }
   }
-  document.getElementById("jb-chat-open").addEventListener("click", () => setChatMode(true));
+  // 3 messages déjà envoyés ce soir : Demande spéciale ouvre la fenêtre Pourboire au lieu du chat (Hubert, 17 nov. 2026)
+  document.getElementById("jb-chat-open").addEventListener("click", () => {
+    if (chatNeedsTip()) { showPayModal(TIP_ID, "chat"); return; }
+    setChatMode(true);
+  });
   document.querySelectorAll("[data-chat-back]").forEach((b) => b.addEventListener("click", () => setChatMode(false)));
 
   // « Choix du public » en haut du chat (toute la liste, défilable) : d'abord celles qui ont reçu un pourboire (le plus gros
@@ -9151,6 +9155,7 @@ répertoire</button>
   // tipMode : "ask" = fenêtre ouverte d'elle-même après la 3e demande (petit mot qui invite au pourboire) ;
   // "unlock" = 5e chanson, payable seulement avec un pourboire (unlockSong = la chanson retenue)
   let tipUnlockSong = null;
+  var tipChatKick = false; // fenêtre ouverte par le 4e message de Demande spéciale
   function showPayModal(id, tipMode = "", unlockSong = null) {
     const modal = document.getElementById("jb-vote-modal");
     if (!modal) return;
@@ -9161,7 +9166,8 @@ répertoire</button>
     tipUnlockSong = isTip && tipMode === "unlock" ? unlockSong : null;
     const title = votes[id]?.title || "";
     const modalText = document.getElementById("jb-vote-modal-text");
-    if (isTip && (tipMode === "ask" || tipMode === "unlock")) { // 6e demande aussi : même titre (Hubert, 16 nov. 2026)
+    tipChatKick = isTip && tipMode === "chat"; // « Ne pas donner » fera sortir du chat (voir le bouton de fermeture)
+    if (isTip && (tipMode === "ask" || tipMode === "unlock" || tipMode === "chat")) { // 6e demande aussi : même titre (Hubert, 16 nov. 2026)
       // titre « $ POURBOIRE $ » (comme le bouton, sans le cadre) au lieu d'une phrase (Hubert, 16 nov. 2026)
       modalText.innerHTML = `<span class="jb-tip-title">${TIP_ICO}<span>${escapeHtml(t("tip_open"))}</span>${TIP_ICO}</span>`;
     } else {
@@ -9258,7 +9264,8 @@ répertoire</button>
   try { localStorage.removeItem("jb_tip_unlock"); } catch (e) {}
   function resumeTipUnlock() {
     // pourboire réussi : le compte des demandes repart à zéro (voir tipCycle()), une seule fois par retour
-    if (tippedReturn) { tippedReturn = false; saveTipCycle({ n: 0, asked: false }); }
+    // (et les 3 messages gratuits de Demande spéciale repartent aussi, 17 nov. 2026)
+    if (tippedReturn) { tippedReturn = false; saveTipCycle({ n: 0, asked: false }); saveChatSentCount(0); }
     if (!pendingTipUnlock) return;
     const song = pendingTipUnlock;
     pendingTipUnlock = null;
@@ -9327,6 +9334,11 @@ répertoire</button>
   document.getElementById("jb-vote-modal-close").addEventListener("click", () => {
     document.getElementById("jb-vote-modal").hidden = true;
     payTargetId = null;
+    // 4e message de Demande spéciale sans pourboire : retour à la page principale (Hubert, 17 nov. 2026)
+    if (tipChatKick) {
+      tipChatKick = false;
+      if (document.getElementById("jb-app-content").classList.contains("jb-chat-mode")) setChatMode(false);
+    }
   });
   // Empêche la page de défiler derrière la fenêtre (iOS laisse passer le geste sinon)
   document.getElementById("jb-vote-modal").addEventListener("touchmove", (e) => e.preventDefault(), { passive: false });
@@ -10598,6 +10610,18 @@ répertoire</button>
     return c;
   }
   function saveTipCycle(c) { c.night = nightId || "default"; safeStorageSet("jb_tip_cycle", JSON.stringify(c)); }
+  // ---------- Messages de « Demande spéciale » (Hubert, 17 nov. 2026) ----------
+  // 3 messages gratuits par soirée sur ce téléphone. Au 4e (ou en rouvrant Demande spéciale ensuite), la
+  // fenêtre Pourboire s'ouvre à la place, et « Ne pas donner de pourboire » ramène à la page principale.
+  // Un pourboire réussi remet ce compte à zéro.
+  const CHAT_FREE_MSGS = 3;
+  function chatSentCount() {
+    let c;
+    try { c = JSON.parse(safeStorageGet("jb_chat_count") || "null"); } catch (e) { c = null; }
+    return c && c.night === (nightId || "default") ? (c.n || 0) : 0;
+  }
+  function saveChatSentCount(n) { safeStorageSet("jb_chat_count", JSON.stringify({ night: nightId || "default", n })); }
+  function chatNeedsTip() { return chatSentCount() >= CHAT_FREE_MSGS; }
 
   // ---------- Action : demander une chanson ----------
   // opts.tipPaid : 5e chanson débloquée par un pourboire (retour de Stripe, voir resumeTipUnlock())
@@ -11411,9 +11435,12 @@ répertoire</button>
     if (!text) return false;
     if (/(https?:\/\/|www\.)/i.test(text)) { showToast(t("chat_no_links")); return false; }
     if (Date.now() - lastChatSentAt < 3000) { showToast(t("chat_slow")); return false; }
+    // 4e message : pas envoyé, la fenêtre Pourboire s'ouvre (voir chatNeedsTip())
+    if (chatNeedsTip()) { showPayModal(TIP_ID, "chat"); return false; }
     const name = await ensureClientName(); // nom d'utilisateur obligatoire
     if (!name) return false;
     lastChatSentAt = Date.now();
+    saveChatSentCount(chatSentCount() + 1);
     if (onTaken) onTaken(); // la barre se vide tout de suite, sans attendre le serveur
     const avatar = getClientAvatar(); // "" = pas d'avatar (le champ n'est alors pas envoyé)
     const local = { name, avatar, text, ms: Date.now() };
