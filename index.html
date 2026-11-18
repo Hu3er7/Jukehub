@@ -3324,6 +3324,15 @@ html[data-jb-bg="bar"] #jb-app .jb-splash-btn { --jb-cp-c: #ffb84d; font-family:
       var(--jb-cp-diag) bottom left / 14px 14px no-repeat border-box,
       rgba(26, 11, 5, 0.75); text-shadow: 0 0 8px rgba(255, 184, 77, 0.6) }
 html[data-jb-bg="bar"] #jb-app .jb-splash-btn:active { background: #ffb84d; color: #1a0b05; text-shadow: none }
+/* Français / English : même contour que les boutons du Bar (Chansons, Artiste, Genre) — coins arrondis,
+   trait orangé de 2px et légère lueur, plus de coin coupé (Hubert, 18 nov. 2026) */
+html[data-jb-bg="bar"] #jb-app .jb-splash-btn {
+  clip-path: none !important; border: 2px solid rgba(255, 184, 77, 0.75) !important; border-radius: 14px !important;
+  background: rgba(255, 184, 77, 0.06) !important; background-image: none !important;
+  box-shadow: 0 0 8px rgba(255, 184, 77, 0.45), inset 0 0 8px rgba(255, 184, 77, 0.2) !important;
+}
+html[data-jb-bg="bar"] #jb-app .jb-splash-btn::before, html[data-jb-bg="bar"] #jb-app .jb-splash-btn::after { display: none !important; }
+html[data-jb-bg="bar"] #jb-app .jb-splash-btn:active { background: #ffb84d !important; color: #1a0b05; }
 html[data-jb-bg="bar"] #jb-public .jb-catalog-frame { background-color: #1a0a05; border: 2px solid #4ed4c8; box-shadow: 0 0 18px rgba(70, 205, 195, 0.45), inset 0 0 26px rgba(70, 205, 195, 0.14); border-radius: 3px }
 html[data-jb-bg="bar"] #jb-public .jb-catalog-frame::before { border: 1px solid rgba(78, 212, 200, 0.35) }
 html[data-jb-bg="bar"] #jb-public .jb-catalog-frame::after { border-radius: 50%; background: #4ed4c8; box-shadow: 0 0 8px #4ed4c8 }
@@ -6533,7 +6542,7 @@ répertoire</button>
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-22.272";
+  const APP_BUILD = "2026-10-22.273";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
