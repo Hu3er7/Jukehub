@@ -6509,7 +6509,7 @@ répertoire</button>
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-22.269";
+  const APP_BUILD = "2026-10-22.270";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -7760,10 +7760,13 @@ répertoire</button>
       clone.style.fontSize = `${parseFloat(fromStyle.fontSize) * 1.5}px`;
       clone.style.width = "auto";
       clone.style.whiteSpace = "nowrap";
+      // point de départ : EXACTEMENT là où est le titre dans la liste (même début de texte, même hauteur) —
+      // il ne fait que grossir sur place avant de partir (Hubert, 18 nov. 2026)
       const cr0 = clone.getBoundingClientRect();
-      const cx0 = startRect.left + startRect.width / 2, cy0 = startRect.top + startRect.height / 2;
-      clone.style.left = `${cx0 - cr0.width / 2}px`;
+      const cy0 = startRect.top + startRect.height / 2;
+      clone.style.left = `${startRect.left}px`;
       clone.style.top = `${cy0 - cr0.height / 2}px`;
+      const cx0 = startRect.left + cr0.width / 2; // centre du titre agrandi (le point B reste le même)
       // …et il file EXACTEMENT sur le mot « La playlist » de l'onglet (pas le centre de l'onglet, où est aussi l'icône)
       const lbl = pubTab.querySelector(".jb-tab-label");
       const tr = (lbl && lbl.getBoundingClientRect().width > 0 ? lbl : pubTab).getBoundingClientRect();
@@ -10644,7 +10647,7 @@ répertoire</button>
   // AJOUTE selon le montant (tranches de 5 $, montant pile = tranche du haut) :
   //   2 à 4,99 $ : +5 chansons / +3 messages · 5 à 9,99 $ : +10 / +5 · 10 à 14,99 $ : +15 / +8 · 15 $ : +20 / +10…
   //   (chansons = 5 × (tranche + 1) ; messages = la moitié des chansons, arrondie vers le haut)
-  // L'invitation au pourboire s'ouvre quand il ne reste plus que 2 chansons ; à 0, la demande est bloquée
+  // L'invitation au pourboire s'ouvre après chacune des 3 dernières chansons (il en reste 2, 1, 0) ; ensuite la demande est bloquée
   // (fenêtre Pourboire). Pareil pour les messages : à 0, la fenêtre Pourboire et retour à la page principale.
   const FREE_SONGS = 5, FREE_MSGS = 3, TIP_ASK_AT = 2;
   function tipBonus(cents) {
@@ -10795,11 +10798,13 @@ répertoire</button>
     const cr = credits();
     if (!opts.tipPaid) cr.songs = Math.max(0, cr.songs - 1);
     saveCredits(cr);
-    if (!opts.tipPaid && cr.songs === TIP_ASK_AT) {
+    // invitation après CHACUNE des 3 dernières chansons (il en reste 2, 1, puis 0) — 3e, 4e et 5e des 5
+    // gratuites (Hubert, 18 nov. 2026)
+    if (!opts.tipPaid && cr.songs <= TIP_ASK_AT) {
       voteModalPending = true;
-      // attend la fin du vol du titre vers « La playlist » et de l'illumination de l'onglet (~2,2 s) pour ne pas
-      // que la fenêtre les chevauche (Hubert, 17 nov. 2026)
-      setTimeout(() => { voteModalPending = false; showPayModal(TIP_ID, "ask"); }, 2300);
+      // s'ouvre dès que le titre arrive sur « La playlist » (fin du vol, 0,94 s) — sans attendre la fin de
+      // l'illumination de l'onglet (Hubert, 18 nov. 2026)
+      setTimeout(() => { voteModalPending = false; showPayModal(TIP_ID, "ask"); }, 950);
     }
     // Illumine la ligne elle-même — même animation que la sélection de la chanson démo dans le
     // tuto, demande explicite de Hubert : "je veux que ce soit la même animation d'illumination
