@@ -6509,7 +6509,7 @@ répertoire</button>
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-22.268";
+  const APP_BUILD = "2026-10-22.269";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -7756,9 +7756,19 @@ répertoire</button>
     const rowShown = visibleRow && visibleRow.isConnected && visibleRow.getBoundingClientRect().height > 0;
     const pubTab = [...document.querySelectorAll('.jb-tab[data-tab="public"]')].find((t) => t.getBoundingClientRect().width > 0);
     if (!rowShown && pubTab) {
-      const tr = pubTab.getBoundingClientRect();
-      const dx = tr.left + tr.width / 2 - (startRect.left + startRect.width / 2);
-      const dy = tr.top + tr.height / 2 - (startRect.top + startRect.height / 2);
+      // titre 50 % plus gros pendant le vol, sur une ligne, centré là où était le titre (Hubert, 18 nov. 2026)
+      clone.style.fontSize = `${parseFloat(fromStyle.fontSize) * 1.5}px`;
+      clone.style.width = "auto";
+      clone.style.whiteSpace = "nowrap";
+      const cr0 = clone.getBoundingClientRect();
+      const cx0 = startRect.left + startRect.width / 2, cy0 = startRect.top + startRect.height / 2;
+      clone.style.left = `${cx0 - cr0.width / 2}px`;
+      clone.style.top = `${cy0 - cr0.height / 2}px`;
+      // …et il file EXACTEMENT sur le mot « La playlist » de l'onglet (pas le centre de l'onglet, où est aussi l'icône)
+      const lbl = pubTab.querySelector(".jb-tab-label");
+      const tr = (lbl && lbl.getBoundingClientRect().width > 0 ? lbl : pubTab).getBoundingClientRect();
+      const dx = tr.left + tr.width / 2 - cx0;
+      const dy = tr.top + tr.height / 2 - cy0;
       clone.style.transformOrigin = "50% 50%";
       // plus apparent (Hubert, 16 nov. 2026) : titre lumineux, vol plus lent, il rapetisse moins et ne s'efface qu'à l'arrivée
       clone.style.textShadow = `0 0 6px ${fromStyle.color}, 0 0 14px ${fromStyle.color}`;
