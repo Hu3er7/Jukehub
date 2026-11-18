@@ -58,6 +58,12 @@ service cloud.firestore {
         (!('askedBy' in request.resource.data) || oneName(request.resource.data.askedBy)) &&
         soloAv(request.resource.data)
       ) || (
+        // 18 nov. 2026 : « remonter » une chanson de La playlist (toucher la ligne) = seulement l'heure du
+        // serveur dans "bumpedAt", au plus une fois toutes les 2 s par chanson (la recharge du client est de 3 s)
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['bumpedAt']) &&
+        request.resource.data.bumpedAt == request.time &&
+        (!('bumpedAt' in resource.data) || request.time > resource.data.bumpedAt + duration.value(2, 's'))
+      ) || (
         // Une autre personne demande une chanson déjà là : on AJOUTE seulement son nom à la liste
         // (et, s'il en a une, son icône dans "askedAv" — rien d'autre n'y change).
         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['askedBy', 'askedAv']) &&

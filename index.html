@@ -2327,6 +2327,25 @@
     background-repeat: no-repeat;
     background-origin: border-box;
   }
+  /* La playlist : « N chansons » à gauche, barre de recharge (5 s) tout à droite, sur la même ligne ;
+     chaque ligne se touche pour remonter la chanson (Hubert, 18 nov. 2026) */
+  #jb-public #jb-tab-public .jb-tab-panel-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  #jb-public .jb-slot-bumpable { cursor: pointer; -webkit-tap-highlight-color: transparent; }
+  #jb-public .jb-slot-bumpable:active { filter: brightness(1.25); }
+  /* barre 50 % plus grosse (165 × 24), toujours affichée ; « Monte ta toune » écrit dedans quand c'est prêt */
+  #jb-public .jb-bump-cd {
+    --hex: polygon(10px 0, calc(100% - 10px) 0, 100% 50%, calc(100% - 10px) 100%, 10px 100%, 0 50%);
+    position: relative; flex: 0 0 auto; width: 165px; height: 24px; margin-right: 4px;
+    background: #ff6a1a; clip-path: var(--hex);
+  }
+  #jb-public .jb-bump-cd::before { content: ""; position: absolute; inset: 2px; background: #1a0b05; clip-path: var(--hex); }
+  #jb-public .jb-bump-cd i { position: absolute; left: 4px; top: 4px; bottom: 4px; width: calc(100% - 8px); background: #ff6a1a; clip-path: var(--hex); }
+  #jb-public .jb-bump-cd-txt {
+    position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+    font-family: 'Oswald', sans-serif; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+    color: #1a0b05; white-space: nowrap; opacity: 0; transition: opacity 0.2s ease; pointer-events: none;
+  }
+  #jb-public .jb-bump-cd.jb-bump-ready .jb-bump-cd-txt { opacity: 1; }
   /* Pourboire, 2e étape « Choisir le montant » (Hubert, 18 nov. 2026) : tout s'assombrit sauf les montants
      (et « Autre montant ») et le bouton « Retour » ; « Donner X $ » se rallume avec un autre montant valide */
   html #jb-app #jb-public .jb-vote-modal.jb-tip-choose :is(.jb-vote-modal-text, #jb-pay-note) {
@@ -5880,7 +5899,9 @@ html[data-jb-bg="matrix"] #jb-public .jb-style-heading-row h2 { font-size: 18.4p
           </div>
           <!-- Onglet « Choix du public » (ex-section « Palmarès ») -->
           <div id="jb-tab-public" class="jb-tab-panel jb-tab-public" hidden>
-            <div class="jb-tab-panel-head"><span id="jb-palm-frame-label" class="jb-tab-count"></span></div>
+            <div class="jb-tab-panel-head"><span id="jb-palm-frame-label" class="jb-tab-count"></span>
+              <!-- recharge de 5 s après avoir remonté une chanson (Hubert, 18 nov. 2026), voir bumpSong() -->
+              <span id="jb-bump-cd" class="jb-bump-cd" aria-hidden="true"><i></i><b class="jb-bump-cd-txt"></b></span></div>
             <div id="jb-palmares-list" class="jb-palmares-grid"></div>
             <p id="jb-palmares-empty" class="jb-empty" hidden>Aucune demande pour l'instant — sois le premier à demander une chanson !</p>
             <button type="button" class="jb-mode-btn jb-goto-rep" data-i18n-goto-rep>Accéder au répertoire</button>
@@ -6542,7 +6563,7 @@ répertoire</button>
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-22.273";
+  const APP_BUILD = "2026-10-22.274";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -6693,6 +6714,9 @@ répertoire</button>
       req_first_back: "",
       req_limit_title: "Tu as atteint ta limite de 5 demandes",
       req_limit_back: "Tu pourras en faire d'autres quand une de tes chansons sera jouée",
+      bump_help: "Touche n'importe quelle chanson de La playlist : elle remonte tout en haut de la liste !",
+      bump_help_back: "Tu peux le refaire toutes les 3 secondes.",
+      bump_ready: "Monte ta toune",
       public_full_title: "Le Choix du public est plein (100 chansons)",
       public_full_back: "Tu pourras demander une nouvelle chanson dès qu'une chanson de la liste sera jouée",
       style_title: "Chansons",
@@ -6808,6 +6832,9 @@ répertoire</button>
       req_first_back: "",
       req_limit_title: "You've reached your limit of 5 requests",
       req_limit_back: "You can make more once one of your songs is played",
+      bump_help: "Tap any song in The playlist: it jumps to the very top of the list!",
+      bump_help_back: "You can do it again every 3 seconds.",
+      bump_ready: "Bump your song",
       public_full_title: "Crowd's Picks is full (100 songs)",
       public_full_back: "You can request a new song as soon as one on the list is played",
       style_title: "Songs",
@@ -7683,6 +7710,10 @@ répertoire</button>
   // haut — indélogeables par une simple demande ; puis les chansons à 0 $, la PLUS RÉCENTE en haut
   // (une nouvelle demande arrive en tête des chansons à 0 $ et pousse les autres d'un cran).
   function compareVoteEntries(a, b) {
+    // 18 nov. 2026 (Hubert) : une chanson touchée dans La playlist remonte TOUT EN HAUT — les chansons remontées
+    // passent devant, la plus récemment remontée en premier ; les autres gardent l'ordre habituel
+    const ba = tsMillis(a[1].bumpedAt), bb = tsMillis(b[1].bumpedAt);
+    if (ba !== bb) return bb - ba;
     const diff = (b[1].requests || 0) - (a[1].requests || 0);
     if (diff !== 0) return diff;
     return createdAtMillis(b[1]) - createdAtMillis(a[1]);
@@ -8821,6 +8852,11 @@ répertoire</button>
   var catalogTabSig = "";
   function setCatalogTab(tab) {
     if (tab === catalogTab) return;
+    // 1re visite de La playlist sur ce téléphone : on explique qu'un toucher remonte une chanson (18 nov. 2026)
+    if (tab === "public" && !safeStorageGet("jb_bump_help_seen")) {
+      safeStorageSet("jb_bump_help_seen", "1");
+      showInfoModal("bump_help", "bump_help_back", 350);
+    }
     // hauteur actuelle du cadre Chansons/Artiste/Genre (s'il est affiché) : les onglets vides la reprennent
     const home = document.querySelector("#jb-catalog-browse .jb-catalog-frame");
     if (home && home.offsetParent && !home._jbMorph) lastHomeFrameH = home.getBoundingClientRect().height;
@@ -9525,6 +9561,48 @@ répertoire</button>
   //     la réserve. "up" et "down" peuvent donc maintenant être tous les deux > 0 pour une chanson.
   //     (Les votes reviennent toujours quand Hubert marque la chanson "Jouée" — voir activeVotesCount().)
   //  2. Plancher remis, à 0 : impossible de voter à la baisse sur une chanson déjà à 0 (ou moins).
+  // ---------- Remonter une chanson de La playlist (Hubert, 18 nov. 2026) ----------
+  // Toucher une chanson de La playlist la remonte TOUT EN HAUT de la liste, sans payer (champ "bumpedAt" =
+  // heure du serveur, voir compareVoteEntries() et firestore.rules). Ensuite, 5 s de recharge sur ce téléphone,
+  // montrées par une barre qui se vide à droite de « N chansons ».
+  // (18 nov. 2026, Hubert) barre TOUJOURS là : pleine avec « Monte ta toune » quand c'est prêt ; après une
+  // remontée, elle se vide d'un coup puis se remplit depuis la gauche en 3 s
+  const BUMP_COOLDOWN_MS = 3000;
+  function bumpCooldownLeft() { return Math.max(0, Math.min(BUMP_COOLDOWN_MS, (Number(safeStorageGet("jb_bump_until")) || 0) - Date.now())); }
+  function showBumpCooldown() {
+    const bar = document.getElementById("jb-bump-cd");
+    if (!bar) return;
+    const fill = bar.querySelector("i");
+    bar.querySelector(".jb-bump-cd-txt").textContent = t("bump_ready");
+    // avancée image par image (une transition CSS ne part pas si l'onglet est caché à ce moment-là)
+    cancelAnimationFrame(showBumpCooldown._raf);
+    const tick = () => {
+      const left = bumpCooldownLeft();
+      bar.classList.toggle("jb-bump-ready", left <= 0);
+      fill.style.width = `calc((100% - 8px) * ${1 - left / BUMP_COOLDOWN_MS})`;
+      if (left > 0) showBumpCooldown._raf = requestAnimationFrame(tick);
+    };
+    tick();
+  }
+  function bumpSong(id) {
+    const v = votes[id];
+    if (!v || !db || bumpCooldownLeft() > 0 || palmaresAnimating) return;
+    safeStorageSet("jb_bump_until", String(Date.now() + BUMP_COOLDOWN_MS));
+    showBumpCooldown();
+    // tout de suite à l'écran (le serveur confirme juste après)
+    votes[id] = { ...v, bumpedAt: { seconds: Date.now() / 1000 } };
+    renderPalmares();
+    const list = document.getElementById("jb-palmares-list");
+    for (let p = list; p; p = p.parentElement) {
+      if (p.scrollHeight > p.clientHeight + 2 && /(auto|scroll)/.test(getComputedStyle(p).overflowY)) { p.scrollTo({ top: 0, behavior: "smooth" }); break; }
+    }
+    updateDoc(doc(db, "votes", id), { bumpedAt: serverTimestamp() }).catch((err) => console.warn("bump", err && err.code));
+  }
+  document.getElementById("jb-palmares-list").addEventListener("click", (e) => {
+    const row = e.target.closest(".jb-slot[data-bump]");
+    if (row) bumpSong(row.dataset.bump);
+  });
+  showBumpCooldown(); // recharge encore en cours après un rechargement de la page
   async function castVote(id, delta) {
     if (palmaresAnimating || voteModalBusy()) return;
     const v = votes[id];
@@ -10068,7 +10146,8 @@ répertoire</button>
         el = document.createElement("div");
         palmaresElByKey.set(key, el);
       }
-      el.className = "jb-slot";
+      el.className = "jb-slot jb-slot-bumpable";
+      el.dataset.bump = id; // toucher la ligne la remonte en haut (voir bumpSong())
       // Nombre de demandes déplacé à côté du bouton Boost (plutôt que sa propre colonne à
       // gauche). Juste le nombre brut ici, sans le mot "Demande" (contrairement à
       // renderSongRow()).
