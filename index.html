@@ -1311,6 +1311,8 @@
     background: none !important; box-shadow: none !important;
   }
   html #jb-app .jb-chat-av::after { display: none !important; }
+  /* 18 nov. 2026 (Hubert) : plus d'icône à côté des noms, nulle part (chat, La playlist, admin) */
+  html #jb-app .jb-chat-av { display: none !important; }
   /* Bar spectacle : l'icône seule, sans cadre autour (Hubert, 17 nov. 2026) */
   html[data-jb-bg="bar"] #jb-app #jb-public .jb-palmares-grid .jb-voter-named .jb-chat-av {
     clip-path: none !important; border: none !important; background: none !important; box-sizing: border-box;
@@ -2873,7 +2875,9 @@
   /* Grille de choix dans la fenêtre du nom : les 5 sur une rangée, celui choisi est plein et lumineux */
   #jb-app .jb-avatar-pick-label { margin: 12px 0 8px; padding-right: 0; }
   #jb-app .jb-avatar-picker { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-top: 12px; }
-  #jb-app #jb-name-prompt-skip { display: none; } /* plus de « Annuler » : nom + avatar obligatoires */
+  #jb-app #jb-name-prompt-skip { display: none; } /* plus de « Annuler » : nom obligatoire */
+  /* 18 nov. 2026 (Hubert) : plus de choix d'icône dans la fenêtre du nom */
+  #jb-app #jb-avatar-picker, #jb-app #jb-avatar-pick-label { display: none !important; }
   /* fenêtre du nom ouverte : rien d'autre que le décor (mur de briques…) derrière (Hubert, 16 nov. 2026) */
   #jb-app.jb-name-open #jb-app-content { visibility: hidden; }
   #jb-app.jb-name-open .jb-name-prompt-backdrop { background: transparent !important; }
@@ -6440,7 +6444,8 @@ répertoire</button>
     // 27 oct. 2026 (Hubert) : l'avatar est obligatoire aussi — un nom déjà donné sans avatar (ex. par la
     // boîte de suggestions) rouvre la fenêtre, avec le nom déjà rempli
     const existing = getClientName();
-    if (existing && getClientAvatar()) return Promise.resolve(existing);
+    // 18 nov. 2026 (Hubert) : plus d'icône à choisir — le nom suffit
+    if (existing) return Promise.resolve(existing);
     if (clientNamePromptPromise) return clientNamePromptPromise;
     clientNamePromptPromise = new Promise((resolve) => {
       const wrap = document.getElementById("jb-name-prompt");
@@ -6480,7 +6485,7 @@ répertoire</button>
       function finish(name) {
         safeSessionStorageSet("jb_client_name_asked", "1");
         if (name) safeSessionStorageSet("jb_client_name", name);
-        if (name) safeSessionStorageSet("jb_client_avatar", pickedAvatar);
+        if (name && pickedAvatar) safeSessionStorageSet("jb_client_avatar", pickedAvatar);
         if (picker) picker.removeEventListener("click", onPick);
         wrap.hidden = true;
         document.getElementById("jb-app").classList.remove("jb-name-open");
@@ -6494,8 +6499,7 @@ répertoire</button>
       function onConfirm() {
         const name = input.value.trim().slice(0, 15);
         if (!name) { if (!nameUsesAppKbd) input.focus(); input.classList.remove("jb-input-shake"); void input.offsetWidth; input.classList.add("jb-input-shake"); return; }
-        if (!pickedAvatar) { if (picker) { picker.classList.remove("jb-input-shake"); void picker.offsetWidth; picker.classList.add("jb-input-shake"); } return; }
-        finish(name);
+        finish(name); // (plus d'icône obligatoire, 18 nov. 2026)
       }
       function onKeydown(e) { if (e.key === "Enter") onConfirm(); }
       skipBtn.addEventListener("click", onSkip);
@@ -6529,7 +6533,7 @@ répertoire</button>
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-22.271";
+  const APP_BUILD = "2026-10-22.272";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
