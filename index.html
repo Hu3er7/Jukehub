@@ -2325,6 +2325,20 @@
     background-repeat: no-repeat;
     background-origin: border-box;
   }
+  /* Pourboire, 2e étape « Choisir le montant » (Hubert, 18 nov. 2026) : tout s'assombrit sauf les montants
+     (et « Autre montant ») et le bouton « Retour » ; « Donner X $ » se rallume avec un autre montant valide */
+  html #jb-app #jb-public .jb-vote-modal.jb-tip-choose :is(.jb-vote-modal-text, #jb-pay-note) {
+    opacity: 0.18 !important; transition: opacity 0.2s ease;
+  }
+  html #jb-app #jb-public .jb-vote-modal.jb-tip-choose #jb-vote-modal-btn:not(.jb-pay-ready) {
+    opacity: 0.18 !important; pointer-events: none;
+  }
+  html #jb-app #jb-public .jb-vote-modal.jb-tip-choose .jb-vote-modal-card { box-shadow: 0 0 0 100vmax rgba(0, 0, 0, 0.55) !important; }
+  html #jb-app #jb-public .jb-pay-choose-title {
+    margin: 0 0 10px; text-align: center; font-weight: 800; font-size: 1.15rem; letter-spacing: 0.04em;
+    color: #39ff7a; text-shadow: 0 0 2px #fff, 0 0 8px #39ff7a;
+  }
+  html #jb-app #jb-public .jb-pay-choose-title[hidden] { display: none; }
   /* Boutons de montant (2 $, 5 $, 10 $, 20 $) : même traitement — contour 3px jaune néon, coins
      biseautés fermés par leur diagonale (Hubert) */
   #jb-public .jb-pay-chip {
@@ -3615,6 +3629,10 @@ html[data-jb-bg="bar"] #jb-app:not(.jb-browse-only) #jb-public .jb-catalog .jb-f
 html[data-jb-bg="bar"] #jb-app:not(.jb-browse-only) #jb-public .jb-catalog .jb-tab:not(.jb-tab-active)::before,
 html[data-jb-bg="bar"] #jb-app:not(.jb-browse-only) #jb-public .jb-catalog .jb-tab:not(.jb-tab-active)::after {
   content: ""; position: absolute; pointer-events: none; background: var(--bar-sign); box-shadow: 0 0 6px var(--bar-sign);
+}
+/* onglet fermé : même fond transparent que l'intérieur du cadre (Hubert, 18 nov. 2026) */
+html[data-jb-bg="bar"] #jb-app:not(.jb-browse-only) #jb-public .jb-catalog .jb-tab:not(.jb-tab-active) {
+  background-color: rgba(14, 8, 20, 0.6) !important; -webkit-backdrop-filter: blur(2px) !important; backdrop-filter: blur(2px) !important;
 }
 /* onglet rose à DROITE (Mon répertoire ouvert) */
 html[data-jb-bg="bar"] #jb-app:not(.jb-browse-only) #jb-public .jb-catalog .jb-tab-pub:not(.jb-tab-active) {
@@ -5990,6 +6008,8 @@ html[data-jb-bg="matrix"] #jb-public .jb-style-heading-row h2 { font-size: 18.4p
         <p id="jb-vote-modal-text" class="jb-vote-modal-text"></p>
         <!-- Choix du montant (paiements Stripe, 19 oct. 2026) — seulement en mode "pay", voir showPayModal() -->
         <div id="jb-pay-amounts" class="jb-pay-amounts" hidden>
+          <!-- pourboire, 2e étape (après « Donner ») : titre au-dessus des montants (Hubert, 18 nov. 2026) -->
+          <p id="jb-pay-choose-title" class="jb-pay-choose-title" hidden></p>
           <div class="jb-pay-chips">
             <!-- 16 nov. 2026 (Hubert) : plus de 2 $, 50 $ ajouté après 20 $ -->
             <button type="button" class="jb-pay-chip" data-amount="500">5 $</button>
@@ -6509,7 +6529,7 @@ répertoire</button>
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-22.270";
+  const APP_BUILD = "2026-10-22.271";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -6640,6 +6660,7 @@ répertoire</button>
       pay_title: (title) => `Fais monter « ${title} »`,
       pay_note: "La chanson qui a reçu le plus d'argent reste en haut de la liste. Tu es facturé seulement si la chanson est jouée ce soir.",
       pay_custom_ph: "Autre montant",
+      tip_give: "Donner", tip_choose: "Choisir le montant", tip_back: "Retour", // pourboire en 2 étapes (18 nov. 2026)
       pay_btn: (amount) => `Donner ${amount}`,
       pay_invalid: "Montant de 2 à 100 $",
       pay_redirect: "Redirection vers le paiement…",
@@ -6755,6 +6776,7 @@ répertoire</button>
       pay_title: (title) => `Push “${title}” up`,
       pay_note: "The song with the most money stays at the top of the list. You're only charged if the song is played tonight.",
       pay_custom_ph: "Other amount",
+      tip_give: "Give", tip_choose: "Choose the amount", tip_back: "Back",
       pay_btn: (amount) => `Give ${amount}`,
       pay_invalid: "Amount from $2 to $100",
       pay_redirect: "Opening payment…",
@@ -7725,6 +7747,7 @@ répertoire</button>
   // palmarès (déclenché par l'écouteur onSnapshot(collection(db, "votes")) pour une vraie
   // demande, ou directement par selectDemoSong() pour la démo du tuto) peut survenir un ou
   // plusieurs rendus après cet appel — jamais de façon garantie au même tick.
+  const TITLE_FLIGHT_HOLD_MS = 200; // pause du titre au centre avant son vol vers « La playlist » (0,2 s, Hubert, 18 nov. 2026)
   function flyTitleToPalmares(fromTitleEl, key) {
     if (!fromTitleEl || !fromTitleEl.isConnected) return;
     const startRect = fromTitleEl.getBoundingClientRect();
@@ -7756,31 +7779,57 @@ répertoire</button>
     const rowShown = visibleRow && visibleRow.isConnected && visibleRow.getBoundingClientRect().height > 0;
     const pubTab = [...document.querySelectorAll('.jb-tab[data-tab="public"]')].find((t) => t.getBoundingClientRect().width > 0);
     if (!rowShown && pubTab) {
-      // titre 50 % plus gros pendant le vol, sur une ligne, centré là où était le titre (Hubert, 18 nov. 2026)
-      clone.style.fontSize = `${parseFloat(fromStyle.fontSize) * 1.5}px`;
+      // titre bien plus gros au départ (×1,5, puis encore +50 % = ×2,25), sur une ligne (Hubert, 18 nov. 2026)
+      clone.style.fontSize = `${parseFloat(fromStyle.fontSize) * 2.25}px`;
       clone.style.width = "auto";
       clone.style.whiteSpace = "nowrap";
-      // point de départ : EXACTEMENT là où est le titre dans la liste (même début de texte, même hauteur) —
-      // il ne fait que grossir sur place avant de partir (Hubert, 18 nov. 2026)
+      // texte ENTIER, jamais coupé (haut, bas, côtés) : la hauteur de ligne suit la nouvelle taille et rien ne
+      // cache ce qui dépasse, même le halo lumineux (Hubert, 18 nov. 2026)
+      clone.style.lineHeight = "1.35";
+      clone.style.overflow = "visible";
+      clone.style.textOverflow = "clip";
+      clone.style.padding = "2px 12px";
+      // fond noir transparent derrière le titre, pour bien le lire par-dessus la liste (Hubert, 18 nov. 2026)
+      clone.style.background = "rgba(0, 0, 0, 0.6)";
+      clone.style.borderRadius = "8px";
+      // point de départ : en PLEIN MILIEU de la section Mon répertoire (le cadre de la liste), 50 % plus gros
+      // (Hubert, 18 nov. 2026)
+      const frameEl = fromTitleEl.closest(".jb-catalog-frame") || visibleCatalogFrame();
+      const fr = frameEl ? frameEl.getBoundingClientRect() : startRect;
+      // titre trop long pour l'écran : les mots passent sur 2 lignes (3 au maximum), centrés ; s'il le faut
+      // encore, les lettres rapetissent juste assez pour tenir en 3 lignes (Hubert, 18 nov. 2026)
+      const maxW = Math.max(120, Math.min(fr.width, window.innerWidth) - 24);
+      if (clone.getBoundingClientRect().width > maxW) {
+        Object.assign(clone.style, { whiteSpace: "normal", width: `${maxW}px`, textAlign: "center", boxSizing: "border-box" });
+        let fsz = parseFloat(clone.style.fontSize);
+        for (let i = 0; i < 12 && clone.getBoundingClientRect().height > fsz * 1.35 * 3 + 6; i++) {
+          fsz *= 0.9;
+          clone.style.fontSize = `${fsz}px`;
+        }
+      }
       const cr0 = clone.getBoundingClientRect();
-      const cy0 = startRect.top + startRect.height / 2;
-      clone.style.left = `${startRect.left}px`;
+      const cx0 = fr.left + fr.width / 2, cy0 = fr.top + fr.height / 2;
+      clone.style.left = `${cx0 - cr0.width / 2}px`;
       clone.style.top = `${cy0 - cr0.height / 2}px`;
-      const cx0 = startRect.left + cr0.width / 2; // centre du titre agrandi (le point B reste le même)
       // …et il file EXACTEMENT sur le mot « La playlist » de l'onglet (pas le centre de l'onglet, où est aussi l'icône)
       const lbl = pubTab.querySelector(".jb-tab-label");
       const tr = (lbl && lbl.getBoundingClientRect().width > 0 ? lbl : pubTab).getBoundingClientRect();
       const dx = tr.left + tr.width / 2 - cx0;
       const dy = tr.top + tr.height / 2 - cy0;
+      // il rapetisse à mesure qu'il approche, jusqu'à la taille des lettres de « La playlist »
+      const endScale = lbl ? Math.min(1, Math.max(0.3, parseFloat(getComputedStyle(lbl).fontSize) / parseFloat(clone.style.fontSize))) : 0.7;
       clone.style.transformOrigin = "50% 50%";
       // plus apparent (Hubert, 16 nov. 2026) : titre lumineux, vol plus lent, il rapetisse moins et ne s'efface qu'à l'arrivée
       clone.style.textShadow = `0 0 6px ${fromStyle.color}, 0 0 14px ${fromStyle.color}`;
       clone.style.filter = "brightness(1.4)";
-      requestAnimationFrame(() => requestAnimationFrame(() => {
-        clone.style.transition = "transform 0.9s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease 0.62s";
-        clone.style.transform = `translate(${dx}px, ${dy}px) scale(0.7)`;
+      // le titre reste 0,5 s au centre de Mon répertoire avant de partir (Hubert, 18 nov. 2026)
+      setTimeout(() => {
+        // même vitesse de parcours, mais il ne traîne plus à l'arrivée : courbe qui freine peu à la fin et
+        // vol de 0,7 s au lieu de 0,9 s (Hubert, 18 nov. 2026)
+        clone.style.transition = "transform 0.7s cubic-bezier(0.4, 0, 0.75, 1), opacity 0.2s ease 0.5s";
+        clone.style.transform = `translate(${dx}px, ${dy}px) scale(${endScale})`;
         clone.style.opacity = "0";
-      }));
+      }, TITLE_FLIGHT_HOLD_MS);
       setTimeout(() => {
         clone.remove();
         document.querySelectorAll('.jb-tab[data-tab="public"]').forEach((t) => {
@@ -7789,7 +7838,7 @@ répertoire</button>
           t.classList.add("jb-tab-glow");
           setTimeout(() => t.classList.remove("jb-tab-glow"), 1400);
         });
-      }, 940);
+      }, TITLE_FLIGHT_HOLD_MS + 720);
       return;
     }
 
@@ -8843,6 +8892,29 @@ répertoire</button>
       fr.style.setProperty("--cTL", x <= 1 ? "0" : "1");
       fr.style.setProperty("--cTR", x + t.width >= f.width - 1 ? "0" : "1");
     });
+    alignTabContents();
+  }
+  // Icône et nom des onglets EXACTEMENT au même endroit dans tous les thèmes (Hubert, 18 nov. 2026) : quand on
+  // change de thème, rien ne bouge. Polices inchangées ; on décale seulement l'icône et le nom ensemble pour que
+  // le centre de l'icône soit à 21px du haut du cadre, et à 8px du bord du cadre (gauche pour Mon répertoire,
+  // droite pour La playlist).
+  const TAB_ICO_TOP = 21, TAB_ICO_SIDE = 8;
+  function alignTabContents() {
+    document.querySelectorAll(".jb-catalog .jb-catalog-frame").forEach((fr) => {
+      if (!fr.offsetParent) return;
+      const f = fr.getBoundingClientRect();
+      fr.querySelectorAll(".jb-tab").forEach((tab) => {
+        const ico = tab.querySelector(".jb-tab-ico"), lbl = tab.querySelector(".jb-tab-label");
+        if (!ico || !lbl) return;
+        ico.style.transform = ""; lbl.style.transform = "";
+        const ir = ico.getBoundingClientRect();
+        if (!ir.width) return; // « ⬅ RETOUR » : pas d'icône, rien à aligner
+        const dy = f.top + TAB_ICO_TOP - (ir.top + ir.height / 2);
+        const dx = tab.classList.contains("jb-tab-pub") ? (f.right - TAB_ICO_SIDE) - ir.right : (f.left + TAB_ICO_SIDE) - ir.left;
+        const tf = `translate(${Math.round(dx * 2) / 2}px, ${Math.round(dy * 2) / 2}px)`;
+        ico.style.transform = tf; lbl.style.transform = tf;
+      });
+    });
   }
   window.addEventListener("resize", () => requestAnimationFrame(fitTabGaps));
   // Découpe de la liste autour du renfoncement de l'échelle, calculée en px à partir de la vraie
@@ -9163,6 +9235,22 @@ répertoire</button>
     const cents = Math.round(Number(raw) * 100);
     return Number.isFinite(cents) ? cents : NaN;
   }
+  // Pourboire en 2 étapes (Hubert, 18 nov. 2026) : la fenêtre s'ouvre avec « Donner » SANS montant ; « Donner »
+  // assombrit tout sauf les montants, avec le titre « Choisir le montant », et « Ne pas donner de pourboire »
+  // devient « Retour » (revient à la 1re étape). Toucher un montant part directement au paiement ; « Autre
+  // montant » rallume « Donner X $ » dès que le montant est valide.
+  let tipChoose = false;
+  function setTipChoose(on) {
+    tipChoose = on;
+    const modal = document.getElementById("jb-vote-modal");
+    modal.classList.toggle("jb-tip-choose", on);
+    const title = document.getElementById("jb-pay-choose-title");
+    title.textContent = t("tip_choose");
+    title.hidden = !on;
+    document.getElementById("jb-vote-modal-close").textContent = on ? t("tip_back") : t("tip_close");
+    if (!on) { payAmountCents = null; document.getElementById("jb-pay-custom").value = ""; }
+    refreshPayButton();
+  }
   function refreshPayButton() {
     const custom = payCustomCents();
     const cents = custom === null ? payAmountCents : custom;
@@ -9171,8 +9259,16 @@ répertoire</button>
       c.classList.toggle("jb-pay-chip-on", custom === null && Number(c.dataset.amount) === payAmountCents);
     });
     const btn = document.getElementById("jb-vote-modal-btn");
+    if (payTargetId === TIP_ID && !tipChoose) {
+      // 1re étape du pourboire : « Donner », sans montant
+      btn.disabled = false;
+      btn.textContent = t("tip_give");
+      btn.classList.remove("jb-pay-ready");
+      return null;
+    }
     btn.disabled = !ok;
-    btn.textContent = ok ? t("pay_btn", formatMoney(cents)) : t("pay_invalid");
+    btn.textContent = ok ? t("pay_btn", formatMoney(cents)) : (payTargetId === TIP_ID ? t("tip_give") : t("pay_invalid"));
+    btn.classList.toggle("jb-pay-ready", ok); // 2e étape : « Donner X $ » se rallume quand un montant valide est entré
     return ok ? cents : null;
   }
   // id = chanson à faire monter, ou TIP_ID pour un pourboire à Hubert sans chanson (16 nov. 2026)
@@ -9186,8 +9282,11 @@ répertoire</button>
     if (!modal) return;
     payTargetId = id;
     voteModalMode = "pay";
-    payAmountCents = 500;
     const isTip = id === TIP_ID;
+    payAmountCents = isTip ? null : 500; // pourboire : aucun montant choisi d'avance
+    tipChoose = false;
+    modal.classList.remove("jb-tip-choose");
+    document.getElementById("jb-pay-choose-title").hidden = true;
     tipUnlockSong = isTip && tipMode === "unlock" ? unlockSong : null;
     const title = votes[id]?.title || "";
     const modalText = document.getElementById("jb-vote-modal-text");
@@ -9222,6 +9321,9 @@ répertoire</button>
     chip.addEventListener("click", () => {
       payAmountCents = Number(chip.dataset.amount);
       document.getElementById("jb-pay-custom").value = "";
+      // pourboire : toucher un montant le choisit et rallume « Donner X $ » — le client confirme en appuyant
+      // sur « Donner » (Hubert, 18 nov. 2026)
+      if (payTargetId === TIP_ID && !tipChoose) { setTipChoose(true); payAmountCents = Number(chip.dataset.amount); }
       refreshPayButton();
     });
   });
@@ -9365,10 +9467,14 @@ répertoire</button>
     showInfoModal("vote_modal_left", "vote_modal_back", delayMs, remaining);
   }
   document.getElementById("jb-vote-modal-btn").addEventListener("click", () => {
+    // pourboire, 1re étape : « Donner » mène au choix du montant (Hubert, 18 nov. 2026)
+    if (voteModalMode === "pay" && payTargetId === TIP_ID && !tipChoose) { setTipChoose(true); return; }
     if (voteModalMode === "pay") { startPayment(); return; }
     document.getElementById("jb-vote-modal").hidden = true;
   });
   document.getElementById("jb-vote-modal-close").addEventListener("click", () => {
+    // « Retour » (choix du montant) : revient à la 1re étape de la fenêtre Pourboire, sans la fermer
+    if (tipChoose && payTargetId === TIP_ID) { setTipChoose(false); return; }
     document.getElementById("jb-vote-modal").hidden = true;
     payTargetId = null;
     // 4e message de Demande spéciale sans pourboire : retour à la page principale (Hubert, 17 nov. 2026)
@@ -10802,9 +10908,9 @@ répertoire</button>
     // gratuites (Hubert, 18 nov. 2026)
     if (!opts.tipPaid && cr.songs <= TIP_ASK_AT) {
       voteModalPending = true;
-      // s'ouvre dès que le titre arrive sur « La playlist » (fin du vol, 0,94 s) — sans attendre la fin de
-      // l'illumination de l'onglet (Hubert, 18 nov. 2026)
-      setTimeout(() => { voteModalPending = false; showPayModal(TIP_ID, "ask"); }, 950);
+      // s'ouvre dès que le titre arrive sur « La playlist » (pause 0,5 s + vol 0,72 s) — sans attendre la fin
+      // de l'illumination de l'onglet (Hubert, 18 nov. 2026)
+      setTimeout(() => { voteModalPending = false; showPayModal(TIP_ID, "ask"); }, TITLE_FLIGHT_HOLD_MS + 730);
     }
     // Illumine la ligne elle-même — même animation que la sélection de la chanson démo dans le
     // tuto, demande explicite de Hubert : "je veux que ce soit la même animation d'illumination
