@@ -2369,6 +2369,68 @@ html[data-jb-bg="matrix"] #jb-public :is(#jb-pl-search-input, #jb-chat-input) {
   html[data-jb-bg="bar"] #jb-public .jb-bump-bar.jb-bump-on { --plc: #6fe0ff; --plc-rgb: 111, 224, 255; --plc-ink: #04161d; }
   #jb-public #jb-tab-public .jb-tab-panel-head.jb-pl-head { display: flex; flex-direction: column; align-items: stretch; justify-content: flex-start; gap: 8px; }
   #jb-public #jb-tab-public .jb-tab-panel-head.jb-pl-head[hidden] { display: none; }
+  /* « ← Retour au calendrier » en rose néon (Hubert, 19 nov. 2026) */
+  html[data-jb-bg="bar"] #jb-app #jb-public #jb-browse-back,
+  html[data-jb-bg="bar"] #jb-app #jb-public #jb-offline-browse {
+    color: #ffd6ea !important; border-color: #ff5fa8 !important; background: rgba(255, 95, 168, 0.08) !important;
+    text-shadow: 0 0 2px #fff, 0 0 6px #ff5fa8 !important; box-shadow: 0 0 8px rgba(255, 95, 168, 0.6), inset 0 0 6px rgba(255, 95, 168, 0.2) !important;
+  }
+  /* « Vous êtes présentement hors ligne » : police droite et lisible au lieu de l'écriture néon cursive (Hubert, 19 nov. 2026) */
+  html.jb-offline-mode #jb-app #jb-public #jb-style-title {
+    font-family: 'Oswald', sans-serif !important; font-style: normal !important; font-weight: 700 !important;
+    text-transform: uppercase !important; letter-spacing: 0.06em !important;
+  }
+  /* Hors spectacle (consultation, toujours en thème Bar) : « ← RETOUR » en ONGLET posé sur le cadre, comme dans la
+     page principale, au lieu du petit bouton au-dessus (Hubert, 19 nov. 2026) */
+  html[data-jb-bg="bar"] #jb-app.jb-browse-only #jb-public #jb-catalog-results #jb-back-btn {
+    position: absolute !important; left: 0; top: 0; width: 50%; height: 34px !important; min-height: 0 !important; max-height: none !important;
+    margin: 0 !important; padding: 0 !important; z-index: 6; background: none !important; border: none !important; box-shadow: none !important; display: flex !important;
+  }
+  html[data-jb-bg="bar"] #jb-app.jb-browse-only #jb-public #jb-catalog-results #jb-back-btn[hidden] { display: none !important; }
+  html[data-jb-bg="bar"] #jb-app.jb-browse-only #jb-public #jb-catalog-results #jb-back-btn .jb-back-inner {
+    flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px; height: 100%; box-sizing: border-box;
+    border: 3px solid #6fe0ff !important; border-bottom: none !important; border-radius: 12px 12px 0 0; background: rgba(14, 8, 20, 0.6) !important;
+    padding: 0 12px !important; font-family: 'Oswald', sans-serif; font-weight: 700; font-size: 14px; letter-spacing: 2px; color: #e2f8ff !important;
+    text-shadow: 0 0 8px rgba(78, 212, 200, 0.85), 0 0 16px rgba(78, 212, 200, 0.45); box-shadow: 0 0 10px rgba(111, 224, 255, 0.6);
+  }
+  html[data-jb-bg="bar"] #jb-app.jb-browse-only #jb-public #jb-catalog-results #jb-back-btn .jb-back-arrow { width: 18px; height: 14px; }
+  /* coins arrondis comme ailleurs (Hubert) : coin haut-droit du cadre arrondi, jonction onglet → ligne du haut en
+     arrondi (pas d'angle droit), et la ligne du cadre ne passe plus sous l'onglet */
+  html[data-jb-bg="bar"] #jb-app.jb-browse-only #jb-public #jb-catalog-results #jb-back-btn { height: 31px !important; }
+  html[data-jb-bg="bar"] #jb-app.jb-browse-only #jb-public #jb-catalog-results #jb-back-btn .jb-back-inner { border-right: none !important; border-radius: 12px 0 0 0 !important; box-shadow: none !important; }
+  html[data-jb-bg="bar"] #jb-app.jb-browse-only #jb-public #jb-catalog-results #jb-back-btn::before {
+    content: ""; position: absolute; top: 0; right: 0; width: 16px; height: 21px; box-sizing: border-box; pointer-events: none;
+    border-top: 3px solid #6fe0ff; border-right: 3px solid #6fe0ff; border-top-right-radius: 12px;
+  }
+  html[data-jb-bg="bar"] #jb-app.jb-browse-only #jb-public #jb-catalog-results #jb-back-btn::after {
+    content: ""; position: absolute; top: 21px; left: calc(100% - 3px); width: 13px; height: 10px; box-sizing: border-box; pointer-events: none;
+    border-left: 3px solid #6fe0ff; border-bottom: 3px solid #6fe0ff; border-bottom-left-radius: 10px;
+  }
+  /* cadre d'accueil hors ligne (Chansons / Artistes / Genres) : les 4 coins arrondis pareil */
+  html[data-jb-bg="bar"] #jb-app.jb-browse-only #jb-public #jb-catalog-browse .jb-fd-ring { border-radius: 20px !important; }
+  html[data-jb-bg="bar"] #jb-app.jb-browse-only #jb-public #jb-catalog-browse .jb-catalog-frame::before { border-radius: 18px !important; }
+  html[data-jb-bg="bar"] #jb-app.jb-browse-only #jb-public #jb-catalog-results .jb-catalog-frame:has(#jb-back-btn:not([hidden]))::before { border-radius: 0 18px 18px 18px !important; }
+  html[data-jb-bg="bar"] #jb-app.jb-browse-only #jb-public #jb-catalog-results .jb-catalog-frame:has(#jb-back-btn:not([hidden])) .jb-fd-ring {
+    border-radius: 0 20px 20px 20px !important;
+    /* la ligne du cadre reprend juste après l'arrondi de l'onglet (pas de chevauchement = pas de surépaisseur) */
+    clip-path: polygon(0 0, 3px 0, 3px 3px, calc(50% + 10px) 3px, calc(50% + 10px) 0, 100% 0, 100% 100%, 0 100%) !important;
+  }
+  /* même lueur néon que la ligne du cadre (sinon la jonction paraissait cassée) — seulement sur les TRAITS ;
+     le fond de l'onglet est porté par le bouton lui-même, sans lueur, exactement comme l'intérieur du cadre,
+     et il ne dépasse pas du contour (Hubert, 19 nov. 2026) */
+  html[data-jb-bg="bar"] #jb-app.jb-browse-only #jb-public #jb-catalog-results #jb-back-btn {
+    background: rgba(14, 8, 20, 0.6) !important; border-radius: 12px 12px 0 0 !important; filter: none !important;
+  }
+  html[data-jb-bg="bar"] #jb-app.jb-browse-only #jb-public #jb-catalog-results #jb-back-btn .jb-back-inner { background: transparent !important; margin: 0 !important; align-self: stretch; clip-path: none !important; }
+  /* la ligne du haut s'arrête avant le coin arrondi de droite (dessiné par ::before) : plus de bout droit qui dépasse */
+  html[data-jb-bg="bar"] #jb-app.jb-browse-only #jb-public #jb-catalog-results #jb-back-btn .jb-back-inner { margin-right: 12px !important; padding-left: 18px !important; }
+  html[data-jb-bg="bar"] #jb-app.jb-browse-only #jb-public #jb-catalog-results #jb-back-btn { clip-path: none !important; }
+  html[data-jb-bg="bar"] #jb-app.jb-browse-only #jb-public #jb-catalog-results #jb-back-btn :is(.jb-back-inner),
+  html[data-jb-bg="bar"] #jb-app.jb-browse-only #jb-public #jb-catalog-results #jb-back-btn::before,
+  html[data-jb-bg="bar"] #jb-app.jb-browse-only #jb-public #jb-catalog-results #jb-back-btn::after {
+    filter: drop-shadow(rgb(111, 224, 255) 0 0 3px) drop-shadow(rgba(80, 200, 255, 0.55) 0 0 9px);
+  }
+  html[data-jb-bg="bar"] #jb-app.jb-browse-only #jb-public #jb-catalog-results #jb-back-btn:active .jb-back-inner { background: rgba(111, 224, 255, 0.25) !important; }
   /* pendant que le client est dans la recherche de La playlist (son clavier ouvert), pas de bouton « Monter » ;
      il réapparaît dès qu'il en sort (Hubert, 19 nov. 2026) */
   /* pendant la recherche de La playlist : tout s'assombrit et ne se touche plus, sauf la recherche, la liste
@@ -6613,6 +6675,8 @@ répertoire</button>
     const n = getClientName();
     let en = false;
     try { en = lang === "en"; } catch (e) { /* langue pas encore prête */ }
+    // hors spectacle (consultation seulement) : « Vous êtes présentement hors ligne » (Hubert, 19 nov. 2026)
+    if (document.documentElement.classList.contains("jb-offline-mode")) return en ? "You are currently offline" : "Vous êtes présentement hors ligne";
     return n ? `${en ? "Good evening" : "Bonsoir"} ${n}` : "";
   }
   // Avatars néon du chat (Hubert, 27 oct. 2026) : choisi (facultatif) avec le nom d'utilisateur, affiché à
@@ -6758,7 +6822,7 @@ répertoire</button>
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-22.290";
+  const APP_BUILD = "2026-10-22.291";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -9996,7 +10060,7 @@ répertoire</button>
     if (appContent) appContent.hidden = !(granted || browsing);
     if (offlinePage) offlinePage.hidden = granted || browsing;
     if (qrGatePage) qrGatePage.hidden = true;
-    // Hors spectacle (page « pas en spectacle » et simple consultation) : toujours le thème Cyberpunk, sans
+    // Hors spectacle (page « pas en spectacle » et simple consultation) : toujours le même thème (Bar spectacle depuis le 19 nov.), sans
     // bouton Thème (Hubert, 17 nov. 2026). Le thème choisi revient quand le spectacle (re)commence.
     const root = document.documentElement;
     if (!granted) {
@@ -10004,10 +10068,14 @@ répertoire</button>
         offlineSavedTheme = root.dataset.jbBg || "";
         root.classList.add("jb-offline-mode");
       }
-      if (root.dataset.jbBg) { delete root.dataset.jbBg; window.dispatchEvent(new Event("jb-bg-change")); }
+      // (19 nov. 2026, Hubert) hors spectacle : toujours le thème Bar spectacle (avant : Cyberpunk)
+      if (root.dataset.jbBg !== "bar") { root.dataset.jbBg = "bar"; window.dispatchEvent(new Event("jb-bg-change")); }
     } else if (root.classList.contains("jb-offline-mode")) {
       root.classList.remove("jb-offline-mode");
-      if (offlineSavedTheme) { root.dataset.jbBg = offlineSavedTheme; window.dispatchEvent(new Event("jb-bg-change")); }
+      if ((root.dataset.jbBg || "") !== offlineSavedTheme) {
+        if (offlineSavedTheme) root.dataset.jbBg = offlineSavedTheme; else delete root.dataset.jbBg;
+        window.dispatchEvent(new Event("jb-bg-change"));
+      }
     }
     if (granted) {
       // #jb-app-content démarre "hidden" (voir plus haut, pour éviter un flash de l'appli au
@@ -10072,6 +10140,7 @@ répertoire</button>
   document.getElementById("jb-offline-browse").addEventListener("click", () => {
     browseOnly = true;
     applyLiveGateNow(isLiveNow());
+    try { renderCatalog(); } catch (e) { /* pas encore prêt */ } // titre « Vous êtes présentement hors ligne »
     window.scrollTo(0, 0);
   });
   document.getElementById("jb-browse-back").addEventListener("click", () => {
