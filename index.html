@@ -6666,7 +6666,7 @@ répertoire</button>
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-22.280";
+  const APP_BUILD = "2026-10-22.281";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -8966,25 +8966,9 @@ répertoire</button>
   var catalogTab = "repertoire"; // var : renderCatalog() peut tourner avant cette ligne
   var bumpPickId = null; // chanson de La playlist choisie pour « Monter » (var : renderPalmares() peut tourner avant)
   var catalogTabSig = "";
-  // Explication « toucher une chanson la remonte » : UNE seule fois, et seulement quand La playlist compte au
-  // moins 3 chansons (Hubert, 18 nov. 2026) — sinon on attend : elle s'affichera à une visite suivante, ou dès
-  // que la 3e chanson arrive pendant que le client regarde La playlist.
-  var BUMP_HELP_MIN = 3;
-  function maybeShowBumpHelp(delayMs = 0) {
-    if (safeStorageGet("jb_bump_help_seen")) return;
-    let n = 0;
-    try { n = Object.values(votes).filter((v) => !isHiddenFromPalmares(v)).length; } catch (e) { return; }
-    if (n < BUMP_HELP_MIN) return;
-    const modal = document.getElementById("jb-vote-modal");
-    try { if (voteModalPending) return; } catch (e) { return; } // (pas encore prêt)
-    if (modal && !modal.hidden) return; // une autre fenêtre est ouverte : plus tard
-    safeStorageSet("jb_bump_help_seen", "1");
-    showInfoModal("bump_help", "bump_help_back", delayMs);
-  }
+  // (19 nov. 2026, Hubert) plus de fenêtre tutoriel dans La playlist : la barre « Choisis une chanson » suffit
   function setCatalogTab(tab) {
     if (tab === catalogTab) return;
-    // 1re visite de La playlist sur ce téléphone : on explique qu'un toucher remonte une chanson (18 nov. 2026)
-    if (tab === "public") maybeShowBumpHelp(350);
     // hauteur actuelle du cadre Chansons/Artiste/Genre (s'il est affiché) : les onglets vides la reprennent
     const home = document.querySelector("#jb-catalog-browse .jb-catalog-frame");
     if (home && home.offsetParent && !home._jbMorph) lastHomeFrameH = home.getBoundingClientRect().height;
@@ -10288,13 +10272,14 @@ répertoire</button>
       .sort(compareVoteEntries);
 
     empty.hidden = ranked.length > 0;
-    // la 3e chanson arrive pendant que le client regarde La playlist : explication (une seule fois)
-    if (catalogTab === "public" && list.offsetParent && ranked.length >= BUMP_HELP_MIN) setTimeout(() => maybeShowBumpHelp(350), 0);
     // Étiquette de la case vert néon : nombre de chansons au palmarès (ex. « 3 CHANSONS »)
     if (palmLabel) palmLabel.textContent = t("palm_label", ranked.length);
     // le nombre de chansons est maintenant dans la recherche de La playlist (Hubert, 18 nov. 2026)
     const plInput = document.getElementById("jb-pl-search-input");
     if (plInput) plInput.placeholder = t("pl_search_ph", ranked.length);
+    // aucune chanson dans La playlist : ni recherche ni barre « Monter » (Hubert, 19 nov. 2026)
+    const plHead = document.querySelector("#jb-tab-public .jb-pl-head");
+    if (plHead) plHead.hidden = ranked.length === 0;
     // chanson choisie qui n'est plus dans la liste (jouée, retirée) : on la désélectionne
     if (bumpPickId && !ranked.some(([id]) => id === bumpPickId)) bumpPickId = null;
     updateTabCounts();
@@ -11960,7 +11945,9 @@ répertoire</button>
   // 17 nov. 2026 : le même clavier sert aussi à la recherche par mot clé (voir setupSearchKeyboard() plus bas).
   // opts : input, kbd, form (où poser le curseur « _ » ; aucun = pas de curseur), maxLen, capitalize (majuscule
   // automatique en début de phrase), notify (prévient la barre à chaque touche, pour la recherche en direct)
-  function setupAppKeyboard({ input, kbd, form = null, maxLen = 30, capitalize = true, notify = false }) {
+  // (19 nov. 2026) emoji : touche 😀 ou non ; onEmptyBack : appelée quand on appuie sur ⌫ alors que la barre est
+  // déjà vide (sert à refermer le clavier — Hubert, partout sauf la fenêtre du nom d'utilisateur)
+  function setupAppKeyboard({ input, kbd, form = null, maxLen = 30, capitalize = true, notify = false, emoji = true, onEmptyBack = null }) {
     if (!input || !kbd) return;
     if (!(window.matchMedia && window.matchMedia("(pointer: coarse)").matches)) return;
     input.setAttribute("inputmode", "none");
@@ -11976,7 +11963,9 @@ répertoire</button>
         ["abc", "num", "acc", "space", "!"],
       ],
     };
-    const WIDE = { shift: "⇧", back: "⌫", num: "123", acc: "ÉÀ", abc: "ABC", emo: "😀", "#": "#" };
+    // sans émoticônes (recherche de La playlist) : plus de touche 😀, la barre d'espace prend sa place
+    if (!emoji) { delete LAYOUTS.emo; Object.values(LAYOUTS).forEach((rows) => rows.forEach((row, i) => { rows[i] = row.filter((k) => k !== "emo"); })); }
+    const WIDE ={ shift: "⇧", back: "⌫", num: "123", acc: "ÉÀ", abc: "ABC", emo: "😀", "#": "#" };
     let layout = "abc";
     let shift = true;
     let downKey = null, repeatT = null; // touche tenue enfoncée, minuterie de répétition
@@ -12092,6 +12081,9 @@ répertoire</button>
       release();
       if (!b) return;
       const k = b.dataset.k;
+      // ⌫ sur une barre déjà vide : le clavier se referme (pas quand on tient ⌫ pour tout effacer — seulement un
+      // nouvel appui une fois la barre vide ; Hubert, 19 nov. 2026)
+      if (k === "back" && !input.value && onEmptyBack) { onEmptyBack(); return; }
       downKey = k;
       b.classList.add("jb-kbd-down");
       if (MODE_KEYS.includes(k)) return; // agit au relâchement
@@ -12110,9 +12102,16 @@ répertoire</button>
     return true;
   }
   // Clavier du chat : toujours affiché sous la barre (Hubert, 27 oct. 2026) — il ne se replie jamais
-  if (setupAppKeyboard({ input: document.getElementById("jb-chat-input"), kbd: document.getElementById("jb-kbd"), form: document.getElementById("jb-chat-form") })) {
-    document.getElementById("jb-kbd").hidden = false;
-  }
+  // (19 nov. 2026, Hubert) ⌫ sur une barre vide le referme ; toucher la barre le rouvre
+  (function setupChatKeyboard() {
+    const input = document.getElementById("jb-chat-input"), kbd = document.getElementById("jb-kbd");
+    const show = () => { if (kbd.hidden) kbd.hidden = false; };
+    if (setupAppKeyboard({ input, kbd, form: document.getElementById("jb-chat-form"), onEmptyBack: () => { kbd.hidden = true; } })) {
+      kbd.hidden = false;
+      input.addEventListener("pointerdown", show);
+      input.addEventListener("focus", show);
+    }
+  })();
   // Recherche par mot clé (Hubert, 17 nov. 2026) : le clavier de l'app monte du bas de l'écran quand on touche
   // la barre, et redescend quand on en sort ; « Suggestion » est caché pendant ce temps et le cadre Mon
   // répertoire / La playlist rapetisse pour lui laisser la place (voir fitFrameToScreen()).
@@ -12125,7 +12124,7 @@ répertoire</button>
     // pas par-dessus (sur iPhone, le clavier « flottant » se retrouvait coupé au milieu de l'écran, 17 nov. 2026)
     document.getElementById("jb-chat-open").after(kbd);
     const bar = document.getElementById("jb-catalog-searchbar");
-    if (!setupAppKeyboard({ input, kbd, form: bar, maxLen: 60, capitalize: false, notify: true })) { kbd.remove(); return; }
+    if (!setupAppKeyboard({ input, kbd, form: bar, maxLen: 60, capitalize: false, notify: true, onEmptyBack: () => close() })) { kbd.remove(); return; }
     searchUsesAppKbd = true;
     // La barre ne reçoit JAMAIS le vrai focus du téléphone (17 nov. 2026) : sur iPhone, ce focus montrait le
     // curseur bleu clignotant et le soulignement rouge de l'orthographe, et iOS retirait ensuite le focus en
@@ -12170,7 +12169,8 @@ répertoire</button>
     kbd.className = "jb-kbd jb-pl-kbd";
     document.getElementById("jb-chat-open").after(kbd);
     const bar = document.getElementById("jb-pl-searchbar");
-    if (!setupAppKeyboard({ input, kbd, form: bar, maxLen: 60, capitalize: false, notify: true })) { kbd.remove(); return; }
+    // pas d'émoticônes pour chercher une chanson (Hubert, 19 nov. 2026)
+    if (!setupAppKeyboard({ input, kbd, form: bar, maxLen: 60, capitalize: false, notify: true, emoji: false, onEmptyBack: () => close() })) { kbd.remove(); return; }
     input.readOnly = true;
     input.setAttribute("spellcheck", "false");
     input.setAttribute("autocorrect", "off");
