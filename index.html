@@ -6754,7 +6754,7 @@ répertoire</button>
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-22.287";
+  const APP_BUILD = "2026-10-22.288";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -7526,11 +7526,12 @@ répertoire</button>
   // téléphone (localStorage) ; son nom s'affiche brièvement. 28 oct. 2026 : seulement 2 styles —
   // le Cyberpunk d'origine et « Bar spectacle » (voir <style id="jb-theme-bar">) ; les anciens fonds
   // (rose, grille, étoilé…) sont retirés du bouton.
+  // ordre du bouton Thème (Hubert, 19 nov. 2026) : 1. Bar spectacle, 2. Cyberpunk, 3. Matrix, 4. Forêt
   const BG_THEMES = [
-    { id: "", fr: "Cyberpunk", en: "Cyberpunk" },
     { id: "bar", fr: "Bar spectacle", en: "Show bar" },
-    { id: "foret", fr: "Forêt enchantée", en: "Enchanted forest" }, // 3e thème (Hubert, 28 oct. 2026)
-    { id: "matrix", fr: "Matrix", en: "Matrix" }, // 5e thème (Hubert, 29 oct. 2026)
+    { id: "", fr: "Cyberpunk", en: "Cyberpunk" },
+    { id: "matrix", fr: "Matrix", en: "Matrix" },
+    { id: "foret", fr: "Forêt enchantée", en: "Enchanted forest" },
   ];
   document.getElementById("jb-bg-btn").addEventListener("click", () => {
     const cur = document.documentElement.dataset.jbBg || "";
