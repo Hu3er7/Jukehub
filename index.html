@@ -5155,6 +5155,14 @@ html[data-jb-bg="matrix"] #jb-app:not(.jb-browse-only) #jb-public .jb-catalog .j
 /* plus d'icône sur l'onglet La playlist, dans tous les thèmes (Hubert, 18 nov. 2026) — cachée sans retirer sa
    place, pour que le titre « La playlist » ne bouge pas */
 html #jb-app #jb-public .jb-tab-pub .jb-tab-ico { visibility: hidden !important; }
+/* …ni sur l'onglet Mon répertoire, et les 2 titres CENTRÉS dans leur onglet, dans tous les thèmes (Hubert, 18 nov. 2026) */
+html #jb-app #jb-public .jb-catalog .jb-tab .jb-tab-ico { display: none !important; }
+html #jb-app #jb-public .jb-catalog .jb-tab { justify-content: center !important; }
+html #jb-app #jb-public .jb-catalog .jb-tab .jb-tab-label { flex: 1 1 auto !important; text-align: center !important; margin: 0 !important; }
+/* Forêt : la planche fermée a plus de marge du côté de l'onglet choisi (elle passe sous son rebord) — on recentre
+   le titre sur la partie VISIBLE de la planche */
+html[data-jb-bg="foret"] #jb-app:not(.jb-browse-only) #jb-public .jb-catalog .jb-tab-pub:not(.jb-tab-active) .jb-tab-label { position: relative; left: -2.5px; }
+html[data-jb-bg="foret"] #jb-app:not(.jb-browse-only) #jb-public .jb-catalog .jb-tab-rep:not(.jb-tab-active) .jb-tab-label { position: relative; left: 2px; }
 html[data-jb-bg="matrix"] #jb-public .jb-tab {
   clip-path: none !important; border: none !important; border-radius: 0 !important; background: transparent !important;
   background-image: none !important; box-shadow: none !important; color: rgba(0, 255, 65, 0.55) !important; text-shadow: none !important;
@@ -6594,7 +6602,7 @@ répertoire</button>
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-22.276";
+  const APP_BUILD = "2026-10-22.277";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
