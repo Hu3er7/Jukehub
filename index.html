@@ -6617,6 +6617,7 @@ répertoire</button>
         if (name) safeSessionStorageSet("jb_client_name", name);
         // le titre au-dessus du cadre affiche maintenant ce nom (Hubert, 18 nov. 2026)
         if (name && catalogTab === "repertoire") { try { renderCatalog(); } catch (e) { /* pas encore prêt */ } }
+        else if (name) { const st = document.getElementById("jb-style-title"); if (st) st.textContent = name; }
         if (name && pickedAvatar) safeSessionStorageSet("jb_client_avatar", pickedAvatar);
         if (picker) picker.removeEventListener("click", onPick);
         wrap.hidden = true;
@@ -6665,7 +6666,7 @@ répertoire</button>
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-22.279";
+  const APP_BUILD = "2026-10-22.280";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -9005,7 +9006,8 @@ répertoire</button>
       $("jb-catalog-results").hidden = false;
       ["jb-folder-title-wrap", "jb-catalog-empty", "jb-special-request-block", "jb-back-btn"].forEach((id) => { $(id).hidden = true; });
       $("jb-section-title-row").hidden = false;
-      $("jb-style-title").textContent = t(catalogTab === "myreq" ? "tab_myreq_title" : "tab_public_title");
+      // le nom d'utilisateur reste aussi en titre sur La playlist (Hubert, 19 nov. 2026)
+      $("jb-style-title").textContent = getClientName() || t(catalogTab === "myreq" ? "tab_myreq_title" : "tab_public_title");
     }
     // Tes suggestions / Choix du public : jamais plus petits que le cadre Chansons/Artiste/Genre
     // (même grandeur quand ils sont vides, Hubert, 26 oct. 2026)
