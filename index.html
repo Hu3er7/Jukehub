@@ -2412,6 +2412,10 @@ html[data-jb-bg="matrix"] #jb-public :is(#jb-pl-search-input, #jb-chat-input) {
   #jb-public .jb-bump-bar:not(.jb-bump-idle) .jb-bump-bar-txt { font-size: 0.95rem; letter-spacing: 0; padding: 0 6px; }
   #jb-public .jb-bump-bar.jb-bump-idle .jb-bump-bar-txt { font-size: 0.665rem; letter-spacing: 0.02em; text-overflow: clip; }
   #jb-public .jb-bump-fit { display: inline-block; transform-origin: center; }
+  /* titre de la chanson entre 2 flèches vers le haut, collées aux 2 bouts du bouton (Hubert, 19 nov. 2026) */
+  #jb-public .jb-bump-bar.jb-bump-arrows .jb-bump-bar-txt { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 0 10px; }
+  #jb-public .jb-bump-arr { flex: 0 0 auto; width: 14px; height: 16px; }
+  #jb-public .jb-bump-title { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: center; }
   #jb-public .jb-bump-bar.jb-bump-on:not(.jb-bump-wait) {
     cursor: pointer; border-color: var(--plc) !important; background: var(--plc) !important; color: var(--plc-ink);
     box-shadow: 0 0 12px rgba(var(--plc-rgb), 0.6) !important;
@@ -6754,7 +6758,7 @@ répertoire</button>
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-22.288";
+  const APP_BUILD = "2026-10-22.289";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -9809,7 +9813,7 @@ répertoire</button>
       if (v || left > 0 || !bar.offsetParent) showBumpCooldown._readyAt = 0;
       else if (!showBumpCooldown._readyAt) showBumpCooldown._readyAt = Date.now();
       const showChoose = !v && !veteran && Math.floor((Date.now() - (showBumpCooldown._readyAt || Date.now())) / 2000) % 2 === 0;
-      const label = v ? (veteran ? t("bump_btn_short") : t("bump_btn", v.title || "")) : (showChoose ? t("bump_idle") : t("bump_idle_short"));
+      const label = v ? (veteran ? `↑${v.title || ""}↑` : t("bump_btn", v.title || "")) : (showChoose ? t("bump_idle") : t("bump_idle_short"));
       bar.classList.toggle("jb-bump-idle", !v);
       if (txt.dataset.label !== label || txt.dataset.w !== String(bar.clientWidth)) {
         txt.dataset.label = label;
@@ -9818,10 +9822,15 @@ répertoire</button>
         // bout à l'autre
         // (barre vide : on mesure toujours « Choisis une chanson » pour l'étirement, puis on affiche le bon texte avec
         // ce même étirement — les 2 messages ont ainsi exactement la même police)
-        txt.innerHTML = v ? escapeHtml(label) : `<span class="jb-bump-fit">${escapeHtml(t("bump_idle"))}</span>`;
+        // (19 nov. 2026, Hubert) après 5 chansons : le titre de la chanson choisie, avec une flèche vers le haut de
+        // chaque côté du bouton
+        const ARROW = '<svg class="jb-bump-arr" viewBox="0 0 12 14" aria-hidden="true"><path d="M6 1 11 7H7.6v6H4.4V7H1Z" fill="currentColor"/></svg>';
+        txt.innerHTML = v ? (veteran ? `${ARROW}<span class="jb-bump-title">${escapeHtml(v.title || "")}</span>${ARROW}` : escapeHtml(label))
+          : `<span class="jb-bump-fit">${escapeHtml(t("bump_idle"))}</span>`;
+        bar.classList.toggle("jb-bump-arrows", !!(v && veteran));
         // texte « Appuie ici… » : police réduite juste assez pour qu'il tienne sur une ligne (Hubert, 19 nov. 2026)
         txt.style.fontSize = "";
-        if (v && bar.clientWidth) {
+        if (v && !veteran && bar.clientWidth) {
           const base = parseFloat(getComputedStyle(txt).fontSize);
           const room = txt.clientWidth - 12;
           if (txt.scrollWidth - 12 > room && room > 0) txt.style.fontSize = `${Math.max(9, Math.floor(base * room / (txt.scrollWidth - 12) * 10) / 10)}px`;
