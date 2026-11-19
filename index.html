@@ -6602,7 +6602,7 @@ répertoire</button>
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-22.277";
+  const APP_BUILD = "2026-10-22.278";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -8889,13 +8889,25 @@ répertoire</button>
   // « Mon répertoire » dès qu'on change de liste ou de recherche.
   var catalogTab = "repertoire"; // var : renderCatalog() peut tourner avant cette ligne
   var catalogTabSig = "";
+  // Explication « toucher une chanson la remonte » : UNE seule fois, et seulement quand La playlist compte au
+  // moins 3 chansons (Hubert, 18 nov. 2026) — sinon on attend : elle s'affichera à une visite suivante, ou dès
+  // que la 3e chanson arrive pendant que le client regarde La playlist.
+  var BUMP_HELP_MIN = 3;
+  function maybeShowBumpHelp(delayMs = 0) {
+    if (safeStorageGet("jb_bump_help_seen")) return;
+    let n = 0;
+    try { n = Object.values(votes).filter((v) => !isHiddenFromPalmares(v)).length; } catch (e) { return; }
+    if (n < BUMP_HELP_MIN) return;
+    const modal = document.getElementById("jb-vote-modal");
+    try { if (voteModalPending) return; } catch (e) { return; } // (pas encore prêt)
+    if (modal && !modal.hidden) return; // une autre fenêtre est ouverte : plus tard
+    safeStorageSet("jb_bump_help_seen", "1");
+    showInfoModal("bump_help", "bump_help_back", delayMs);
+  }
   function setCatalogTab(tab) {
     if (tab === catalogTab) return;
     // 1re visite de La playlist sur ce téléphone : on explique qu'un toucher remonte une chanson (18 nov. 2026)
-    if (tab === "public" && !safeStorageGet("jb_bump_help_seen")) {
-      safeStorageSet("jb_bump_help_seen", "1");
-      showInfoModal("bump_help", "bump_help_back", 350);
-    }
+    if (tab === "public") maybeShowBumpHelp(350);
     // hauteur actuelle du cadre Chansons/Artiste/Genre (s'il est affiché) : les onglets vides la reprennent
     const home = document.querySelector("#jb-catalog-browse .jb-catalog-frame");
     if (home && home.offsetParent && !home._jbMorph) lastHomeFrameH = home.getBoundingClientRect().height;
@@ -10141,6 +10153,8 @@ répertoire</button>
       .sort(compareVoteEntries);
 
     empty.hidden = ranked.length > 0;
+    // la 3e chanson arrive pendant que le client regarde La playlist : explication (une seule fois)
+    if (catalogTab === "public" && list.offsetParent && ranked.length >= BUMP_HELP_MIN) setTimeout(() => maybeShowBumpHelp(350), 0);
     // Étiquette de la case vert néon : nombre de chansons au palmarès (ex. « 3 CHANSONS »)
     if (palmLabel) palmLabel.textContent = t("palm_label", ranked.length);
     updateTabCounts();
