@@ -2366,6 +2366,15 @@ html[data-jb-bg="matrix"] #jb-public :is(#jb-pl-search-input, #jb-chat-input) {
   html[data-jb-bg="matrix"] #jb-public { --plc: #00ff41; --plc-rgb: 0, 255, 65; --plc-ink: #000a02; }
   #jb-public #jb-tab-public .jb-tab-panel-head.jb-pl-head { display: flex; flex-direction: column; align-items: stretch; justify-content: flex-start; gap: 8px; }
   #jb-public #jb-tab-public .jb-tab-panel-head.jb-pl-head[hidden] { display: none; }
+  /* fenêtre « nom choisi » (Hubert, 19 nov. 2026) : le nom en gros au centre, puis Confirmer et Changer de nom */
+  #jb-app .jb-name-prompt .jb-name-prompt-card[hidden] { display: none !important; }
+  #jb-app .jb-name-check-card { text-align: center; }
+  #jb-app .jb-name-check-name {
+    font-size: 1.9rem; font-weight: 800; line-height: 1.2; color: var(--accent2, var(--accent)); word-break: break-word;
+    padding: 10px 6px 16px;
+  }
+  #jb-app .jb-name-check-actions { display: flex; flex-direction: column; gap: 10px; }
+  #jb-app .jb-name-check-actions button { width: 100%; }
   #jb-public .jb-pl-searchbar { margin: 0 !important; position: relative; }
   html:not(.jb-pl-kbd-open) #jb-public #jb-pl-searchbar .jb-kbd-caret { display: none; }
   html.jb-pl-kbd-open #jb-public #jb-pl-search-input::placeholder { color: transparent; }
@@ -6132,6 +6141,15 @@ html[data-jb-bg="matrix"] #jb-public .jb-style-heading-row h2 { font-size: 18.4p
           <button id="jb-name-prompt-confirm" class="jb-btn-primary"></button>
         </div>
       </div>
+      <!-- 19 nov. 2026 (Hubert) : après « Confirmer », une 2e fenêtre montre le nom choisi avec « Confirmer » et
+           « Changer de nom » (retour à la fenêtre précédente, le nom déjà écrit) -->
+      <div id="jb-name-check" class="jb-name-prompt-card jb-name-check-card" hidden>
+        <div id="jb-name-check-name" class="jb-name-check-name"></div>
+        <div class="jb-name-check-actions">
+          <button type="button" id="jb-name-check-ok" class="jb-btn-primary"></button>
+          <button type="button" id="jb-name-check-change" class="jb-name-prompt-skip-btn jb-name-check-change"></button>
+        </div>
+      </div>
     </div>
 
     <!-- Fenêtre affichée après CHAQUE vote (maquette de Hubert) : écran assombri, nombre de votes
@@ -6629,11 +6647,31 @@ répertoire</button>
         resolve(name);
       }
       function onSkip() { finish(""); }
+      // 2e fenêtre « nom choisi » : Confirmer (on garde ce nom) ou Changer de nom (retour, nom déjà écrit)
+      const mainCard = wrap.querySelector(".jb-name-prompt-card:not(.jb-name-check-card)");
+      const check = document.getElementById("jb-name-check");
+      const checkOk = document.getElementById("jb-name-check-ok");
+      const checkChange = document.getElementById("jb-name-check-change");
+      let pendingName = "";
+      function showCheck(on) {
+        if (mainCard) mainCard.hidden = on;
+        if (check) check.hidden = !on;
+      }
+      function onCheckOk() { const n = pendingName; showCheck(false); finish(n); }
+      function onCheckChange() { showCheck(false); if (!nameUsesAppKbd) setTimeout(() => input.focus(), 50); }
       function onConfirm() {
         const name = input.value.trim().slice(0, 15);
         if (!name) { if (!nameUsesAppKbd) input.focus(); input.classList.remove("jb-input-shake"); void input.offsetWidth; input.classList.add("jb-input-shake"); return; }
-        finish(name); // (plus d'icône obligatoire, 18 nov. 2026)
+        if (!check || !checkOk || !checkChange) { finish(name); return; }
+        pendingName = name;
+        document.getElementById("jb-name-check-name").textContent = name;
+        checkOk.textContent = t("name_check_ok");
+        checkChange.textContent = t("name_check_change");
+        showCheck(true);
       }
+      if (checkOk) checkOk.onclick = onCheckOk;
+      if (checkChange) checkChange.onclick = onCheckChange;
+      showCheck(false);
       function onKeydown(e) { if (e.key === "Enter") onConfirm(); }
       skipBtn.addEventListener("click", onSkip);
       confirmBtn.addEventListener("click", onConfirm);
@@ -6666,7 +6704,7 @@ répertoire</button>
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-22.281";
+  const APP_BUILD = "2026-10-22.282";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -6851,6 +6889,8 @@ répertoire</button>
       name_prompt_placeholder: "Nom",
       name_prompt_skip: "Annuler",
       name_prompt_confirm: "Confirmer",
+      name_check_ok: "Confirmer",
+      name_check_change: "Changer de nom",
       avatar_pick: "Choisis ton avatar pour le chat (facultatif) :",
       burned_badge: "🔥❌ Brûlée",
       cooldown_played_label: "Déjà Jouée",
@@ -6973,6 +7013,8 @@ répertoire</button>
       name_prompt_placeholder: "Name",
       name_prompt_skip: "Cancel",
       name_prompt_confirm: "Confirm",
+      name_check_ok: "Confirm",
+      name_check_change: "Change name",
       avatar_pick: "Pick your chat avatar (optional):",
       burned_badge: "🔥❌ Unavailable",
       cooldown_played_label: "Already Played",
