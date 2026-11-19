@@ -6581,6 +6581,36 @@ répertoire</button>
   function getClientName() {
     return (safeSessionStorageGet("jb_client_name") || "").trim().slice(0, 15);
   }
+  // Titre au-dessus du cadre trop long (« Bonsoir » + un long nom) : sa police rapetisse juste assez pour tenir
+  // sur la ligne à côté du bouton Thème (Hubert, 19 nov. 2026)
+  function fitStyleTitle() {
+    const h = document.getElementById("jb-style-title");
+    const row = document.getElementById("jb-section-title-row");
+    if (!h || !row || !row.offsetParent) return;
+    h.style.removeProperty("font-size");
+    const others = [...row.children].filter((c) => c !== h && c.offsetParent);
+    const gap = parseFloat(getComputedStyle(row).columnGap) || 10;
+    // (Hubert : « trop squeeze ») on laisse de l'air : le titre n'occupe que 88 % de la place disponible
+    const room = (row.clientWidth - others.reduce((s, c) => s + c.getBoundingClientRect().width + gap, 0)) * 0.88;
+    const w = h.scrollWidth;
+    // (!important : certains thèmes, comme Bar, imposent déjà la taille du titre avec !important)
+    if (room > 0 && w > room) h.style.setProperty("font-size", `${Math.floor(parseFloat(getComputedStyle(h).fontSize) * room / w * 10) / 10}px`, "important");
+  }
+  (function watchStyleTitle() {
+    const h = document.getElementById("jb-style-title");
+    if (!h) return;
+    new MutationObserver(() => requestAnimationFrame(fitStyleTitle)).observe(h, { childList: true, characterData: true, subtree: true });
+    window.addEventListener("resize", () => requestAnimationFrame(fitStyleTitle));
+    window.addEventListener("jb-bg-change", () => setTimeout(fitStyleTitle, 50));
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitStyleTitle);
+  })();
+  // titre au-dessus du cadre : « Bonsoir Hubert » (Hubert, 19 nov. 2026) ; "" s'il n'y a pas encore de nom
+  function greetName() {
+    const n = getClientName();
+    let en = false;
+    try { en = lang === "en"; } catch (e) { /* langue pas encore prête */ }
+    return n ? `${en ? "Good evening" : "Bonsoir"} ${n}` : "";
+  }
   // Avatars néon du chat (Hubert, 27 oct. 2026) : choisi (facultatif) avec le nom d'utilisateur, affiché à
   // côté du nom dans le chat. Dessins SVG 32x32 en trait (currentColor = couleur de l'avatar). Les
   // identifiants sont aussi listés dans firestore.rules (match /chat) : à garder pareils.
@@ -6655,7 +6685,7 @@ répertoire</button>
         if (name) safeSessionStorageSet("jb_client_name", name);
         // le titre au-dessus du cadre affiche maintenant ce nom (Hubert, 18 nov. 2026)
         if (name && catalogTab === "repertoire") { try { renderCatalog(); } catch (e) { /* pas encore prêt */ } }
-        else if (name) { const st = document.getElementById("jb-style-title"); if (st) st.textContent = name; }
+        else if (name) { const st = document.getElementById("jb-style-title"); if (st) st.textContent = greetName(); }
         if (name && pickedAvatar) safeSessionStorageSet("jb_client_avatar", pickedAvatar);
         if (picker) picker.removeEventListener("click", onPick);
         wrap.hidden = true;
@@ -6724,7 +6754,7 @@ répertoire</button>
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-22.286";
+  const APP_BUILD = "2026-10-22.287";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -9057,7 +9087,7 @@ répertoire</button>
       ["jb-folder-title-wrap", "jb-catalog-empty", "jb-special-request-block", "jb-back-btn"].forEach((id) => { $(id).hidden = true; });
       $("jb-section-title-row").hidden = false;
       // le nom d'utilisateur reste aussi en titre sur La playlist (Hubert, 19 nov. 2026)
-      $("jb-style-title").textContent = getClientName() || t(catalogTab === "myreq" ? "tab_myreq_title" : "tab_public_title");
+      $("jb-style-title").textContent = greetName() || t(catalogTab === "myreq" ? "tab_myreq_title" : "tab_public_title");
     }
     // Tes suggestions / Choix du public : jamais plus petits que le cadre Chansons/Artiste/Genre
     // (même grandeur quand ils sont vides, Hubert, 26 oct. 2026)
@@ -10292,6 +10322,7 @@ répertoire</button>
   }, 1000);
 
   // ---------- Rendu : Palmarès (public) ----------
+  var PALM_MOVE_MS = 1200; // glissement des chansons de La playlist quand l'ordre change (ex. remontée au top)
   function palmaresLock() {
     palmaresAnimating = true;
     const list = document.getElementById("jb-palmares-list");
@@ -10516,7 +10547,8 @@ répertoire</button>
         // ne brillent que 0.5s, voir jb-num-glow/jb-pulse-attn plus haut — la ligne continuait
         // donc à glisser une fois le flash déjà éteint). Même durée que ces deux animations, pour
         // que les 3 démarrent ET se terminent ensemble.
-        el.style.transition = "transform 0.5s cubic-bezier(0.4, 0, 0.2, 1)";
+        // (19 nov. 2026, Hubert) ralenti : 1,2 s au lieu de 0,5 s, pour bien voir la chanson monter au top
+        el.style.transition = `transform ${PALM_MOVE_MS || 1200}ms cubic-bezier(0.4, 0, 0.2, 1)`;
         el.style.transform = "";
       });
       if (palmaresAnimTimer) clearTimeout(palmaresAnimTimer);
@@ -10526,7 +10558,7 @@ répertoire</button>
           el.style.zIndex = "";
         });
         palmaresUnlock();
-      }, 600); // 0.5s de transition + marge, comme ailleurs dans le système (voir ROW_FLASH_MS)
+      }, (PALM_MOVE_MS || 1200) + 100); // durée de la transition + marge
     });
   }
 
@@ -10757,7 +10789,7 @@ répertoire</button>
 
     if (!showResults) {
       sectionTitleRow.hidden = false;
-      sectionTitleEl.textContent = getClientName() || t("style_title_count", catalogSongs.length);
+      sectionTitleEl.textContent = greetName() || t("style_title_count", catalogSongs.length);
       renderModeButtons();
       return;
     }
@@ -10769,7 +10801,7 @@ répertoire</button>
     const atListLevel = !search && catalogView && LIST_LEVEL[catalogView.type];
     // pendant une recherche aussi : « 670 Chansons » et Thème restent en place, rien ne bouge (Hubert, 17 nov. 2026)
     sectionTitleRow.hidden = !atListLevel && !search;
-    if (search) sectionTitleEl.textContent = getClientName() || t("style_title_count", catalogSongs.length);
+    if (search) sectionTitleEl.textContent = greetName() || t("style_title_count", catalogSongs.length);
     titleWrap.hidden = !!atListLevel || !!search;
 
     // Préserve la position de défilement d'une liste déjà affichée face aux ré-affichages SANS
@@ -10800,7 +10832,7 @@ répertoire</button>
 
     if (!search && catalogView.type === "artist-list") {
       const artists = buildArtistList();
-      sectionTitleEl.textContent = getClientName() || t("artist_title_count", artists.length);
+      sectionTitleEl.textContent = greetName() || t("artist_title_count", artists.length);
       empty.hidden = artists.length > 0;
       artists.forEach((a) => list.appendChild(renderNameRow(a.name, String(a.count), () => {
         catalogView = { type: "artist", name: a.name };
@@ -10808,7 +10840,7 @@ répertoire</button>
       })));
     } else if (!search && catalogView.type === "genre-list") {
       const genres = buildGenreList();
-      sectionTitleEl.textContent = getClientName() || t("genre_title_count", genres.length);
+      sectionTitleEl.textContent = greetName() || t("genre_title_count", genres.length);
       empty.hidden = genres.length > 0;
       genres.forEach((g) => list.appendChild(renderNameRow(g.label, "›", () => {
         catalogView = { type: "genre-songs", key: g.key };
@@ -10821,7 +10853,7 @@ répertoire</button>
       if (search) {
         songs = catalogSongs.filter((s) => matchesSearch(s, search));
       } else if (catalogView.type === "all-songs") {
-        sectionTitleEl.textContent = getClientName() || t("style_title_count", catalogSongs.length);
+        sectionTitleEl.textContent = greetName() || t("style_title_count", catalogSongs.length);
         songs = catalogSongs;
       } else if (catalogView.type === "artist") {
         // Son nom s'affiche déjà dans le bandeau de dossier, pas besoin de le répéter sur chaque
