@@ -2369,6 +2369,8 @@ html[data-jb-bg="matrix"] #jb-public :is(#jb-pl-search-input, #jb-chat-input) {
   html[data-jb-bg="bar"] #jb-public .jb-bump-bar.jb-bump-on { --plc: #6fe0ff; --plc-rgb: 111, 224, 255; --plc-ink: #04161d; }
   #jb-public #jb-tab-public .jb-tab-panel-head.jb-pl-head { display: flex; flex-direction: column; align-items: stretch; justify-content: flex-start; gap: 8px; }
   #jb-public #jb-tab-public .jb-tab-panel-head.jb-pl-head[hidden] { display: none; }
+  /* dates du calendrier (« Jeudi 5 ») en bleu néon, comme le tube du thème Bar (Hubert, 19 nov. 2026) */
+  html[data-jb-bg="bar"] #jb-app #jb-public .jb-cal-day { color: #6fe0ff !important; text-shadow: 0 0 6px rgba(111, 224, 255, 0.6) !important; }
   /* « ← Retour au calendrier » en rose néon (Hubert, 19 nov. 2026) */
   html[data-jb-bg="bar"] #jb-app #jb-public #jb-browse-back,
   html[data-jb-bg="bar"] #jb-app #jb-public #jb-offline-browse {
@@ -6822,7 +6824,7 @@ répertoire</button>
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-22.291";
+  const APP_BUILD = "2026-10-22.292";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
