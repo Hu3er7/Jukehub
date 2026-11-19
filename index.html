@@ -2364,6 +2364,9 @@ html[data-jb-bg="matrix"] #jb-public :is(#jb-pl-search-input, #jb-chat-input) {
   html[data-jb-bg="bar"] #jb-public { --plc: #ffb84d; --plc-rgb: 255, 184, 77; --plc-ink: #1c0d07; }
   html[data-jb-bg="foret"] #jb-public { --plc: #c6f36a; --plc-rgb: 198, 243, 106; --plc-ink: #102408; }
   html[data-jb-bg="matrix"] #jb-public { --plc: #00ff41; --plc-rgb: 0, 255, 65; --plc-ink: #000a02; }
+  /* Bar : bouton ROSE néon à l'étape « Choisis une chanson », BLEU néon (comme le tube) à « Appuie ici… » (Hubert, 19 nov. 2026) */
+  html[data-jb-bg="bar"] #jb-public .jb-bump-bar { --plc: #ff5fa8; --plc-rgb: 255, 95, 168; --plc-ink: #2a0716; }
+  html[data-jb-bg="bar"] #jb-public .jb-bump-bar.jb-bump-on { --plc: #6fe0ff; --plc-rgb: 111, 224, 255; --plc-ink: #04161d; }
   #jb-public #jb-tab-public .jb-tab-panel-head.jb-pl-head { display: flex; flex-direction: column; align-items: stretch; justify-content: flex-start; gap: 8px; }
   #jb-public #jb-tab-public .jb-tab-panel-head.jb-pl-head[hidden] { display: none; }
   /* pendant que le client est dans la recherche de La playlist (son clavier ouvert), pas de bouton « Monter » ;
@@ -2397,7 +2400,9 @@ html[data-jb-bg="matrix"] #jb-public :is(#jb-pl-search-input, #jb-chat-input) {
     background: rgba(0, 0, 0, 0.35) !important; clip-path: none !important;
     color: var(--plc); cursor: default; -webkit-tap-highlight-color: transparent; transition: background 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
   }
-  #jb-public .jb-bump-bar i { position: absolute; left: 0; top: 0; bottom: 0; width: 0; background: rgba(var(--plc-rgb), 0.35); pointer-events: none; }
+  /* remplissage néon bien flash (Hubert, 19 nov. 2026) ; les lettres, toujours par-dessus lui, sont foncées */
+  #jb-public .jb-bump-bar i { position: absolute; left: 0; top: 0; bottom: 0; width: 0; background: var(--plc); box-shadow: 0 0 10px rgba(var(--plc-rgb), 0.8); pointer-events: none; }
+  #jb-public .jb-bump-bar .jb-bump-bar-txt { color: var(--plc-ink) !important; text-shadow: none !important; }
   #jb-public .jb-bump-bar-txt {
     /* sur toute la largeur de la barre (comme le remplissage), pour que les lettres apparaissent pile avec lui */
     position: absolute; inset: 0; padding: 0 12px; box-sizing: border-box;
@@ -2413,8 +2418,12 @@ html[data-jb-bg="matrix"] #jb-public :is(#jb-pl-search-input, #jb-chat-input) {
   }
   #jb-public .jb-bump-bar.jb-bump-on:not(.jb-bump-wait):active { filter: brightness(1.2); }
   #jb-public .jb-bump-bar.jb-bump-wait { border-color: rgba(var(--plc-rgb), 0.7) !important; }
-  #jb-public .jb-bump-bar.jb-bump-wait .jb-bump-bar-txt { opacity: 0.6; }
+  /* pendant la recharge, les lettres qui apparaissent sont aussi flash que quand la barre est prête (Hubert, 19 nov. 2026) */
+  #jb-public .jb-bump-bar.jb-bump-wait .jb-bump-bar-txt { opacity: 1; }
   /* chanson choisie : elle s'allume */
+  /* un peu d'espace de chaque côté de chaque ligne, pour que le cadre de la chanson choisie ne colle pas au texte
+     (Hubert, 19 nov. 2026 : « élargis le cadre ») */
+  #jb-public #jb-palmares-list .jb-slot-bumpable { padding-left: 10px !important; padding-right: 10px !important; box-sizing: border-box; }
   #jb-public .jb-slot.jb-slot-picked { background: rgba(var(--plc-rgb), 0.14) !important; box-shadow: inset 3px 0 0 var(--plc), 0 0 0 1px rgba(var(--plc-rgb), 0.55); border-radius: 4px; }
   #jb-public .jb-slot.jb-pl-hide { display: none !important; }
   /* clavier de la recherche de La playlist : comme celui de la recherche principale */
@@ -6715,7 +6724,7 @@ répertoire</button>
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-22.284";
+  const APP_BUILD = "2026-10-22.285";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -6869,7 +6878,9 @@ répertoire</button>
       bump_help: "Touche une chanson de La playlist, puis la barre « Appuie ici » : elle remonte tout en haut de la liste !",
       bump_help_back: "Tu peux le refaire toutes les 3 secondes.",
       bump_ready: "Monte ta toune",
-      bump_btn: () => "Appuie ici pour la mettre au top",
+      bump_btn: () => "Tape ici pour la placer au top",
+      bump_btn_short: "Monter au sommet",
+      bump_idle_short: "Let's gooo",
       bump_idle: "Choisis une chanson",
       pl_search_ph: (n) => n > 1 ? `🔍 Cherche parmi les ${n} chansons` : `🔍 Cherche parmi ${n} chanson`,
       public_full_title: "Le Choix du public est plein (100 chansons)",
@@ -6996,6 +7007,8 @@ répertoire</button>
       bump_help_back: "You can do it again every 3 seconds.",
       bump_ready: "Bump your song",
       bump_btn: () => "Tap here to put it on top",
+      bump_btn_short: "Move to the top",
+      bump_idle_short: "Let's gooo",
       bump_idle: "Choose a song",
       pl_search_ph: (n) => n === 1 ? `🔍 Search 1 song` : `🔍 Search the ${n} songs`,
       public_full_title: "Crowd's Picks is full (100 songs)",
@@ -9754,14 +9767,34 @@ répertoire</button>
       // par défaut (aucune chanson choisie) : « Monter une chanson au top », toujours affiché (Hubert, 18 nov. 2026)
       // « Choisis une chanson » en plus gros, étalé d'un bout à l'autre de la barre (une case par lettre, réparties
       // sur toute la largeur — Hubert, 18 nov. 2026)
-      const label = v ? t("bump_btn", v.title || "") : t("bump_idle");
+      // après 5 chansons remontées sur ce téléphone, le client connaît le truc : « Monter au sommet » (Hubert, 19 nov. 2026)
+      // …et plus de « Choisis une chanson » non plus : la barre reste vide tant qu'aucune chanson n'est choisie
+      const veteran = (Number(safeStorageGet("jb_bump_count")) || 0) >= 5;
+      // (19 nov. 2026, Hubert) barre vide : le message passe de « Choisis une chanson » à « LET'S GOOO » toutes les
+      // secondes ; après 5 chansons, seulement « LET'S GOOO »
+      // (Hubert : alternance aux 2 s, et « LET'S GOOO » dans exactement la même police que « Choisis une chanson »)
+      // l'alternance commence TOUJOURS par « Choisis une chanson » (Hubert) : on compte depuis le moment où la barre
+      // vide est devenue prête (fin de recharge, chanson désélectionnée, onglet ouvert)
+      if (v || left > 0 || !bar.offsetParent) showBumpCooldown._readyAt = 0;
+      else if (!showBumpCooldown._readyAt) showBumpCooldown._readyAt = Date.now();
+      const showChoose = !v && !veteran && Math.floor((Date.now() - (showBumpCooldown._readyAt || Date.now())) / 2000) % 2 === 0;
+      const label = v ? (veteran ? t("bump_btn_short") : t("bump_btn", v.title || "")) : (showChoose ? t("bump_idle") : t("bump_idle_short"));
       bar.classList.toggle("jb-bump-idle", !v);
       if (txt.dataset.label !== label || txt.dataset.w !== String(bar.clientWidth)) {
         txt.dataset.label = label;
         txt.dataset.w = String(bar.clientWidth);
         // (Hubert : lettres trop écartées) lettres collées normalement, mais élargies pour remplir la barre d'un
         // bout à l'autre
-        txt.innerHTML = v ? escapeHtml(label) : `<span class="jb-bump-fit">${escapeHtml(label)}</span>`;
+        // (barre vide : on mesure toujours « Choisis une chanson » pour l'étirement, puis on affiche le bon texte avec
+        // ce même étirement — les 2 messages ont ainsi exactement la même police)
+        txt.innerHTML = v ? escapeHtml(label) : `<span class="jb-bump-fit">${escapeHtml(t("bump_idle"))}</span>`;
+        // texte « Appuie ici… » : police réduite juste assez pour qu'il tienne sur une ligne (Hubert, 19 nov. 2026)
+        txt.style.fontSize = "";
+        if (v && bar.clientWidth) {
+          const base = parseFloat(getComputedStyle(txt).fontSize);
+          const room = txt.clientWidth - 12;
+          if (txt.scrollWidth - 12 > room && room > 0) txt.style.fontSize = `${Math.max(9, Math.floor(base * room / (txt.scrollWidth - 12) * 10) / 10)}px`;
+        }
         const fit = txt.querySelector(".jb-bump-fit");
         if (fit && bar.clientWidth) {
           fit.style.transform = "";
@@ -9769,14 +9802,16 @@ répertoire</button>
           const avail = (bar.clientWidth - 24) * 0.7, w = fit.offsetWidth;
           if (w > 0) fit.style.transform = `scaleX(${Math.min(3, avail / w).toFixed(3)})`;
         }
+        if (fit && label !== t("bump_idle")) fit.textContent = label;
       }
       bar.classList.toggle("jb-bump-on", !!v);
       bar.classList.toggle("jb-bump-wait", left > 0);
       bar.disabled = !v || left > 0;
-      fill.style.width = left > 0 ? `${(1 - left / BUMP_COOLDOWN_MS) * 100}%` : "0%";
-      // les lettres sont invisibles après une remontée et apparaissent au fur et à mesure que la barre se
-      // remplit, de gauche à droite (Hubert, 18 nov. 2026)
-      txt.style.clipPath = left > 0 ? `inset(0 ${(left / BUMP_COOLDOWN_MS) * 100}% 0 0)` : "";
+      // (19 nov. 2026, Hubert) une fois pleine, la barre RESTE remplie
+      fill.style.width = left > 0 ? `${(1 - left / BUMP_COOLDOWN_MS) * 100}%` : "100%";
+      // (19 nov. 2026, Hubert) le message n'apparaît que quand la barre est remplie à 100 %
+      txt.style.clipPath = "";
+      txt.style.visibility = left > 0 ? "hidden" : "";
       if (left > 0) showBumpCooldown._raf = requestAnimationFrame(tick);
     };
     tick();
@@ -9801,6 +9836,7 @@ répertoire</button>
     const v = votes[id];
     if (!v || !db || bumpCooldownLeft() > 0 || palmaresAnimating) return;
     safeStorageSet("jb_bump_until", String(Date.now() + BUMP_COOLDOWN_MS));
+    safeStorageSet("jb_bump_count", String((Number(safeStorageGet("jb_bump_count")) || 0) + 1));
     bumpPickId = null; // la barre se vide (puis se remplit pendant la recharge)
     showBumpCooldown();
     // tout de suite à l'écran (le serveur confirme juste après)
@@ -9835,6 +9871,12 @@ répertoire</button>
   // « Choisis une chanson » réajusté à la largeur de la barre quand elle apparaît / change de taille, et une fois
   // la police chargée
   if (window.ResizeObserver) new ResizeObserver(() => showBumpCooldown()).observe(document.getElementById("jb-bump-bar"));
+  // alternance « Choisis une chanson » / « LET'S GOOO » chaque seconde (seulement si la barre est visible et prête)
+  setInterval(() => {
+    const b = document.getElementById("jb-bump-bar");
+    if (b && !b.offsetParent) { showBumpCooldown._readyAt = 0; return; } // barre cachée : on repartira de « Choisis une chanson »
+    if (b && !bumpPickId && bumpCooldownLeft() <= 0) showBumpCooldown();
+  }, 250);
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { const tx = document.querySelector(".jb-bump-bar-txt"); if (tx) tx.dataset.w = ""; showBumpCooldown(); });
   document.getElementById("jb-pl-search-input").addEventListener("input", applyPlaylistFilter);
   showBumpCooldown(); // recharge encore en cours après un rechargement de la page
