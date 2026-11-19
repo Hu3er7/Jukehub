@@ -2366,6 +2366,10 @@ html[data-jb-bg="matrix"] #jb-public :is(#jb-pl-search-input, #jb-chat-input) {
   html[data-jb-bg="matrix"] #jb-public { --plc: #00ff41; --plc-rgb: 0, 255, 65; --plc-ink: #000a02; }
   #jb-public #jb-tab-public .jb-tab-panel-head.jb-pl-head { display: flex; flex-direction: column; align-items: stretch; justify-content: flex-start; gap: 8px; }
   #jb-public #jb-tab-public .jb-tab-panel-head.jb-pl-head[hidden] { display: none; }
+  /* pendant que le client est dans la recherche de La playlist (son clavier ouvert), pas de bouton « Monter » ;
+     il réapparaît dès qu'il en sort (Hubert, 19 nov. 2026) */
+  html.jb-pl-kbd-open #jb-public .jb-bump-bar,
+  #jb-public .jb-pl-head:has(#jb-pl-search-input:focus) .jb-bump-bar { display: none !important; }
   /* fenêtre « nom choisi » (Hubert, 19 nov. 2026) : le nom en gros au centre, puis Confirmer et Changer de nom */
   #jb-app .jb-name-prompt .jb-name-prompt-card[hidden] { display: none !important; }
   #jb-app .jb-name-check-card { text-align: center; }
@@ -6704,7 +6708,7 @@ répertoire</button>
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-22.282";
+  const APP_BUILD = "2026-10-22.283";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
