@@ -2368,6 +2368,13 @@ html[data-jb-bg="matrix"] #jb-public :is(#jb-pl-search-input, #jb-chat-input) {
   #jb-public #jb-tab-public .jb-tab-panel-head.jb-pl-head[hidden] { display: none; }
   /* pendant que le client est dans la recherche de La playlist (son clavier ouvert), pas de bouton « Monter » ;
      il réapparaît dès qu'il en sort (Hubert, 19 nov. 2026) */
+  /* pendant la recherche de La playlist : tout s'assombrit et ne se touche plus, sauf la recherche, la liste
+     des chansons et le clavier (Hubert, 19 nov. 2026) */
+  html.jb-pl-kbd-open #jb-app-content > :not(.jb-catalog),
+  html.jb-pl-kbd-open #jb-public .jb-catalog > :is(#jb-tip-open, #jb-catalog-searchbar, #jb-section-title-row),
+  html.jb-pl-kbd-open #jb-public #jb-catalog-results .jb-catalog-frame > :is(.jb-frame-deco, .jb-tabbar, .jb-catalog-frame-caps) {
+    opacity: 0.22 !important; pointer-events: none !important;
+  }
   html.jb-pl-kbd-open #jb-public .jb-bump-bar,
   #jb-public .jb-pl-head:has(#jb-pl-search-input:focus) .jb-bump-bar { display: none !important; }
   /* fenêtre « nom choisi » (Hubert, 19 nov. 2026) : le nom en gros au centre, puis Confirmer et Changer de nom */
@@ -6708,7 +6715,7 @@ répertoire</button>
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-22.283";
+  const APP_BUILD = "2026-10-22.284";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -9808,6 +9815,18 @@ répertoire</button>
   document.getElementById("jb-palmares-list").addEventListener("click", (e) => {
     const row = e.target.closest(".jb-slot[data-bump]");
     if (!row || e.target.closest("[data-vote-up], [data-vote-down]")) return;
+    // chanson trouvée par la recherche : la recherche revient à son état de base (vide, clavier fermé) et la
+    // chanson reste choisie, visible dans la liste complète (Hubert, 19 nov. 2026)
+    const plInput = document.getElementById("jb-pl-search-input");
+    if (plInput && plInput.value) {
+      plInput.value = "";
+      plInput.dispatchEvent(new Event("input", { bubbles: true }));
+      bumpPickId = row.dataset.bump;
+      window.dispatchEvent(new Event("jb-pl-kbd-close"));
+      applyPlaylistFilter();
+      requestAnimationFrame(() => row.scrollIntoView({ block: "nearest", behavior: "smooth" }));
+      return;
+    }
     // toucher la chanson choisie une 2e fois la désélectionne
     bumpPickId = bumpPickId === row.dataset.bump ? null : row.dataset.bump;
     applyPlaylistFilter();
@@ -12239,6 +12258,8 @@ répertoire</button>
     document.addEventListener("pointerdown", (e) => {
       if (!root.classList.contains("jb-pl-kbd-open")) return;
       if (e.target === input || kbd.contains(e.target)) return;
+      // la liste reste utilisable (défiler, toucher sa chanson — voir le clic sur une ligne) sans fermer le clavier
+      if (e.target.closest && e.target.closest("#jb-palmares-list")) return;
       close();
     }, true);
     // en quittant La playlist, le clavier redescend
