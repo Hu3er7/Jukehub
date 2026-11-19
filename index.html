@@ -5,6 +5,31 @@
 <!-- 27 oct. 2026 (Hubert) : pas de zoom sur l'écran (pincement, double-toucher, zoom auto d'un champ) -->
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 <style>html { touch-action: pan-x pan-y; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }</style>
+<style id="jb-pl-search-css">
+/* ==== GÉNÉRÉ (18 nov. 2026) : recherche de La playlist = copie des règles de la recherche principale ==== */
+#jb-public #jb-pl-searchbar { position: relative; }
+#jb-public #jb-pl-search-input {
+    box-sizing: border-box; height: 40px; min-height: 40px; max-height: 40px; margin-top: 0; margin-bottom: 0;
+  }
+#jb-public #jb-pl-search-input {
+    border-color: #fff200;
+    box-shadow: 0 0 8px rgba(255, 242, 0, 0.55), inset 0 0 6px rgba(255, 242, 0, 0.12);
+  }
+html[data-jb-bg="bar"] #jb-public #jb-pl-search-input { border-color: #ffb84d; box-shadow: 0 0 8px rgba(255, 184, 77, 0.55), inset 0 0 6px rgba(255, 184, 77, 0.12) }
+html[data-jb-bg="foret"] #jb-public #jb-pl-search-input { border-color: #c6f36a; box-shadow: 0 0 8px rgba(198, 243, 106, 0.55), inset 0 0 6px rgba(198, 243, 106, 0.12) }
+html[data-jb-bg="foret"] #jb-public #jb-pl-searchbar,
+html[data-jb-bg="foret"] #jb-public #jb-pl-search-input { clip-path: none !important; background-image: none !important; }
+html[data-jb-bg="foret"] #jb-public #jb-pl-search-input {
+  background-color: rgba(8, 26, 12, 0.7) !important; border: 2px solid var(--fo-lime) !important; border-radius: 10px !important;
+  color: var(--fo-text) !important; box-shadow: 0 0 10px var(--fo-glow) !important; font-family: 'Nunito', sans-serif !important;
+}
+html[data-jb-bg="foret"] #jb-public #jb-pl-search-input::placeholder { color: rgba(220, 255, 180, 0.65) !important; }
+html[data-jb-bg="matrix"] #jb-public #jb-pl-search-input { border-color: #00ff41; box-shadow: 0 0 8px rgba(0, 255, 65, 0.55), inset 0 0 6px rgba(0, 255, 65, 0.12) }
+html[data-jb-bg="matrix"] #jb-public :is(#jb-pl-search-input, #jb-chat-input) {
+  clip-path: none !important; border: 1px solid var(--mx-line) !important; border-radius: 3px !important;
+  background: rgba(0, 6, 2, 0.9) !important; box-shadow: inset 0 0 10px rgba(0, 255, 65, 0.08) !important;
+}
+</style>
 <script>
   // Safari (iPhone/iPad) ignore user-scalable=no pour le pincement : on bloque ses gestes de zoom
   ["gesturestart", "gesturechange", "gestureend"].forEach(function (t) {
@@ -2332,20 +2357,50 @@
   #jb-public #jb-tab-public .jb-tab-panel-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
   #jb-public .jb-slot-bumpable { cursor: pointer; -webkit-tap-highlight-color: transparent; }
   #jb-public .jb-slot-bumpable:active { filter: brightness(1.25); }
-  /* barre 50 % plus grosse (165 × 24), toujours affichée ; « Monte ta toune » écrit dedans quand c'est prêt */
-  #jb-public .jb-bump-cd {
-    --hex: polygon(10px 0, calc(100% - 10px) 0, 100% 50%, calc(100% - 10px) 100%, 10px 100%, 0 50%);
-    position: relative; flex: 0 0 auto; width: 165px; height: 24px; margin-right: 4px;
-    background: #ff6a1a; clip-path: var(--hex);
+  /* (18 nov. 2026, maquette de Hubert) haut de La playlist : recherche « Cherche dans N chansons », puis la barre
+     « Monter « Titre » » sur toute la largeur. Vide au départ ; allumée quand une chanson est choisie ; pendant la
+     recharge de 3 s, elle se remplit depuis la gauche. Couleur = celle de la recherche du thème (--plc). */
+  #jb-public { --plc: #fff200; --plc-rgb: 255, 242, 0; --plc-ink: #141000; }
+  html[data-jb-bg="bar"] #jb-public { --plc: #ffb84d; --plc-rgb: 255, 184, 77; --plc-ink: #1c0d07; }
+  html[data-jb-bg="foret"] #jb-public { --plc: #c6f36a; --plc-rgb: 198, 243, 106; --plc-ink: #102408; }
+  html[data-jb-bg="matrix"] #jb-public { --plc: #00ff41; --plc-rgb: 0, 255, 65; --plc-ink: #000a02; }
+  #jb-public #jb-tab-public .jb-tab-panel-head.jb-pl-head { display: flex; flex-direction: column; align-items: stretch; justify-content: flex-start; gap: 8px; }
+  #jb-public #jb-tab-public .jb-tab-panel-head.jb-pl-head[hidden] { display: none; }
+  #jb-public .jb-pl-searchbar { margin: 0 !important; position: relative; }
+  html:not(.jb-pl-kbd-open) #jb-public #jb-pl-searchbar .jb-kbd-caret { display: none; }
+  html.jb-pl-kbd-open #jb-public #jb-pl-search-input::placeholder { color: transparent; }
+  #jb-public .jb-bump-bar {
+    position: relative; display: block; width: 100%; height: 34px; margin: 0; padding: 0 12px; overflow: hidden;
+    /* !important : les thèmes Bar, Forêt et Matrix enlèvent la bordure de tous les boutons (Hubert, 18 nov. 2026 :
+       contour dans les 4 thèmes) */
+    box-sizing: border-box; border: 2px solid rgba(var(--plc-rgb), 0.55) !important; border-radius: 4px !important;
+    background: rgba(0, 0, 0, 0.35) !important; clip-path: none !important;
+    color: var(--plc); cursor: default; -webkit-tap-highlight-color: transparent; transition: background 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
   }
-  #jb-public .jb-bump-cd::before { content: ""; position: absolute; inset: 2px; background: #1a0b05; clip-path: var(--hex); }
-  #jb-public .jb-bump-cd i { position: absolute; left: 4px; top: 4px; bottom: 4px; width: calc(100% - 8px); background: #ff6a1a; clip-path: var(--hex); }
-  #jb-public .jb-bump-cd-txt {
-    position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
-    font-family: 'Oswald', sans-serif; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
-    color: #1a0b05; white-space: nowrap; opacity: 0; transition: opacity 0.2s ease; pointer-events: none;
+  #jb-public .jb-bump-bar i { position: absolute; left: 0; top: 0; bottom: 0; width: 0; background: rgba(var(--plc-rgb), 0.35); pointer-events: none; }
+  #jb-public .jb-bump-bar-txt {
+    /* sur toute la largeur de la barre (comme le remplissage), pour que les lettres apparaissent pile avec lui */
+    position: absolute; inset: 0; padding: 0 12px; box-sizing: border-box;
+    display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: center;
+    font-family: 'Oswald', sans-serif; font-size: 0.65rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; line-height: 30px;
   }
-  #jb-public .jb-bump-cd.jb-bump-ready .jb-bump-cd-txt { opacity: 1; }
+  #jb-public .jb-bump-bar:not(.jb-bump-idle) .jb-bump-bar-txt { font-size: 0.95rem; letter-spacing: 0; padding: 0 6px; }
+  #jb-public .jb-bump-bar.jb-bump-idle .jb-bump-bar-txt { font-size: 0.665rem; letter-spacing: 0.02em; text-overflow: clip; }
+  #jb-public .jb-bump-fit { display: inline-block; transform-origin: center; }
+  #jb-public .jb-bump-bar.jb-bump-on:not(.jb-bump-wait) {
+    cursor: pointer; border-color: var(--plc) !important; background: var(--plc) !important; color: var(--plc-ink);
+    box-shadow: 0 0 12px rgba(var(--plc-rgb), 0.6) !important;
+  }
+  #jb-public .jb-bump-bar.jb-bump-on:not(.jb-bump-wait):active { filter: brightness(1.2); }
+  #jb-public .jb-bump-bar.jb-bump-wait { border-color: rgba(var(--plc-rgb), 0.7) !important; }
+  #jb-public .jb-bump-bar.jb-bump-wait .jb-bump-bar-txt { opacity: 0.6; }
+  /* chanson choisie : elle s'allume */
+  #jb-public .jb-slot.jb-slot-picked { background: rgba(var(--plc-rgb), 0.14) !important; box-shadow: inset 3px 0 0 var(--plc), 0 0 0 1px rgba(var(--plc-rgb), 0.55); border-radius: 4px; }
+  #jb-public .jb-slot.jb-pl-hide { display: none !important; }
+  /* clavier de la recherche de La playlist : comme celui de la recherche principale */
+  #jb-public .jb-kbd.jb-pl-kbd { display: none !important; margin: 10px -10px 4px !important; }
+  html.jb-pl-kbd-open #jb-public .jb-kbd.jb-pl-kbd { display: flex !important; animation: jb-kbd-up 0.3s ease; }
+  html.jb-pl-kbd-open #jb-app #jb-public #jb-chat-open { display: none !important; }
   /* Pourboire, 2e étape « Choisir le montant » (Hubert, 18 nov. 2026) : tout s'assombrit sauf les montants
      (et « Autre montant ») et le bouton « Retour » ; « Donner X $ » se rallume avec un autre montant valide */
   html #jb-app #jb-public .jb-vote-modal.jb-tip-choose :is(.jb-vote-modal-text, #jb-pay-note) {
@@ -5938,9 +5993,15 @@ html[data-jb-bg="matrix"] #jb-public .jb-style-heading-row h2 { font-size: 18.4p
           </div>
           <!-- Onglet « Choix du public » (ex-section « Palmarès ») -->
           <div id="jb-tab-public" class="jb-tab-panel jb-tab-public" hidden>
-            <div class="jb-tab-panel-head"><span id="jb-palm-frame-label" class="jb-tab-count"></span>
-              <!-- recharge de 5 s après avoir remonté une chanson (Hubert, 18 nov. 2026), voir bumpSong() -->
-              <span id="jb-bump-cd" class="jb-bump-cd" aria-hidden="true"><i></i><b class="jb-bump-cd-txt"></b></span></div>
+            <!-- 18 nov. 2026 (Hubert) : recherche dans La playlist (« Cherche dans N chansons ») puis la barre
+                 « Monter (Titre) » : toucher une chanson la choisit, toucher la barre la remonte (voir bumpSong()) -->
+            <div class="jb-tab-panel-head jb-pl-head"><span id="jb-palm-frame-label" class="jb-tab-count" hidden></span>
+              <div id="jb-pl-searchbar" class="jb-catalog-searchbar jb-pl-searchbar">
+                <input id="jb-pl-search-input" type="text" placeholder="🔍 Cherche dans la playlist" autocomplete="off" maxlength="60" />
+              </div>
+              <button type="button" id="jb-bump-bar" class="jb-bump-bar" disabled><i></i><b class="jb-bump-bar-txt"></b></button>
+            </div>
+            <p id="jb-pl-none" class="jb-empty jb-catalog-empty-in" hidden>Aucun résultat pour cette recherche.</p>
             <div id="jb-palmares-list" class="jb-palmares-grid"></div>
             <p id="jb-palmares-empty" class="jb-empty" hidden>Aucune demande pour l'instant — sois le premier à demander une chanson !</p>
             <button type="button" class="jb-mode-btn jb-goto-rep" data-i18n-goto-rep>Accéder au répertoire</button>
@@ -6554,6 +6615,8 @@ répertoire</button>
       function finish(name) {
         safeSessionStorageSet("jb_client_name_asked", "1");
         if (name) safeSessionStorageSet("jb_client_name", name);
+        // le titre au-dessus du cadre affiche maintenant ce nom (Hubert, 18 nov. 2026)
+        if (name && catalogTab === "repertoire") { try { renderCatalog(); } catch (e) { /* pas encore prêt */ } }
         if (name && pickedAvatar) safeSessionStorageSet("jb_client_avatar", pickedAvatar);
         if (picker) picker.removeEventListener("click", onPick);
         wrap.hidden = true;
@@ -6602,7 +6665,7 @@ répertoire</button>
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-22.278";
+  const APP_BUILD = "2026-10-22.279";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -6753,9 +6816,12 @@ répertoire</button>
       req_first_back: "",
       req_limit_title: "Tu as atteint ta limite de 5 demandes",
       req_limit_back: "Tu pourras en faire d'autres quand une de tes chansons sera jouée",
-      bump_help: "Touche n'importe quelle chanson de La playlist : elle remonte tout en haut de la liste !",
+      bump_help: "Touche une chanson de La playlist, puis la barre « Appuie ici » : elle remonte tout en haut de la liste !",
       bump_help_back: "Tu peux le refaire toutes les 3 secondes.",
       bump_ready: "Monte ta toune",
+      bump_btn: () => "Appuie ici pour la mettre au top",
+      bump_idle: "Choisis une chanson",
+      pl_search_ph: (n) => n > 1 ? `🔍 Cherche parmi les ${n} chansons` : `🔍 Cherche parmi ${n} chanson`,
       public_full_title: "Le Choix du public est plein (100 chansons)",
       public_full_back: "Tu pourras demander une nouvelle chanson dès qu'une chanson de la liste sera jouée",
       style_title: "Chansons",
@@ -6766,6 +6832,9 @@ répertoire</button>
       mode_songs_btn: "Chansons",
       mode_artist_btn: "Artiste",
       mode_genre_btn: "Genre",
+      mode_songs_count: (n) => `Chansons (${n})`,
+      mode_artist_count: (n) => `Artistes (${n})`,
+      mode_genre_count: (n) => `Genres (${n})`,
       back_btn: "RETOUR",
       search_placeholder: "🔍 Cherche par mots clés",
       catalog_empty: "Aucun résultat pour cette recherche.",
@@ -6871,9 +6940,12 @@ répertoire</button>
       req_first_back: "",
       req_limit_title: "You've reached your limit of 5 requests",
       req_limit_back: "You can make more once one of your songs is played",
-      bump_help: "Tap any song in The playlist: it jumps to the very top of the list!",
+      bump_help: "Tap a song in The playlist, then the « Tap here » bar: it jumps to the very top of the list!",
       bump_help_back: "You can do it again every 3 seconds.",
       bump_ready: "Bump your song",
+      bump_btn: () => "Tap here to put it on top",
+      bump_idle: "Choose a song",
+      pl_search_ph: (n) => n === 1 ? `🔍 Search 1 song` : `🔍 Search the ${n} songs`,
       public_full_title: "Crowd's Picks is full (100 songs)",
       public_full_back: "You can request a new song as soon as one on the list is played",
       style_title: "Songs",
@@ -6884,6 +6956,9 @@ répertoire</button>
       mode_songs_btn: "Songs",
       mode_artist_btn: "Artist",
       mode_genre_btn: "Genre",
+      mode_songs_count: (n) => `Songs (${n})`,
+      mode_artist_count: (n) => `Artists (${n})`,
+      mode_genre_count: (n) => `Genres (${n})`,
       back_btn: "BACK",
       search_placeholder: "🔍 Search by keywords",
       catalog_empty: "No results for this search.",
@@ -8888,6 +8963,7 @@ répertoire</button>
   // liste de chansons, "myreq" = Tes suggestions, "public" = Choix du public. On revient sur
   // « Mon répertoire » dès qu'on change de liste ou de recherche.
   var catalogTab = "repertoire"; // var : renderCatalog() peut tourner avant cette ligne
+  var bumpPickId = null; // chanson de La playlist choisie pour « Monter » (var : renderPalmares() peut tourner avant)
   var catalogTabSig = "";
   // Explication « toucher une chanson la remonte » : UNE seule fois, et seulement quand La playlist compte au
   // moins 3 chansons (Hubert, 18 nov. 2026) — sinon on attend : elle s'affichera à une visite suivante, ou dès
@@ -9119,14 +9195,17 @@ répertoire</button>
     const sbs = sb && sb.offsetParent ? getComputedStyle(sb) : null;
     let below = sbs ? sb.offsetHeight + parseFloat(sbs.marginTop) + parseFloat(sbs.marginBottom) : 0;
     // clavier de la recherche ouvert : le cadre rapetisse pour lui laisser la place (17 nov. 2026)
-    const skb = document.getElementById("jb-search-kbd");
-    if (skb && document.documentElement.classList.contains("jb-search-kbd-open")) {
+    // (18 nov. 2026) ou celui de la recherche de La playlist
+    const rc = document.documentElement.classList;
+    const skb = rc.contains("jb-pl-kbd-open") ? document.getElementById("jb-pl-kbd")
+      : rc.contains("jb-search-kbd-open") ? document.getElementById("jb-search-kbd") : null;
+    if (skb) {
       const ks = getComputedStyle(skb);
       below = skb.offsetHeight + parseFloat(ks.marginTop) + parseFloat(ks.marginBottom);
     }
     // clavier de recherche ouvert : le cadre peut descendre bien plus bas que d'habitude (285px) pour que le
     // clavier tienne en entier à l'écran, même sur un iPhone (679px de haut, mesuré chez Hubert, 17 nov. 2026)
-    const minH = skb && document.documentElement.classList.contains("jb-search-kbd-open") ? 120 : 285;
+    const minH = skb ? 120 : 285;
     const h = Math.max(minH, Math.round(visibleHeight() - top - FRAME_BOTTOM_GAP - below));
     document.getElementById("jb-public").style.setProperty("--jb-frame-h", `${h}px`);
   }
@@ -9618,27 +9697,72 @@ répertoire</button>
   // montrées par une barre qui se vide à droite de « N chansons ».
   // (18 nov. 2026, Hubert) barre TOUJOURS là : pleine avec « Monte ta toune » quand c'est prêt ; après une
   // remontée, elle se vide d'un coup puis se remplit depuis la gauche en 3 s
+  // (18 nov. 2026, Hubert, 2e version) en 2 temps : toucher une chanson la CHOISIT (elle s'allume), et la barre
+  // pleine largeur sous la recherche affiche alors « Monter « Titre » » ; toucher la barre la remonte. Au départ la
+  // barre est vide. Pendant la recharge de 3 s, elle se remplit depuis la gauche puis se vide.
   const BUMP_COOLDOWN_MS = 3000;
   function bumpCooldownLeft() { return Math.max(0, Math.min(BUMP_COOLDOWN_MS, (Number(safeStorageGet("jb_bump_until")) || 0) - Date.now())); }
   function showBumpCooldown() {
-    const bar = document.getElementById("jb-bump-cd");
+    const bar = document.getElementById("jb-bump-bar");
     if (!bar) return;
     const fill = bar.querySelector("i");
-    bar.querySelector(".jb-bump-cd-txt").textContent = t("bump_ready");
+    const txt = bar.querySelector(".jb-bump-bar-txt");
     // avancée image par image (une transition CSS ne part pas si l'onglet est caché à ce moment-là)
     cancelAnimationFrame(showBumpCooldown._raf);
     const tick = () => {
       const left = bumpCooldownLeft();
-      bar.classList.toggle("jb-bump-ready", left <= 0);
-      fill.style.width = `calc((100% - 8px) * ${1 - left / BUMP_COOLDOWN_MS})`;
+      const v = bumpPickId ? votes[bumpPickId] : null;
+      // par défaut (aucune chanson choisie) : « Monter une chanson au top », toujours affiché (Hubert, 18 nov. 2026)
+      // « Choisis une chanson » en plus gros, étalé d'un bout à l'autre de la barre (une case par lettre, réparties
+      // sur toute la largeur — Hubert, 18 nov. 2026)
+      const label = v ? t("bump_btn", v.title || "") : t("bump_idle");
+      bar.classList.toggle("jb-bump-idle", !v);
+      if (txt.dataset.label !== label || txt.dataset.w !== String(bar.clientWidth)) {
+        txt.dataset.label = label;
+        txt.dataset.w = String(bar.clientWidth);
+        // (Hubert : lettres trop écartées) lettres collées normalement, mais élargies pour remplir la barre d'un
+        // bout à l'autre
+        txt.innerHTML = v ? escapeHtml(label) : `<span class="jb-bump-fit">${escapeHtml(label)}</span>`;
+        const fit = txt.querySelector(".jb-bump-fit");
+        if (fit && bar.clientWidth) {
+          fit.style.transform = "";
+          // (Hubert : 30 % plus petit) les mêmes lettres élargies, mais sur 70 % de la barre, centrées
+          const avail = (bar.clientWidth - 24) * 0.7, w = fit.offsetWidth;
+          if (w > 0) fit.style.transform = `scaleX(${Math.min(3, avail / w).toFixed(3)})`;
+        }
+      }
+      bar.classList.toggle("jb-bump-on", !!v);
+      bar.classList.toggle("jb-bump-wait", left > 0);
+      bar.disabled = !v || left > 0;
+      fill.style.width = left > 0 ? `${(1 - left / BUMP_COOLDOWN_MS) * 100}%` : "0%";
+      // les lettres sont invisibles après une remontée et apparaissent au fur et à mesure que la barre se
+      // remplit, de gauche à droite (Hubert, 18 nov. 2026)
+      txt.style.clipPath = left > 0 ? `inset(0 ${(left / BUMP_COOLDOWN_MS) * 100}% 0 0)` : "";
       if (left > 0) showBumpCooldown._raf = requestAnimationFrame(tick);
     };
     tick();
+  }
+  // filtre de la recherche de La playlist (titre ou artiste), sans toucher à l'ordre ni aux animations
+  function applyPlaylistFilter() {
+    const input = document.getElementById("jb-pl-search-input");
+    const q = input ? searchKey(input.value) : "";
+    const list = document.getElementById("jb-palmares-list");
+    let shown = 0;
+    list.querySelectorAll(".jb-slot[data-bump]").forEach((row) => {
+      const ok = !q || (row.dataset.search || "").includes(q);
+      row.classList.toggle("jb-pl-hide", !ok);
+      row.classList.toggle("jb-slot-picked", row.dataset.bump === bumpPickId);
+      if (ok) shown++;
+    });
+    const none = document.getElementById("jb-pl-none");
+    if (none) { none.textContent = t("catalog_empty"); none.hidden = !(q && shown === 0 && list.children.length); }
+    showBumpCooldown();
   }
   function bumpSong(id) {
     const v = votes[id];
     if (!v || !db || bumpCooldownLeft() > 0 || palmaresAnimating) return;
     safeStorageSet("jb_bump_until", String(Date.now() + BUMP_COOLDOWN_MS));
+    bumpPickId = null; // la barre se vide (puis se remplit pendant la recharge)
     showBumpCooldown();
     // tout de suite à l'écran (le serveur confirme juste après)
     votes[id] = { ...v, bumpedAt: { seconds: Date.now() / 1000 } };
@@ -9651,8 +9775,17 @@ répertoire</button>
   }
   document.getElementById("jb-palmares-list").addEventListener("click", (e) => {
     const row = e.target.closest(".jb-slot[data-bump]");
-    if (row) bumpSong(row.dataset.bump);
+    if (!row || e.target.closest("[data-vote-up], [data-vote-down]")) return;
+    // toucher la chanson choisie une 2e fois la désélectionne
+    bumpPickId = bumpPickId === row.dataset.bump ? null : row.dataset.bump;
+    applyPlaylistFilter();
   });
+  document.getElementById("jb-bump-bar").addEventListener("click", () => { if (bumpPickId) bumpSong(bumpPickId); });
+  // « Choisis une chanson » réajusté à la largeur de la barre quand elle apparaît / change de taille, et une fois
+  // la police chargée
+  if (window.ResizeObserver) new ResizeObserver(() => showBumpCooldown()).observe(document.getElementById("jb-bump-bar"));
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { const tx = document.querySelector(".jb-bump-bar-txt"); if (tx) tx.dataset.w = ""; showBumpCooldown(); });
+  document.getElementById("jb-pl-search-input").addEventListener("input", applyPlaylistFilter);
   showBumpCooldown(); // recharge encore en cours après un rechargement de la page
   async function castVote(id, delta) {
     if (palmaresAnimating || voteModalBusy()) return;
@@ -10157,6 +10290,11 @@ répertoire</button>
     if (catalogTab === "public" && list.offsetParent && ranked.length >= BUMP_HELP_MIN) setTimeout(() => maybeShowBumpHelp(350), 0);
     // Étiquette de la case vert néon : nombre de chansons au palmarès (ex. « 3 CHANSONS »)
     if (palmLabel) palmLabel.textContent = t("palm_label", ranked.length);
+    // le nombre de chansons est maintenant dans la recherche de La playlist (Hubert, 18 nov. 2026)
+    const plInput = document.getElementById("jb-pl-search-input");
+    if (plInput) plInput.placeholder = t("pl_search_ph", ranked.length);
+    // chanson choisie qui n'est plus dans la liste (jouée, retirée) : on la désélectionne
+    if (bumpPickId && !ranked.some(([id]) => id === bumpPickId)) bumpPickId = null;
     updateTabCounts();
 
     if (ranked.length === 0) {
@@ -10166,6 +10304,7 @@ répertoire</button>
       list.innerHTML = "";
       if (palmaresAnimTimer) { clearTimeout(palmaresAnimTimer); palmaresAnimTimer = null; }
       palmaresUnlock();
+      applyPlaylistFilter();
       return;
     }
 
@@ -10199,8 +10338,9 @@ répertoire</button>
         el = document.createElement("div");
         palmaresElByKey.set(key, el);
       }
-      el.className = "jb-slot jb-slot-bumpable";
-      el.dataset.bump = id; // toucher la ligne la remonte en haut (voir bumpSong())
+      el.className = "jb-slot jb-slot-bumpable" + (id === bumpPickId ? " jb-slot-picked" : "");
+      el.dataset.bump = id; // toucher la ligne la choisit ; la barre « Monter » la remonte (voir bumpSong())
+      el.dataset.search = searchKey(`${v.title || ""} ${v.artist || ""}`);
       // Nombre de demandes déplacé à côté du bouton Boost (plutôt que sa propre colonne à
       // gauche). Juste le nombre brut ici, sans le mot "Demande" (contrairement à
       // renderSongRow()).
@@ -10226,6 +10366,7 @@ répertoire</button>
     newKeys.forEach((key) => {
       list.appendChild(palmaresElByKey.get(key));
     });
+    applyPlaylistFilter();
 
     list.querySelectorAll("[data-vote-up]").forEach((btn) => {
       btn.addEventListener("click", () => castVote(btn.dataset.voteUp, 1));
@@ -10522,7 +10663,7 @@ répertoire</button>
 
     if (!showResults) {
       sectionTitleRow.hidden = false;
-      sectionTitleEl.textContent = t("style_title_count", catalogSongs.length);
+      sectionTitleEl.textContent = getClientName() || t("style_title_count", catalogSongs.length);
       renderModeButtons();
       return;
     }
@@ -10534,7 +10675,7 @@ répertoire</button>
     const atListLevel = !search && catalogView && LIST_LEVEL[catalogView.type];
     // pendant une recherche aussi : « 670 Chansons » et Thème restent en place, rien ne bouge (Hubert, 17 nov. 2026)
     sectionTitleRow.hidden = !atListLevel && !search;
-    if (search) sectionTitleEl.textContent = t("style_title_count", catalogSongs.length);
+    if (search) sectionTitleEl.textContent = getClientName() || t("style_title_count", catalogSongs.length);
     titleWrap.hidden = !!atListLevel || !!search;
 
     // Préserve la position de défilement d'une liste déjà affichée face aux ré-affichages SANS
@@ -10565,7 +10706,7 @@ répertoire</button>
 
     if (!search && catalogView.type === "artist-list") {
       const artists = buildArtistList();
-      sectionTitleEl.textContent = t("artist_title_count", artists.length);
+      sectionTitleEl.textContent = getClientName() || t("artist_title_count", artists.length);
       empty.hidden = artists.length > 0;
       artists.forEach((a) => list.appendChild(renderNameRow(a.name, String(a.count), () => {
         catalogView = { type: "artist", name: a.name };
@@ -10573,7 +10714,7 @@ répertoire</button>
       })));
     } else if (!search && catalogView.type === "genre-list") {
       const genres = buildGenreList();
-      sectionTitleEl.textContent = t("genre_title_count", genres.length);
+      sectionTitleEl.textContent = getClientName() || t("genre_title_count", genres.length);
       empty.hidden = genres.length > 0;
       genres.forEach((g) => list.appendChild(renderNameRow(g.label, "›", () => {
         catalogView = { type: "genre-songs", key: g.key };
@@ -10586,7 +10727,7 @@ répertoire</button>
       if (search) {
         songs = catalogSongs.filter((s) => matchesSearch(s, search));
       } else if (catalogView.type === "all-songs") {
-        sectionTitleEl.textContent = t("style_title_count", catalogSongs.length);
+        sectionTitleEl.textContent = getClientName() || t("style_title_count", catalogSongs.length);
         songs = catalogSongs;
       } else if (catalogView.type === "artist") {
         // Son nom s'affiche déjà dans le bandeau de dossier, pas besoin de le répéter sur chaque
@@ -10653,10 +10794,10 @@ répertoire</button>
     const cap = document.querySelector("#jb-catalog-browse .jb-catalog-frame-caps-top");
     if (cap) cap.dataset.label = t("search_by_label");
     list.innerHTML = `
-      <button class="jb-mode-btn" data-mode="all-songs">${escapeHtml(t("mode_songs_btn"))}</button>
-      <button class="jb-mode-btn" data-mode="artist-list">${escapeHtml(t("mode_artist_btn"))}</button>
-      <button class="jb-mode-btn" data-mode="genre-list">${escapeHtml(t("mode_genre_btn"))}</button>
-    `;
+      <button class="jb-mode-btn" data-mode="all-songs">${escapeHtml(t("mode_songs_count", catalogSongs.length))}</button>
+      <button class="jb-mode-btn" data-mode="artist-list">${escapeHtml(t("mode_artist_count", buildArtistList().length))}</button>
+      <button class="jb-mode-btn" data-mode="genre-list">${escapeHtml(t("mode_genre_count", buildGenreList().length))}</button>
+    `; // (18-19 nov. 2026, Hubert) le nombre total à droite, entre parenthèses : « Chansons (670) », « Artistes (356) »…
     list.querySelectorAll("[data-mode]").forEach((btn) => {
       btn.addEventListener("click", () => {
         // retient la taille du panneau d'accueil au moment de le quitter (animation de RETOUR)
@@ -12017,6 +12158,43 @@ répertoire</button>
       if (e.target === input || kbd.contains(e.target)) return;
       close();
     }, true);
+  })();
+  // Recherche de La playlist (Hubert, 18 nov. 2026) : même principe que la recherche principale — son propre clavier
+  // de l'app monte sous le cadre (classe jb-pl-kbd-open), la barre ne prend jamais le focus du téléphone.
+  (function setupPlaylistSearchKeyboard() {
+    const input = document.getElementById("jb-pl-search-input");
+    const kbd = document.createElement("div");
+    kbd.id = "jb-pl-kbd";
+    kbd.className = "jb-kbd jb-pl-kbd";
+    document.getElementById("jb-chat-open").after(kbd);
+    const bar = document.getElementById("jb-pl-searchbar");
+    if (!setupAppKeyboard({ input, kbd, form: bar, maxLen: 60, capitalize: false, notify: true })) { kbd.remove(); return; }
+    input.readOnly = true;
+    input.setAttribute("spellcheck", "false");
+    input.setAttribute("autocorrect", "off");
+    input.setAttribute("autocapitalize", "off");
+    const root = document.documentElement;
+    let animT = null;
+    const animate = () => { root.classList.add("jb-frame-anim"); clearTimeout(animT); animT = setTimeout(() => root.classList.remove("jb-frame-anim"), 400); };
+    const open = () => {
+      if (root.classList.contains("jb-pl-kbd-open")) return;
+      animate(); root.classList.add("jb-pl-kbd-open"); fitFrameToScreen(); window.scrollTo(0, 0);
+    };
+    const close = () => {
+      if (!root.classList.contains("jb-pl-kbd-open")) return;
+      animate(); root.classList.remove("jb-pl-kbd-open"); fitFrameToScreen();
+    };
+    input.addEventListener("pointerdown", (e) => { e.preventDefault(); open(); });
+    input.addEventListener("mousedown", (e) => e.preventDefault());
+    input.addEventListener("touchend", (e) => { if (e.cancelable) e.preventDefault(); }, { passive: false });
+    input.addEventListener("focus", () => { open(); input.blur(); });
+    document.addEventListener("pointerdown", (e) => {
+      if (!root.classList.contains("jb-pl-kbd-open")) return;
+      if (e.target === input || kbd.contains(e.target)) return;
+      close();
+    }, true);
+    // en quittant La playlist, le clavier redescend
+    window.addEventListener("jb-pl-kbd-close", close);
   })();
   // Fenêtre « Nom d'utilisateur » : clavier de l'app toujours affiché entre les icônes et « Confirmer »
   // (Hubert, 17 nov. 2026). Comme la recherche, la barre ne prend jamais le focus du téléphone.
