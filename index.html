@@ -4556,6 +4556,15 @@ html[data-jb-bg="foret"] #jb-app:not(.jb-browse-only) #jb-public .jb-catalog .jb
 }
 html[data-jb-bg="foret"] #jb-app:not(.jb-browse-only) #jb-public .jb-catalog .jb-tab-pub:not(.jb-tab-active) { border-left: none !important; border-radius: 0 9px 0 0 !important; }
 html[data-jb-bg="foret"] #jb-app:not(.jb-browse-only) #jb-public .jb-catalog .jb-tab-rep:not(.jb-tab-active) { border-right: none !important; border-radius: 9px 0 0 0 !important; }
+/* contour du haut descendu de 8px (Hubert, 18 nov. 2026) : le bord EXTÉRIEUR du rebord brun arrive à la même
+   hauteur que la ligne du cadre des autres thèmes (Matrix…), il n'empiète plus sur l'onglet non choisi */
+html[data-jb-bg="foret"] #jb-app:not(.jb-browse-only) #jb-public .jb-catalog .jb-catalog-frame { --wT: calc(var(--ft) + 8px); }
+html[data-jb-bg="foret"] #jb-app:not(.jb-browse-only) #jb-public .jb-catalog .jb-tab:not(.jb-tab-active) { height: calc(100% + 7px) !important; }
+html[data-jb-bg="foret"] #jb-app:not(.jb-browse-only) #jb-public .jb-catalog .jb-frame-deco > i.jb-fd-bodyline { top: var(--ft) !important; }
+/* même largeur que dans les 3 autres thèmes (Hubert, 18 nov. 2026) : le rebord brun déborde de 8px de chaque
+   côté du cadre, donc le cadre est 8px plus étroit de chaque côté — le bord extérieur brun tombe pile où est la
+   ligne du cadre des autres thèmes */
+html[data-jb-bg="foret"] #jb-app:not(.jb-browse-only) #jb-public .jb-catalog .jb-catalog-frame { margin-left: -2px !important; margin-right: -2px !important; }
 
 /* ---- Boutons Chansons / Artiste / Genre ---- */
 html[data-jb-bg="foret"] #jb-public .jb-mode-btn {
@@ -6563,7 +6572,7 @@ répertoire</button>
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-22.274";
+  const APP_BUILD = "2026-10-22.275";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
