@@ -2373,6 +2373,22 @@ html[data-jb-bg="matrix"] #jb-public :is(#jb-pl-search-input, #jb-chat-input) {
   html[data-jb-bg="bar"] #jb-app #jb-public .jb-cal-day { color: #6fe0ff !important; text-shadow: 0 0 6px rgba(111, 224, 255, 0.6) !important; }
   /* lieux (« Pub St Patrick 21h - 1h ») en jaune soleil (Hubert, 19 nov. 2026) */
   html[data-jb-bg="bar"] #jb-app #jb-public .jb-cal-event { color: #ffd23f !important; text-shadow: 0 0 6px rgba(255, 210, 63, 0.45) !important; }
+  /* page hors spectacle : « Voir mes chansons » à gauche, FR / EN à droite, sur la même ligne */
+  /* tout le contenu de la page hors spectacle descendu (il collait au haut de l'écran — Hubert, 19 nov. 2026) */
+  /* titre centré dans l'espace entre le haut et la ligne « Voir mes chansons » : même espace dessus et dessous */
+  #jb-public .jb-offline-card { padding-top: calc(6vh + 8px) !important; }
+  #jb-public #jb-offline-title { margin-top: 0 !important; margin-bottom: 6vh !important; }
+  /* la ligne des 3 boutons centrée entre le titre et le mois : même espace dessus et dessous (Hubert) */
+  #jb-public .jb-offline-card .jb-offline-top { margin-top: 0 !important; margin-bottom: 6vh !important; }
+  /* titre sur 2 lignes (« Je ne suis pas en spectacle » / « pour le moment »), plus gros (Hubert, 19 nov. 2026) */
+  #jb-public #jb-offline-title { white-space: pre-line !important; font-size: 1.9rem !important; line-height: 1.15 !important; }
+  /* …en bleu néon, comme le tube du thème Bar (Hubert, 19 nov. 2026) */
+  html[data-jb-bg="bar"] #jb-app #jb-public #jb-offline-title {
+    color: #e2f8ff !important; text-shadow: 0 0 2px #fff, 0 0 8px #6fe0ff, 0 0 16px #6fe0ff, 0 0 28px rgba(111, 224, 255, 0.6) !important;
+  }
+  #jb-public .jb-offline-top { display: flex; align-items: center; justify-content: center; gap: 22px; /* rapprochés du centre (Hubert) */ width: 100%; margin: 14px 0 12px; }
+  #jb-public .jb-offline-top .jb-offline-browse-link { margin: 0 !important; }
+  #jb-public .jb-offline-top .jb-offline-lang-bar { margin: 0 !important; position: static !important; }
   /* « ← Retour au calendrier » en rose néon (Hubert, 19 nov. 2026) */
   html[data-jb-bg="bar"] #jb-app #jb-public #jb-browse-back,
   html[data-jb-bg="bar"] #jb-app #jb-public #jb-offline-browse {
@@ -6163,15 +6179,19 @@ html[data-jb-bg="matrix"] #jb-public .jb-style-heading-row h2 { font-size: 18.4p
          remet à jour toute seule, sans recharger la page, dès qu'il se connecte ou déconnecte. -->
     <div id="jb-offline-page" class="jb-offline-page" hidden>
       <div class="jb-offline-card">
-        <div class="jb-lang-bar jb-offline-lang-bar">
-          <button class="jb-lang-btn" data-lang="fr">FR</button>
-          <button class="jb-lang-btn" data-lang="en">EN</button>
-        </div>
         <h1 id="jb-offline-title"></h1>
         <p id="jb-offline-text" hidden></p>
-        <!-- 22 oct. 2026 (Hubert) : le texte est remplacé par un lien qui ouvre le répertoire en
-             consultation seulement (voir browseOnly / applyLiveGateNow()) -->
-        <button id="jb-offline-browse" type="button" class="jb-offline-browse-link"></button>
+        <!-- 19 nov. 2026 (Hubert) : « Voir mes chansons » à gauche et FR / EN à droite, sur la même ligne, entre le
+             titre et le calendrier -->
+        <div class="jb-offline-top">
+          <!-- 22 oct. 2026 (Hubert) : le texte est remplacé par un lien qui ouvre le répertoire en
+               consultation seulement (voir browseOnly / applyLiveGateNow()) -->
+          <button id="jb-offline-browse" type="button" class="jb-offline-browse-link"></button>
+          <div class="jb-lang-bar jb-offline-lang-bar">
+            <button class="jb-lang-btn" data-lang="fr">FR</button>
+            <button class="jb-lang-btn" data-lang="en">EN</button>
+          </div>
+        </div>
         <div id="jb-offline-calendar" class="jb-offline-calendar">
           <div class="jb-cal-nav">
             <button id="jb-cal-prev" class="jb-cal-nav-btn" aria-label="Mois précédent">◀</button>
@@ -6826,7 +6846,7 @@ répertoire</button>
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-22.294";
+  const APP_BUILD = "2026-10-22.295";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -7035,7 +7055,7 @@ répertoire</button>
         folk: "Folk", "classic-folk": "Classique Folk", reggae: "Reggae", oldies: "Oldies", irish: "Irlandais",
         christmas: "Noël",
       },
-      offline_title: "Je ne suis pas en spectacle pour le moment",
+      offline_title: "Je ne suis pas en spectacle\npour le moment",
       offline_text: "Reviens faire une demande pendant l'une de mes prochaines soirées — en attendant, voici mon calendrier :",
       offline_browse: "▶ Voir mes chansons",
       browse_back: "⬅ Retour au calendrier",
@@ -7157,7 +7177,7 @@ répertoire</button>
         folk: "Folk", "classic-folk": "Classic Folk", reggae: "Reggae", oldies: "Oldies", irish: "Irish",
         christmas: "Christmas",
       },
-      offline_title: "I'm not performing right now",
+      offline_title: "I'm not performing\nright now",
       offline_text: "Come back and make a request during one of my next shows — in the meantime, here's my calendar:",
       offline_browse: "▶ See my songs",
       browse_back: "⬅ Back to the calendar",
