@@ -2414,7 +2414,7 @@ html[data-jb-bg="matrix"] #jb-public :is(#jb-pl-search-input, #jb-chat-input) {
   #jb-public .jb-bump-fit { display: inline-block; transform-origin: center; }
   /* titre de la chanson entre 2 flèches vers le haut, collées aux 2 bouts du bouton (Hubert, 19 nov. 2026) */
   #jb-public .jb-bump-bar.jb-bump-arrows .jb-bump-bar-txt { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 0 10px; }
-  #jb-public .jb-bump-arr { flex: 0 0 auto; width: 14px; height: 16px; }
+  #jb-public .jb-bump-arr { flex: 0 0 auto; width: 16px; height: 23px; }
   #jb-public .jb-bump-title { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: center; }
   #jb-public .jb-bump-bar.jb-bump-on:not(.jb-bump-wait) {
     cursor: pointer; border-color: var(--plc) !important; background: var(--plc) !important; color: var(--plc-ink);
@@ -6758,7 +6758,7 @@ répertoire</button>
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-22.289";
+  const APP_BUILD = "2026-10-22.290";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -9824,7 +9824,8 @@ répertoire</button>
         // ce même étirement — les 2 messages ont ainsi exactement la même police)
         // (19 nov. 2026, Hubert) après 5 chansons : le titre de la chanson choisie, avec une flèche vers le haut de
         // chaque côté du bouton
-        const ARROW = '<svg class="jb-bump-arr" viewBox="0 0 12 14" aria-hidden="true"><path d="M6 1 11 7H7.6v6H4.4V7H1Z" fill="currentColor"/></svg>';
+        // flèche « boost » (modèle de Hubert) : grosse pointe, tige, puis 2 barres en dessous
+        const ARROW = '<svg class="jb-bump-arr" viewBox="0 0 14 20" aria-hidden="true"><path d="M7 1 13 8H9.4v4.4H4.6V8H1Z" fill="currentColor" stroke="currentColor" stroke-width="1" stroke-linejoin="round"/><rect x="4.6" y="13.6" width="4.8" height="2" rx="0.4" fill="currentColor"/><rect x="4.6" y="16.9" width="4.8" height="2" rx="0.4" fill="currentColor"/></svg>';
         txt.innerHTML = v ? (veteran ? `${ARROW}<span class="jb-bump-title">${escapeHtml(v.title || "")}</span>${ARROW}` : escapeHtml(label))
           : `<span class="jb-bump-fit">${escapeHtml(t("bump_idle"))}</span>`;
         bar.classList.toggle("jb-bump-arrows", !!(v && veteran));
@@ -10332,7 +10333,7 @@ répertoire</button>
   }, 1000);
 
   // ---------- Rendu : Palmarès (public) ----------
-  var PALM_MOVE_MS = 1200; // glissement des chansons de La playlist quand l'ordre change (ex. remontée au top)
+  var PALM_MOVE_MS = 440; // (19 nov. 2026, Hubert) 0,44 s, maintenant que la chanson monte vraiment (bogue de téléportation corrigé) // glissement des chansons de La playlist quand l'ordre change (ex. remontée au top)
   function palmaresLock() {
     palmaresAnimating = true;
     const list = document.getElementById("jb-palmares-list");
@@ -10498,8 +10499,12 @@ répertoire</button>
     });
 
     // 4) LAST — replace les éléments dans le bon ordre dans le DOM.
-    newKeys.forEach((key) => {
-      list.appendChild(palmaresElByKey.get(key));
+    // (19 nov. 2026) seulement les lignes qui ne sont pas déjà à leur place : retirer/remettre une ligne dans la
+    // page ANNULE son animation — à chaque nouvel affichage (le serveur confirme juste après une remontée), la
+    // chanson « se téléportait » au lieu de monter (Hubert)
+    newKeys.forEach((key, i) => {
+      const el = palmaresElByKey.get(key);
+      if (list.children[i] !== el) list.insertBefore(el, list.children[i] || null);
     });
     applyPlaylistFilter();
 
@@ -10558,7 +10563,9 @@ répertoire</button>
         // donc à glisser une fois le flash déjà éteint). Même durée que ces deux animations, pour
         // que les 3 démarrent ET se terminent ensemble.
         // (19 nov. 2026, Hubert) ralenti : 1,2 s au lieu de 0,5 s, pour bien voir la chanson monter au top
-        el.style.transition = `transform ${PALM_MOVE_MS || 1200}ms cubic-bezier(0.4, 0, 0.2, 1)`;
+        // mouvement régulier du début à la fin (l'ancienne courbe faisait presque tout le trajet dans la 1re seconde,
+        // puis traînait : on ne sentait pas le ralenti — Hubert, 19 nov. 2026)
+        el.style.transition = `transform ${PALM_MOVE_MS || 440}ms cubic-bezier(0.45, 0, 0.55, 1)`;
         el.style.transform = "";
       });
       if (palmaresAnimTimer) clearTimeout(palmaresAnimTimer);
@@ -10568,7 +10575,7 @@ répertoire</button>
           el.style.zIndex = "";
         });
         palmaresUnlock();
-      }, (PALM_MOVE_MS || 1200) + 100); // durée de la transition + marge
+      }, (PALM_MOVE_MS || 440) + 100); // durée de la transition + marge
     });
   }
 
