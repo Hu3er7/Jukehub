@@ -6724,7 +6724,7 @@ répertoire</button>
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-22.285";
+  const APP_BUILD = "2026-10-22.286";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -6879,7 +6879,7 @@ répertoire</button>
       bump_help_back: "Tu peux le refaire toutes les 3 secondes.",
       bump_ready: "Monte ta toune",
       bump_btn: () => "Tape ici pour la placer au top",
-      bump_btn_short: "Monter au sommet",
+      bump_btn_short: "Allez hop au top",
       bump_idle_short: "Let's gooo",
       bump_idle: "Choisis une chanson",
       pl_search_ph: (n) => n > 1 ? `🔍 Cherche parmi les ${n} chansons` : `🔍 Cherche parmi ${n} chanson`,
@@ -7007,7 +7007,7 @@ répertoire</button>
       bump_help_back: "You can do it again every 3 seconds.",
       bump_ready: "Bump your song",
       bump_btn: () => "Tap here to put it on top",
-      bump_btn_short: "Move to the top",
+      bump_btn_short: "Up to the top!",
       bump_idle_short: "Let's gooo",
       bump_idle: "Choose a song",
       pl_search_ph: (n) => n === 1 ? `🔍 Search 1 song` : `🔍 Search the ${n} songs`,
@@ -11577,7 +11577,7 @@ répertoire</button>
       // d'onsongSlug().
       li.innerHTML = `
         <a class="jb-slot-onsong-wrap jb-onsong-link" href="${onsongHref(id, v.title)}" title="Ouvrir la partition dans OnSong">
-          <span class="jb-slot-votes jb-admin-amount">${escapeHtml(formatMoney(v.requests))}</span>
+          <span class="jb-slot-votes jb-admin-amount">${(v.requests || 0) > 0 ? escapeHtml(formatMoney(v.requests)) : "" /* plus de « 0 $ » (Hubert, 19 nov. 2026) */}</span>
           <span class="jb-slot-info">
             <span class="jb-slot-title">📄 ${escapeHtml(v.title)}</span>
             ${v.artist ? `<span class="jb-slot-artist">${escapeHtml(v.artist)}</span>` : ""}
