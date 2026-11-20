@@ -2396,6 +2396,43 @@ html[data-jb-bg="matrix"] #jb-public :is(#jb-pl-search-input, #jb-chat-input) {
     color: #ffd6ea !important; border-color: #ff5fa8 !important; background: rgba(255, 95, 168, 0.08) !important;
     text-shadow: 0 0 2px #fff, 0 0 6px #ff5fa8 !important; box-shadow: 0 0 8px rgba(255, 95, 168, 0.6), inset 0 0 6px rgba(255, 95, 168, 0.2) !important;
   }
+  /* chat : 10 s d'attente entre 2 messages — barre bleue par-dessus la zone d'écriture (Hubert, 20 nov. 2026) */
+  #jb-public #jb-chat-form { position: relative; }
+  #jb-public .jb-chat-wait {
+    position: absolute; inset: 0; z-index: 5; overflow: hidden; border-radius: 6px; border: 2px solid #6fe0ff;
+    background: rgba(4, 10, 18, 0.92); box-shadow: 0 0 8px rgba(111, 224, 255, 0.45);
+  }
+  #jb-public .jb-chat-wait[hidden] { display: none; }
+  #jb-public .jb-chat-wait i { position: absolute; left: 0; top: 0; bottom: 0; width: 0; background: rgba(111, 224, 255, 0.35); }
+  #jb-public .jb-chat-wait span {
+    position: relative; display: flex; align-items: center; justify-content: center; height: 100%;
+    font-weight: 700; font-size: 0.95rem; color: #e2f8ff; font-variant-numeric: tabular-nums; letter-spacing: 0.03em;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+  }
+  /* fenêtre Pourboire, chansons gratuites épuisées : compte à rebours, puis bouton « ▶ Demander « titre » » */
+  #jb-app .jb-pay-wait { margin: 4px 0 12px; text-align: center; }
+  /* pourboire : « Donner » sous le titre, un peu d'air avant les montants */
+  #jb-app .jb-vote-modal.jb-tip-mode #jb-vote-modal-btn { margin-top: 4px !important; margin-bottom: 14px !important; }
+  #jb-app .jb-vote-modal.jb-tip-mode #jb-pay-amounts { margin-top: 0 !important; }
+  #jb-app .jb-pay-wait[hidden] { display: none; }
+  #jb-app .jb-pay-wait-bar {
+    position: relative; height: 34px; overflow: hidden; border-radius: 10px; border: 2px solid #6fe0ff;
+    background: rgba(0, 0, 0, 0.35); box-shadow: 0 0 8px rgba(111, 224, 255, 0.45);
+  }
+  #jb-app .jb-pay-wait-bar[hidden] { display: none; }
+  #jb-app .jb-pay-wait-bar i { position: absolute; left: 0; top: 0; bottom: 0; width: 0; background: rgba(111, 224, 255, 0.35); transition: width 0.25s linear; }
+  #jb-app .jb-pay-wait-txt {
+    position: relative; display: flex; align-items: center; justify-content: center; height: 100%;
+    font-size: 0.95rem; font-weight: 700; color: #e2f8ff; font-variant-numeric: tabular-nums; letter-spacing: 0.03em;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+  }
+  #jb-app .jb-pay-wait-go {
+    width: 100%; padding: 11px 12px; border: 2px solid #6fe0ff; background: rgba(111, 224, 255, 0.12); color: #e2f8ff;
+    font-weight: 700; font-size: 0.95rem; letter-spacing: 0.04em; cursor: pointer; border-radius: 10px;
+    box-shadow: 0 0 10px rgba(111, 224, 255, 0.5); text-shadow: 0 0 6px rgba(111, 224, 255, 0.6);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  #jb-app .jb-pay-wait-go[hidden] { display: none; }
   /* admin : « Suggestions » à gauche, « Tout retirer » à droite */
   #jb-admin .jb-admin-sugg-head { display: flex !important; align-items: center; justify-content: space-between; gap: 10px; }
   #jb-admin .jb-admin-special-clear {
@@ -6198,6 +6235,8 @@ html[data-jb-bg="matrix"] #jb-public .jb-style-heading-row h2 { font-size: 18.4p
           <!-- 30 caractères au maximum (Hubert, 16 nov. 2026) -->
           <input id="jb-chat-input" type="text" maxlength="30" />
           <button id="jb-chat-send" type="submit" class="jb-chat-send" aria-label="Envoyer">➤</button>
+          <!-- 20 nov. 2026 (Hubert) : après chaque message, 10 s d'attente — barre qui se remplit, « Disponible dans 10 sec » -->
+          <div id="jb-chat-wait" class="jb-chat-wait" hidden><i></i><span></span></div>
         </form>
       </div>
       <!-- Clavier QWERTY néon de l'app (Hubert, 27 oct. 2026), à la place de celui du téléphone : voir setupChatKeyboard() -->
@@ -6302,6 +6341,13 @@ html[data-jb-bg="matrix"] #jb-public .jb-style-heading-row h2 { font-size: 18.4p
     <div id="jb-vote-modal" class="jb-vote-modal" role="dialog" aria-modal="true" aria-labelledby="jb-vote-modal-text" hidden>
       <div class="jb-vote-modal-card">
         <p id="jb-vote-modal-text" class="jb-vote-modal-text"></p>
+        <!-- 20 nov. 2026 (Hubert) : plus de chansons gratuites → au lieu de bloquer, un compte à rebours (30 s, puis
+             +15 s à chaque demande, max 5 min). À 0 : bouton pour faire la demande sans pourboire. -->
+        <div id="jb-pay-wait" class="jb-pay-wait" hidden>
+          <!-- barre de progression qui se remplit pendant l'attente, « Disponible dans : 0:30 » écrit dedans (Hubert) -->
+          <div class="jb-pay-wait-bar"><i></i><span class="jb-pay-wait-txt"></span></div>
+          <button type="button" id="jb-pay-wait-go" class="jb-pay-wait-go" hidden></button>
+        </div>
         <!-- Choix du montant (paiements Stripe, 19 oct. 2026) — seulement en mode "pay", voir showPayModal() -->
         <div id="jb-pay-amounts" class="jb-pay-amounts" hidden>
           <!-- pourboire, 2e étape (après « Donner ») : titre au-dessus des montants (Hubert, 18 nov. 2026) -->
@@ -6884,7 +6930,7 @@ répertoire</button>
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-22.297";
+  const APP_BUILD = "2026-10-22.298";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -7003,6 +7049,7 @@ répertoire</button>
       chat_banned: "Tu as été retiré du chat.",
       chat_no_links: "Les liens ne sont pas permis dans le chat.",
       chat_slow: "Doucement ! Attends quelques secondes.",
+      chat_wait: (time) => `Disponible dans ${time}`,
       chat_error: "Oups, message non envoyé. Réessaie.",
       my_req_rank: (n) => `${n}${n === 1 ? "ER" : "E"} RANG`,
       inpalm_badge: "DEMANDÉE", // chanson déjà au « Choix du public » (plus de rangs, 26 oct. 2026)
@@ -7030,6 +7077,8 @@ répertoire</button>
       tipped_thanks: "💳 Merci beaucoup pour le pourboire !",
       tip_ask: "Tu aimes la soirée ? Encourage Hubert avec un pourboire 🎸",
       tip_unlock: (title) => `Pour une 6e chanson${title ? ` (« ${title} »)` : ""}, laisse un pourboire à Hubert 🎸`,
+      wait_txt: (time) => `Disponible dans\u00a0: ${time}`,
+      wait_go: (title) => `▶ Demander « ${title} »`,
       boost_word: "Faire monter",
       req_first_title: (n) => `Il te reste ${n} chansons à sélectionner`,
       req_first_back: "",
@@ -7133,6 +7182,7 @@ répertoire</button>
       chat_banned: "You've been removed from the chat.",
       chat_no_links: "Links aren't allowed in the chat.",
       chat_slow: "Easy! Wait a few seconds.",
+      chat_wait: (time) => `Available in ${time}`,
       chat_error: "Oops, message not sent. Try again.",
       my_req_rank: (n) => `RANK ${n}`,
       inpalm_badge: "REQUESTED",
@@ -7158,6 +7208,8 @@ répertoire</button>
       tipped_thanks: "💳 Thank you so much for the tip!",
       tip_ask: "Enjoying the night? Support Hubert with a tip 🎸",
       tip_unlock: (title) => `For a 6th song${title ? ` (“${title}”)` : ""}, leave Hubert a tip 🎸`,
+      wait_txt: (time) => `Available in: ${time}`,
+      wait_go: (title) => `▶ Request “${title}”`,
       boost_word: "Push up",
       req_first_title: (n) => `You have ${n} songs left to pick`,
       req_first_back: "",
@@ -9706,9 +9758,57 @@ répertoire</button>
     const close = document.getElementById("jb-vote-modal-close");
     close.textContent = isTip ? t("tip_close") : t("pay_close");
     close.hidden = false;
+    // (20 nov. 2026, Hubert) pourboire : « Donner » juste sous le titre, avant les montants ; la barre d'attente
+    // entre « Autre montant » et « Ne pas donner de pourboire ». Paiement d'une chanson : ordre d'origine.
+    {
+      const card = modal.querySelector(".jb-vote-modal-card");
+      const payBtn = document.getElementById("jb-vote-modal-btn");
+      const amounts = document.getElementById("jb-pay-amounts");
+      const waitBox = document.getElementById("jb-pay-wait");
+      const closeBtn = document.getElementById("jb-vote-modal-close");
+      if (isTip) { amounts.before(payBtn); closeBtn.before(waitBox); }
+      else { amounts.after(payBtn); modalText.after(waitBox); }
+      void card;
+    }
     refreshPayButton();
     modal.hidden = false;
+    startPayWaitTick();
   }
+  // Compte à rebours dans la fenêtre Pourboire (chansons gratuites épuisées, Hubert 20 nov. 2026) : « Ou attends
+  // 0:30… » ; à 0, bouton « ▶ Demander « titre » » qui fait la demande sans pourboire.
+  function startPayWaitTick() {
+    const box = document.getElementById("jb-pay-wait");
+    const txt = box.querySelector(".jb-pay-wait-txt");
+    const go = document.getElementById("jb-pay-wait-go");
+    clearInterval(startPayWaitTick._t);
+    const tick = () => {
+      const modal = document.getElementById("jb-vote-modal");
+      const on = !modal.hidden && voteModalMode === "pay" && !!tipUnlockSong && !tipChoose;
+      box.hidden = !on;
+      if (!on) { clearInterval(startPayWaitTick._t); return; }
+      const cr = credits();
+      const until = cr.waitUntil || 0;
+      const leftMs = Math.max(0, until - Date.now());
+      const left = Math.ceil(leftMs / 1000);
+      const total = cr.waitTotal || waitSecs(cr.extra) * 1000;
+      const bar = box.querySelector(".jb-pay-wait-bar");
+      bar.hidden = left <= 0;
+      go.hidden = left > 0;
+      if (left > 0) {
+        txt.textContent = t("wait_txt", fmtWait(left));
+        bar.querySelector("i").style.width = `${Math.min(100, (1 - leftMs / total) * 100)}%`;
+      } else go.textContent = t("wait_go", tipUnlockSong.title || "");
+    };
+    tick();
+    startPayWaitTick._t = setInterval(tick, 250);
+  }
+  document.getElementById("jb-pay-wait-go").addEventListener("click", () => {
+    const song = tipUnlockSong;
+    document.getElementById("jb-vote-modal").hidden = true;
+    tipUnlockSong = null;
+    document.getElementById("jb-pay-wait").hidden = true;
+    if (song) requestSong(song);
+  });
   document.querySelectorAll(".jb-pay-chip").forEach((chip) => {
     chip.addEventListener("click", () => {
       payAmountCents = Number(chip.dataset.amount);
@@ -11340,7 +11440,16 @@ répertoire</button>
   //   (chansons = 5 × (tranche + 1) ; messages = la moitié des chansons, arrondie vers le haut)
   // L'invitation au pourboire s'ouvre après chacune des 3 dernières chansons (il en reste 2, 1, 0) ; ensuite la demande est bloquée
   // (fenêtre Pourboire). Pareil pour les messages : à 0, la fenêtre Pourboire et retour à la page principale.
-  const FREE_SONGS = 5, FREE_MSGS = 3, TIP_ASK_AT = 2;
+  const FREE_SONGS = 5, FREE_MSGS = 5, TIP_ASK_AT = 2; // (20 nov. 2026, Hubert) 5 messages gratuits au lieu de 3
+  // (20 nov. 2026, Hubert) après les 5 chansons gratuites : plus de blocage, mais une attente avant chaque
+  // nouvelle demande — 30 s pour la 6e, 45 s pour la 7e, 1 min pour la 8e… (+15 s à chaque fois, max 5 min).
+  // c.extra = demandes faites en attendant ; c.waitUntil = fin du compte à rebours en cours (0 = pas commencé).
+  // Un pourboire remet tout au départ (chansons gratuites et attente).
+  // (20 nov. 2026, Hubert, 2e version) attente qui monte par paliers : 5 s, 10 s, 15 s, 30 s, 45 s, 1 min, puis
+  // 2 min au maximum — la même échelle pour les chansons ET pour le chat
+  const WAIT_LADDER_S = [5, 10, 15, 30, 45, 60, 120];
+  function waitSecs(n) { return WAIT_LADDER_S[Math.min(Math.max(0, n || 0), WAIT_LADDER_S.length - 1)]; }
+  function fmtWait(sec) { return `${String(Math.floor(sec / 60)).padStart(2, "0")}:${String(sec % 60).padStart(2, "0")}`; }
   function tipBonus(cents) {
     const songs = 5 * (Math.floor((cents || 0) / 500) + 1);
     return { songs, msgs: Math.ceil(songs / 2) };
@@ -11366,7 +11475,9 @@ répertoire</button>
       try { b = JSON.parse(safeStorageGet("jb_tip_bonus") || "null"); } catch (e) { b = null; }
       if (b) {
         try { localStorage.removeItem("jb_tip_bonus"); } catch (e) {}
-        if (Date.now() - (b.at || 0) < 12 * 3600 * 1000) { c.songs += b.songs || 0; c.msgs += b.msgs || 0; }
+        // (20 nov. 2026, Hubert) peu importe le montant : un pourboire remet le client AU DÉPART — 5 chansons et
+        // 5 messages gratuits, puis l'attente recommence à 00:05 (plus de chansons en plus selon le montant)
+        if (Date.now() - (b.at || 0) < 12 * 3600 * 1000) { c.songs = FREE_SONGS; c.msgs = FREE_MSGS; c.extra = 0; c.waitUntil = 0; c.chatN = 0; }
         saveCredits(c);
       }
     }
@@ -11384,10 +11495,20 @@ répertoire</button>
     // 5e chanson : seulement avec un pourboire (Hubert, 16 nov. 2026). La chanson est retenue ; elle est
     // ajoutée au retour du paiement réussi.
     // 16 nov. 2026 (Hubert) : finalement, c'est la 6e chanson qui exige un pourboire
-    if (!opts.tipPaid && credits().songs <= 0) { // plus de chansons : seulement avec un pourboire
-      if (!(await ensureClientName())) return;
-      showPayModal(TIP_ID, "unlock", { id: song.id, title: song.title, artist: song.artist || "" });
-      return;
+    // (20 nov. 2026, Hubert) plus de chansons gratuites : un pourboire OU attendre la fin du compte à rebours
+    let waitPass = false;
+    if (!opts.tipPaid && credits().songs <= 0) {
+      const c = credits();
+      if (c.waitUntil && Date.now() >= c.waitUntil) {
+        // attente terminée : cette demande passe, et la prochaine attendra 15 s de plus
+        c.waitUntil = 0; c.extra = (c.extra || 0) + 1; saveCredits(c);
+        waitPass = true;
+      } else {
+        if (!(await ensureClientName())) return;
+        if (!c.waitUntil) { c.waitTotal = waitSecs(c.extra) * 1000; c.waitUntil = Date.now() + c.waitTotal; saveCredits(c); }
+        showPayModal(TIP_ID, "unlock", { id: song.id, title: song.title, artist: song.artist || "" });
+        return;
+      }
     }
     // Plafond de la salle (Hubert, 28 oct. 2026) : au plus PUBLIC_MAX_SONGS chansons en même temps dans
     // « Choix du public » — un client en navigation privée qui revient sans cesse avec 5 nouvelles
@@ -11491,7 +11612,7 @@ répertoire</button>
     saveCredits(cr);
     // invitation après CHACUNE des 3 dernières chansons (il en reste 2, 1, puis 0) — 3e, 4e et 5e des 5
     // gratuites (Hubert, 18 nov. 2026)
-    if (!opts.tipPaid && cr.songs <= TIP_ASK_AT) {
+    if (!opts.tipPaid && !waitPass && cr.songs <= TIP_ASK_AT) {
       voteModalPending = true;
       // s'ouvre dès que le titre arrive sur « La playlist » (pause 0,5 s + vol 0,72 s) — sans attendre la fin
       // de l'illumination de l'onglet (Hubert, 18 nov. 2026)
@@ -11982,14 +12103,7 @@ répertoire</button>
       showToast("Erreur — réessaie.");
       return;
     }
-    // Paiements (19 oct. 2026) : la chanson est jouée, on prélève les cartes réservées pour elle.
-    try {
-      const r = await callPayments("captureSong", { songId: id });
-      if (r.count) showToast(`💳 ${r.count} paiement(s) prélevé(s) : ${formatMoney(r.totalCents)}`, PAYMENT_TOAST_MS);
-    } catch (e) {
-      console.error("captureSong", e);
-      showToast("⚠️ Chanson jouée, mais les paiements n'ont pas pu être prélevés. Réessaie « Jouée » plus tard.", PAYMENT_TOAST_MS);
-    }
+    // (20 nov. 2026, Hubert) plus de paiements liés aux chansons : rien à prélever quand une chanson est jouée
   }
 
   // Rend la chanson disponible tout de suite, sans attendre la fin du refroidissement
@@ -12031,16 +12145,7 @@ répertoire</button>
       showToast("Erreur — réessaie.");
       return;
     }
-    if (burn) {
-      // Paiements (19 oct. 2026) : chanson retirée = jamais jouée → on libère les cartes réservées.
-      try {
-        const r = await callPayments("releaseSong", { songId: id });
-        if (r.count) showToast(`💳 ${r.count} paiement(s) annulé(s)`, PAYMENT_TOAST_MS);
-      } catch (e) {
-        console.error("releaseSong", e);
-        showToast("⚠️ Les paiements de cette chanson n'ont pas pu être annulés.", PAYMENT_TOAST_MS);
-      }
-    }
+    // (20 nov. 2026, Hubert) plus de paiements liés aux chansons : rien à annuler quand une chanson est brûlée
   }
 
   // ---------- Rendu admin : chansons en refroidissement / brûlées ----------
@@ -12109,16 +12214,8 @@ répertoire</button>
     if (!confirm("Réinitialiser le palmarès et les chansons jouées pour une nouvelle soirée ? (La boîte de suggestions est gardée.)")) return;
     // Ne supprime QUE les documents "votes" (palmarès) : la collection "specialRequests" n'est jamais
     // touchée ici — Hubert garde ses suggestions pour les apprendre (demande du 18 oct. 2026).
-    // Paiements (19 oct. 2026) : AVANT tout, on annule les réservations des chansons jamais jouées
-    // — le client ne paie rien. Si ça échoue, on n'efface rien (Hubert peut réessayer).
-    try {
-      const r = await callPayments("releaseNight");
-      if (r.count) showToast(`💳 ${r.count} paiement(s) non joué(s) annulé(s)`, PAYMENT_TOAST_MS);
-    } catch (e) {
-      console.error("releaseNight", e);
-      showToast("⚠️ Les paiements en attente n'ont pas pu être annulés. Réessaie « Nouvelle soirée ».", PAYMENT_TOAST_MS);
-      return;
-    }
+    // (20 nov. 2026, Hubert) les pourboires ne sont liés à aucune chanson et sont déjà prélevés : le Reset ne
+    // touche à aucun paiement (plus d'annulation de « réservations »)
     try {
       const voteIds = Object.keys(votes);
       for (let i = 0; i < voteIds.length; i += 400) {
@@ -12239,18 +12336,48 @@ répertoire</button>
   }
   // Envoie un message dans le chat ("song" = titre de la chanson, pour un message écrit sous une
   // chanson : la chanson s'affiche à côté du nom). Renvoie true si le texte a été pris.
+  // Attente de 10 s entre deux messages (Hubert, 20 nov. 2026) : une barre se remplit par-dessus la zone
+  // d'écriture, avec « Disponible dans X sec » ; gardée sur ce téléphone (même après un rechargement)
+  // (20 nov. 2026, 2e version) l'attente monte à chaque message : 5 s, 10 s, 15 s, 30 s, 45 s, 1 min, 2 min max
+  // (même échelle que les chansons, voir waitSecs()) ; un pourboire la remet à 5 s
+  function chatCooldownTotal() { return Number(safeStorageGet("jb_chat_total")) || 5000; }
+  function chatCooldownLeft() { return Math.max(0, Math.min(chatCooldownTotal(), (Number(safeStorageGet("jb_chat_until")) || 0) - Date.now())); }
+  function showChatCooldown() {
+    const box = document.getElementById("jb-chat-wait");
+    if (!box) return;
+    cancelAnimationFrame(showChatCooldown._raf);
+    const tick = () => {
+      const left = chatCooldownLeft();
+      box.hidden = left <= 0;
+      if (left > 0) {
+        box.querySelector("i").style.width = `${(1 - left / chatCooldownTotal()) * 100}%`;
+        box.querySelector("span").textContent = t("chat_wait", fmtWait(Math.ceil(left / 1000)));
+        showChatCooldown._raf = requestAnimationFrame(tick);
+      }
+    };
+    tick();
+  }
   async function postChatMessage(rawText, song, onTaken) {
     if (!db) return false;
     const text = rawText.replace(/\s+/g, " ").trim().slice(0, 30); // 30 caractères au maximum (Hubert, 16 nov. 2026)
     if (!text) return false;
     if (/(https?:\/\/|www\.)/i.test(text)) { showToast(t("chat_no_links")); return false; }
-    if (Date.now() - lastChatSentAt < 3000) { showToast(t("chat_slow")); return false; }
+    if (chatCooldownLeft() > 0) { showChatCooldown(); return false; } // 10 s entre 2 messages (barre sur la zone d'écriture)
     // 4e message : pas envoyé, la fenêtre Pourboire s'ouvre (voir chatNeedsTip())
     if (chatNeedsTip()) { showPayModal(TIP_ID, "chat"); return false; }
     const name = await ensureClientName(); // nom d'utilisateur obligatoire
     if (!name) return false;
     lastChatSentAt = Date.now();
-    { const cr = credits(); cr.msgs = Math.max(0, cr.msgs - 1); saveCredits(cr); } // un message de moins
+    {
+      const cr = credits();
+      cr.msgs = Math.max(0, cr.msgs - 1); // un message de moins
+      const dur = waitSecs(cr.chatN || 0) * 1000; // 1er message : 5 s d'attente, puis 10 s, 15 s…
+      cr.chatN = (cr.chatN || 0) + 1;
+      saveCredits(cr);
+      safeStorageSet("jb_chat_total", String(dur));
+      safeStorageSet("jb_chat_until", String(Date.now() + dur));
+    }
+    showChatCooldown();
     if (onTaken) onTaken(); // la barre se vide tout de suite, sans attendre le serveur
     const avatar = getClientAvatar(); // "" = pas d'avatar (le champ n'est alors pas envoyé)
     const local = { name, avatar, text, ms: Date.now() };
@@ -12301,6 +12428,7 @@ répertoire</button>
     });
   }
   document.getElementById("jb-chat-form").addEventListener("submit", sendChatMessage);
+  showChatCooldown(); // attente encore en cours après un rechargement de la page
 
   // ---------- Clavier QWERTY de l'app (Hubert, 27 oct. 2026) ----------
   // Sur écran tactile, CE clavier néon est toujours affiché juste sous la barre de commentaire, au lieu de
