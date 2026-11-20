@@ -2702,6 +2702,13 @@ html[data-jb-bg="matrix"] #jb-public :is(#jb-pl-search-input, #jb-chat-input) {
   /* min-height !important : la hauteur minimale posée par le JS (catalogListMinHeight, d'avant le cadre à
      hauteur fixe) faisait déborder la liste sous le cadre sur un écran peu haut (Hubert, 16 nov. 2026) */
   #jb-app:not(.jb-browse-only) #jb-public #jb-catalog-list { flex: 1 1 auto; min-height: 0 !important; max-height: none; }
+  /* hors spectacle, clavier de recherche ouvert : même cadre ajusté à l'écran, la liste défile dedans et le
+     clavier reste visible sous le cadre (Hubert, 20 nov. 2026) */
+  html.jb-search-kbd-open #jb-app.jb-browse-only #jb-public .jb-catalog .jb-catalog-frame {
+    box-sizing: border-box; height: var(--jb-frame-h, 285px) !important; min-height: 0 !important; max-height: var(--jb-frame-h, 285px) !important;
+    display: flex; flex-direction: column; overflow: hidden;
+  }
+  html.jb-search-kbd-open #jb-app.jb-browse-only #jb-public #jb-catalog-list { flex: 1 1 auto; min-height: 0 !important; max-height: none !important; overflow-y: auto; }
   #jb-app:not(.jb-browse-only) #jb-public .jb-tab-panel:not([hidden]) { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
   #jb-app:not(.jb-browse-only) #jb-public .jb-tab-panel :is(#jb-palmares-list, #jb-my-votes-list) {
     /* ne grandit pas (sinon le texte « Aucune demande… », placé après la liste, tombait au bas du
@@ -6930,7 +6937,7 @@ répertoire</button>
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-22.298";
+  const APP_BUILD = "2026-10-22.299";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -9453,7 +9460,9 @@ répertoire</button>
   if (window.visualViewport) window.visualViewport.addEventListener("resize", () => scheduleFitFrameToScreen());
   function fitFrameToScreen() {
     const f = visibleCatalogFrame();
-    if (!f || browseOnly) return;
+    // hors spectacle (consultation) : le cadre n'est ajusté que pendant que le clavier de recherche est ouvert —
+    // sinon la liste grandissait et poussait le clavier sous le bas de l'écran (Hubert, 20 nov. 2026)
+    if (!f || (browseOnly && !document.documentElement.classList.contains("jb-search-kbd-open"))) return;
     const top = f.getBoundingClientRect().top + window.scrollY;
     // place pour le bouton « Suggestion » sous le cadre (16 nov. 2026)
     const sb = document.getElementById("jb-chat-open");
