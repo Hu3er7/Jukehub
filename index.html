@@ -2396,6 +2396,26 @@ html[data-jb-bg="matrix"] #jb-public :is(#jb-pl-search-input, #jb-chat-input) {
     color: #ffd6ea !important; border-color: #ff5fa8 !important; background: rgba(255, 95, 168, 0.08) !important;
     text-shadow: 0 0 2px #fff, 0 0 6px #ff5fa8 !important; box-shadow: 0 0 8px rgba(255, 95, 168, 0.6), inset 0 0 6px rgba(255, 95, 168, 0.2) !important;
   }
+  /* admin : « Suggestions » à gauche, « Tout retirer » à droite */
+  #jb-admin .jb-admin-sugg-head { display: flex !important; align-items: center; justify-content: space-between; gap: 10px; }
+  #jb-admin .jb-admin-special-clear {
+    /* vert néon, comme le titre « Suggestions » (Hubert, 20 nov. 2026) */
+    flex: 0 0 auto; padding: 5px 12px; border: 2px solid #39ff7a; background: rgba(57, 255, 122, 0.08); color: #c8ffd9;
+    font-family: 'Share Tech Mono', monospace; font-size: 0.8rem; letter-spacing: 0.06em; text-transform: uppercase; cursor: pointer;
+    box-shadow: 0 0 8px rgba(57, 255, 122, 0.45);
+  }
+  /* fenêtre de confirmation « Tout retirer » */
+  #jb-admin .jb-admin-confirm { position: fixed; inset: 0; z-index: 2000; background: rgba(0, 0, 0, 0.7); display: flex; align-items: center; justify-content: center; padding: 20px; }
+  #jb-admin .jb-admin-confirm[hidden] { display: none; }
+  #jb-admin .jb-admin-confirm-card {
+    width: 100%; max-width: 340px; padding: 20px 18px; background: #0b0614; border: 2px solid #ff3b6b; box-shadow: 0 0 18px rgba(255, 59, 107, 0.5);
+    font-family: 'Share Tech Mono', monospace; color: #ffe3ea; text-align: center;
+  }
+  #jb-admin .jb-admin-confirm-text { margin: 0 0 16px; font-size: 1rem; line-height: 1.4; }
+  #jb-admin .jb-admin-confirm-actions { display: flex; flex-direction: column; gap: 10px; }
+  #jb-admin .jb-admin-confirm-actions button { padding: 10px; font-family: inherit; font-size: 0.95rem; letter-spacing: 0.05em; text-transform: uppercase; cursor: pointer; }
+  #jb-admin .jb-admin-confirm-yes { background: #ff3b6b; color: #1a0008; border: 2px solid #ff3b6b; font-weight: 700; }
+  #jb-admin .jb-admin-confirm-no { background: transparent; color: #5af4f0; border: 2px solid #5af4f0; }
   /* admin : « Pourboire : X $ » entre la barre du haut et la boîte de suggestions (Hubert, 20 nov. 2026) */
   #jb-admin .jb-admin-tips {
     margin: 12px 0; padding: 8px 14px; border: 2px solid #fff200; box-shadow: 0 0 10px rgba(255, 242, 0, 0.35);
@@ -6332,7 +6352,9 @@ html[data-jb-bg="matrix"] #jb-public .jb-style-heading-row h2 { font-size: 18.4p
            évidence (5 suggestions visibles, on fait défiler pour les autres). Gardée d'une soirée à
            l'autre — « Reset » ne l'efface pas. -->
       <section class="jb-admin-section jb-admin-green jb-admin-sugg">
-        <h3><span data-at="💡 Boîte de suggestions|💡 Suggestion box">💡 Boîte de suggestions</span> <span id="jb-admin-special-count" class="jb-admin-special-count"></span></h3>
+        <!-- 20 nov. 2026 (Hubert) : « Suggestions » à gauche, bouton « Tout retirer » à droite (2 touchers pour confirmer) -->
+        <h3 class="jb-admin-sugg-head"><span data-at="Suggestions|Suggestions">Suggestions</span>
+          <button type="button" id="jb-admin-special-clear" class="jb-admin-special-clear" data-at="Tout retirer|Remove all">Tout retirer</button></h3>
         <ol id="jb-admin-special" class="jb-admin-palmares jb-admin-special-list"></ol>
         <p id="jb-admin-special-empty" class="jb-empty" hidden data-at="Rien pour l'instant.|Nothing yet.">Rien pour l'instant.</p>
       </section>
@@ -6347,7 +6369,7 @@ html[data-jb-bg="matrix"] #jb-public .jb-style-heading-row h2 { font-size: 18.4p
 
       <section class="jb-admin-section jb-admin-columns">
         <div class="jb-admin-column jb-admin-public">
-          <h3 data-at="👥 Choix du public|👥 Crowd picks">👥 Choix du public</h3>
+          <h3 data-at="Choix du public|Crowd picks">Choix du public</h3>
           <ol id="jb-admin-palmares" class="jb-admin-palmares"></ol>
           <p id="jb-admin-palmares-empty" class="jb-empty" hidden data-at="Rien pour l'instant.|Nothing yet.">Rien pour l'instant.</p>
         </div>
@@ -6862,7 +6884,7 @@ répertoire</button>
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-22.296";
+  const APP_BUILD = "2026-10-22.297";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -11761,9 +11783,9 @@ répertoire</button>
       // d'onsongSlug().
       li.innerHTML = `
         <a class="jb-slot-onsong-wrap jb-onsong-link" href="${onsongHref(id, v.title)}" title="Ouvrir la partition dans OnSong">
-          <span class="jb-slot-votes jb-admin-amount">${(v.requests || 0) > 0 ? escapeHtml(formatMoney(v.requests)) : "" /* plus de « 0 $ » (Hubert, 19 nov. 2026) */}</span>
+          ${(v.requests || 0) > 0 ? `<span class="jb-slot-votes jb-admin-amount">${escapeHtml(formatMoney(v.requests))}</span>` : "" /* plus de « 0 $ » ni de case vide qui décalait le titre (Hubert, 19-20 nov. 2026) */}
           <span class="jb-slot-info">
-            <span class="jb-slot-title">📄 ${escapeHtml(v.title)}</span>
+            <span class="jb-slot-title">${escapeHtml(v.title) /* plus d'icône 📄 devant le titre (Hubert, 20 nov. 2026) */}</span>
             ${v.artist ? `<span class="jb-slot-artist">${escapeHtml(v.artist)}</span>` : ""}
             ${renderVotersLine(v.voters, true, v.askedBy)}
           </span>
@@ -11817,6 +11839,7 @@ répertoire</button>
   // retirer une demande une fois lue/traitée. Si le paiement Stripe est activé plus tard, ces
   // entrées auront un statut ("pending"/"captured"/...) et des boutons Accepter/Refuser — voir
   // l'historique du fichier ou functions/index.js pour ce mécanisme déjà prêt.
+  var dismissArmedUntil = {}; // suggestion → heure où « Confirmer ? » expire (var : renderAll() peut tourner avant)
   function renderAdminSpecial() {
     if (!isAdmin) return;
     const list = document.getElementById("jb-admin-special");
@@ -11844,14 +11867,25 @@ répertoire</button>
           <span class="jb-slot-title">${escapeHtml(req.text || "")}</span>
           ${sub ? `<span class="jb-slot-artist">${sub}</span>` : ""}
         </span>
-        <button class="jb-dismiss-special-btn" data-dismiss="${id}">${at("✖ Retirer", "✖ Remove")}</button>`;
+        <button class="jb-dismiss-special-btn${(dismissArmedUntil[id] || 0) > Date.now() ? " jb-mark-played-armed" : ""}" data-dismiss="${id}">${(dismissArmedUntil[id] || 0) > Date.now() ? at("❓ Confirmer ?", "❓ Confirm?") : at("✖ Retirer", "✖ Remove")}</button>`;
       list.appendChild(li);
     });
     sizeSpecialList();
 
     list.querySelectorAll("[data-dismiss]").forEach((btn) => {
-      // retrait immédiat, sans fenêtre de confirmation (Hubert, 16 nov. 2026)
-      btn.addEventListener("click", () => dismissSpecialRequest(btn.dataset.dismiss));
+      // (20 nov. 2026, Hubert) double confirmation, comme « Jouée » : 1er toucher = « Confirmer ? » (4 s),
+      // 2e toucher = retire la suggestion
+      btn.addEventListener("click", () => {
+        const id = btn.dataset.dismiss;
+        if ((dismissArmedUntil[id] || 0) > Date.now()) {
+          delete dismissArmedUntil[id];
+          dismissSpecialRequest(id);
+          return;
+        }
+        dismissArmedUntil[id] = Date.now() + 4000;
+        renderAdminSpecial();
+        setTimeout(() => { if ((dismissArmedUntil[id] || 0) <= Date.now()) { delete dismissArmedUntil[id]; renderAdminSpecial(); } }, 4050);
+      });
     });
   }
   // 5 suggestions visibles au maximum ; on fait défiler pour voir les autres (Hubert, 16 nov. 2026).
@@ -11893,6 +11927,46 @@ répertoire</button>
     } catch (e) {
       console.error(e);
     }
+  }
+  // « Tout retirer » (Hubert, 20 nov. 2026) : ouvre une fenêtre de confirmation — « Oui, tout retirer » efface
+  // toutes les suggestions, « Annuler » (ou toucher à côté) ne fait rien
+  {
+    const clearBtn = document.getElementById("jb-admin-special-clear");
+    const box = document.createElement("div");
+    box.className = "jb-admin-confirm";
+    box.hidden = true;
+    box.innerHTML = `<div class="jb-admin-confirm-card" role="dialog" aria-modal="true">
+        <p class="jb-admin-confirm-text"></p>
+        <div class="jb-admin-confirm-actions">
+          <button type="button" class="jb-admin-confirm-yes"></button>
+          <button type="button" class="jb-admin-confirm-no"></button>
+        </div>
+      </div>`;
+    document.getElementById("jb-admin").appendChild(box);
+    const close = () => { box.hidden = true; };
+    box.addEventListener("click", (e) => { if (e.target === box) close(); });
+    box.querySelector(".jb-admin-confirm-no").addEventListener("click", close);
+    box.querySelector(".jb-admin-confirm-yes").addEventListener("click", async () => {
+      close();
+      const ids = Object.keys(specialRequests || {});
+      try {
+        for (let i = 0; i < ids.length; i += 400) {
+          const batch = writeBatch(db);
+          ids.slice(i, i + 400).forEach((id) => batch.delete(doc(db, "specialRequests", id)));
+          await batch.commit();
+        }
+      } catch (e) { console.error("Tout retirer", e); }
+    });
+    if (clearBtn) clearBtn.addEventListener("click", () => {
+      const n = Object.keys(specialRequests || {}).length;
+      if (!n) return;
+      box.querySelector(".jb-admin-confirm-text").textContent = at(
+        `Retirer toutes les suggestions (${n}) ? Elles seront effacées pour de bon.`,
+        `Remove all suggestions (${n})? They will be deleted for good.`);
+      box.querySelector(".jb-admin-confirm-yes").textContent = at("Oui, tout retirer", "Yes, remove all");
+      box.querySelector(".jb-admin-confirm-no").textContent = at("Annuler", "Cancel");
+      box.hidden = false;
+    });
   }
 
   async function markPlayed(id) {
