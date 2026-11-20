@@ -2420,7 +2420,16 @@ html[data-jb-bg="matrix"] #jb-public :is(#jb-pl-search-input, #jb-chat-input) {
   }
   #jb-public .jb-chat-wait[hidden] { display: none; }
   #jb-public .jb-chat-wait i { position: absolute; left: 0; top: 0; bottom: 0; width: 0; background: rgba(111, 224, 255, 0.35); }
+  /* (20 nov. 2026, Hubert) bouton Pourboire au bout de la barre d'attente : remet les 5 messages gratuits */
+  #jb-public .jb-chat-wait:not([hidden]) { display: flex; align-items: stretch; }
+  #jb-public .jb-chat-wait-tip {
+    position: relative; flex: 0 0 auto; margin: 4px; padding: 0 12px; border-radius: 4px;
+    border: 2px solid #39ff88; background: rgba(57, 255, 136, 0.14); color: #c8ffe0;
+    font-weight: 800; font-size: 0.85rem; letter-spacing: 0.04em; text-transform: uppercase; cursor: pointer;
+    text-shadow: 0 0 6px rgba(57, 255, 136, 0.8); box-shadow: 0 0 8px rgba(57, 255, 136, 0.45);
+  }
   #jb-public .jb-chat-wait span {
+    flex: 1 1 auto; min-width: 0;
     position: relative; display: flex; align-items: center; justify-content: center; height: 100%;
     font-weight: 700; font-size: 0.95rem; color: #e2f8ff; font-variant-numeric: tabular-nums; letter-spacing: 0.03em;
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
@@ -6262,7 +6271,7 @@ html[data-jb-bg="matrix"] #jb-public .jb-style-heading-row h2 { font-size: 18.4p
           <input id="jb-chat-input" type="text" maxlength="30" />
           <button id="jb-chat-send" type="submit" class="jb-chat-send" aria-label="Envoyer">➤</button>
           <!-- 20 nov. 2026 (Hubert) : après chaque message, 10 s d'attente — barre qui se remplit, « Disponible dans 10 sec » -->
-          <div id="jb-chat-wait" class="jb-chat-wait" hidden><i></i><span></span></div>
+          <div id="jb-chat-wait" class="jb-chat-wait" hidden><i></i><span></span><button type="button" id="jb-chat-wait-tip" class="jb-chat-wait-tip">Pourboire</button></div>
         </form>
       </div>
       <!-- Clavier QWERTY néon de l'app (Hubert, 27 oct. 2026), à la place de celui du téléphone : voir setupChatKeyboard() -->
@@ -6956,7 +6965,7 @@ répertoire</button>
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-22.304";
+  const APP_BUILD = "2026-10-22.305";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -9580,9 +9589,14 @@ répertoire</button>
     }
   }
   // 3 messages déjà envoyés ce soir : Demande spéciale ouvre la fenêtre Pourboire au lieu du chat (Hubert, 17 nov. 2026)
+  // (20 nov. 2026, Hubert) plus de blocage du chat : après les 5 messages gratuits, une attente (barre) avec un bouton Pourboire
   document.getElementById("jb-chat-open").addEventListener("click", () => {
-    if (chatNeedsTip()) { showPayModal(TIP_ID, "chat"); return; }
     setChatMode(true);
+  });
+  // Pourboire pendant l'attente du chat : la fenêtre Pourboire (sans sortir du chat si on n'en donne pas)
+  document.getElementById("jb-chat-wait-tip").addEventListener("click", (e) => {
+    e.preventDefault(); e.stopPropagation();
+    showPayModal(TIP_ID, "ask");
   });
   document.querySelectorAll("[data-chat-back]").forEach((b) => b.addEventListener("click", () => setChatMode(false)));
 
@@ -9915,6 +9929,7 @@ répertoire</button>
       try { localStorage.removeItem("jb_tip_pending"); } catch (e) {}
       const cents = p && Date.now() - (p.at || 0) < 3 * 3600 * 1000 ? p.cents : 0;
       safeStorageSet("jb_tip_bonus", JSON.stringify({ ...tipBonus(cents), at: Date.now() }));
+      safeStorageSet("jb_chat_until", "0"); // (20 nov. 2026) l'attente du chat s'arrête tout de suite au retour du pourboire
     }
     setTimeout(() => showToast(t("tipped_thanks")), 1500);
     try { pendingTipUnlock = JSON.parse(safeStorageGet("jb_tip_unlock") || "null"); } catch (e) { pendingTipUnlock = null; }
@@ -10443,6 +10458,7 @@ répertoire</button>
     const newNightId = data?.nightId || "default";
     if (newNightId !== nightId) {
       nightId = newNightId;
+      try { credits(); } catch (e) {} // applique tout de suite un pourboire en attente (5 messages / 5 chansons)
       loadRequestedFromStorage();
       loadVotesFromStorage();
       renderAll();
@@ -11505,7 +11521,10 @@ répertoire</button>
         try { localStorage.removeItem("jb_tip_bonus"); } catch (e) {}
         // (20 nov. 2026, Hubert) peu importe le montant : un pourboire remet le client AU DÉPART — 5 chansons et
         // 5 messages gratuits, puis l'attente recommence à 00:05 (plus de chansons en plus selon le montant)
-        if (Date.now() - (b.at || 0) < 12 * 3600 * 1000) { c.songs = FREE_SONGS; c.msgs = FREE_MSGS; c.extra = 0; c.waitUntil = 0; c.chatN = 0; }
+        if (Date.now() - (b.at || 0) < 12 * 3600 * 1000) {
+          c.songs = FREE_SONGS; c.msgs = FREE_MSGS; c.extra = 0; c.waitUntil = 0; c.chatN = 0;
+          safeStorageSet("jb_chat_until", "0"); // l'attente du chat en cours s'arrête aussi
+        }
         saveCredits(c);
       }
     }
@@ -12392,6 +12411,7 @@ répertoire</button>
       if (left > 0) {
         box.querySelector("i").style.width = `${(1 - left / chatCooldownTotal()) * 100}%`;
         box.querySelector("span").textContent = t("chat_wait", fmtWait(Math.ceil(left / 1000)));
+        box.querySelector("button").textContent = t("tip_open"); // Pourboire / Tip
         showChatCooldown._raf = requestAnimationFrame(tick);
       }
     };
@@ -12402,20 +12422,23 @@ répertoire</button>
     const text = rawText.replace(/\s+/g, " ").trim().slice(0, 30); // 30 caractères au maximum (Hubert, 16 nov. 2026)
     if (!text) return false;
     if (/(https?:\/\/|www\.)/i.test(text)) { showToast(t("chat_no_links")); return false; }
-    if (chatCooldownLeft() > 0) { showChatCooldown(); return false; } // 10 s entre 2 messages (barre sur la zone d'écriture)
-    // 4e message : pas envoyé, la fenêtre Pourboire s'ouvre (voir chatNeedsTip())
-    if (chatNeedsTip()) { showPayModal(TIP_ID, "chat"); return false; }
+    if (chatCooldownLeft() > 0) { showChatCooldown(); return false; } // attente en cours (barre sur la zone d'écriture)
     const name = await ensureClientName(); // nom d'utilisateur obligatoire
     if (!name) return false;
     lastChatSentAt = Date.now();
     {
+      // (20 nov. 2026, Hubert) 5 messages gratuits SANS attente ; l'attente commence au 5e (00:05), puis 00:10,
+      // 00:15… (waitSecs) à chaque message suivant. Plus de blocage : pendant l'attente, le bouton Pourboire
+      // de la barre remet le client au départ (5 messages gratuits, voir credits()).
       const cr = credits();
-      cr.msgs = Math.max(0, cr.msgs - 1); // un message de moins
-      const dur = waitSecs(cr.chatN || 0) * 1000; // 1er message : 5 s d'attente, puis 10 s, 15 s…
-      cr.chatN = (cr.chatN || 0) + 1;
+      cr.msgs = Math.max(0, cr.msgs - 1); // un message gratuit de moins
+      if (cr.msgs <= 0) {
+        const dur = waitSecs(cr.chatN || 0) * 1000;
+        cr.chatN = (cr.chatN || 0) + 1;
+        safeStorageSet("jb_chat_total", String(dur));
+        safeStorageSet("jb_chat_until", String(Date.now() + dur));
+      }
       saveCredits(cr);
-      safeStorageSet("jb_chat_total", String(dur));
-      safeStorageSet("jb_chat_until", String(Date.now() + dur));
     }
     showChatCooldown();
     if (onTaken) onTaken(); // la barre se vide tout de suite, sans attendre le serveur
