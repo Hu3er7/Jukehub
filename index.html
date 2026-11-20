@@ -2931,7 +2931,8 @@ html[data-jb-bg="matrix"] #jb-public :is(#jb-pl-search-input, #jb-chat-input) {
   html #jb-app #jb-public .jb-pay-note.jb-pay-note-tip { font-size: 1.55rem !important; line-height: 1.3; }
   /* …dans la police du titre « 670 Chansons » de chaque thème (Hubert, 16 nov. 2026) */
   html:not([data-jb-bg]) #jb-app #jb-public .jb-pay-note.jb-pay-note-tip { font-family: 'Jukehub Crypto', Orbitron, sans-serif !important; font-weight: 700 !important; text-transform: uppercase; font-size: 0.9rem !important;
-    color: #ff3bd4 !important; text-shadow: 0 0 6px rgba(255, 59, 212, 0.45) !important; /* rose comme Suggestion (Hubert, 16 nov. 2026) */ }
+    color: #ff6ae6 !important; /* rose néon plus lumineux (Hubert, 20 nov. 2026) */
+    text-shadow: 0 0 4px rgba(255, 90, 230, 0.9), 0 0 10px rgba(255, 59, 212, 0.75), 0 0 20px rgba(255, 59, 212, 0.45) !important; }
   /* l'émoticône reste au bout du texte, jamais en dessous (Hubert, 16 nov. 2026) */
   html #jb-app #jb-public .jb-pay-note.jb-pay-note-tip { white-space: nowrap; }
   html[data-jb-bg="bar"] #jb-app #jb-public .jb-pay-note.jb-pay-note-tip {
@@ -6953,7 +6954,7 @@ répertoire</button>
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-22.302";
+  const APP_BUILD = "2026-10-22.303";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
