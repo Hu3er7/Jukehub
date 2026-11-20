@@ -6937,7 +6937,7 @@ répertoire</button>
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-22.299";
+  const APP_BUILD = "2026-10-22.300";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -12626,7 +12626,8 @@ répertoire</button>
     // pas par-dessus (sur iPhone, le clavier « flottant » se retrouvait coupé au milieu de l'écran, 17 nov. 2026)
     document.getElementById("jb-chat-open").after(kbd);
     const bar = document.getElementById("jb-catalog-searchbar");
-    if (!setupAppKeyboard({ input, kbd, form: bar, maxLen: 60, capitalize: false, notify: true, onEmptyBack: () => close() })) { kbd.remove(); return; }
+    // pas d'émoticônes non plus dans « Cherche par mots clés », en spectacle et hors ligne (Hubert, 20 nov. 2026)
+    if (!setupAppKeyboard({ input, kbd, form: bar, maxLen: 60, capitalize: false, notify: true, emoji: false, onEmptyBack: () => close() })) { kbd.remove(); return; }
     searchUsesAppKbd = true;
     // La barre ne reçoit JAMAIS le vrai focus du téléphone (17 nov. 2026) : sur iPhone, ce focus montrait le
     // curseur bleu clignotant et le soulignement rouge de l'orthographe, et iOS retirait ensuite le focus en
