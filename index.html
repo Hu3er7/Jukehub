@@ -2384,7 +2384,8 @@ html[data-jb-bg="matrix"] #jb-public :is(#jb-pl-search-input, #jb-chat-input) {
   #jb-public #jb-offline-title { white-space: pre-line !important; font-size: 1.9rem !important; line-height: 1.15 !important; }
   /* …en bleu néon, comme le tube du thème Bar (Hubert, 19 nov. 2026) */
   html[data-jb-bg="bar"] #jb-app #jb-public #jb-offline-title {
-    color: #e2f8ff !important; text-shadow: 0 0 2px #fff, 0 0 8px #6fe0ff, 0 0 16px #6fe0ff, 0 0 28px rgba(111, 224, 255, 0.6) !important;
+    /* (Hubert : un peu moins fluorescent) halo réduit */
+    color: #d4f4ff !important; text-shadow: 0 0 5px rgba(111, 224, 255, 0.75), 0 0 12px rgba(111, 224, 255, 0.35) !important;
   }
   #jb-public .jb-offline-top { display: flex; align-items: center; justify-content: center; gap: 22px; /* rapprochés du centre (Hubert) */ width: 100%; margin: 14px 0 12px; }
   #jb-public .jb-offline-top .jb-offline-browse-link { margin: 0 !important; }
@@ -2395,7 +2396,20 @@ html[data-jb-bg="matrix"] #jb-public :is(#jb-pl-search-input, #jb-chat-input) {
     color: #ffd6ea !important; border-color: #ff5fa8 !important; background: rgba(255, 95, 168, 0.08) !important;
     text-shadow: 0 0 2px #fff, 0 0 6px #ff5fa8 !important; box-shadow: 0 0 8px rgba(255, 95, 168, 0.6), inset 0 0 6px rgba(255, 95, 168, 0.2) !important;
   }
+  /* admin : « Pourboire : X $ » entre la barre du haut et la boîte de suggestions (Hubert, 20 nov. 2026) */
+  #jb-admin .jb-admin-tips {
+    margin: 12px 0; padding: 8px 14px; border: 2px solid #fff200; box-shadow: 0 0 10px rgba(255, 242, 0, 0.35);
+    font-family: 'Share Tech Mono', monospace; font-size: 1.15rem; letter-spacing: 0.08em; text-transform: uppercase; color: #fffaa8;
+    display: flex; align-items: baseline; justify-content: center; gap: 8px;
+  }
+  #jb-admin .jb-admin-tips b { color: #fff200; font-size: 1.35rem; text-shadow: 0 0 8px rgba(255, 242, 0, 0.6); }
+  /* admin : « Déconnexion » / « Log out » garde la même largeur dans les 2 langues (Hubert, 20 nov. 2026) */
+  #jb-admin #jb-logout-btn { min-width: 134px !important; box-sizing: border-box !important; text-align: center !important; justify-content: center !important; }
   /* « Vous êtes présentement hors ligne » : police droite et lisible au lieu de l'écriture néon cursive (Hubert, 19 nov. 2026) */
+  html.jb-offline-mode #jb-app #jb-public #jb-section-title-row { justify-content: center !important; }
+  html.jb-offline-mode #jb-app #jb-public #jb-style-title {
+    text-align: center !important; margin-left: auto !important; margin-right: auto !important;
+  }
   html.jb-offline-mode #jb-app #jb-public #jb-style-title {
     font-family: 'Oswald', sans-serif !important; font-style: normal !important; font-weight: 700 !important;
     text-transform: uppercase !important; letter-spacing: 0.06em !important;
@@ -6311,6 +6325,8 @@ html[data-jb-bg="matrix"] #jb-public .jb-style-heading-row h2 { font-size: 18.4p
         </div>
         <button id="jb-logout-btn" class="jb-btn-ghost" data-at="Déconnexion|Log out">Déconnexion</button>
       </div>
+      <!-- 20 nov. 2026 (Hubert) : total des pourboires de la soirée, qui s'additionne en direct -->
+      <div class="jb-admin-tips"><span data-at="Pourboire :|Tips:">Pourboire :</span> <b id="jb-admin-tips-amount">0 $</b></div>
 
       <!-- 16 nov. 2026 (Hubert) : plus de chat room ici ; la boîte de suggestions prend sa place, bien en
            évidence (5 suggestions visibles, on fait défiler pour les autres). Gardée d'une soirée à
@@ -6846,7 +6862,7 @@ répertoire</button>
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-22.295";
+  const APP_BUILD = "2026-10-22.296";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -10385,6 +10401,30 @@ répertoire</button>
   // Admin seulement (18 oct. 2026) : les règles Firestore refusent cette lecture aux clients — chaque
   // téléphone faisait donc une requête refusée inutile à chaque connexion. Lancé/arrêté par
   // onAuthStateChanged() plus bas.
+  // Admin (Hubert, 20 nov. 2026) : « Pourboire : X $ » = total des pourboires de la soirée en cours, qui
+  // s'additionne en direct (paiements « tip » écrits par le serveur de paiement, lisibles par l'admin seulement)
+  var adminTips = []; // var : renderAll() peut tourner avant cette ligne
+  var stopTipsListener = null;
+  function renderAdminTips() {
+    const el = document.getElementById("jb-admin-tips-amount");
+    if (!el) return;
+    const night = nightId || "default";
+    const cents = adminTips.filter((p) => (p.nightId || "default") === night).reduce((s, p) => s + (p.amountCents || 0), 0);
+    el.textContent = formatMoney(cents);
+  }
+  function setTipsListener(on) {
+    if (on && !stopTipsListener) {
+      stopTipsListener = onSnapshot(query(collection(db, "payments"), where("type", "==", "tip")), (snap) => {
+        adminTips = [];
+        snap.forEach((d) => adminTips.push(d.data()));
+        renderAdminTips();
+      }, (err) => console.error("tips onSnapshot", err));
+    } else if (!on && stopTipsListener) {
+      stopTipsListener();
+      stopTipsListener = null;
+      adminTips = [];
+    }
+  }
   let stopSpecialRequestsListener = null;
   function setSpecialRequestsListener(on) {
     if (on && !stopSpecialRequestsListener) {
@@ -10406,6 +10446,7 @@ répertoire</button>
     renderCatalog();
     renderAdminPalmares();
     renderAdminSpecial();
+    renderAdminTips(); // (nouvelle soirée : le total repart de 0)
     renderAdminCatalog();
     renderCooldownList();
   }
@@ -11581,6 +11622,7 @@ répertoire</button>
       try { localStorage.removeItem("jb-admin-device"); } catch (e) {}
     }
     setSpecialRequestsListener(isAdmin);
+    setTipsListener(isAdmin);
     if (isAdmin) { try { startChat(); renderChat(); } catch (e) { console.warn("chat admin", e); } }
     document.getElementById("jb-login").hidden = isAdmin;
     document.getElementById("jb-dashboard").hidden = !isAdmin;
