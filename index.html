@@ -1860,6 +1860,22 @@ html[data-jb-bg="matrix"] #jb-public :is(#jb-pl-search-input, #jb-chat-input) {
   #jb-admin .jb-cooldown-badge, #jb-admin .jb-cooldown-wait-seg { background: #201d04; }
   #jb-admin .jb-cooldown-played-seg { color: #080701; }
   #jb-admin .jb-burned-badge { background: #201d04; border-color: #d4c000; color: #fffaa8; }
+  /* Refroidissement : minuteur + Disponible + Brûler plus petits pour tenir dans le cadre sur téléphone (Hubert, 20 nov. 2026) */
+  #jb-admin .jb-cooldown-row-controls { gap: 6px; width: 100%; }
+  /* les 2 boutons s'étirent pour prendre toute la largeur qui reste (Hubert) */
+  #jb-admin .jb-cooldown-row-controls .jb-bypass-btn, #jb-admin .jb-cooldown-row-controls .jb-burn-btn { flex: 1 1 0; min-width: 0; text-align: center; }
+  #jb-admin .jb-cooldown-row-controls .jb-cooldown-badge { padding: 4px 8px; }
+  #jb-admin .jb-cooldown-row-controls .jb-cooldown-num { font-size: 1rem; }
+  #jb-admin .jb-cooldown-row-controls .jb-bypass-btn, #jb-admin .jb-cooldown-row-controls .jb-burn-btn {
+    padding: 7px 8px; font-size: 0.7rem; letter-spacing: 0.5px;
+  }
+  /* minuteur dans « Dispo dans : » (20 nov. 2026) : bouton plus large que Brûler, chiffres en gros */
+  #jb-admin .jb-cooldown-row-controls .jb-bypass-btn { flex-grow: 1.8; font-size: 0.88rem; letter-spacing: 0; word-spacing: -3px; padding: 0 4px; line-height: 1; box-sizing: border-box; height: 29px; }
+  /* même hauteur pour Brûler (le bouton ne grossit pas, seulement la police — Hubert) */
+  #jb-admin .jb-cooldown-row-controls .jb-burn-btn { box-sizing: border-box; height: 29px; }
+  /* minuteur = même police, même grosseur que « Disponible dans : » (Hubert) */
+  #jb-admin .jb-cooldown-row-controls .jb-bypass-btn .jb-cooldown-num { font-size: inherit; font-weight: inherit; letter-spacing: inherit; margin-left: 4px; }
+  #jb-admin .jb-bypass-btn.jb-mark-played-armed { background: #fffaa8; color: #080701; }
   #jb-admin .jb-genre-chip { border-radius: 0; font-family: 'Share Tech Mono', monospace; }
   #jb-admin .jb-genre-chip.jb-genre-chip-active { background: #6e6300; border-color: var(--accent); color: #fffaa8; }
   #jb-admin .jb-error { color: #fffaa8; }
@@ -6937,7 +6953,7 @@ répertoire</button>
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-22.300";
+  const APP_BUILD = "2026-10-22.301";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -12116,9 +12132,8 @@ répertoire</button>
   }
 
   // Rend la chanson disponible tout de suite, sans attendre la fin du refroidissement
+  var bypassArmedUntil = {}; // chanson → heure où « Confirmer ? » expire (double confirmation, 20 nov. 2026)
   async function bypassCooldown(id) {
-    const title = votes[id]?.title || "";
-    if (!confirm(`Rendre « ${title} » disponible tout de suite ?`)) return;
     try {
       await updateDoc(doc(db, "votes", id), { cooldownUntil: 0 });
     } catch (e) {
@@ -12192,15 +12207,28 @@ répertoire</button>
             <div class="jb-song-artist">${escapeHtml(v.artist || "")}</div>
           </div>
           <div class="jb-cooldown-row-controls">
-            <div class="jb-cooldown-badge" data-until="${v.cooldownUntil}"><span class="jb-cooldown-num">${formatCooldown(v)}</span></div>
-            <button class="jb-bypass-btn" data-bypass="${id}">${at("▶️ Disponible", "▶️ Available")}</button>
+            ${(bypassArmedUntil[id] || 0) > Date.now()
+              ? `<button class="jb-bypass-btn jb-mark-played-armed" data-bypass="${id}">${at("❓ Confirmer ?", "❓ Confirm?")}</button>`
+              : `<button class="jb-bypass-btn" data-bypass="${id}">${at("Disponible dans ", "Available in ")}<span class="jb-cooldown-num">${formatCooldown(v)}</span></button>`}
             <button class="jb-burn-btn" data-burn="${id}">${at("🔥 Brûler", "🔥 Burn")}</button>
           </div>`;
       }
       container.appendChild(row);
     });
 
-    container.querySelectorAll("[data-bypass]").forEach((b) => b.addEventListener("click", () => bypassCooldown(b.dataset.bypass)));
+    // (20 nov. 2026, Hubert) minuteur dans le bouton (« Dispo dans : 57:53 ») + double confirmation comme
+    // « Retirer » : 1er toucher = « Confirmer ? » (4 s), 2e toucher = disponible tout de suite
+    container.querySelectorAll("[data-bypass]").forEach((b) => b.addEventListener("click", () => {
+      const id = b.dataset.bypass;
+      if ((bypassArmedUntil[id] || 0) > Date.now()) {
+        delete bypassArmedUntil[id];
+        bypassCooldown(id);
+        return;
+      }
+      bypassArmedUntil[id] = Date.now() + 4000;
+      renderCooldownList();
+      setTimeout(() => { if ((bypassArmedUntil[id] || 0) <= Date.now()) { delete bypassArmedUntil[id]; renderCooldownList(); } }, 4050);
+    }));
     container.querySelectorAll("[data-burn]").forEach((b) => b.addEventListener("click", () => toggleBurn(b.dataset.burn, true)));
     container.querySelectorAll("[data-unburn]").forEach((b) => b.addEventListener("click", () => toggleBurn(b.dataset.unburn, false)));
   }
