@@ -2789,8 +2789,77 @@ html[data-jb-bg="matrix"] #jb-public :is(#jb-pl-search-input, #jb-chat-input) {
     min-height: 0 !important; padding-bottom: 0 !important;
   }
   #jb-app-content:not(.jb-chat-mode) .jb-chat { display: none; }
-  /* écran Suggestion : plus de « Choix du public » en haut du cadre, seulement les messages (Hubert, 16 nov. 2026) */
-  #jb-public .jb-chat-frame .jb-chat-top { display: none !important; }
+  /* écran Suggestion (21 nov. 2026, Hubert) : moitié La playlist en haut, moitié chat en bas
+     (avant, 16 nov. : seulement les messages) — voir renderChatTop() */
+  #jb-public .jb-chat-frame .jb-chat-top { flex: 1 1 0 !important; padding-top: 0 !important; }
+  #jb-public .jb-chat-frame .jb-chat-main { flex: 1 1 0 !important; }
+  /* plus de titre « Demande spéciale » ni de sa ligne : la place va à La playlist et au chat (Hubert, 21 nov. 2026) */
+  #jb-public .jb-chat > .jb-style-heading-row { display: none !important; }
+  /* barre d'écriture collée au clavier, sans espace entre les deux (Hubert, 21 nov. 2026 ; avant : 28px) */
+  #jb-public .jb-chat .jb-chat-frame { margin-bottom: 0 !important; }
+  #jb-public .jb-chat .jb-chat-frame #jb-chat-form { margin-bottom: 0 !important; }
+  #jb-public .jb-chat > #jb-kbd { margin-top: 0 !important; }
+  /* chat élargi jusqu'au bord de l'écran : 4px au lieu de 24px de chaque côté (Hubert, 21 nov. 2026) */
+  #jb-public #jb-app-content.jb-chat-mode .jb-chat { margin-left: -20px !important; margin-right: -20px !important; }
+  /* Bar, Forêt, Matrix : le contour du cadre est dessiné 10px VERS L'EXTÉRIEUR — le cadre recule de 10px pour que
+     tout le contour reste visible à l'écran (Hubert, 21 nov. 2026) ; le clavier garde toute la largeur */
+  /* ===== Menu ☰ en haut à droite (21 nov. 2026, Hubert) : Langue / Changer de thème / Contact ===== */
+  #jb-app .jb-top-bar-right > .jb-lang-bar { display: none !important; }
+  #jb-public #jb-bg-btn { display: none !important; } /* le thème se change maintenant dans le menu */
+  /* « Bonsoir Hubert » centré (plus de bouton Thème à côté) — Hubert, 21 nov. 2026 */
+  #jb-app #jb-public #jb-section-title-row { justify-content: center !important; }
+  /* « Cherche par mots clés » dans le cadre, sous les onglets (voir placeSearchBar()) : même retrait partout */
+  #jb-public .jb-catalog-frame > #jb-catalog-searchbar.jb-searchbar-in-frame { position: relative; z-index: 2; margin: 10px 12px 6px !important; flex: 0 0 auto; }
+  #jb-app #jb-public #jb-style-title { text-align: center !important; margin-left: auto !important; margin-right: auto !important; }
+  #jb-app .jb-menu-wrap { position: relative; }
+  #jb-app .jb-menu-btn {
+    display: inline-flex !important; align-items: center; justify-content: center; padding: 6px 10px !important;
+    color: #ff6ae6 !important; border-color: #ff6ae6 !important;
+    box-shadow: 0 0 6px rgba(255, 59, 212, 0.55) !important;
+  }
+  #jb-app .jb-menu-btn[aria-expanded="true"] { background: rgba(255, 59, 212, 0.18) !important; }
+  #jb-app .jb-menu {
+    position: absolute; right: 0; top: calc(100% + 8px); z-index: 1250; min-width: 210px;
+    display: flex; flex-direction: column; gap: 6px; padding: 10px;
+    background: rgba(12, 6, 14, 0.97); border: 2px solid #ff6ae6; border-radius: 8px;
+    box-shadow: 0 0 10px rgba(255, 59, 212, 0.55), 0 10px 26px rgba(0, 0, 0, 0.6);
+    transform-origin: top right; animation: jb-menu-drop 0.18s ease-out;
+  }
+  #jb-app .jb-menu[hidden] { display: none; }
+  /* menu ouvert : le bandeau passe devant tout le reste (en Bar, la recherche passait par-dessus le menu) */
+  #jb-app .jb-top-bar:has(.jb-menu:not([hidden])) { position: relative; z-index: 1250 !important; }
+  @keyframes jb-menu-drop { from { opacity: 0; transform: translateY(-6px) scaleY(0.9); } to { opacity: 1; transform: none; } }
+  #jb-app .jb-menu-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 4px 4px 8px; border-bottom: 1px solid rgba(255, 106, 230, 0.3); }
+  #jb-app .jb-menu-label { color: #ffd6f5; font-weight: 700; font-size: 0.95rem; }
+  #jb-app .jb-menu-langs { display: flex; gap: 6px; }
+  #jb-app .jb-menu-langs .jb-lang-btn { padding: 4px 10px; font-size: 0.8rem; }
+  #jb-app .jb-menu-item {
+    width: 100%; text-align: left; padding: 10px 8px; border: none; border-radius: 4px; background: transparent;
+    color: #ffd6f5; font-weight: 700; font-size: 0.95rem; cursor: pointer;
+  }
+  #jb-app .jb-menu-item:active, #jb-app .jb-menu-item:hover { background: rgba(255, 59, 212, 0.18); }
+  /* fenêtre Contact / booking */
+  #jb-app .jb-contact-card { display: flex; flex-direction: column; gap: 8px; }
+  #jb-app .jb-contact-card h3, #jb-app .jb-contact-card p { padding-right: 0 !important; margin: 0 !important; }
+  #jb-app .jb-contact-card h3 { text-align: center; font-size: 1.2rem !important; }
+  #jb-app .jb-contact-card p { text-align: center; }
+  #jb-app .jb-contact-card :is(input, textarea) {
+    width: 100%; box-sizing: border-box; margin: 0; padding: 10px; font-size: 16px; /* 16px : pas de zoom sur iPhone */
+    border-radius: 6px; border: 1px solid var(--accent); background: rgba(0, 0, 0, 0.35); color: var(--text); font-family: inherit;
+  }
+  #jb-app .jb-contact-card textarea { resize: none; }
+  #jb-app .jb-contact-card .jb-name-check-actions { margin-top: 4px; }
+  #jb-public .jb-offline-top { flex-wrap: wrap; row-gap: 12px; }
+  /* « Les demandes de la soirée » : rose néon, un peu plus gros, centré — dans les 4 thèmes (Hubert, 21 nov. 2026) */
+  html #jb-public .jb-chat-frame h3.jb-chat-top-title {
+    color: #ff6ae6 !important; text-align: center !important; font-size: 0.95rem !important; margin: -2px 0 6px !important; line-height: 1.1 !important;
+    text-shadow: 0 0 4px rgba(255, 90, 230, 0.85), 0 0 10px rgba(255, 59, 212, 0.6) !important;
+  }
+  /* titres des chansons des « demandes de la soirée » en vert fluo (Hubert, 21 nov. 2026) */
+  html #jb-public .jb-chat-frame .jb-chat-top-info .jb-slot-title {
+    color: #5dff8a !important; text-shadow: 0 0 4px rgba(93, 255, 138, 0.75), 0 0 9px rgba(93, 255, 138, 0.4) !important;
+  }
+  html[data-jb-bg] #jb-public #jb-app-content.jb-chat-mode .jb-chat-frame { margin-left: 10px !important; margin-right: 10px !important; margin-bottom: 12px !important; }
   /* …ni de RETOUR sous le clavier : celui du haut suffit (Hubert, 16 nov. 2026) */
   #jb-public .jb-chat > .jb-chat-back:last-child { display: none !important; }
   #jb-public .jb-chat > .jb-kbd { margin-bottom: 4px !important; }
@@ -3703,6 +3772,8 @@ html[data-jb-bg="bar"] #jb-public .jb-chat-song-tag { font-family: 'Oswald', mon
 html[data-jb-bg="bar"] .jb-chat-song { color: #4ed4c8 }
 html[data-jb-bg="bar"] #jb-public .jb-chat-song-tag-x { border: none; background: none; color: #ffe7c4 }
 html[data-jb-bg="bar"] #jb-public .jb-chat-frame .jb-chat-top { border-bottom: 2px solid #ffb84d; box-shadow: 0 4px 6px -5px rgba(255, 184, 77, 0.7) }
+/* ligne entre « Les demandes de la soirée » et les messages : bleu néon, comme le contour du chat (Hubert, 21 nov. 2026) */
+html[data-jb-bg="bar"] #jb-public .jb-chat-frame .jb-chat-top { border-bottom-color: var(--bar-tube) !important; box-shadow: 0 4px 7px -5px var(--bar-tube) !important; }
 html[data-jb-bg="bar"] #jb-public .jb-chat-top-title { font-family: 'Bebas Neue', sans-serif; color: #ffb84d }
 html[data-jb-bg="bar"] #jb-public .jb-chat .jb-style-heading-row { border-bottom: 2px solid #ffb84d; box-shadow: 0 6px 8px -6px rgba(255, 184, 77, 0.7) }
 html[data-jb-bg="bar"] #jb-public .jb-kbd-caret { font-family: 'Oswald', monospace; color: #ffb84d; text-shadow: 0 0 6px rgba(255, 184, 77, 0.8) }
@@ -6114,6 +6185,24 @@ html[data-jb-bg="matrix"] #jb-public .jb-style-heading-row h2 { font-size: 18.4p
           <button id="jb-lang-fr" class="jb-lang-btn" data-lang="fr">FR</button>
           <button id="jb-lang-en" class="jb-lang-btn" data-lang="en">EN</button>
         </div>
+        <!-- (21 nov. 2026, Hubert) menu déroulant en haut à droite : Langue / Changer de thème / Contact (booking).
+             FR/EN ci-dessus restent dans la page (cachés) : ils servent à mesurer le bandeau (fitTopBar). -->
+        <div class="jb-menu-wrap">
+          <button id="jb-menu-btn" class="jb-lang-btn jb-menu-btn" type="button" aria-haspopup="true" aria-expanded="false" aria-label="Menu">
+            <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M2 4h12M2 8h12M2 12h12" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/></svg>
+          </button>
+          <div id="jb-menu" class="jb-menu" hidden>
+            <div class="jb-menu-row">
+              <span id="jb-menu-lang-label" class="jb-menu-label">Langue</span>
+              <span class="jb-menu-langs">
+                <button class="jb-lang-btn" data-lang="fr" type="button">FR</button>
+                <button class="jb-lang-btn" data-lang="en" type="button">EN</button>
+              </span>
+            </div>
+            <button id="jb-menu-theme" class="jb-menu-item" type="button">Changer de thème</button>
+            <button id="jb-menu-contact" class="jb-menu-item" type="button">Contact</button>
+          </div>
+        </div>
       </div>
     </header>
     <div class="jb-cp-status" aria-hidden="true"><span class="jb-cp-live">LIVE</span><span>// signal ok</span></div>
@@ -6295,6 +6384,8 @@ html[data-jb-bg="matrix"] #jb-public .jb-style-heading-row h2 { font-size: 18.4p
           <!-- 22 oct. 2026 (Hubert) : le texte est remplacé par un lien qui ouvre le répertoire en
                consultation seulement (voir browseOnly / applyLiveGateNow()) -->
           <button id="jb-offline-browse" type="button" class="jb-offline-browse-link"></button>
+          <!-- (21 nov. 2026, Hubert) booking aussi hors spectacle : même fenêtre Contact que le menu -->
+          <button id="jb-offline-booking" type="button" class="jb-offline-browse-link jb-offline-booking">Booking</button>
           <div class="jb-lang-bar jb-offline-lang-bar">
             <button class="jb-lang-btn" data-lang="fr">FR</button>
             <button class="jb-lang-btn" data-lang="en">EN</button>
@@ -6331,6 +6422,23 @@ html[data-jb-bg="matrix"] #jb-public .jb-style-heading-row h2 { font-size: 18.4p
          appareil, juste avant la toute première demande OU le tout premier boost de la soirée
          (jamais avant, pour ne pas ralentir l'arrivée du client) — son prénom sert ensuite à la
          fois pour les demandes spéciales et pour apparaître sous les chansons du palmarès. -->
+    <!-- (21 nov. 2026, Hubert) Contact / booking : le client remplit, « Envoyer » ouvre son application de courriel
+         avec un message tout prêt à Hubert, sujet « Hubert Chansonnier Booking ». Voir openContact(). -->
+    <div id="jb-contact" class="jb-name-prompt jb-contact" hidden>
+      <div class="jb-name-prompt-backdrop" data-contact-close></div>
+      <div class="jb-name-prompt-card jb-contact-card">
+        <h3 id="jb-contact-title"></h3>
+        <p id="jb-contact-text"></p>
+        <input id="jb-contact-name" type="text" maxlength="60" autocomplete="name" />
+        <input id="jb-contact-reply" type="text" maxlength="80" autocomplete="email" />
+        <input id="jb-contact-date" type="text" maxlength="60" />
+        <textarea id="jb-contact-msg" rows="4" maxlength="1500"></textarea>
+        <div class="jb-name-check-actions">
+          <button type="button" id="jb-contact-send" class="jb-btn-primary"></button>
+          <button type="button" id="jb-contact-cancel" class="jb-name-prompt-skip-btn" data-contact-close></button>
+        </div>
+      </div>
+    </div>
     <div id="jb-name-prompt" class="jb-name-prompt" hidden>
       <div class="jb-name-prompt-backdrop"></div>
       <div class="jb-name-prompt-card">
@@ -6965,7 +7073,7 @@ répertoire</button>
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-22.306";
+  const APP_BUILD = "2026-10-22.307";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -7076,7 +7184,7 @@ répertoire</button>
       chat_title: "Demande spéciale", // titre de l'écran du chat (Hubert, 16 nov. 2026 ; ex-« Suggestion », 17 nov.)
       chat_open: "Demande spéciale", // ouvre le chat (16 nov. 2026 ; ex-« Suggestion », 17 nov.)
       chat_back: "⬅ Retour",
-      chat_top_title: "Choix du public",
+      chat_top_title: "Les demandes de la soirée", // (Hubert, 21 nov. 2026)
       chat_top_empty: "Aucune demande pour l'instant.",
       chat_placeholder: (n) => `Commenter en tant que « ${n} »`,
       chat_placeholder_noname: "Écris un message…",
@@ -7209,7 +7317,7 @@ répertoire</button>
       chat_title: "Special request", // titre de l'écran du chat (ex-« Suggestion », 17 nov. 2026)
       chat_open: "Special request", // ouvre le chat (ex-« Suggestion », 17 nov. 2026)
       chat_back: "⬅ Back",
-      chat_top_title: "Crowd picks",
+      chat_top_title: "Tonight's requests",
       chat_top_empty: "No requests yet.",
       chat_placeholder: (n) => `Comment as "${n}"`,
       chat_placeholder_noname: "Write a message…",
@@ -7367,7 +7475,7 @@ répertoire</button>
     // centre (Hubert, 16 nov. 2026)
     document.getElementById("jb-tip-open").innerHTML = `${TIP_ICO}<span class="jb-tab-label">${escapeHtml(t("tip_open"))}</span>${TIP_ICO}`;
     document.querySelectorAll("[data-chat-back]").forEach((b) => { b.textContent = t("chat_back"); });
-    document.getElementById("jb-chat-top-title").textContent = t("chat_top_title");
+    document.getElementById("jb-chat-top-title").textContent = t("chat_top_title"); // « Les demandes de la soirée » (Hubert, 21 nov. 2026)
     document.getElementById("jb-chat-top-empty").textContent = t("chat_top_empty");
     try { renderChatTop(); } catch (e) { /* données pas encore prêtes */ }
     try { renderChat(); } catch (e) { /* pas encore prêt */ }
@@ -7760,6 +7868,70 @@ répertoire</button>
     window.dispatchEvent(new Event("jb-bg-change"));
     // plus de message « Style : … » au changement de thème (Hubert, 16 nov. 2026)
   });
+
+  // ---------- Menu ☰ (21 nov. 2026, Hubert) : Langue / Changer de thème / Contact (booking) ----------
+  (function setupMenuAndContact() {
+    const en = () => lang === "en";
+    const menuBtn = document.getElementById("jb-menu-btn");
+    const menu = document.getElementById("jb-menu");
+    function menuLabels() {
+      document.getElementById("jb-menu-lang-label").textContent = en() ? "Language" : "Langue";
+      document.getElementById("jb-menu-theme").textContent = en() ? "Change theme" : "Changer de thème";
+      document.getElementById("jb-menu-contact").textContent = en() ? "Contact / Booking" : "Contact / Booking";
+    }
+    function setMenu(open) {
+      menu.hidden = !open;
+      menuBtn.setAttribute("aria-expanded", open ? "true" : "false");
+      if (open) menuLabels();
+    }
+    menuBtn.addEventListener("click", (e) => { e.stopPropagation(); setMenu(menu.hidden); });
+    // langue : les boutons FR/EN du menu sont déjà câblés (tout .jb-lang-btn[data-lang]) — on remet les libellés
+    menu.querySelectorAll("[data-lang]").forEach((b) => b.addEventListener("click", () => setTimeout(menuLabels, 0)));
+    document.getElementById("jb-menu-theme").addEventListener("click", () => document.getElementById("jb-bg-btn").click());
+    document.getElementById("jb-menu-contact").addEventListener("click", () => { setMenu(false); openContact(); });
+    document.addEventListener("click", (e) => { if (!menu.hidden && !e.target.closest(".jb-menu-wrap")) setMenu(false); });
+
+    // Fenêtre Contact : « Envoyer » ouvre l'application de courriel du client, message prêt à partir
+    const wrap = document.getElementById("jb-contact");
+    const $ = (id) => document.getElementById(id);
+    // adresse assemblée ici (pas écrite en clair dans la page) pour éviter les robots qui ramassent les courriels
+    const TO = ["hubert_plantea", "hotmail.ca"].join("@");
+    const SUBJECT = "Hubert Chansonnier Booking";
+    function contactLabels() {
+      const E = en();
+      $("jb-contact-title").textContent = E ? "Book Hubert" : "Booker Hubert";
+      $("jb-contact-text").textContent = E
+        ? "Wedding, party, corporate event… Tell me about it and I'll get back to you."
+        : "Mariage, party, événement corporatif… Écris-moi et je te reviens rapidement.";
+      $("jb-contact-name").placeholder = E ? "Your name" : "Ton nom";
+      $("jb-contact-reply").placeholder = E ? "Your email or phone" : "Ton courriel ou téléphone";
+      $("jb-contact-date").placeholder = E ? "Event date and place (optional)" : "Date et lieu de l'événement (facultatif)";
+      $("jb-contact-msg").placeholder = E ? "Your message" : "Ton message";
+      $("jb-contact-send").textContent = E ? "Send" : "Envoyer";
+      $("jb-contact-cancel").textContent = E ? "Cancel" : "Annuler";
+    }
+    function openContact() { contactLabels(); wrap.hidden = false; }
+    window.jbOpenContact = openContact;
+    wrap.querySelectorAll("[data-contact-close]").forEach((el) => el.addEventListener("click", () => { wrap.hidden = true; }));
+    $("jb-contact-send").addEventListener("click", () => {
+      const name = $("jb-contact-name").value.trim();
+      const reply = $("jb-contact-reply").value.trim();
+      const date = $("jb-contact-date").value.trim();
+      const msg = $("jb-contact-msg").value.trim();
+      const missing = [[name, "jb-contact-name"], [reply, "jb-contact-reply"], [msg, "jb-contact-msg"]].filter(([v]) => !v);
+      if (missing.length) {
+        missing.forEach(([, id]) => { const el = $(id); el.classList.remove("jb-input-shake"); void el.offsetWidth; el.classList.add("jb-input-shake"); });
+        return;
+      }
+      const head = [`Nom : ${name}`, `Pour me joindre : ${reply}`];
+      if (date) head.push(`Événement : ${date}`);
+      const body = [...head, "", msg, "", "— Envoyé depuis monrepertoire.ca"].join("\n");
+      location.href = `mailto:${TO}?subject=${encodeURIComponent(SUBJECT)}&body=${encodeURIComponent(body)}`;
+      wrap.hidden = true;
+    });
+    const off = document.getElementById("jb-offline-booking");
+    if (off) off.addEventListener("click", openContact);
+  })();
 
   if (firebaseConfig.apiKey === "REMPLACE_MOI") {
     const app = document.getElementById("jb-app");
@@ -9577,11 +9749,12 @@ répertoire</button>
     const kb = document.getElementById("jb-kbd");
     if (kb) new ResizeObserver(() => requestAnimationFrame(fitChatFrame)).observe(kb);
   }
+  var chatKbdShow = null; // rouvre le clavier de l'app du chat (posé par setupChatKeyboard)
   function setChatMode(on) {
     const content = document.getElementById("jb-app-content");
     content.classList.toggle("jb-chat-mode", on);
     window.scrollTo(0, 0);
-    if (on) { renderChatTop(); requestAnimationFrame(fitChatFrame); }
+    if (on) { if (chatKbdShow) chatKbdShow(); renderChatTop(); requestAnimationFrame(fitChatFrame); }
     else {
       // le bandeau était caché pendant le chat : on le remesure (sinon le titre déborde sur FR/EN)
       if (typeof scheduleFitTopBar === "function") scheduleFitTopBar();
@@ -9639,31 +9812,59 @@ répertoire</button>
     return ts.seconds ? ts.seconds * 1000 : 0;
   }
   function chatTopSongs() {
-    const active = Object.entries(votes).filter(([, v]) => !isHiddenFromPalmares(v));
-    const tipped = active.filter(([, v]) => (v.requests || 0) > 0).sort((a, b) =>
-      ((b[1].requests || 0) - (a[1].requests || 0))
-      || (tsMillis(b[1].tippedAt) - tsMillis(a[1].tippedAt))
-      || (createdAtMillis(b[1]) - createdAtMillis(a[1])));
-    const newest = active.filter(([, v]) => !((v.requests || 0) > 0))
-      .sort((a, b) => createdAtMillis(b[1]) - createdAtMillis(a[1]));
-    return [...tipped, ...newest];
+    // (21 nov. 2026, Hubert) même ordre que La playlist
+    return Object.entries(votes).filter(([, v]) => !isHiddenFromPalmares(v)).sort(compareVoteEntries);
   }
+  // « Les demandes de la soirée » prend toute la largeur du cadre (Hubert, 21 nov. 2026) : police agrandie
+  // jusqu'à ce que le texte occupe ~96 % de la largeur
+  function fitChatTopTitle() {
+    const h = document.getElementById("jb-chat-top-title");
+    if (!h || !h.offsetParent) return;
+    h.style.removeProperty("font-size");
+    h.style.removeProperty("letter-spacing");
+    h.style.removeProperty("text-indent");
+    h.style.whiteSpace = "nowrap";
+    const rg = document.createRange(); rg.selectNodeContents(h);
+    // quelques passes : l'espacement des lettres ne grandit pas en proportion de la police
+    for (let i = 0; i < 4; i++) {
+      const room = h.clientWidth * 0.96;
+      const w = rg.getBoundingClientRect().width;
+      if (!(room > 0 && w > 0) || Math.abs(room - w) < 2) break;
+      h.style.setProperty("font-size", `${Math.floor(parseFloat(getComputedStyle(h).fontSize) * room / w * 10) / 10}px`, "important");
+    }
+    // (Hubert : « trop gros ») police à 70 % de cette taille, et les lettres s'espacent pour garder toute la largeur
+    const fs = parseFloat(getComputedStyle(h).fontSize);
+    // (Hubert : « encore » + « décolle-le du bord ») 60 %, et 86 % de la largeur seulement, centré
+    h.style.setProperty("font-size", `${Math.floor(fs * 0.6 * 10) / 10}px`, "important");
+    h.style.setProperty("letter-spacing", "0px", "important");
+    const n = (h.textContent || "").length;
+    const gap = h.clientWidth * 0.86 - rg.getBoundingClientRect().width;
+    if (n > 1 && gap > 0) {
+      const ls = Math.floor(gap / (n - 1) * 10) / 10;
+      h.style.setProperty("letter-spacing", `${ls}px`, "important");
+      h.style.setProperty("text-indent", `${ls}px`, "important"); // compense l'espace ajouté après la dernière lettre (bien centré)
+    }
+  }
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => fitChatTopTitle());
+  window.addEventListener("resize", () => requestAnimationFrame(fitChatTopTitle));
+  window.addEventListener("jb-bg-change", () => setTimeout(fitChatTopTitle, 60));
   function renderChatTop() {
+    requestAnimationFrame(fitChatTopTitle);
+    setTimeout(fitChatTopTitle, 350); // après la mise en place du cadre du chat (fitChatFrame) et des polices
     const list = document.getElementById("jb-chat-top-list");
     const empty = document.getElementById("jb-chat-top-empty");
     if (!list) return;
     const top = chatTopSongs();
     empty.hidden = top.length > 0;
+    // (21 nov. 2026, Hubert) La playlist dans le chat : titre + artiste seulement (plus de ▲ ni de montant,
+    // les chansons ne se paient plus)
     list.innerHTML = top.map(([id, v]) => `
-      <li class="jb-chat-top-item${(v.requests || 0) > 0 ? " jb-chat-top-paid" : " jb-chat-top-free"}">
-        <span class="jb-myreq-up-wrap"><button class="jb-slot-vote-btn jb-slot-vote-up jb-myreq-up${voteUpBtnIllumClass(id)}" data-vote-up="${escapeHtml(id)}" aria-label="${t("vote_up_aria")}" title="${t("vote_up_aria")}"><svg viewBox="0 0 12 12" width="14" height="14" aria-hidden="true"><path d="M6 1 11 5.5H1ZM6 6 11 10.5H1Z" fill="currentColor"/></svg></button></span>
+      <li class="jb-chat-top-item jb-chat-top-free">
         <span class="jb-chat-top-info">
           <span class="jb-slot-title">${escapeHtml(v.title || "")}</span>
           ${v.artist ? `<span class="jb-slot-artist">${escapeHtml(v.artist)}</span>` : ""}
-          <button type="button" class="jb-song-chat-btn" data-song-chat="${escapeHtml(id)}">💬 Chat</button>
         </span>
-        ${amountHtml(id, v.requests, false, true)}
-      </li>`).join(""); /* « 0 $ » affiché aussi sur les gratuites (Hubert, 29 oct. 2026) */
+      </li>`).join("");
     // bouton ▲ « donner un pourboire » : même bouton et même paiement que dans Choix du public (Hubert, 29 oct. 2026)
     list.querySelectorAll("[data-vote-up]").forEach((btn) => {
       btn.addEventListener("click", () => castVote(btn.dataset.voteUp, 1));
@@ -10141,6 +10342,58 @@ répertoire</button>
     const none = document.getElementById("jb-pl-none");
     if (none) { none.textContent = t("catalog_empty"); none.hidden = !(q && shown === 0 && list.children.length); }
     showBumpCooldown();
+  }
+  // (21 nov. 2026, Hubert) un message du chat qui nomme une chanson déjà dans les demandes de la soirée la fait
+  // monter au 1er rang. Titre cherché comme des mots entiers (« Destin » trouve « j'adore Destin! »), sans ce qui
+  // est entre parenthèses (« Sous Le Vent (Feat Garou) » → « sous le vent ») ; le plus long titre trouvé gagne.
+  // Petites fautes de frappe tolérées (Hubert : « i remember everithing ») : distance d'édition entre le titre et
+  // les mêmes nombre de mots du message — 0 faute sous 5 lettres, 1 jusqu'à 9, puis ~1 par 7 lettres.
+  function editDistance(a, b) {
+    const m = a.length, n = b.length;
+    if (!m || !n) return m || n;
+    let prev = Array.from({ length: n + 1 }, (_, j) => j);
+    for (let i = 1; i <= m; i++) {
+      const cur = [i];
+      for (let j = 1; j <= n; j++) cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+      prev = cur;
+    }
+    return prev[n];
+  }
+  function chatMentionedSong(text) {
+    const words = (s) => norm(s).replace(/œ/g, "oe").replace(/æ/g, "ae").replace(/[^a-z0-9]+/g, " ").trim();
+    const hw = words(text).split(" ").filter(Boolean);
+    let best = null, bestLen = 0;
+    Object.entries(votes).forEach(([id, v]) => {
+      if (!v || isHiddenFromPalmares(v) || !v.title) return;
+      const t = words(String(v.title).replace(/\s*[(\[].*?[)\]]\s*/g, " "));
+      if (t.length < 3) return;
+      const tw = t.split(" "), L = tw.length, tc = tw.join("");
+      // (Hubert : « crezy im lov » doit trouver Crazy In Love) ~1 faute par 4 lettres sur les titres de 10+ lettres
+      const allowed = t.length < 5 ? 0 : t.length < 10 ? 1 : Math.floor(t.length / 4);
+      // comparé sans les espaces (« lamérique » = « l'amérique »), sur L-1, L ou L+1 mots du message ; le 1er et le
+      // dernier mot doivent commencer par la même lettre que ceux du titre (« better than » ≠ Better Man)
+      let found = false;
+      for (const n of [L, L - 1, L + 1]) {
+        if (n < 1 || found) continue;
+        for (let i = 0; i + n <= hw.length; i++) {
+          const win = hw.slice(i, i + n);
+          if (win[0][0] !== tw[0][0] || win[n - 1][0] !== tw[L - 1][0]) continue;
+          if (editDistance(win.join(""), tc) <= allowed) { found = true; break; }
+        }
+      }
+      if (found && tc.length > bestLen) { best = id; bestLen = tc.length; }
+    });
+    return best;
+  }
+  function bumpFromChat(text) {
+    const id = chatMentionedSong(text);
+    if (!id || !db) return;
+    const v = votes[id];
+    votes[id] = { ...v, bumpedAt: { seconds: Date.now() / 1000 } }; // tout de suite à l'écran
+    renderPalmares();
+    try { renderChatTop(); } catch (e) {}
+    // (les règles Firestore : au plus une fois toutes les 2 s par chanson — sinon simplement ignoré)
+    updateDoc(doc(db, "votes", id), { bumpedAt: serverTimestamp() }).catch((err) => console.warn("chat bump", err && err.code));
   }
   function bumpSong(id) {
     const v = votes[id];
@@ -11043,6 +11296,21 @@ répertoire</button>
   })();
   var lastHomeFrameH = 0; // var : lue avant cette ligne possible (voir la note plus haut)
   var nextCatalogMorphDelay = 0; // délai (ms) de la PROCHAINE animation de taille du panneau (RETOUR)
+  // (21 nov. 2026, Hubert) « Cherche par mots clés » DANS le cadre de Mon répertoire, juste sous les onglets :
+  // la barre suit le cadre affiché (accueil Chansons/Artistes/Genres, ou liste/résultats) ; cachée dans
+  // La playlist, qui a sa propre recherche
+  function placeSearchBar() {
+    const bar = document.getElementById("jb-catalog-searchbar");
+    const results = document.getElementById("jb-catalog-results");
+    const browse = document.getElementById("jb-catalog-browse");
+    if (!bar || !results || !browse) return;
+    const inResults = !results.hidden;
+    const frame = (inResults ? results : browse).querySelector(".jb-catalog-frame");
+    const anchor = frame && (inResults ? (frame.querySelector(":scope > #jb-back-btn") || frame.querySelector("#jb-catalog-empty")) : frame.querySelector("#jb-mode-list"));
+    if (anchor && bar.nextElementSibling !== anchor) frame.insertBefore(bar, anchor);
+    bar.classList.add("jb-searchbar-in-frame");
+    bar.style.display = catalogTab === "repertoire" ? "" : "none";
+  }
   function renderCatalog() {
     const prevFrame = visibleCatalogFrame();
     const prevH = prevFrame ? prevFrame.getBoundingClientRect().height : 0;
@@ -11052,6 +11320,7 @@ répertoire</button>
     if (browseOnly) catalogTab = "repertoire"; // pas d'onglets en simple consultation
     renderCatalogNow();
     applyCatalogTab();
+    placeSearchBar();
     placeBackBtn();
     fitListsToScreen();
     animateCatalogFrame(prevH);
@@ -12459,6 +12728,7 @@ répertoire</button>
       const ref = await addDoc(collection(db, "chat"), msg);
       myChatLocal.push({ id: ref.id, ...local });
       saveMyChatLocal();
+      bumpFromChat(text); // chanson déjà demandée nommée dans le message : au 1er rang (Hubert, 21 nov. 2026)
       // Copie dans la boîte de suggestions du panneau admin, gardée d'une soirée à l'autre (Hubert, 16 nov. 2026)
       const sugg = { text: (song ? `🎵 ${song} — ${text}` : text).slice(0, 200), createdAt: serverTimestamp(), name: name.slice(0, 15) };
       addDoc(collection(db, "specialRequests"), sugg).catch((err) => console.warn("suggestion", err && err.code));
@@ -12666,6 +12936,10 @@ répertoire</button>
       kbd.hidden = false;
       input.addEventListener("pointerdown", show);
       input.addEventListener("focus", show);
+      // (21 nov. 2026, Hubert) toucher n'importe où dans la zone d'écriture le rouvre aussi, et il réapparaît
+      // chaque fois qu'on entre dans le chat (avant, refermé par ⌫ il restait fermé au retour)
+      document.getElementById("jb-chat-form").addEventListener("pointerdown", show);
+      chatKbdShow = show;
     }
   })();
   // Recherche par mot clé (Hubert, 17 nov. 2026) : le clavier de l'app monte du bas de l'écran quand on touche
