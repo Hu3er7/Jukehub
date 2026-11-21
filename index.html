@@ -2852,8 +2852,24 @@ html[data-jb-bg="matrix"] #jb-public :is(#jb-pl-search-input, #jb-chat-input) {
   #jb-public .jb-offline-top { flex-wrap: wrap; row-gap: 12px; }
   /* « Les demandes de la soirée » : rose néon, un peu plus gros, centré — dans les 4 thèmes (Hubert, 21 nov. 2026) */
   html #jb-public .jb-chat-frame h3.jb-chat-top-title {
-    color: #ff6ae6 !important; text-align: center !important; font-size: 0.95rem !important; margin: -2px 0 6px !important; line-height: 1.1 !important;
+    color: #ff6ae6 !important; text-align: center !important; font-size: 0.95rem !important; margin: 3px 0 6px !important; line-height: 1.1 !important; /* +5px (Hubert, 21 nov. 2026) */
     text-shadow: 0 0 4px rgba(255, 90, 230, 0.85), 0 0 10px rgba(255, 59, 212, 0.6) !important;
+  }
+  /* plus flash (Hubert, 21 nov. 2026) : cœur presque blanc + lueur rose plus large */
+  html #jb-public .jb-chat-frame h3.jb-chat-top-title {
+    color: #ffc4f4 !important;
+    text-shadow: 0 0 2px #fff, 0 0 6px #ff6ae6, 0 0 12px #ff3bd4, 0 0 22px rgba(255, 59, 212, 0.8), 0 0 34px rgba(255, 59, 212, 0.45) !important;
+  }
+  /* noms d'utilisateur des messages du chat en bleu néon (Hubert, 21 nov. 2026) */
+  html #jb-public .jb-chat-list .jb-chat-name {
+    color: #6fe0ff !important; text-shadow: 0 0 3px rgba(111, 224, 255, 0.45) !important;
+    font-size: 1.05rem !important; letter-spacing: 0.04em !important; line-height: 1.2 !important; /* plus gros, lisible (Hubert) */
+  }
+  /* numéro de position à gauche de chaque demande (Hubert, 21 nov. 2026) */
+  #jb-public .jb-chat-top-item .jb-chat-top-rank {
+    order: 0; flex: 0 0 auto; min-width: 22px; text-align: center; font-weight: 800; font-size: 1rem; line-height: 1;
+    color: #ffc4f4; text-shadow: 0 0 2px #fff, 0 0 6px #ff6ae6, 0 0 12px rgba(255, 59, 212, 0.7);
+    font-variant-numeric: tabular-nums;
   }
   /* titres des chansons des « demandes de la soirée » en vert fluo (Hubert, 21 nov. 2026) */
   html #jb-public .jb-chat-frame .jb-chat-top-info .jb-slot-title {
@@ -5675,7 +5691,9 @@ html[data-jb-bg="matrix"] #jb-public .jb-style-heading-row h2 { font-size: 18.4p
    <!-- le site s'ouvre toujours en « Bar spectacle » (Hubert, 29 oct. 2026) : le bouton style change le thème
         seulement pour la visite en cours. Sauf sur le téléphone de Hubert connecté en admin : toujours
         Cyberpunk (marque « jb-admin-device », posée à la connexion admin, retirée à la déconnexion) -->
-   <script>try { if (localStorage.getItem("jb-admin-device") !== "1") document.documentElement.dataset.jbBg = "bar"; } catch (e) { document.documentElement.dataset.jbBg = "bar"; }</script>
+   <script>try { if (localStorage.getItem("jb-admin-device") !== "1" || location.hostname === "localhost") document.documentElement.dataset.jbBg = "bar"; } catch (e) { document.documentElement.dataset.jbBg = "bar"; }</script>
+   <!-- (21 nov. 2026, Hubert) aperçu local (localhost) : toujours Bar spectacle, même connecté en admin -->
+
    <script>
    (function () {
      const canvas = document.getElementById("jb-cp-matrix");
@@ -7073,7 +7091,7 @@ répertoire</button>
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-22.307";
+  const APP_BUILD = "2026-10-22.308";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -9858,13 +9876,38 @@ répertoire</button>
     empty.hidden = top.length > 0;
     // (21 nov. 2026, Hubert) La playlist dans le chat : titre + artiste seulement (plus de ▲ ni de montant,
     // les chansons ne se paient plus)
-    list.innerHTML = top.map(([id, v]) => `
-      <li class="jb-chat-top-item jb-chat-top-free">
+    // (21 nov. 2026, Hubert) une chanson qui monte GLISSE jusqu'à sa place, à la même vitesse que dans La playlist
+    // (PALM_MOVE_MS, même courbe) : positions notées avant, chaque ligne repart de son ancienne place (FLIP)
+    const CHAT_TOP_MOVE_MS = 900; // (Hubert : « ralentis encore ») 0,9 s au lieu de 0,44 s
+    const before = {};
+    list.querySelectorAll("li[data-id]").forEach((li) => { before[li.dataset.id] = li.getBoundingClientRect().top; });
+    list.innerHTML = top.map(([id, v], i) => `
+      <li class="jb-chat-top-item jb-chat-top-free" data-id="${escapeHtml(id)}">
+        <span class="jb-chat-top-rank">${i + 1}</span>
         <span class="jb-chat-top-info">
           <span class="jb-slot-title">${escapeHtml(v.title || "")}</span>
           ${v.artist ? `<span class="jb-slot-artist">${escapeHtml(v.artist)}</span>` : ""}
         </span>
       </li>`).join("");
+    const moved = [];
+    list.querySelectorAll("li[data-id]").forEach((li) => {
+      const old = before[li.dataset.id];
+      if (old === undefined) return;
+      const dy = old - li.getBoundingClientRect().top;
+      if (Math.abs(dy) < 1) return;
+      li.style.transition = "none";
+      li.style.transform = `translateY(${dy}px)`;
+      li.style.position = "relative";
+      li.style.zIndex = dy > 0 ? "2" : "1"; // celle qui monte passe par-dessus les autres
+      moved.push(li);
+    });
+    if (moved.length) {
+      void list.offsetHeight;
+      requestAnimationFrame(() => moved.forEach((li) => {
+        li.style.transition = `transform ${CHAT_TOP_MOVE_MS}ms cubic-bezier(0.45, 0, 0.55, 1)`;
+        li.style.transform = "";
+      }));
+    }
     // bouton ▲ « donner un pourboire » : même bouton et même paiement que dans Choix du public (Hubert, 29 oct. 2026)
     list.querySelectorAll("[data-vote-up]").forEach((btn) => {
       btn.addEventListener("click", () => castVote(btn.dataset.voteUp, 1));
@@ -12073,7 +12116,8 @@ répertoire</button>
     // admin : toujours le thème Cyberpunk (Hubert, 29 oct. 2026) ; les clients restent en Bar spectacle
     if (isAdmin) {
       safeStorageSet("jb-admin-device", "1");
-      if (document.documentElement.dataset.jbBg) {
+      // (aperçu local : on reste en Bar spectacle — Hubert, 21 nov. 2026)
+      if (document.documentElement.dataset.jbBg && location.hostname !== "localhost") {
         delete document.documentElement.dataset.jbBg;
         window.dispatchEvent(new Event("jb-bg-change"));
       }
