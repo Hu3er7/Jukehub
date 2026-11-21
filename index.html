@@ -2865,6 +2865,18 @@ html[data-jb-bg="matrix"] #jb-public :is(#jb-pl-search-input, #jb-chat-input) {
     color: #6fe0ff !important; text-shadow: 0 0 3px rgba(111, 224, 255, 0.45) !important;
     font-size: 1.05rem !important; letter-spacing: 0.04em !important; line-height: 1.2 !important; /* plus gros, lisible (Hubert) */
   }
+  /* RETOUR sur la ligne du titre, dans le cadre ; le cadre monte jusqu'en haut de l'écran (Hubert, 21 nov. 2026) */
+  #jb-public .jb-chat-top-head { display: flex; align-items: center; gap: 8px; margin: 2px 0 6px; }
+  #jb-public .jb-chat-top-head h3.jb-chat-top-title { flex: 1 1 auto; min-width: 0; margin: 0 !important; }
+  #jb-public .jb-chat-back.jb-chat-back-inline {
+    flex: 0 0 auto; width: auto !important; margin: 0 !important; padding: 5px 9px !important; min-height: 0 !important;
+    font-size: 0.8rem !important; line-height: 1 !important; letter-spacing: 0.04em; white-space: nowrap; cursor: pointer;
+    background: rgba(111, 224, 255, 0.08) !important; color: #c8f4ff !important;
+    border: 2px solid #6fe0ff !important; border-radius: 6px !important; clip-path: none !important;
+    box-shadow: 0 0 6px rgba(111, 224, 255, 0.55) !important; text-shadow: 0 0 4px rgba(111, 224, 255, 0.6) !important;
+  }
+  #jb-public #jb-app-content.jb-chat-mode .jb-chat { padding-top: 0 !important; }
+  html[data-jb-bg] #jb-public #jb-app-content.jb-chat-mode .jb-chat-frame { margin-top: 10px !important; }
   /* numéro de position à gauche de chaque demande (Hubert, 21 nov. 2026) */
   #jb-public .jb-chat-top-item .jb-chat-top-rank {
     order: 0; flex: 0 0 auto; min-width: 22px; text-align: center; font-weight: 800; font-size: 1rem; line-height: 1;
@@ -6358,11 +6370,14 @@ html[data-jb-bg="matrix"] #jb-public .jb-style-heading-row h2 { font-size: 18.4p
       <!-- 29 oct. 2026 (Hubert) : écran à part, avec RETOUR en haut et en bas. Le chat monte juste sous
            RETOUR ; son cadre est divisé : « Choix du public » dans le 30 % du haut, les messages qui
            défilent dans le 70 % du bas (voir fitChatFrame()) -->
-      <button type="button" class="jb-mode-btn jb-chat-back" data-chat-back></button>
       <div class="jb-style-heading-row"><h2 id="jb-chat-title">Chat room</h2></div>
       <div class="jb-chat-frame">
         <div class="jb-chat-top">
-          <h3 id="jb-chat-top-title" class="jb-chat-top-title"></h3>
+          <!-- (21 nov. 2026, Hubert) RETOUR dans le cadre, sur la même ligne que « Les demandes de la soirée » -->
+          <div class="jb-chat-top-head">
+            <button type="button" class="jb-chat-back jb-chat-back-inline" data-chat-back></button>
+            <h3 id="jb-chat-top-title" class="jb-chat-top-title"></h3>
+          </div>
           <p id="jb-chat-top-empty" class="jb-empty" hidden></p>
           <ol id="jb-chat-top-list" class="jb-chat-top-list"></ol>
         </div>
@@ -7091,7 +7106,7 @@ répertoire</button>
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-22.308";
+  const APP_BUILD = "2026-10-22.309";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
