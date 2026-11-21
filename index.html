@@ -6965,7 +6965,7 @@ répertoire</button>
   // changé, ça veut dire qu'une nouvelle version a été publiée : on recharge
   // la page automatiquement pour que le client (et le tableau de bord admin)
   // ne restent jamais coincés sur une vieille copie en cache.
-  const APP_BUILD = "2026-10-22.305";
+  const APP_BUILD = "2026-10-22.306";
   (function setupAutoUpdateCheck() {
     const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     let checking = false;
@@ -11958,7 +11958,7 @@ répertoire</button>
             ${renderVotersLine(v.voters, true, v.askedBy)}
           </span>
         </a>
-        <button class="jb-mark-played-btn${isMarkPlayedArmed(id) ? " jb-mark-played-armed" : ""}" data-played="${id}">${isMarkPlayedArmed(id) ? at("❓ Confirmer ?", "❓ Confirm?") : at("✅ Jouée", "✅ Played")}</button>`;
+        <button class="jb-mark-played-btn${isMarkPlayedArmed(id) ? " jb-mark-played-armed" : ""}" data-played="${escapeHtml(id)}">${isMarkPlayedArmed(id) ? at("❓ Confirmer ?", "❓ Confirm?") : at("✅ Jouée", "✅ Played")}</button>`;
       list.appendChild(li);
     });
 
@@ -12035,7 +12035,7 @@ répertoire</button>
           <span class="jb-slot-title">${escapeHtml(req.text || "")}</span>
           ${sub ? `<span class="jb-slot-artist">${sub}</span>` : ""}
         </span>
-        <button class="jb-dismiss-special-btn${(dismissArmedUntil[id] || 0) > Date.now() ? " jb-mark-played-armed" : ""}" data-dismiss="${id}">${(dismissArmedUntil[id] || 0) > Date.now() ? at("❓ Confirmer ?", "❓ Confirm?") : at("✖ Retirer", "✖ Remove")}</button>`;
+        <button class="jb-dismiss-special-btn${(dismissArmedUntil[id] || 0) > Date.now() ? " jb-mark-played-armed" : ""}" data-dismiss="${escapeHtml(id)}">${(dismissArmedUntil[id] || 0) > Date.now() ? at("❓ Confirmer ?", "❓ Confirm?") : at("✖ Retirer", "✖ Remove")}</button>`;
       list.appendChild(li);
     });
     sizeSpecialList();
@@ -12215,7 +12215,7 @@ répertoire</button>
             <div class="jb-song-title">${escapeHtml(v.title)}</div>
             <div class="jb-song-artist">${escapeHtml(v.artist || "")} · 🔥❌ ${at("Brûlée", "Burned")}</div>
           </div>
-          <button class="jb-unburn-btn" data-unburn="${id}">${at("♻️ Réactiver", "♻️ Restore")}</button>`;
+          <button class="jb-unburn-btn" data-unburn="${escapeHtml(id)}">${at("♻️ Réactiver", "♻️ Restore")}</button>`;
       } else {
         row.dataset.until = v.cooldownUntil;
         // Titre/artiste sur leur propre ligne, AU-DESSUS du minuteur/des boutons (voir
@@ -12230,9 +12230,9 @@ répertoire</button>
           </div>
           <div class="jb-cooldown-row-controls">
             ${(bypassArmedUntil[id] || 0) > Date.now()
-              ? `<button class="jb-bypass-btn jb-mark-played-armed" data-bypass="${id}">${at("❓ Confirmer ?", "❓ Confirm?")}</button>`
-              : `<button class="jb-bypass-btn" data-bypass="${id}">${at("Disponible dans ", "Available in ")}<span class="jb-cooldown-num">${formatCooldown(v)}</span></button>`}
-            <button class="jb-burn-btn" data-burn="${id}">${at("🔥 Brûler", "🔥 Burn")}</button>
+              ? `<button class="jb-bypass-btn jb-mark-played-armed" data-bypass="${escapeHtml(id)}">${at("❓ Confirmer ?", "❓ Confirm?")}</button>`
+              : `<button class="jb-bypass-btn" data-bypass="${escapeHtml(id)}">${at("Disponible dans ", "Available in ")}<span class="jb-cooldown-num">${formatCooldown(v)}</span></button>`}
+            <button class="jb-burn-btn" data-burn="${escapeHtml(id)}">${at("🔥 Brûler", "🔥 Burn")}</button>
           </div>`;
       }
       container.appendChild(row);
